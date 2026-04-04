@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Impatto SRL — Dati per ricevuta</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0e0d;
+  --surface: #161614;
+  --surface2: #1e1e1b;
+  --border: #2a2a26;
+  --border2: #3a3a34;
+  --text: #f0ede6;
+  --text2: #9a9688;
+  --text3: #5a5850;
+  --accent: #c8b87a;
+  --accent2: #9a8a4a;
+  --green: #4a9a6a;
+  --green-bg: #1a2e20;
+  --red: #c85a4a;
+  --red-bg: #2e1a18;
+  --blue: #4a7ac8;
+  --blue-bg: #1a2040;
+  --radius: 10px;
+  --radius-sm: 6px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  min-height: 100vh;
+  padding: 0 0 80px;
+}
+
+/* HEADER */
+.header {
+  border-bottom: 1px solid var(--border);
+  padding: 28px 32px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  background: rgba(14,14,13,0.95);
+  backdrop-filter: blur(12px);
+  z-index: 100;
+}
+
+.logo-mark {
+  width: 36px;
+  height: 36px;
+  background: var(--accent);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'DM Serif Display', serif;
+  font-size: 18px;
+  color: #0e0e0d;
+  flex-shrink: 0;
+}
+
+.header-text h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 17px;
+  font-weight: 400;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+.header-text p {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 2px;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.04em;
+}
+
+/* MAIN */
+.main {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 40px 24px 0;
+}
+
+.intro {
+  margin-bottom: 36px;
+}
+
+.intro h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.intro p {
+  font-size: 14px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
+/* TYPE SELECTOR */
+.type-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.type-btn {
+  padding: 16px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.18s;
+  position: relative;
+  overflow: hidden;
+}
+
+.type-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity 0.18s;
+}
+
+.type-btn:hover { border-color: var(--border2); }
+
+.type-btn.active {
+  border-color: var(--accent);
+  background: rgba(200,184,122,0.06);
+}
+
+.type-btn .type-icon {
+  font-size: 20px;
+  margin-bottom: 8px;
+  position: relative;
+}
+
+.type-btn .type-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  position: relative;
+}
+
+.type-btn .type-desc {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 3px;
+  font-family: 'DM Mono', monospace;
+  position: relative;
+}
+
+/* TABS */
+.tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--surface);
+  padding: 4px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+
+.tab {
+  flex: 1;
+  padding: 9px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text3);
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  border-radius: 7px;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-weight: 400;
+}
+
+.tab.active {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border2);
+}
+
+/* UPLOAD AREA */
+.upload-area {
+  border: 1.5px dashed var(--border2);
+  border-radius: var(--radius);
+  padding: 40px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--surface);
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.upload-area:hover, .upload-area.dragover {
+  border-color: var(--accent);
+  background: rgba(200,184,122,0.04);
+}
+
+.upload-area input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+.upload-icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.upload-area h3 {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.upload-area p {
+  font-size: 12px;
+  color: var(--text3);
+  font-family: 'DM Mono', monospace;
+}
+
+/* IMAGE PREVIEW */
+.img-preview {
+  display: none;
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+
+.img-preview img {
+  width: 100%;
+  max-height: 240px;
+  object-fit: cover;
+  display: block;
+}
+
+.img-preview .remove-img {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0,0,0,0.7);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: 'DM Mono', monospace;
+}
+
+/* OCR STATUS */
+.ocr-status {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--blue-bg);
+  border: 1px solid rgba(74,122,200,0.3);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: #7aabf0;
+  margin-bottom: 20px;
+  font-family: 'DM Mono', monospace;
+}
+
+.ocr-status.success {
+  background: var(--green-bg);
+  border-color: rgba(74,154,106,0.3);
+  color: #7acd9a;
+}
+
+.ocr-status.error {
+  background: var(--red-bg);
+  border-color: rgba(200,90,74,0.3);
+  color: #f07a6a;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(74,122,200,0.3);
+  border-top-color: #7aabf0;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* SECTION */
+.section {
+  margin-bottom: 8px;
+}
+
+.section-label {
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  color: var(--text3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* FIELD */
+.field {
+  margin-bottom: 14px;
+}
+
+.field label {
+  display: block;
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 6px;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.02em;
+}
+
+.field label .req {
+  color: var(--accent);
+  margin-left: 3px;
+}
+
+.field input, .field select, .field textarea {
+  width: 100%;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 11px 14px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  outline: none;
+  transition: border-color 0.15s;
+  -webkit-appearance: none;
+}
+
+.field input:focus, .field select:focus, .field textarea:focus {
+  border-color: var(--accent);
+}
+
+.field input.filled {
+  border-color: rgba(74,154,106,0.5);
+  background: rgba(74,154,106,0.04);
+}
+
+.field input::placeholder { color: var(--text3); }
+
+.field select option { background: var(--surface2); }
+
+.field textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* NOTA IMPORTO */
+.amount-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 14px;
+}
+
+.amount-section .section-label { margin-bottom: 14px; }
+
+/* DIVIDER */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 24px 0;
+}
+
+/* SUBMIT */
+.submit-btn {
+  width: 100%;
+  padding: 16px;
+  background: var(--accent);
+  color: #0e0e0d;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 15px;
+  font-weight: 500;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.18s;
+  letter-spacing: -0.01em;
+  margin-top: 8px;
+}
+
+.submit-btn:hover { background: #d4c48e; transform: translateY(-1px); }
+.submit-btn:active { transform: translateY(0); }
+.submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* SUCCESS */
+.success-screen {
+  display: none;
+  text-align: center;
+  padding: 60px 24px;
+}
+
+.success-icon {
+  width: 64px;
+  height: 64px;
+  background: var(--green-bg);
+  border: 1px solid rgba(74,154,106,0.4);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  margin: 0 auto 24px;
+}
+
+.success-screen h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.success-screen p {
+  font-size: 14px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
+/* MANUAL ADMIN SECTION */
+.admin-panel {
+  display: none;
+  margin-top: 40px;
+  padding-top: 40px;
+  border-top: 1px solid var(--border);
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-family: 'DM Mono', monospace;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 999;
+  white-space: nowrap;
+}
+
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* OCR EXTRACTED BADGE */
+.ocr-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-family: 'DM Mono', monospace;
+  color: #7acd9a;
+  background: var(--green-bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+@media (max-width: 480px) {
+  .field-row { grid-template-columns: 1fr; }
+  .header { padding: 20px 16px; }
+  .main { padding: 28px 16px 0; }
+  .intro h2 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-mark">I</div>
+  <div class="header-text">
+    <h1>Impatto SRL</h1>
+    <p>PORTALE DATI FISCALI OSPITI</p>
+  </div>
+</div>
+
+<div class="main" id="mainForm">
+
+  <div class="intro">
+    <h2>Inserimento dati<br><em>per ricevuta fiscale</em></h2>
+    <p>Compila i tuoi dati per ricevere la ricevuta del soggiorno. Puoi fotografare il tuo documento oppure inserire i dati manualmente.</p>
+  </div>
+
+  <!-- TIPO SOGGETTO -->
+  <div class="type-selector">
+    <button class="type-btn active" onclick="setType('privato')" id="btn-privato">
+      <div class="type-icon">👤</div>
+      <div class="type-label">Persona privata</div>
+      <div class="type-desc">CF / documento identità</div>
+    </button>
+    <button class="type-btn" onclick="setType('azienda')" id="btn-azienda">
+      <div class="type-icon">🏢</div>
+      <div class="type-label">Azienda / P.IVA</div>
+      <div class="type-desc">Fattura elettronica B2B</div>
+    </button>
+  </div>
+
+  <!-- TABS INSERIMENTO -->
+  <div class="tabs">
+    <button class="tab active" onclick="setTab('foto')" id="tab-foto">
+      📷 Foto documento
+    </button>
+    <button class="tab" onclick="setTab('manuale')" id="tab-manuale">
+      ✏️ Inserimento manuale
+    </button>
+  </div>
+
+  <!-- SEZIONE FOTO -->
+  <div id="section-foto">
+    <div class="img-preview" id="imgPreview">
+      <img id="previewImg" src="" alt="documento">
+      <button class="remove-img" onclick="removeImage()">✕ Rimuovi</button>
+    </div>
+
+    <div class="upload-area" id="uploadArea">
+      <input type="file" id="fileInput" accept="image/*" capture="environment" onchange="handleFile(this.files[0])">
+      <div class="upload-icon">📄</div>
+      <h3>Fotografa o carica il documento</h3>
+      <p>Carta d'identità · Passaporto · Patente · Tessera sanitaria</p>
+    </div>
+
+    <div class="ocr-status" id="ocrStatus">
+      <div class="spinner" id="ocrSpinner"></div>
+      <span id="ocrMsg">Estrazione dati in corso...</span>
+    </div>
+  </div>
+
+  <!-- FORM DATI -->
+  <div id="formDati" style="display:none">
+
+    <!-- PRIVATO -->
+    <div id="fields-privato">
+      <div class="section">
+        <div class="section-label">Dati anagrafici</div>
+        <div class="field-row">
+          <div class="field">
+            <label>Nome <span class="req">*</span></label>
+            <input type="text" id="nome" placeholder="Mario" oninput="markFilled(this)">
+          </div>
+          <div class="field">
+            <label>Cognome <span class="req">*</span></label>
+            <input type="text" id="cognome" placeholder="Rossi" oninput="markFilled(this)">
+          </div>
+        </div>
+        <div class="field">
+          <label>Codice fiscale <span class="req">*</span></label>
+          <input type="text" id="cf" placeholder="RSSMRA80A01H501Z" oninput="markFilled(this)" style="font-family:'DM Mono',monospace; letter-spacing:0.05em; text-transform:uppercase">
+        </div>
+        <div class="field">
+          <label>Data di nascita</label>
+          <input type="date" id="dataNascita">
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section">
+        <div class="section-label">Residenza</div>
+        <div class="field">
+          <label>Indirizzo <span class="req">*</span></label>
+          <input type="text" id="indirizzo" placeholder="Via Roma 1" oninput="markFilled(this)">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>CAP <span class="req">*</span></label>
+            <input type="text" id="cap" placeholder="47841" maxlength="10" oninput="markFilled(this)">
+          </div>
+          <div class="field">
+            <label>Città <span class="req">*</span></label>
+            <input type="text" id="citta" placeholder="Riccione" oninput="markFilled(this)">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Provincia</label>
+            <input type="text" id="provincia" placeholder="RN" maxlength="3" style="text-transform:uppercase">
+          </div>
+          <div class="field">
+            <label>Paese</label>
+            <input type="text" id="paese" placeholder="Italia" value="Italia">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AZIENDA -->
+    <div id="fields-azienda" style="display:none">
+      <div class="section">
+        <div class="section-label">Dati azienda</div>
+        <div class="field">
+          <label>Ragione sociale <span class="req">*</span></label>
+          <input type="text" id="ragioneSociale" placeholder="Esempio SRL" oninput="markFilled(this)">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Partita IVA <span class="req">*</span></label>
+            <input type="text" id="piva" placeholder="01234567890" maxlength="13" oninput="markFilled(this)" style="font-family:'DM Mono',monospace; letter-spacing:0.05em">
+          </div>
+          <div class="field">
+            <label>Codice fiscale azienda</label>
+            <input type="text" id="cfAzienda" placeholder="01234567890" style="font-family:'DM Mono',monospace; letter-spacing:0.05em; text-transform:uppercase">
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section">
+        <div class="section-label">Recapiti fatturazione elettronica</div>
+        <div class="field">
+          <label>Codice SDI <span class="req">*</span></label>
+          <input type="text" id="sdi" placeholder="XXXXXXX (7 caratteri)" maxlength="7" oninput="markFilled(this)" style="font-family:'DM Mono',monospace; text-transform:uppercase">
+        </div>
+        <div class="field">
+          <label>PEC (alternativa al SDI)</label>
+          <input type="email" id="pec" placeholder="fatture@pec.esempio.it" style="font-family:'DM Mono',monospace">
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section">
+        <div class="section-label">Sede legale</div>
+        <div class="field">
+          <label>Indirizzo <span class="req">*</span></label>
+          <input type="text" id="indirizzoAz" placeholder="Via Roma 1" oninput="markFilled(this)">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>CAP <span class="req">*</span></label>
+            <input type="text" id="capAz" placeholder="47841" maxlength="10" oninput="markFilled(this)">
+          </div>
+          <div class="field">
+            <label>Città <span class="req">*</span></label>
+            <input type="text" id="cittaAz" placeholder="Milano" oninput="markFilled(this)">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Provincia</label>
+            <input type="text" id="provinciaAz" placeholder="MI" maxlength="3" style="text-transform:uppercase">
+          </div>
+          <div class="field">
+            <label>Paese</label>
+            <input type="text" id="paeseAz" placeholder="Italia" value="Italia">
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="section-label">Contatto aziendale</div>
+        <div class="field-row">
+          <div class="field">
+            <label>Nome referente</label>
+            <input type="text" id="nomeRef" placeholder="Mario">
+          </div>
+          <div class="field">
+            <label>Cognome referente</label>
+            <input type="text" id="cognomeRef" placeholder="Rossi">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- DATI SOGGIORNO -->
+    <div class="section">
+      <div class="section-label">Prenotazione</div>
+      <div class="field">
+        <label>Numero prenotazione / appartamento</label>
+        <input type="text" id="prenotazione" placeholder="es. BK-12345678 o App. Riccione 3">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Check-in</label>
+          <input type="date" id="checkin">
+        </div>
+        <div class="field">
+          <label>Check-out</label>
+          <input type="date" id="checkout">
+        </div>
+      </div>
+      <div class="field">
+        <label>Note aggiuntive</label>
+        <textarea id="note" placeholder="Eventuali informazioni utili..."></textarea>
+      </div>
+    </div>
+
+    <button class="submit-btn" onclick="submitForm()" id="submitBtn">
+      Invia dati →
+    </button>
+
+  </div><!-- fine formDati -->
+
+</div><!-- fine main -->
+
+<!-- SUCCESS -->
+<div class="success-screen" id="successScreen">
+  <div class="success-icon">✓</div>
+  <h2>Dati ricevuti</h2>
+  <p>I tuoi dati fiscali sono stati inviati correttamente.<br>Riceverai la ricevuta non appena elaborata.<br><br>Grazie per aver soggiornato con noi.</p>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── CONFIG ────────────────────────────────────────────────
+const SUPABASE_URL = 'https://tysxeikqbgebpfyblgeb.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5c3hlaWtxYmdlYnBmeWJsZ2ViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyODczODAsImV4cCI6MjA5MDg2MzM4MH0.yXmS2MFh47eRkCX2voemdBkK5m_tyJiKAFhfyp1YEbw';
+
+// ─── STATE ─────────────────────────────────────────────────
+let currentType = 'privato';
+let currentTab = 'foto';
+let uploadedImageBase64 = null;
+let ocrDone = false;
+
+// ─── TYPE ──────────────────────────────────────────────────
+function setType(type) {
+  currentType = type;
+  document.getElementById('btn-privato').classList.toggle('active', type === 'privato');
+  document.getElementById('btn-azienda').classList.toggle('active', type === 'azienda');
+  document.getElementById('fields-privato').style.display = type === 'privato' ? '' : 'none';
+  document.getElementById('fields-azienda').style.display = type === 'azienda' ? '' : 'none';
+  // reset OCR se cambia tipo
+  clearOcrFields();
+}
+
+// ─── TAB ───────────────────────────────────────────────────
+function setTab(tab) {
+  currentTab = tab;
+  document.getElementById('tab-foto').classList.toggle('active', tab === 'foto');
+  document.getElementById('tab-manuale').classList.toggle('active', tab === 'manuale');
+  document.getElementById('section-foto').style.display = tab === 'foto' ? '' : 'none';
+  // In entrambi i tab il form è visibile, ma in manuale lo mostriamo subito
+  if (tab === 'manuale') {
+    document.getElementById('formDati').style.display = '';
+  }
+}
+
+// ─── FILE UPLOAD ───────────────────────────────────────────
+function handleFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    uploadedImageBase64 = e.target.result.split(',')[1];
+    document.getElementById('previewImg').src = e.target.result;
+    document.getElementById('imgPreview').style.display = 'block';
+    document.getElementById('uploadArea').style.display = 'none';
+    runOCR(e.target.result.split(',')[1]);
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeImage() {
+  uploadedImageBase64 = null;
+  ocrDone = false;
+  document.getElementById('imgPreview').style.display = 'none';
+  document.getElementById('uploadArea').style.display = 'block';
+  document.getElementById('fileInput').value = '';
+  document.getElementById('ocrStatus').style.display = 'none';
+  document.getElementById('formDati').style.display = 'none';
+  clearOcrFields();
+}
+
+// Drag and drop
+const ua = document.getElementById('uploadArea');
+ua.addEventListener('dragover', e => { e.preventDefault(); ua.classList.add('dragover'); });
+ua.addEventListener('dragleave', () => ua.classList.remove('dragover'));
+ua.addEventListener('drop', e => {
+  e.preventDefault();
+  ua.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+
+// ─── OCR ───────────────────────────────────────────────────
+async function runOCR(base64) {
+  const status = document.getElementById('ocrStatus');
+  const msg = document.getElementById('ocrMsg');
+  const spinner = document.getElementById('ocrSpinner');
+
+  status.style.display = 'flex';
+  status.className = 'ocr-status';
+  spinner.style.display = 'block';
+  msg.textContent = 'Estrazione dati in corso...';
+
+  const prompt = currentType === 'privato'
+    ? `Sei un assistente per l'estrazione dati da documenti italiani. Analizza questa immagine di un documento d'identità italiano (carta d'identità, passaporto, patente o tessera sanitaria) e restituisci SOLO un JSON con questi campi:
+{"nome":"","cognome":"","codice_fiscale":"","data_nascita":"YYYY-MM-DD","indirizzo":"","cap":"","citta":"","provincia":"","paese":"Italia"}
+Se un campo non è leggibile lascialo stringa vuota. Rispondi SOLO con il JSON, niente altro.`
+    : `Sei un assistente per l'estrazione dati da documenti aziendali italiani. Analizza questa immagine (visura camerale, documento aziendale, carta intestata) e restituisci SOLO un JSON:
+{"ragione_sociale":"","partita_iva":"","codice_fiscale":"","indirizzo":"","cap":"","citta":"","provincia":"","paese":"Italia","sdi":"","pec":""}
+Se un campo non è leggibile lascialo stringa vuota. Rispondi SOLO con il JSON, niente altro.`;
+
+  try {
+    const res = await fetch('/.netlify/functions/ocr', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: base64, tipo: currentType })
+    });
+
+    const parsed = await res.json();
+    if (!res.ok) throw new Error('OCR error');
+
+    populateFields(parsed);
+
+    status.className = 'ocr-status success';
+    spinner.style.display = 'none';
+    msg.textContent = '✓ Dati estratti automaticamente — verifica e correggi se necessario';
+    ocrDone = true;
+    document.getElementById('formDati').style.display = '';
+
+  } catch(err) {
+    status.className = 'ocr-status error';
+    spinner.style.display = 'none';
+    msg.textContent = '⚠ Estrazione automatica non riuscita — inserisci i dati manualmente';
+    document.getElementById('formDati').style.display = '';
+  }
+}
+
+function populateFields(data) {
+  if (currentType === 'privato') {
+    setField('nome', data.nome);
+    setField('cognome', data.cognome);
+    setField('cf', (data.codice_fiscale || '').toUpperCase());
+    setField('dataNascita', data.data_nascita);
+    setField('indirizzo', data.indirizzo);
+    setField('cap', data.cap);
+    setField('citta', data.citta);
+    setField('provincia', (data.provincia || '').toUpperCase());
+    setField('paese', data.paese || 'Italia');
+  } else {
+    setField('ragioneSociale', data.ragione_sociale);
+    setField('piva', data.partita_iva);
+    setField('cfAzienda', (data.codice_fiscale || '').toUpperCase());
+    setField('indirizzoAz', data.indirizzo);
+    setField('capAz', data.cap);
+    setField('cittaAz', data.citta);
+    setField('provinciaAz', (data.provincia || '').toUpperCase());
+    setField('paeseAz', data.paese || 'Italia');
+    setField('sdi', (data.sdi || '').toUpperCase());
+    setField('pec', data.pec);
+  }
+}
+
+function setField(id, val) {
+  const el = document.getElementById(id);
+  if (el && val) {
+    el.value = val;
+    el.classList.add('filled');
+  }
+}
+
+function clearOcrFields() {
+  const ids = ['nome','cognome','cf','dataNascita','indirizzo','cap','citta','provincia',
+                'ragioneSociale','piva','cfAzienda','indirizzoAz','capAz','cittaAz','provinciaAz','sdi','pec'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.value = ''; el.classList.remove('filled'); }
+  });
+}
+
+function markFilled(el) {
+  el.classList.toggle('filled', el.value.length > 0);
+}
+
+// ─── SUBMIT ────────────────────────────────────────────────
+async function submitForm() {
+  const btn = document.getElementById('submitBtn');
+
+  // Validazione base
+  const required = currentType === 'privato'
+    ? ['nome', 'cognome', 'cf', 'indirizzo', 'cap', 'citta']
+    : ['ragioneSociale', 'piva', 'indirizzoAz', 'capAz', 'cittaAz'];
+
+  for (const id of required) {
+    const el = document.getElementById(id);
+    if (!el || !el.value.trim()) {
+      showToast('⚠ Compila tutti i campi obbligatori');
+      el?.focus();
+      return;
+    }
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Invio in corso...';
+
+  // Costruisci payload
+  const payload = {
+    tipo: currentType,
+    fonte: currentTab === 'foto' ? (ocrDone ? 'ocr' : 'foto_manuale') : 'manuale',
+    stato: 'DA_VERIFICARE',
+    created_at: new Date().toISOString(),
+    prenotazione_ref: document.getElementById('prenotazione')?.value || '',
+    checkin: document.getElementById('checkin')?.value || null,
+    checkout: document.getElementById('checkout')?.value || null,
+    note: document.getElementById('note')?.value || '',
+    ha_immagine: !!uploadedImageBase64,
+  };
+
+  if (currentType === 'privato') {
+    Object.assign(payload, {
+      nome: document.getElementById('nome').value.trim(),
+      cognome: document.getElementById('cognome').value.trim(),
+      codice_fiscale: document.getElementById('cf').value.trim().toUpperCase(),
+      data_nascita: document.getElementById('dataNascita').value || null,
+      indirizzo: document.getElementById('indirizzo').value.trim(),
+      cap: document.getElementById('cap').value.trim(),
+      citta: document.getElementById('citta').value.trim(),
+      provincia: document.getElementById('provincia').value.trim().toUpperCase(),
+      paese: document.getElementById('paese').value.trim() || 'Italia',
+    });
+  } else {
+    Object.assign(payload, {
+      ragione_sociale: document.getElementById('ragioneSociale').value.trim(),
+      partita_iva: document.getElementById('piva').value.trim(),
+      codice_fiscale: document.getElementById('cfAzienda').value.trim().toUpperCase(),
+      codice_sdi: document.getElementById('sdi').value.trim().toUpperCase(),
+      pec: document.getElementById('pec').value.trim(),
+      indirizzo: document.getElementById('indirizzoAz').value.trim(),
+      cap: document.getElementById('capAz').value.trim(),
+      citta: document.getElementById('cittaAz').value.trim(),
+      provincia: document.getElementById('provinciaAz').value.trim().toUpperCase(),
+      paese: document.getElementById('paeseAz').value.trim() || 'Italia',
+      nome_referente: document.getElementById('nomeRef').value.trim(),
+      cognome_referente: document.getElementById('cognomeRef').value.trim(),
+    });
+  }
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/fatture_staging`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) throw new Error('Supabase error ' + res.status);
+
+    document.getElementById('mainForm').style.display = 'none';
+    document.getElementById('successScreen').style.display = 'block';
+
+  } catch(err) {
+    console.error(err);
+    showToast('⚠ Errore di invio — riprova tra qualche secondo');
+    btn.disabled = false;
+    btn.textContent = 'Invia dati →';
+  }
+}
+
+// ─── TOAST ─────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+// ─── INIT ──────────────────────────────────────────────────
+// Precompila date da URL params se presenti
+const params = new URLSearchParams(window.location.search);
+if (params.get('checkin')) document.getElementById('checkin').value = params.get('checkin');
+if (params.get('checkout')) document.getElementById('checkout').value = params.get('checkout');
+if (params.get('ref')) document.getElementById('prenotazione').value = params.get('ref');
+if (params.get('tipo') === 'azienda') setType('azienda');
+</script>
+</body>
+</html>
