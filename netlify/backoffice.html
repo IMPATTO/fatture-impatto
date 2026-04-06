@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Backoffice · Impatto</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #f5f4f1;
+      --white:    #ffffff;
+      --surf:     #fafaf8;
+      --border:   #e2e0db;
+      --border2:  #d0cdc6;
+      --accent:   #2563eb;
+      --accent-l: #eff4ff;
+      --green:    #16a34a;
+      --green-l:  #f0fdf4;
+      --red:      #dc2626;
+      --red-l:    #fef2f2;
+      --yellow:   #d97706;
+      --yellow-l: #fffbeb;
+      --purple:   #9333ea;
+      --purple-l: #fdf4ff;
+      --blue-l:   #eff6ff;
+      --text:     #1a1917;
+      --text2:    #57534e;
+      --muted:    #a8a29e;
+      --serif:    'Cormorant Garamond', Georgia, serif;
+      --sans:     'DM Sans', sans-serif;
+      --mono:     'DM Mono', monospace;
+    }
+
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; }
+
+    /* ── LOGIN ── */
+    .login-wrap {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: var(--bg);
+    }
+    .login-card {
+      width: 400px; background: var(--white);
+      border: 1px solid var(--border); border-radius: 12px;
+      padding: 48px 44px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    }
+    .login-logo { font-family: var(--serif); font-size: 30px; font-weight: 500; margin-bottom: 4px; }
+    .login-sub  { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 36px; }
+
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text2); margin-bottom: 6px; }
+    .field input, .field select, .field textarea {
+      width: 100%; background: var(--white); border: 1px solid var(--border); border-radius: 6px;
+      padding: 10px 13px; font-size: 14px; font-family: var(--sans); color: var(--text);
+      transition: border-color 0.15s, box-shadow 0.15s; outline: none;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+    .field textarea { resize: vertical; min-height: 78px; }
+    .field select { appearance: none; cursor: pointer; }
+    .field-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 9px 18px; border: none; border-radius: 6px;
+      font-size: 13px; font-weight: 500; font-family: var(--sans);
+      cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.38; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: #1d4ed8; }
+    .btn-green  { background: var(--green);  color: #fff; font-weight: 600; }
+    .btn-green:hover:not(:disabled)  { background: #15803d; }
+    .btn-red    { background: var(--red);    color: #fff; }
+    .btn-red:hover:not(:disabled)    { background: #b91c1c; }
+    .btn-yellow { background: var(--yellow); color: #fff; }
+    .btn-yellow:hover:not(:disabled) { background: #b45309; }
+    .btn-ghost  { background: var(--white); color: var(--text2); border: 1px solid var(--border); }
+    .btn-ghost:hover:not(:disabled)  { border-color: var(--border2); color: var(--text); }
+    .btn-full { width: 100%; margin-top: 8px; padding: 12px; font-size: 14px; }
+
+    .msg-err { background: var(--red-l); border: 1px solid #fecaca; color: var(--red); border-radius: 6px; padding: 10px 13px; font-size: 13px; margin-bottom: 12px; display: none; }
+
+    /* ── HEADER ── */
+    .header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; height: 56px;
+      background: var(--white); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 50;
+    }
+    .header-left { display: flex; align-items: baseline; gap: 10px; }
+    .header-brand { font-family: var(--serif); font-size: 22px; font-weight: 500; }
+    .header-tag { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .header-user { font-size: 12px; font-family: var(--mono); color: var(--muted); }
+
+    /* ── TIMEOUT BAR ── */
+    .tbar { height: 3px; background: var(--border); }
+    .tbar-fill { height: 100%; transition: width 1s linear, background 0.5s; }
+
+    /* ── STATS ── */
+    .stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; padding: 16px 24px; background: var(--white); border-bottom: 1px solid var(--border); }
+    .stat-card { background: var(--surf); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; }
+    .stat-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+    .stat-val { font-size: 30px; font-family: var(--serif); font-weight: 600; }
+
+    /* ── FILTERS ── */
+    .filters { display: flex; gap: 10px; padding: 12px 24px; background: var(--white); border-bottom: 1px solid var(--border); flex-wrap: wrap; align-items: center; }
+    .filters input, .filters select {
+      background: var(--surf); border: 1px solid var(--border); border-radius: 6px;
+      padding: 8px 12px; font-size: 13px; font-family: var(--sans); color: var(--text);
+      outline: none; transition: border-color 0.15s;
+    }
+    .filters input:focus, .filters select:focus { border-color: var(--accent); }
+    .filters input { min-width: 220px; }
+    .filters select { appearance: none; cursor: pointer; padding-right: 28px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a8a29e' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center;
+    }
+
+    /* ── BODY ── */
+    .body-wrap { display: flex; height: calc(100vh - 56px - 3px - 80px - 52px - 48px); overflow: hidden; }
+
+    /* ── TABLE ── */
+    .table-panel { flex: 1; overflow-y: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th {
+      text-align: left; font-family: var(--mono); font-size: 10px;
+      letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
+      padding: 10px 16px; border-bottom: 1px solid var(--border);
+      background: var(--surf); position: sticky; top: 0; z-index: 10; white-space: nowrap;
+    }
+    tbody tr { border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; }
+    tbody tr:hover { background: var(--blue-l); }
+    tbody tr.selected { background: var(--accent-l); border-left: 3px solid var(--accent); }
+    tbody td { padding: 11px 16px; vertical-align: middle; }
+    .td-name { font-weight: 500; }
+    .td-apt  { font-size: 12px; color: var(--text2); }
+    .td-date { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+    .badge { display: inline-block; font-family: var(--mono); font-size: 10px; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 500; }
+    .b-check   { background: #f0f9ff; color: #0369a1; }
+    .b-daverif { background: var(--yellow-l); color: var(--yellow); }
+    .b-approv  { background: var(--green-l);  color: var(--green); }
+    .b-cred    { background: #ecfdf5; color: #059669; }
+    .b-scart   { background: var(--red-l);    color: var(--red); }
+    .b-segn    { background: var(--purple-l); color: var(--purple); }
+
+    .flag-segn { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: var(--purple-l); font-size: 12px; }
+
+    /* ── DRAWER ── */
+    .drawer { width: 0; min-width: 0; overflow: hidden; background: var(--white); border-left: 1px solid var(--border); display: flex; flex-direction: column; transition: width 0.25s ease, min-width 0.25s ease; }
+    .drawer.open { width: 460px; min-width: 460px; overflow-y: auto; }
+    .drawer-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 20px 24px 16px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--white); z-index: 10; }
+    .drawer-title { font-family: var(--serif); font-size: 22px; font-weight: 500; }
+    .drawer-sub { font-size: 11px; font-family: var(--mono); color: var(--muted); margin-top: 2px; }
+    .drawer-close { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 18px; padding: 3px 7px; border-radius: 4px; transition: background 0.15s; }
+    .drawer-close:hover { background: var(--border); color: var(--text); }
+    .drawer-body { padding: 20px 24px; flex: 1; }
+    .drawer-footer { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-wrap: wrap; position: sticky; bottom: 0; background: var(--white); }
+    .drawer-sec { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin: 18px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .drawer-sec:first-child { margin-top: 0; }
+
+    .chk-row { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
+    .chk-row input[type=checkbox] { width: 15px; height: 15px; cursor: pointer; accent-color: var(--accent); }
+    .chk-row label { font-size: 13px; color: var(--text2); cursor: pointer; user-select: none; }
+
+    /* ── MISC ── */
+    .empty { text-align: center; padding: 80px 0; color: var(--muted); }
+    .empty-ico { font-size: 36px; margin-bottom: 12px; }
+    .loading { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; padding: 48px 24px; }
+    .spin { display: inline-block; width: 15px; height: 15px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: rot 0.7s linear infinite; flex-shrink: 0; }
+    @keyframes rot { to { transform: rotate(360deg); } }
+
+    .toast { position: fixed; bottom: 20px; right: 20px; background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 12px 18px; font-size: 13px; z-index: 9999; box-shadow: 0 8px 24px rgba(0,0,0,0.1); animation: tup 0.2s ease; max-width: 300px; }
+    .toast-ok   { border-left: 3px solid var(--green);  color: var(--green); }
+    .toast-err  { border-left: 3px solid var(--red);    color: var(--red); }
+    .toast-info { border-left: 3px solid var(--purple); color: var(--purple); }
+    @keyframes tup { from { transform: translateY(8px); opacity: 0; } }
+    .mono-sm { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  </style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+// ─── Init Supabase ────────────────────────────────────────────────────────────
+const SUPABASE_URL      = 'https://tysxeikqbgebpfyblgeb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5c3hlaWtxYmdlYnBmeWJsZ2ViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyODczODAsImV4cCI6MjA5MDg2MzM4MH0.yXmS2MFh47eRkCX2voemdBkK5m_tyJiKAFhfyp1YEbw';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const TIMEOUT_MS = 30 * 60 * 1000;
+const PAESI = ['Italia','Germania','Francia','Spagna','Regno Unito','Russia','Polonia',
+  'Ucraina','Romania','Paesi Bassi','Belgio','Svizzera','Austria','Repubblica Ceca',
+  'Ungheria','Portogallo','Svezia','Norvegia','Danimarca','Finlandia',
+  'Stati Uniti','Canada','Australia','Giappone','Cina','Brasile','Argentina','Altro'];
+const IVA_OPT  = [0,4,5,10,22];
+const TIPO_OPT = ['privato','azienda','professionista'];
+const STATI    = ['CHECK_IN_COMPLETATO','DA_VERIFICARE','APPROVATA','CREDENZIALI_INVIATE','SCARTATA'];
+
+// ─── State ────────────────────────────────────────────────────────────────────
+const S = {
+  session: null, rows: [], apartments: [],
+  selected: null, form: {},
+  loading: true, saving: false,
+  fSearch: '', fStato: '', fApt: '',
+  timeLeft: TIMEOUT_MS,
+  inTimer: null, cdTimer: null,
+  toastTimer: null,
+};
+
+// ─── Utils ────────────────────────────────────────────────────────────────────
+function fmt(d) { if(!d)return'—'; return new Date(d).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+function esc(s) { if(s==null)return''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function badgeCls(s){ return{CHECK_IN_COMPLETATO:'b-check',DA_VERIFICARE:'b-daverif',APPROVATA:'b-approv',CREDENZIALI_INVIATE:'b-cred',SCARTATA:'b-scart'}[s]||'b-daverif'; }
+function badgeLbl(s){ return{CHECK_IN_COMPLETATO:'Check-in',DA_VERIFICARE:'Da verificare',APPROVATA:'Approvata',CREDENZIALI_INVIATE:'Cred. inviate',SCARTATA:'Scartata'}[s]||s; }
+
+async function audit(action, table, id) {
+  await sb.from('audit_log').insert({ user_email: S.session?.user?.email||'', action, table_name: table, record_id: String(id), timestamp: new Date().toISOString() });
+}
+
+function toast(msg, type='ok') {
+  clearTimeout(S.toastTimer);
+  let el = document.getElementById('_toast');
+  if (!el) { el = document.createElement('div'); el.id='_toast'; document.body.appendChild(el); }
+  el.innerHTML = `<div class="toast toast-${type}">${esc(msg)}</div>`;
+  S.toastTimer = setTimeout(()=>{ el.innerHTML=''; }, 3500);
+}
+
+function filtered() {
+  return S.rows.filter(r=>{
+    if (S.fStato && r.stato !== S.fStato) return false;
+    if (S.fApt   && String(r.apartment_id) !== S.fApt) return false;
+    if (S.fSearch) {
+      const q = S.fSearch.toLowerCase();
+      if (!`${r.nome||''} ${r.cognome||''} ${r.email||''}`.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function stats() {
+  const today = new Date().toISOString().slice(0,10);
+  return {
+    tot:   S.rows.length,
+    segn:  S.rows.filter(r=>r.segnalazione_jessica).length,
+    oggi:  S.rows.filter(r=>r.stato==='APPROVATA'&&(r.updated_at||r.created_at||'').slice(0,10)===today).length,
+  };
+}
+
+// ─── Data ─────────────────────────────────────────────────────────────────────
+async function loadData() {
+  S.loading = true; partialTable();
+  const [o,a] = await Promise.all([
+    sb.from('ospiti_da_lavorare').select('*').order('created_at',{ascending:false}),
+    sb.from('apartments').select('id,nome_appartamento').order('nome_appartamento'),
+  ]);
+  S.rows = o.data||[]; S.apartments = a.data||[];
+  S.loading = false; partialTable(); partialStats();
+}
+
+async function saveForm() {
+  if (!S.selected) return;
+  S.saving = true; updateFooter();
+  const {error} = await sb.from('ospiti_check_in').update({...S.form}).eq('id', S.selected.id);
+  S.saving = false;
+  if (error) { toast('Errore: '+error.message,'err'); updateFooter(); return; }
+  await audit('UPDATE','ospiti_check_in', S.selected.id);
+  const i = S.rows.findIndex(r=>r.id===S.selected.id);
+  if (i>=0) S.rows[i]={...S.rows[i],...S.form};
+  S.selected = S.rows[i]||S.selected;
+  toast('✓ Salvato','ok'); updateFooter(); partialTable(); partialStats();
+}
+
+async function setStato(stato) {
+  if (!S.selected) return;
+  if (stato==='DA_VERIFICARE' && !S.form.segnalazione_jessica?.trim()) {
+    toast('Aggiungi una segnalazione prima di segnalare','err'); return;
+  }
+  S.saving = true; updateFooter();
+  const payload = {...S.form, stato};
+  const {error} = await sb.from('ospiti_check_in').update(payload).eq('id', S.selected.id);
+  S.saving = false;
+  if (error) { toast('Errore: '+error.message,'err'); updateFooter(); return; }
+  const act = stato==='APPROVATA'?'APPROVA':stato==='SCARTATA'?'SCARTA':'SEGNALA';
+  await audit(act,'ospiti_check_in', S.selected.id);
+  const lbl = {APPROVATA:'✓ Approvato',SCARTATA:'✗ Scartato',DA_VERIFICARE:'⚑ Segnalato'};
+  const typ = {APPROVATA:'ok',SCARTATA:'err',DA_VERIFICARE:'info'};
+  toast(lbl[stato]||stato, typ[stato]||'ok');
+  const i = S.rows.findIndex(r=>r.id===S.selected.id);
+  if (i>=0) S.rows[i]={...S.rows[i],...payload,stato};
+  // keep drawer open on segnala, close on approva/scarta
+  if (stato !== 'DA_VERIFICARE') { S.selected=null; S.form={}; }
+  else { S.selected=S.rows[i]; }
+  partialTable(); partialStats(); partialDrawer();
+}
+
+// ─── Render Login ─────────────────────────────────────────────────────────────
+function renderLogin() {
+  document.getElementById('app').innerHTML = `
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo">Impatto</div>
+      <div class="login-sub">Backoffice · Fatturazione</div>
+      <div id="lerr" class="msg-err"></div>
+      <div class="field"><label>Email</label>
+        <input id="lem" type="email" value="fatturazione@illupoaffitta.com" autocomplete="username"/></div>
+      <div class="field"><label>Password</label>
+        <input id="lpw" type="password" autocomplete="current-password"/></div>
+      <button id="lbtn" class="btn btn-primary btn-full">Entra →</button>
+    </div>
+  </div>`;
+  const doLogin = async () => {
+    const btn=document.getElementById('lbtn'), err=document.getElementById('lerr');
+    btn.disabled=true; btn.textContent='Accesso…';
+    const {error} = await sb.auth.signInWithPassword({email:document.getElementById('lem').value, password:document.getElementById('lpw').value});
+    if (error) { err.textContent=error.message; err.style.display='block'; btn.disabled=false; btn.textContent='Entra →'; }
+  };
+  document.getElementById('lbtn').addEventListener('click', doLogin);
+  document.getElementById('lpw').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+  setTimeout(()=>document.getElementById('lpw')?.focus(), 80);
+}
+
+// ─── Render Dashboard ─────────────────────────────────────────────────────────
+function renderDashboard() {
+  const st=stats(), pct=(S.timeLeft/TIMEOUT_MS)*100, email=S.session?.user?.email||'';
+  const barClr = pct<20?'#dc2626':pct<50?'#d97706':'#2563eb';
+  document.getElementById('app').innerHTML = `
+  <header class="header">
+    <div class="header-left">
+      <span class="header-brand">Impatto</span>
+      <span class="header-tag">Backoffice</span>
+    </div>
+    <div class="header-right">
+      <span class="header-user">${esc(email)}</span>
+      <button id="btnLogout" class="btn btn-ghost" style="padding:6px 13px;font-size:12px">Esci</button>
+    </div>
+  </header>
+  <div class="tbar"><div id="tbar" class="tbar-fill" style="width:${pct}%;background:${barClr}"></div></div>
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-label">Da lavorare</div><div class="stat-val" id="st0">${st.tot}</div></div>
+    <div class="stat-card"><div class="stat-label">Con segnalazione</div><div class="stat-val" id="st1">${st.segn}</div></div>
+    <div class="stat-card"><div class="stat-label">Approvati oggi</div><div class="stat-val" id="st2">${st.oggi}</div></div>
+  </div>
+  <div class="filters">
+    <input id="fSearch" type="text" placeholder="Cerca nome, cognome, email…" value="${esc(S.fSearch)}"/>
+    <select id="fStato">
+      <option value="">Tutti gli stati</option>
+      ${STATI.map(s=>`<option value="${s}" ${S.fStato===s?'selected':''}>${badgeLbl(s)}</option>`).join('')}
+    </select>
+    <select id="fApt">
+      <option value="">Tutti gli appartamenti</option>
+      ${S.apartments.map(a=>`<option value="${a.id}" ${S.fApt===String(a.id)?'selected':''}>${esc(a.nome_appartamento)}</option>`).join('')}
+    </select>
+    <button id="btnRefresh" class="btn btn-ghost" style="padding:8px 14px;font-size:12px">↻ Aggiorna</button>
+  </div>
+  <div class="body-wrap">
+    <div class="table-panel" id="tablePanel"></div>
+    <div class="drawer ${S.selected?'open':''}" id="drawer"></div>
+  </div>`;
+
+  document.getElementById('btnLogout').addEventListener('click', ()=>sb.auth.signOut());
+  document.getElementById('btnRefresh').addEventListener('click', loadData);
+  document.getElementById('fSearch').addEventListener('input', e=>{ S.fSearch=e.target.value; partialTable(); });
+  document.getElementById('fStato').addEventListener('change', e=>{ S.fStato=e.target.value; partialTable(); });
+  document.getElementById('fApt').addEventListener('change', e=>{ S.fApt=e.target.value; partialTable(); });
+  partialTable(); partialDrawer();
+}
+
+// ─── Partial: table ───────────────────────────────────────────────────────────
+function partialTable() {
+  const panel = document.getElementById('tablePanel'); if(!panel) return;
+  const rows = filtered();
+  if (S.loading) { panel.innerHTML=`<div class="loading"><span class="spin"></span> Caricamento…</div>`; return; }
+  if (!rows.length) { panel.innerHTML=`<div class="empty"><div class="empty-ico">📋</div><div>Nessun ospite trovato</div></div>`; return; }
+  panel.innerHTML = `<table>
+    <thead><tr>
+      <th>Ospite</th><th>Appartamento</th><th>Check-in</th><th>Check-out</th><th>Paese</th><th>Stato</th><th></th>
+    </tr></thead>
+    <tbody>
+      ${rows.map(r=>`
+      <tr class="row-item${S.selected?.id===r.id?' selected':''}" data-id="${r.id}">
+        <td><div class="td-name">${esc(r.nome||'')} ${esc(r.cognome||'')}</div><div class="mono-sm">${esc(r.email||'')}</div></td>
+        <td class="td-apt">${esc(r.nome_appartamento||'—')}</td>
+        <td class="td-date">${fmt(r.data_checkin)}</td>
+        <td class="td-date">${fmt(r.data_checkout)}</td>
+        <td>${esc(r.paese_residenza||'—')}</td>
+        <td><span class="badge ${badgeCls(r.stato)}">${badgeLbl(r.stato)}</span></td>
+        <td>${r.segnalazione_jessica?`<span class="flag-segn" title="${esc(r.segnalazione_jessica)}">⚑</span>`:''}</td>
+      </tr>`).join('')}
+    </tbody></table>`;
+  panel.querySelectorAll('.row-item').forEach(tr=>{
+    tr.addEventListener('click', ()=>{
+      const row = S.rows.find(r=>r.id===parseInt(tr.dataset.id)); if(!row) return;
+      S.selected = row;
+      S.form = { nome:row.nome||'', cognome:row.cognome||'', email:row.email||'', telefono:row.telefono||'',
+        paese_residenza:row.paese_residenza||'Italia', indirizzo_residenza:row.indirizzo_residenza||'',
+        codice_fiscale:row.codice_fiscale||'', codice_fiscale_verificato:row.codice_fiscale_verificato||false,
+        iva_percentuale:row.iva_percentuale??10, tipo_cliente:row.tipo_cliente||'privato',
+        piva_cliente:row.piva_cliente||'', importo_lordo:row.importo_lordo||'',
+        data_checkin:row.data_checkin||'', segnalazione_jessica:row.segnalazione_jessica||'' };
+      partialDrawer(); partialTable();
+    });
+  });
+}
+
+// ─── Partial: stats ───────────────────────────────────────────────────────────
+function partialStats() {
+  const st=stats();
+  const e0=document.getElementById('st0'), e1=document.getElementById('st1'), e2=document.getElementById('st2');
+  if(e0)e0.textContent=st.tot; if(e1)e1.textContent=st.segn; if(e2)e2.textContent=st.oggi;
+}
+
+// ─── Partial: drawer ──────────────────────────────────────────────────────────
+function partialDrawer() {
+  const d = document.getElementById('drawer'); if(!d) return;
+  if (!S.selected) { d.classList.remove('open'); d.innerHTML=''; return; }
+  const r=S.selected, f=S.form;
+  const isBiz = f.tipo_cliente==='azienda'||f.tipo_cliente==='professionista';
+  d.classList.add('open');
+  d.innerHTML = `
+  <div class="drawer-header">
+    <div>
+      <div class="drawer-title">${esc(f.nome||'')} ${esc(f.cognome||'')}</div>
+      <div class="drawer-sub">#${r.id} · ${fmt(r.created_at)}</div>
+    </div>
+    <button id="dClose" class="drawer-close">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="drawer-sec">Dati anagrafici</div>
+    <div class="field-2">
+      <div class="field"><label>Nome</label><input class="df" data-k="nome" value="${esc(f.nome)}"/></div>
+      <div class="field"><label>Cognome</label><input class="df" data-k="cognome" value="${esc(f.cognome)}"/></div>
+    </div>
+    <div class="field-2">
+      <div class="field"><label>Email</label><input class="df" type="email" data-k="email" value="${esc(f.email)}"/></div>
+      <div class="field"><label>Telefono</label><input class="df" data-k="telefono" value="${esc(f.telefono)}"/></div>
+    </div>
+    <div class="field-2">
+      <div class="field"><label>Paese</label>
+        <select class="df" data-k="paese_residenza">${PAESI.map(p=>`<option${f.paese_residenza===p?' selected':''}>${esc(p)}</option>`).join('')}</select>
+      </div>
+      <div class="field"><label>Indirizzo</label><input class="df" data-k="indirizzo_residenza" value="${esc(f.indirizzo_residenza)}"/></div>
+    </div>
+
+    <div class="drawer-sec">Dati fiscali</div>
+    <div class="field-3">
+      <div class="field"><label>Codice Fiscale</label>
+        <input class="df" data-k="codice_fiscale" value="${esc(f.codice_fiscale)}" id="cfInput" style="${f.codice_fiscale_verificato?'border-color:var(--green);box-shadow:0 0 0 3px rgba(22,163,74,.08)':''}"/>
+      </div>
+      <div class="field"><label>IVA %</label>
+        <select class="df" data-k="iva_percentuale">${IVA_OPT.map(v=>`<option value="${v}"${String(f.iva_percentuale)===String(v)?' selected':''}>${v}%</option>`).join('')}</select>
+      </div>
+      <div class="field"><label>Tipo cliente</label>
+        <select class="df" data-k="tipo_cliente">${TIPO_OPT.map(v=>`<option${f.tipo_cliente===v?' selected':''}>${v}</option>`).join('')}</select>
+      </div>
+    </div>
+    <div class="chk-row">
+      <input id="cfv" type="checkbox"${f.codice_fiscale_verificato?' checked':''}/>
+      <label for="cfv">CF verificato</label>
+    </div>
+    ${isBiz?`<div class="field" style="margin-top:12px"><label>Partita IVA</label><input class="df" data-k="piva_cliente" value="${esc(f.piva_cliente)}"/></div>`:''}
+
+    <div class="drawer-sec">Soggiorno</div>
+    <div class="field-2">
+      <div class="field"><label>Importo lordo (€)</label><input class="df" type="number" step="0.01" data-k="importo_lordo" value="${esc(f.importo_lordo)}"/></div>
+      <div class="field"><label>Data check-in</label><input class="df" type="date" data-k="data_checkin" value="${esc(f.data_checkin)}"/></div>
+    </div>
+
+    <div class="drawer-sec">Segnalazione</div>
+    <div class="field"><textarea class="df" data-k="segnalazione_jessica" placeholder="Note o segnalazione…">${esc(f.segnalazione_jessica)}</textarea></div>
+
+    <div class="drawer-sec">Stato corrente</div>
+    <span class="badge ${badgeCls(r.stato)}" style="font-size:12px;padding:4px 12px">${badgeLbl(r.stato)}</span>
+  </div>
+  <div class="drawer-footer">
+    <button id="dSave" class="btn btn-ghost" style="margin-right:auto">${S.saving?'<span class="spin"></span>':'💾'} Salva</button>
+    <button id="dSegn" class="btn btn-yellow" ${S.saving?'disabled':''}>⚑ Segnala</button>
+    <button id="dScar" class="btn btn-red"    ${S.saving?'disabled':''}>✗ Scarta</button>
+    <button id="dAppr" class="btn btn-green"  ${S.saving?'disabled':''}>✓ Approva</button>
+  </div>`;
+
+  // Events
+  document.getElementById('dClose').addEventListener('click', ()=>{ S.selected=null; S.form={}; partialDrawer(); partialTable(); });
+  document.getElementById('dSave').addEventListener('click', saveForm);
+  document.getElementById('dAppr').addEventListener('click', ()=>setStato('APPROVATA'));
+  document.getElementById('dScar').addEventListener('click', ()=>setStato('SCARTATA'));
+  document.getElementById('dSegn').addEventListener('click', ()=>setStato('DA_VERIFICARE'));
+
+  d.querySelectorAll('.df').forEach(el=>{
+    el.addEventListener('input',  e=>{ S.form[e.target.dataset.k]=e.target.value; });
+    el.addEventListener('change', e=>{
+      S.form[e.target.dataset.k]=e.target.value;
+      if (e.target.dataset.k==='tipo_cliente') partialDrawer();
+    });
+  });
+  document.getElementById('cfv')?.addEventListener('change', e=>{
+    S.form.codice_fiscale_verificato = e.target.checked;
+    const inp = document.getElementById('cfInput');
+    if (inp) { inp.style.borderColor=e.target.checked?'var(--green)':''; inp.style.boxShadow=e.target.checked?'0 0 0 3px rgba(22,163,74,.08)':''; }
+  });
+}
+
+function updateFooter() {
+  const s=document.getElementById('dSave'); if(!s) return;
+  s.innerHTML = S.saving ? '<span class="spin"></span> Salvo…' : '💾 Salva';
+  s.disabled  = S.saving;
+  ['dAppr','dScar','dSegn'].forEach(id=>{ const b=document.getElementById(id); if(b) b.disabled=S.saving; });
+}
+
+// ─── Inactivity ───────────────────────────────────────────────────────────────
+function startInactivity() {
+  const reset = () => {
+    S.timeLeft = TIMEOUT_MS;
+    clearTimeout(S.inTimer);
+    S.inTimer = setTimeout(()=>sb.auth.signOut(), TIMEOUT_MS);
+  };
+  ['mousemove','mousedown','keydown','touchstart','scroll'].forEach(e=>window.addEventListener(e,reset,{passive:true}));
+  reset();
+  clearInterval(S.cdTimer);
+  S.cdTimer = setInterval(()=>{
+    S.timeLeft = Math.max(0, S.timeLeft-1000);
+    const pct=(S.timeLeft/TIMEOUT_MS)*100;
+    const el=document.getElementById('tbar'); if(!el) return;
+    el.style.width=pct+'%';
+    el.style.background=pct<20?'#dc2626':pct<50?'#d97706':'#2563eb';
+  }, 1000);
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+sb.auth.onAuthStateChange(async (_,session)=>{
+  S.session=session;
+  if (session) { renderDashboard(); startInactivity(); await loadData(); }
+  else { clearInterval(S.cdTimer); clearTimeout(S.inTimer); S.rows=[];S.selected=null;S.form={}; renderLogin(); }
+});
+
+(async()=>{
+  const {data:{session}} = await sb.auth.getSession();
+  S.session=session;
+  if (session) { renderDashboard(); startInactivity(); await loadData(); }
+  else renderLogin();
+})();
+</script>
+</body>
+</html>
