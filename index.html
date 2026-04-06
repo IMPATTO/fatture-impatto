@@ -468,7 +468,7 @@ function buildReview(){
 function handleFile(file){
   if(!file)return;
   var reader=new FileReader();
-  reader.onload=function(e){
+  reader.onload=async function(e){
     uploadedImageBase64=e.target.result.split(',')[1];
     document.getElementById('previewImgSmall').src=e.target.result;
     document.getElementById('imgPreviewSmall').style.display='block';
@@ -477,7 +477,35 @@ function handleFile(file){
     st.style.display='flex';st.className='ocr-status';
     document.getElementById('ocrSpinner').style.display='block';
     document.getElementById('ocrMsg').textContent=t('ocrLoading');
-    setTimeout(function(){st.className='ocr-status success';document.getElementById('ocrSpinner').style.display='none';document.getElementById('ocrMsg').textContent=t('ocrOk');},700);
+    try {
+      var res=await fetch('/.netlify/functions/ocr',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({image:uploadedImageBase64,tipo:currentType})
+      });
+      if(!res.ok)throw new Error('OCR error');
+      var data=await res.json();
+      // Auto-compila i campi
+      if(data.nome)        { var el=document.getElementById('nome');        if(el){el.value=data.nome;        markFilled(el);} }
+      if(data.cognome)     { var el=document.getElementById('cognome');     if(el){el.value=data.cognome;     markFilled(el);} }
+      if(data.codice_fiscale){ var el=document.getElementById('cf');        if(el){el.value=data.codice_fiscale.toUpperCase(); markFilled(el);} }
+      if(data.indirizzo)   { var el=document.getElementById('indirizzo');   if(el){el.value=data.indirizzo;   markFilled(el);} }
+      if(data.citta)       { var el=document.getElementById('citta');       if(el){el.value=data.citta;       markFilled(el);} }
+      if(data.cap)         { var el=document.getElementById('cap');         if(el){el.value=data.cap;         markFilled(el);} }
+      if(data.provincia)   { var el=document.getElementById('provincia');   if(el){el.value=data.provincia.toUpperCase(); markFilled(el);} }
+      // Azienda
+      if(data.ragione_sociale){ var el=document.getElementById('ragioneSociale'); if(el){el.value=data.ragione_sociale; markFilled(el);} }
+      if(data.partita_iva) { var el=document.getElementById('piva');        if(el){el.value=data.partita_iva; markFilled(el);} }
+      if(data.sdi)         { var el=document.getElementById('sdi');         if(el){el.value=data.sdi.toUpperCase(); markFilled(el);} }
+      if(data.pec)         { var el=document.getElementById('pec');         if(el){el.value=data.pec;         markFilled(el);} }
+      st.className='ocr-status success';
+      document.getElementById('ocrSpinner').style.display='none';
+      document.getElementById('ocrMsg').textContent=t('ocrOk');
+    } catch(err) {
+      st.className='ocr-status error';
+      document.getElementById('ocrSpinner').style.display='none';
+      document.getElementById('ocrMsg').textContent=t('ocrErr');
+    }
   };
   reader.readAsDataURL(file);
 }
