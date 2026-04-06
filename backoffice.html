@@ -353,9 +353,15 @@ function partialTable() {
         codice_fiscale:row.codice_fiscale||'', codice_fiscale_verificato:row.codice_fiscale_verificato||false,
         iva_percentuale:row.iva_percentuale??10, tipo_cliente:row.tipo_cliente||'privato',
         piva_cliente:row.piva_cliente||'', importo_lordo:row.importo_lordo||'',
-        data_checkin:row.data_checkin||'', segnalazione_jessica:row.segnalazione_jessica||'' };
-      partialDrawer(); partialTable();
+        data_checkin:row.data_checkin||'', data_checkout:row.data_checkout||'', segnalazione_jessica:row.segnalazione_jessica||'' };
+      partialDrawer(); highlightSelected();
     });
+  });
+}
+
+function highlightSelected() {
+  document.querySelectorAll('.row-item').forEach(tr=>{
+    tr.classList.toggle('selected', String(tr.dataset.id)===String(S.selected?.id));
   });
 }
 
@@ -417,6 +423,9 @@ function partialDrawer() {
       <div class="field"><label>Importo lordo (€)</label><input class="df" type="number" step="0.01" data-k="importo_lordo" value="${esc(f.importo_lordo)}"/></div>
       <div class="field"><label>Data check-in</label><input class="df" type="date" data-k="data_checkin" value="${esc(f.data_checkin)}"/></div>
     </div>
+    <div class="field-2">
+      <div class="field"><label>Data check-out</label><input class="df" type="date" data-k="data_checkout" value="${esc(f.data_checkout)}"/></div>
+    </div>
     <div class="drawer-sec">Segnalazione</div>
     <div class="field"><textarea class="df" data-k="segnalazione_jessica" placeholder="Note o segnalazione…">${esc(f.segnalazione_jessica)}</textarea></div>
     <div class="drawer-sec">Stato corrente</div>
@@ -429,7 +438,7 @@ function partialDrawer() {
     <button id="dAppr" class="btn btn-green"  ${S.saving?'disabled':''}>✓ Approva</button>
   </div>`;
 
-  document.getElementById('dClose').addEventListener('click', ()=>{ S.selected=null; S.form={}; partialDrawer(); partialTable(); });
+  document.getElementById('dClose').addEventListener('click', ()=>{ S.selected=null; S.form={}; partialDrawer(); highlightSelected(); });
   document.getElementById('dSave').addEventListener('click', saveForm);
   document.getElementById('dAppr').addEventListener('click', ()=>setStato('APPROVATA'));
   document.getElementById('dScar').addEventListener('click', ()=>setStato('SCARTATA'));
