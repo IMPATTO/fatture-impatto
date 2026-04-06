@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portale Ospite — Impatto</title>
+
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─── CSS Variables ─── */
+    :root {
+      --bg: #F7F5F2;
+      --surface: #FFFFFF;
+      --surface-2: #F0EDE8;
+      --border: #E2DDD6;
+      --text-primary: #1A1714;
+      --text-secondary: #6B6460;
+      --text-muted: #A09890;
+      --accent: #C17F4A;
+      --accent-light: #F5EBE0;
+      --accent-dark: #9B6035;
+      --success: #3A7D44;
+      --success-light: #E8F5EB;
+      --error: #C0392B;
+      --error-light: #FDECEA;
+      --shadow-sm: 0 1px 3px rgba(26,23,20,0.08);
+      --shadow-md: 0 4px 16px rgba(26,23,20,0.10);
+      --shadow-lg: 0 12px 40px rgba(26,23,20,0.12);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --transition: 0.22s ease;
+      --font-display: 'DM Serif Display', Georgia, serif;
+      --font-body: 'DM Sans', system-ui, sans-serif;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #16130F;
+        --surface: #1E1A16;
+        --surface-2: #252017;
+        --border: #302A22;
+        --text-primary: #F0EDE8;
+        --text-secondary: #A09080;
+        --text-muted: #6B5E52;
+        --accent: #D4935E;
+        --accent-light: #2A1E12;
+        --accent-dark: #E8A870;
+        --success: #5BA867;
+        --success-light: #0E231A;
+        --error: #E05A4A;
+        --error-light: #2A0E0A;
+        --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+        --shadow-md: 0 4px 16px rgba(0,0,0,0.35);
+        --shadow-lg: 0 12px 40px rgba(0,0,0,0.4);
+      }
+    }
+
+    /* ─── Reset & Base ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ─── Loading Screen ─── */
+    #loading-screen {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 16px;
+      z-index: 999;
+      transition: opacity 0.4s ease;
+    }
+    #loading-screen.fade-out { opacity: 0; pointer-events: none; }
+
+    .loading-logo {
+      font-family: var(--font-display);
+      font-size: 28px;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+
+    .loading-spinner {
+      width: 32px; height: 32px;
+      border: 2.5px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── Error / Access Denied Screen ─── */
+    #error-screen {
+      display: none;
+      min-height: 100vh;
+      align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    #error-screen.visible { display: flex; }
+
+    .error-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 48px 40px;
+      max-width: 440px;
+      width: 100%;
+      text-align: center;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .error-icon {
+      width: 56px; height: 56px;
+      background: var(--error-light);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 24px;
+    }
+
+    .error-title {
+      font-family: var(--font-display);
+      font-size: 22px;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+    }
+
+    .error-msg {
+      color: var(--text-secondary);
+      font-size: 15px;
+      margin-bottom: 28px;
+      line-height: 1.6;
+    }
+
+    .btn-contact {
+      display: inline-flex;
+      align-items: center; gap: 8px;
+      background: var(--accent);
+      color: #fff;
+      text-decoration: none;
+      padding: 12px 24px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 500;
+      transition: background var(--transition);
+    }
+    .btn-contact:hover { background: var(--accent-dark); }
+
+    /* ─── Main App ─── */
+    #app {
+      display: none;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    #app.visible { display: block; }
+    #app.loaded { opacity: 1; }
+
+    /* ─── Header ─── */
+    .portal-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      position: sticky; top: 0; z-index: 10;
+    }
+
+    .header-inner {
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .brand {
+      font-family: var(--font-display);
+      font-size: 20px;
+      color: var(--accent);
+      text-decoration: none;
+      letter-spacing: 0.02em;
+    }
+
+    .header-stay {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-align: right;
+    }
+
+    /* ─── Hero ─── */
+    .portal-hero {
+      background: linear-gradient(135deg, var(--accent-light) 0%, var(--bg) 60%);
+      border-bottom: 1px solid var(--border);
+      padding: 40px 24px 36px;
+    }
+
+    .hero-inner {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .welcome-label {
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .welcome-name {
+      font-family: var(--font-display);
+      font-size: clamp(26px, 5vw, 36px);
+      line-height: 1.2;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+    }
+
+    .stay-pills {
+      display: flex; flex-wrap: wrap; gap: 10px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center; gap: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      box-shadow: var(--shadow-sm);
+    }
+    .pill svg { flex-shrink: 0; opacity: 0.7; }
+
+    .apt-name-tag {
+      display: inline-flex;
+      align-items: center; gap: 6px;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    /* ─── Main Content ─── */
+    .portal-main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 28px 24px 64px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* ─── Cards ─── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      animation: cardIn 0.4s ease both;
+    }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card:nth-child(1) { animation-delay: 0.05s; }
+    .card:nth-child(2) { animation-delay: 0.10s; }
+    .card:nth-child(3) { animation-delay: 0.15s; }
+    .card:nth-child(4) { animation-delay: 0.20s; }
+    .card:nth-child(5) { animation-delay: 0.25s; }
+
+    .card-header {
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+    }
+
+    .card-icon {
+      width: 36px; height: 36px;
+      background: var(--accent-light);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .card-title {
+      font-family: var(--font-display);
+      font-size: 17px;
+      color: var(--text-primary);
+    }
+
+    .card-body {
+      padding: 20px;
+    }
+
+    /* ─── Credentials ─── */
+    .cred-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .cred-item {
+      background: var(--surface-2);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+
+    .cred-label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .cred-value {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text-primary);
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+
+    .cred-value-text { flex: 1; word-break: break-word; }
+
+    .copy-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition);
+      flex-shrink: 0;
+      font-family: var(--font-body);
+    }
+    .copy-btn:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .copy-btn.copied { background: var(--success-light); color: var(--success); border-color: var(--success); }
+
+    /* ─── Instructions ─── */
+    .instructions-list {
+      display: flex; flex-direction: column; gap: 0;
+    }
+
+    .instr-item {
+      display: flex; gap: 14px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .instr-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .instr-item:first-child { padding-top: 0; }
+
+    .instr-num {
+      width: 26px; height: 26px;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 500;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .instr-content { flex: 1; }
+
+    .instr-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 4px;
+    }
+
+    .instr-text {
+      font-size: 15px;
+      color: var(--text-primary);
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+
+    /* ─── Map ─── */
+    .map-container {
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background: var(--surface-2);
+      position: relative;
+    }
+
+    .map-container iframe {
+      width: 100%;
+      height: 280px;
+      border: none;
+      display: block;
+    }
+
+    .map-fallback {
+      padding: 20px;
+      color: var(--text-secondary);
+      font-size: 14px;
+      display: flex; align-items: flex-start; gap: 10px;
+    }
+
+    .map-address-link {
+      margin-top: 12px;
+      display: inline-flex;
+      align-items: center; gap: 6px;
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+      padding: 8px 16px;
+      background: var(--accent-light);
+      border-radius: var(--radius-sm);
+      transition: background var(--transition);
+    }
+    .map-address-link:hover { background: var(--border); }
+
+    /* ─── Video Embed ─── */
+    .video-container {
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+      background: #000;
+    }
+    .video-container iframe {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      border: none;
+    }
+
+    .video-fallback {
+      padding: 16px;
+      background: var(--surface-2);
+      border-radius: var(--radius-sm);
+    }
+
+    .video-link {
+      display: inline-flex;
+      align-items: center; gap: 8px;
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+    }
+
+    /* ─── Numbers / Contacts ─── */
+    .contacts-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--surface-2);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      text-decoration: none;
+      transition: background var(--transition);
+    }
+    .contact-item:hover { background: var(--accent-light); }
+
+    .contact-icon {
+      width: 40px; height: 40px;
+      background: var(--surface);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      box-shadow: var(--shadow-sm);
+      font-size: 18px;
+    }
+
+    .contact-info { flex: 1; min-width: 0; }
+    .contact-label { font-size: 12px; color: var(--text-muted); text-transform: capitalize; }
+    .contact-number { font-size: 16px; font-weight: 500; color: var(--text-primary); }
+
+    .call-badge {
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    /* ─── Emergency Banner ─── */
+    .emergency-banner {
+      background: var(--error-light);
+      border: 1px solid #f5c6c0;
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      font-size: 13px;
+      color: var(--error);
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    /* ─── Footer ─── */
+    .portal-footer {
+      text-align: center;
+      padding: 24px;
+      font-size: 12px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+    }
+
+    /* ─── Placeholder ─── */
+    .placeholder-text {
+      color: var(--text-muted);
+      font-style: italic;
+      font-size: 14px;
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 480px) {
+      .portal-hero { padding: 28px 16px 24px; }
+      .portal-main { padding: 20px 16px 48px; }
+      .card-body { padding: 16px; }
+      .card-header { padding: 14px 16px 12px; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Loading Screen -->
+  <div id="loading-screen">
+    <div class="loading-logo">Impatto</div>
+    <div class="loading-spinner"></div>
+  </div>
+
+  <!-- Error Screen -->
+  <div id="error-screen">
+    <div class="error-card">
+      <div class="error-icon">🔒</div>
+      <h2 class="error-title" id="error-title">Accesso scaduto</h2>
+      <p class="error-msg" id="error-msg">
+        Questo link non è più valido o è già stato utilizzato.<br>
+        Contatta il supporto per ricevere un nuovo link di accesso.
+      </p>
+      <a href="mailto:info@impatto.srl" class="btn-contact">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg>
+        Contatta il supporto
+      </a>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div id="app">
+
+    <!-- Header -->
+    <header class="portal-header">
+      <div class="header-inner">
+        <span class="brand">Impatto</span>
+        <div class="header-stay" id="header-stay"></div>
+      </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="portal-hero">
+      <div class="hero-inner">
+        <div class="welcome-label" id="label-welcome">Benvenuto</div>
+        <h1 class="welcome-name" id="guest-name">—</h1>
+        <div class="stay-pills">
+          <span class="pill" id="checkin-pill">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>
+            <span id="checkin-text">—</span>
+          </span>
+          <span class="pill" id="checkout-pill">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span id="checkout-text">—</span>
+          </span>
+          <span class="apt-name-tag">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            <span id="apt-name">—</span>
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="portal-main" id="portal-main">
+      <!-- Cards injected by JS -->
+    </main>
+
+    <footer class="portal-footer">
+      <p>Impatto SRL &nbsp;·&nbsp; <a href="mailto:info@impatto.srl" style="color:var(--accent);text-decoration:none;">info@impatto.srl</a></p>
+    </footer>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SCRIPT
+  ════════════════════════════════════════════════════════════ -->
+  <script>
+    // ─── Config ────────────────────────────────────────────────
+    const SUPABASE_URL  = 'https://tysxeikqbgebpfyblgeb.supabase.co';
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5c3hlaWtxYmdlYnBmeWJsZ2ViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyODczODAsImV4cCI6MjA5MDg2MzM4MH0.yXmS2MFh47eRkCX2voemdBkK5m_tyJiKAFhfyp1YEbw';
+
+    const { createClient } = supabase;
+    const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+    // ─── i18n ───────────────────────────────────────────────────
+    const T = {
+      IT: {
+        welcome: 'Benvenuto',
+        checkin_label: 'Check-in',
+        checkout_label: 'Check-out',
+        section_credentials: 'Accesso Appartamento',
+        section_instructions: 'Istruzioni',
+        section_map: 'Come Arrivare',
+        section_contacts: 'Numeri Utili',
+        access_code: 'Codice Accesso',
+        key_location: 'Dove si trovano le chiavi',
+        access_instructions: 'Istruzioni Accesso',
+        video_tour: 'Video istruzioni',
+        watch_video: 'Guarda il video',
+        how_to_arrive: 'Come Arrivare',
+        parking: 'Parcheggio',
+        how_to_enter: 'Come Entrare',
+        no_power: 'Se la luce è spenta',
+        locked_out: 'Se sei chiuso fuori',
+        open_maps: 'Apri in Maps',
+        copy: 'Copia',
+        copied: 'Copiato!',
+        call: 'Chiama',
+        error_title: 'Accesso scaduto',
+        error_msg: 'Questo link non è più valido. Contatta il supporto per ricevere un nuovo link.',
+        contact_support: 'Contatta il supporto',
+        emergency: 'Emergenza'
+      },
+      EN: {
+        welcome: 'Welcome',
+        checkin_label: 'Check-in',
+        checkout_label: 'Check-out',
+        section_credentials: 'Apartment Access',
+        section_instructions: 'Instructions',
+        section_map: 'How to Arrive',
+        section_contacts: 'Useful Numbers',
+        access_code: 'Access Code',
+        key_location: 'Key Location',
+        access_instructions: 'Access Instructions',
+        video_tour: 'Video instructions',
+        watch_video: 'Watch video',
+        how_to_arrive: 'How to Arrive',
+        parking: 'Parking',
+        how_to_enter: 'How to Enter',
+        no_power: 'If the power is out',
+        locked_out: 'If you\'re locked out',
+        open_maps: 'Open in Maps',
+        copy: 'Copy',
+        copied: 'Copied!',
+        call: 'Call',
+        error_title: 'Link expired',
+        error_msg: 'This link is no longer valid. Contact support to receive a new link.',
+        contact_support: 'Contact support',
+        emergency: 'Emergency'
+      },
+      DE: {
+        welcome: 'Willkommen',
+        checkin_label: 'Check-in',
+        checkout_label: 'Check-out',
+        section_credentials: 'Wohnungszugang',
+        section_instructions: 'Anweisungen',
+        section_map: 'Anreise',
+        section_contacts: 'Nützliche Nummern',
+        access_code: 'Zugangscode',
+        key_location: 'Schlüssellage',
+        access_instructions: 'Zugangsinstruktionen',
+        video_tour: 'Video-Anleitung',
+        watch_video: 'Video ansehen',
+        how_to_arrive: 'Anreise',
+        parking: 'Parken',
+        how_to_enter: 'Eingang',
+        no_power: 'Bei Stromausfall',
+        locked_out: 'Wenn ausgesperrt',
+        open_maps: 'In Maps öffnen',
+        copy: 'Kopieren',
+        copied: 'Kopiert!',
+        call: 'Anrufen',
+        error_title: 'Zugang abgelaufen',
+        error_msg: 'Dieser Link ist nicht mehr gültig. Kontaktieren Sie den Support.',
+        contact_support: 'Support kontaktieren',
+        emergency: 'Notfall'
+      },
+      FR: {
+        welcome: 'Bienvenue',
+        checkin_label: 'Arrivée',
+        checkout_label: 'Départ',
+        section_credentials: 'Accès Appartement',
+        section_instructions: 'Instructions',
+        section_map: 'Comment Arriver',
+        section_contacts: 'Numéros Utiles',
+        access_code: 'Code d\'Accès',
+        key_location: 'Emplacement des Clés',
+        access_instructions: 'Instructions d\'Accès',
+        video_tour: 'Vidéo instructions',
+        watch_video: 'Regarder la vidéo',
+        how_to_arrive: 'Comment Arriver',
+        parking: 'Stationnement',
+        how_to_enter: 'Comment Entrer',
+        no_power: 'En cas de coupure',
+        locked_out: 'Si vous êtes bloqué',
+        open_maps: 'Ouvrir dans Maps',
+        copy: 'Copier',
+        copied: 'Copié!',
+        call: 'Appeler',
+        error_title: 'Lien expiré',
+        error_msg: 'Ce lien n\'est plus valide. Contactez le support pour recevoir un nouveau lien.',
+        contact_support: 'Contacter le support',
+        emergency: 'Urgence'
+      },
+      ES: {
+        welcome: 'Bienvenido',
+        checkin_label: 'Llegada',
+        checkout_label: 'Salida',
+        section_credentials: 'Acceso al Apartamento',
+        section_instructions: 'Instrucciones',
+        section_map: 'Cómo Llegar',
+        section_contacts: 'Números Útiles',
+        access_code: 'Código de Acceso',
+        key_location: 'Ubicación de las Llaves',
+        access_instructions: 'Instrucciones de Acceso',
+        video_tour: 'Video instrucciones',
+        watch_video: 'Ver el vídeo',
+        how_to_arrive: 'Cómo Llegar',
+        parking: 'Aparcamiento',
+        how_to_enter: 'Cómo Entrar',
+        no_power: 'Sin electricidad',
+        locked_out: 'Si te quedas fuera',
+        open_maps: 'Abrir en Maps',
+        copy: 'Copiar',
+        copied: '¡Copiado!',
+        call: 'Llamar',
+        error_title: 'Enlace caducado',
+        error_msg: 'Este enlace ya no es válido. Contacta con el soporte para recibir un nuevo enlace.',
+        contact_support: 'Contactar soporte',
+        emergency: 'Emergencia'
+      },
+      RU: {
+        welcome: 'Добро пожаловать',
+        checkin_label: 'Заезд',
+        checkout_label: 'Выезд',
+        section_credentials: 'Доступ в квартиру',
+        section_instructions: 'Инструкции',
+        section_map: 'Как добраться',
+        section_contacts: 'Полезные номера',
+        access_code: 'Код доступа',
+        key_location: 'Местонахождение ключей',
+        access_instructions: 'Инструкции по доступу',
+        video_tour: 'Видео-инструкция',
+        watch_video: 'Смотреть видео',
+        how_to_arrive: 'Как добраться',
+        parking: 'Парковка',
+        how_to_enter: 'Как войти',
+        no_power: 'Если нет света',
+        locked_out: 'Если заперты снаружи',
+        open_maps: 'Открыть в Maps',
+        copy: 'Копировать',
+        copied: 'Скопировано!',
+        call: 'Позвонить',
+        error_title: 'Ссылка устарела',
+        error_msg: 'Эта ссылка больше не действительна. Свяжитесь с поддержкой.',
+        contact_support: 'Связаться с поддержкой',
+        emergency: 'Экстренный'
+      }
+    };
+
+    let lang = 'IT';
+    function t(key) { return (T[lang] || T['IT'])[key] || T['IT'][key] || key; }
+
+    // ─── Helpers ────────────────────────────────────────────────
+    function formatDate(dateStr) {
+      if (!dateStr) return '—';
+      const d = new Date(dateStr + 'T12:00:00');
+      return d.toLocaleDateString(lang === 'IT' ? 'it-IT' : lang === 'RU' ? 'ru-RU' : lang === 'DE' ? 'de-DE' : lang === 'FR' ? 'fr-FR' : lang === 'ES' ? 'es-ES' : 'en-GB', {
+        weekday: 'short', day: 'numeric', month: 'long', year: 'numeric'
+      });
+    }
+
+    function extractYoutubeId(url) {
+      if (!url) return null;
+      const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([^&?/\s]{11})/);
+      return m ? m[1] : null;
+    }
+
+    function showError(titleKey, msgKey) {
+      document.getElementById('loading-screen').classList.add('fade-out');
+      document.getElementById('error-title').textContent = t(titleKey);
+      document.getElementById('error-msg').textContent = t(msgKey);
+      document.querySelector('.btn-contact').textContent = t('contact_support');
+      setTimeout(() => {
+        document.getElementById('loading-screen').style.display = 'none';
+        document.getElementById('error-screen').classList.add('visible');
+      }, 400);
+    }
+
+    function svgIcon(name) {
+      const icons = {
+        key: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>`,
+        list: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,
+        map: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>`,
+        phone: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.91a16 16 0 0 0 6.12 6.12l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.85 16.92z"/></svg>`,
+      };
+      return icons[name] || '';
+    }
+
+    // ─── Card Builder Helpers ──────────────────────────────────
+    function buildCard(iconName, titleText, bodyHTML, animDelay) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.animationDelay = `${animDelay}s`;
+      card.innerHTML = `
+        <div class="card-header">
+          <div class="card-icon">${svgIcon(iconName)}</div>
+          <h2 class="card-title">${titleText}</h2>
+        </div>
+        <div class="card-body">${bodyHTML}</div>
+      `;
+      return card;
+    }
+
+    function credItem(label, value) {
+      if (!value) return '';
+      const id = 'cred-' + Math.random().toString(36).slice(2);
+      return `
+        <div class="cred-item">
+          <div class="cred-label">${label}</div>
+          <div class="cred-value">
+            <span class="cred-value-text" id="${id}">${value}</span>
+            <button class="copy-btn" onclick="copyText('${id}', this)">${t('copy')}</button>
+          </div>
+        </div>`;
+    }
+
+    function instrItem(num, title, text) {
+      if (!text) return '';
+      return `
+        <div class="instr-item">
+          <div class="instr-num">${num}</div>
+          <div class="instr-content">
+            <div class="instr-title">${title}</div>
+            <div class="instr-text">${escHtml(text)}</div>
+          </div>
+        </div>`;
+    }
+
+    function escHtml(str) {
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
+
+    // ─── Copy to clipboard ──────────────────────────────────────
+    window.copyText = function(elemId, btn) {
+      const text = document.getElementById(elemId)?.textContent || '';
+      navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = t('copied');
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = t('copy');
+          btn.classList.remove('copied');
+        }, 2000);
+      });
+    };
+
+    // ─── Contact icon by key ────────────────────────────────────
+    function contactEmoji(key) {
+      const k = (key || '').toLowerCase();
+      if (k.includes('emerg')) return '🚨';
+      if (k.includes('prop') || k.includes('owner')) return '🏠';
+      if (k.includes('support') || k.includes('assist')) return '🛎';
+      if (k.includes('medic') || k.includes('doctor')) return '🏥';
+      if (k.includes('polic') || k.includes('carab')) return '👮';
+      return '📞';
+    }
+
+    // ─── Main Load ──────────────────────────────────────────────
+    async function init() {
+      const params = new URLSearchParams(window.location.search);
+      const token  = params.get('token');
+
+      if (!token) { return showError('error_title', 'error_msg'); }
+
+      try {
+        // 1. Validate token + get guest data
+        const { data: guests, error: e1 } = await sb
+          .from('ospiti_check_in')
+          .select(`
+            id, nome, cognome, lingua,
+            data_checkin, data_checkout,
+            apartment_id,
+            stato,
+            portale_token,
+            apartments (
+              nome_appartamento,
+              indirizzo_completo,
+              latitudine, longitudine
+            )
+          `)
+          .eq('portale_token', token)
+          .neq('stato', 'SCARTATA')
+          .limit(1);
+
+        if (e1 || !guests || guests.length === 0) {
+          return showError('error_title', 'error_msg');
+        }
+
+        const guest = guests[0];
+        const apt   = guest.apartments;
+
+        // Set language
+        lang = (guest.lingua || 'IT').toUpperCase();
+        if (!T[lang]) lang = 'IT';
+
+        // 2. Get apartment credentials
+        const { data: creds } = await sb
+          .from('apartment_credentials')
+          .select('codice_accesso, luogo_chiavi, istruzioni_accesso, video_url')
+          .eq('apartment_id', guest.apartment_id)
+          .limit(1)
+          .maybeSingle();
+
+        // 3. Get apartment info in guest's language (with fallback to IT)
+        let { data: info } = await sb
+          .from('apartment_info')
+          .select('come_arrivare, dove_parcheggiare, come_entrare, cosa_fare_se_luce_spenta, cosa_fare_se_chiuso_fuori, numeri_utili')
+          .eq('apartment_id', guest.apartment_id)
+          .eq('lingua', lang)
+          .maybeSingle();
+
+        if (!info) {
+          const { data: infoIT } = await sb
+            .from('apartment_info')
+            .select('come_arrivare, dove_parcheggiare, come_entrare, cosa_fare_se_luce_spenta, cosa_fare_se_chiuso_fuori, numeri_utili')
+            .eq('apartment_id', guest.apartment_id)
+            .eq('lingua', 'IT')
+            .maybeSingle();
+          info = infoIT;
+        }
+
+        // ── Render ──────────────────────────────────────────────
+
+        // Header dates
+        document.getElementById('header-stay').innerHTML =
+          `${t('checkin_label')} ${new Date(guest.data_checkin + 'T12:00:00').toLocaleDateString('it-IT', {day:'numeric',month:'short'})} → ${new Date(guest.data_checkout + 'T12:00:00').toLocaleDateString('it-IT', {day:'numeric',month:'short'})}`;
+
+        // Hero
+        document.getElementById('label-welcome').textContent = t('welcome');
+        document.getElementById('guest-name').textContent    = `${guest.nome} ${guest.cognome}`;
+        document.getElementById('checkin-text').textContent  = `${t('checkin_label')}: ${formatDate(guest.data_checkin)}`;
+        document.getElementById('checkout-text').textContent = `${t('checkout_label')}: ${formatDate(guest.data_checkout)}`;
+        document.getElementById('apt-name').textContent      = apt?.nome_appartamento || '—';
+
+        const main = document.getElementById('portal-main');
+        let delay  = 0.05;
+
+        // ── Card 1: Credentials ──────────────────────────────────
+        if (creds) {
+          let credsHTML = `<div class="cred-grid">`;
+          credsHTML += credItem(t('access_code'),          creds.codice_accesso);
+          credsHTML += credItem(t('key_location'),         creds.luogo_chiavi);
+          credsHTML += credItem(t('access_instructions'),  creds.istruzioni_accesso);
+          credsHTML += `</div>`;
+
+          // Video
+          if (creds.video_url) {
+            const ytId = extractYoutubeId(creds.video_url);
+            if (ytId) {
+              credsHTML += `
+                <div style="margin-top:16px">
+                  <div class="cred-label" style="margin-bottom:10px">${t('video_tour')}</div>
+                  <div class="video-container">
+                    <iframe src="https://www.youtube.com/embed/${ytId}" allowfullscreen
+                      title="Video istruzioni" loading="lazy"></iframe>
+                  </div>
+                </div>`;
+            } else {
+              credsHTML += `
+                <div class="video-fallback" style="margin-top:12px">
+                  <a href="${escHtml(creds.video_url)}" target="_blank" rel="noopener" class="video-link">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    ${t('watch_video')}
+                  </a>
+                </div>`;
+            }
+          }
+
+          main.appendChild(buildCard('key', t('section_credentials'), credsHTML, delay));
+          delay += 0.05;
+        }
+
+        // ── Card 2: Instructions ─────────────────────────────────
+        if (info) {
+          let num = 1;
+          let instrHTML = `<div class="instructions-list">`;
+          instrHTML += instrItem(num++, t('how_to_arrive'),  info.come_arrivare);
+          instrHTML += instrItem(num++, t('parking'),        info.dove_parcheggiare);
+          instrHTML += instrItem(num++, t('how_to_enter'),   info.come_entrare);
+          instrHTML += instrItem(num++, t('no_power'),       info.cosa_fare_se_luce_spenta);
+          instrHTML += instrItem(num++, t('locked_out'),     info.cosa_fare_se_chiuso_fuori);
+          instrHTML += `</div>`;
+
+          // Only show card if at least one instruction exists
+          const hasAny = info.come_arrivare || info.dove_parcheggiare || info.come_entrare ||
+                         info.cosa_fare_se_luce_spenta || info.cosa_fare_se_chiuso_fuori;
+          if (hasAny) {
+            main.appendChild(buildCard('list', t('section_instructions'), instrHTML, delay));
+            delay += 0.05;
+          }
+        }
+
+        // ── Card 3: Map ──────────────────────────────────────────
+        if (apt) {
+          let mapHTML = '';
+          const address = apt.indirizzo_completo;
+          const lat = apt.latitudine;
+          const lng = apt.longitudine;
+
+          if (lat && lng) {
+            const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+            mapHTML = `
+              <div class="map-container">
+                <iframe
+                  src="https://maps.google.com/maps?q=${lat},${lng}&zoom=16&output=embed"
+                  loading="lazy"
+                  title="Mappa appartamento"
+                  referrerpolicy="no-referrer-when-downgrade">
+                </iframe>
+              </div>
+              <div style="margin-top:12px">
+                <a href="${mapsUrl}" target="_blank" rel="noopener" class="map-address-link">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+                  ${t('open_maps')}
+                  ${address ? `<span style="color:var(--text-muted);font-weight:400"> — ${escHtml(address)}</span>` : ''}
+                </a>
+              </div>`;
+          } else if (address) {
+            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+            mapHTML = `
+              <div class="map-fallback">
+                <div>
+                  <div style="color:var(--text-primary);font-size:15px;margin-bottom:8px">${escHtml(address)}</div>
+                  <a href="${mapsUrl}" target="_blank" rel="noopener" class="map-address-link">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+                    ${t('open_maps')}
+                  </a>
+                </div>
+              </div>`;
+          }
+
+          if (mapHTML) {
+            main.appendChild(buildCard('map', t('section_map'), mapHTML, delay));
+            delay += 0.05;
+          }
+        }
+
+        // ── Card 4: Contacts ─────────────────────────────────────
+        const contacts = info?.numeri_utili;
+        if (contacts && typeof contacts === 'object') {
+          let contactsHTML = `<div class="contacts-grid">`;
+
+          for (const [key, value] of Object.entries(contacts)) {
+            if (!value) continue;
+            const isEmergency = key.toLowerCase().includes('emerg');
+            contactsHTML += `
+              <a href="tel:${String(value).replace(/\s/g,'')}" class="contact-item">
+                <div class="contact-icon">${contactEmoji(key)}</div>
+                <div class="contact-info">
+                  <div class="contact-label">${escHtml(key)}</div>
+                  <div class="contact-number">${escHtml(String(value))}</div>
+                </div>
+                <div class="call-badge">${t('call')} →</div>
+              </a>`;
+          }
+
+          contactsHTML += `</div>`;
+          main.appendChild(buildCard('phone', t('section_contacts'), contactsHTML, delay));
+        }
+
+        // ── Show App ─────────────────────────────────────────────
+        const loadingEl = document.getElementById('loading-screen');
+        const appEl     = document.getElementById('app');
+
+        loadingEl.classList.add('fade-out');
+        appEl.classList.add('visible');
+
+        setTimeout(() => {
+          loadingEl.style.display = 'none';
+          appEl.classList.add('loaded');
+        }, 400);
+
+      } catch (err) {
+        console.error('Portale error:', err);
+        showError('error_title', 'error_msg');
+      }
+    }
+
+    init();
+  </script>
+
+</body>
+</html>
