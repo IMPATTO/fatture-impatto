@@ -28,11 +28,11 @@ exports.handler = async (event) => {
     return respond(405, { error: "Method not allowed" });
   }
 
-  const token = process.env.FIC_API_TOKEN;
-  const companyId = process.env.FIC_COMPANY_ID;
+  const token = process.env.FATTURE_CLOUD_TOKEN;
+const companyId = process.env.FATTURE_CLOUD_COMPANY_ID;
 
   if (!token || !companyId) {
-    return respond(500, { error: "Variabili d'ambiente FIC_API_TOKEN e FIC_COMPANY_ID mancanti" });
+    return respond(500, { error: "Variabili d'ambiente FATTURE_CLOUD_TOKEN e FATTURE_CLOUD_COMPANY_ID mancanti" });
   }
 
   let body;
