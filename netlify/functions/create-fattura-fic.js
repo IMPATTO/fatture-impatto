@@ -1,1 +1,204 @@
+const { createClient } = require('@supabase/supabase-js');
 
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const FIC_TOKEN = process.env.FATTURE_CLOUD_TOKEN;
+const FIC_COMPANY_ID = process.env.FATTURE_CLOUD_COMPANY_ID;
+const FIC_BASE = 'https://api.fattureincloud.it/v2';
+
+exports.handler = async (event) => {
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
+  }
+
+  const authHeader = event.headers['x-internal-key'];
+  if (authHeader !== process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
+  }
+
+  let body;
+  try {
+    body = JSON.parse(event.body);
+  } catch {
+    return { statusCode: 400, body: JSON.stringify({ error: 'Invalid JSON' }) };
+  }
+
+  const { ospiti_check_in_id } = body;
+  if (!ospiti_check_in_id) {
+    return { statusCode: 400, body: JSON.stringify({ error: 'ospiti_check_in_id richiesto' }) };
+  }
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+  const { data: ospite, error: ospiteError } = await supabase
+    .from('ospiti_check_in')
+    .select('*, apartments(nome_appartamento)')
+    .eq('id', ospiti_check_in_id)
+    .single();
+
+  if (ospiteError || !ospite) {
+    return { statusCode: 404, body: JSON.stringify({ error: 'Ospite non trovato', detail: ospiteError?.message }) };
+  }
+
+  const isAzienda = ospite.tipo_cliente === 'azienda' && ospite.piva_cliente;
+  const tipoDocumento = isAzienda ? 'invoice' : 'receipt';
+
+  let vatId = null;
+  try {
+    const vatRes = await fetch(`${FIC_BASE}/c/${FIC_COMPANY_ID}/vat_types`, {
+      headers: { Authorization: `Bearer ${FIC_TOKEN}` }
+    });
+    const vatData = await vatRes.json();
+    const vatTypes = vatData?.data || [];
+    const ivaPercTarget = ospite.iva_percentuale ?? 22;
+    const match = vatTypes.find(v => v.value === ivaPercTarget && v.is_disabled === false);
+    vatId = match?.id ?? null;
+  } catch (e) {
+    console.error('Errore recupero VAT types:', e);
+  }
+
+  const ivaPerc = ospite.iva_percentuale ?? 22;
+  const importoLordo = parseFloat(ospite.importo_lordo ?? 0);
+  const importoIva = parseFloat((importoLordo * ivaPerc / 100).toFixed(2));
+  const importoTotale = parseFloat((importoLordo + importoIva).toFixed(2));
+  const today = new Date().toISOString().split('T')[0];
+  const nomeApp = ospite.apartments?.nome_appartamento ?? 'Appartamento';
+
+  const ficPayload = {
+    data: {
+      type: tipoDocumento,
+      date: today,
+      currency: { id: 'EUR', exchange_rate: '1.00', symbol: '€' },
+      language: { code: 'IT', name: 'Italiano' },
+      client: buildClient(ospite, isAzienda),
+      items_list: [
+        {
+          name: `Soggiorno presso ${nomeApp}`,
+          description: `Check-in: ${ospite.data_checkin ?? '-'} | Check-out: ${ospite.data_checkout ?? '-'}`,
+          qty: 1,
+          net_price: importoLordo,
+          gross_price: importoTotale,
+          vat: vatId ? { id: vatId } : { value: ivaPerc },
+          discount: 0,
+          order: 1
+        }
+      ],
+      gross_worth: importoTotale,
+      net_worth: importoLordo,
+      is_marked: false,
+      e_invoice: false
+    }
+  };
+
+  let ficResponse;
+  try {
+    const res = await fetch(`${FIC_BASE}/c/${FIC_COMPANY_ID}/issued_documents`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${FIC_TOKEN}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(ficPayload)
+    });
+    ficResponse = await res.json();
+    if (!res.ok) {
+      console.error('FiC API error:', JSON.stringify(ficResponse));
+      return { statusCode: res.status, body: JSON.stringify({ error: 'Errore FiC API', detail: ficResponse }) };
+    }
+  } catch (e) {
+    return { statusCode: 500, body: JSON.stringify({ error: 'Errore chiamata FiC', detail: e.message }) };
+  }
+
+  const ficDoc = ficResponse?.data;
+  const ficDocId = ficDoc?.id ?? null;
+  const ficDocUrl = ficDoc?.url ?? null;
+  const ficNumero = ficDoc?.number ?? null;
+
+  const { data: staging, error: stagingError } = await supabase
+    .from('fatture_staging')
+    .upsert({
+      ospiti_check_in_id: ospiti_check_in_id,
+      numero_fattura: ficNumero ? String(ficNumero) : null,
+      data_fattura: today,
+      importo_lordo: importoLordo,
+      iva_percentuale: ivaPerc,
+      importo_totale_con_iva: importoTotale,
+      nome_cliente: ospite.nome,
+      cognome_cliente: ospite.cognome,
+      stato: 'BOZZA_CREATA',
+      link_fatture_cloud: ficDocUrl ?? `https://secure.fattureincloud.it/issued_documents/${ficDocId}`
+    }, {
+      onConflict: 'ospiti_check_in_id',
+      returning: 'representation'
+    })
+    .select()
+    .single();
+
+  if (stagingError) {
+    console.error('Errore upsert fatture_staging:', stagingError);
+  }
+
+  await supabase
+    .from('ospiti_check_in')
+    .update({ stato: 'BOZZA_CREATA', updated_at: new Date().toISOString() })
+    .eq('id', ospiti_check_in_id)
+    .eq('stato', 'APPROVATA');
+
+  await supabase.from('audit_log').insert({
+    user_email: 'system@illupoaffitta.com',
+    action: 'CREATE_FATTURA_FIC',
+    table_name: 'fatture_staging',
+    record_id: staging?.id ?? ospiti_check_in_id,
+    timestamp: new Date().toISOString()
+  });
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify({
+      success: true,
+      fic_document_id: ficDocId,
+      fic_url: ficDocUrl,
+      numero_fattura: ficNumero,
+      fattura_staging_id: staging?.id ?? null
+    })
+  };
+};
+
+function buildClient(ospite, isAzienda) {
+  const client = {
+    name: isAzienda
+      ? (ospite.piva_cliente ?? ospite.nome)
+      : [ospite.nome, ospite.cognome].filter(Boolean).join(' '),
+    type: isAzienda ? 'company' : 'person',
+    address_street: ospite.indirizzo_residenza ?? null,
+    country: mapPaeseToISO(ospite.paese_residenza)
+  };
+  if (!isAzienda && ospite.codice_fiscale && ospite.codice_fiscale_verificato) {
+    client.tax_code = ospite.codice_fiscale;
+  }
+  if (isAzienda && ospite.piva_cliente) {
+    client.vat_number = ospite.piva_cliente;
+  }
+  if (ospite.email) client.email = ospite.email;
+  return client;
+}
+
+function mapPaeseToISO(paese) {
+  if (!paese) return 'IT';
+  const p = paese.toUpperCase();
+  const map = {
+    'ITALY': 'IT', 'ITALIA': 'IT', 'IT': 'IT',
+    'GERMANY': 'DE', 'GERMANIA': 'DE', 'DE': 'DE', 'DEUTSCHLAND': 'DE',
+    'FRANCE': 'FR', 'FRANCIA': 'FR', 'FR': 'FR',
+    'SPAIN': 'ES', 'SPAGNA': 'ES', 'ES': 'ES',
+    'RUSSIA': 'RU', 'RU': 'RU',
+    'UNITED KINGDOM': 'GB', 'UK': 'GB', 'GB': 'GB',
+    'AUSTRIA': 'AT', 'AT': 'AT',
+    'SWITZERLAND': 'CH', 'SVIZZERA': 'CH', 'CH': 'CH',
+    'NETHERLANDS': 'NL', 'OLANDA': 'NL', 'NL': 'NL',
+    'POLAND': 'PL', 'POLONIA': 'PL', 'PL': 'PL',
+    'USA': 'US', 'UNITED STATES': 'US', 'US': 'US'
+  };
+  return map[p] ?? 'IT';
+}
