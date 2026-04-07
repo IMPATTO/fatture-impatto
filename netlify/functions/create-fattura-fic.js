@@ -4,7 +4,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const FIC_TOKEN = process.env.FATTURE_CLOUD_TOKEN;
 const FIC_COMPANY_ID = process.env.FATTURE_CLOUD_COMPANY_ID;
-const FIC_BASE = 'https://api.fattureincloud.it/v2';
+const FIC_BASE = 'https://api-v2.fattureincloud.it';';
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
