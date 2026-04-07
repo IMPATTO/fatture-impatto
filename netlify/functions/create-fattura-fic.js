@@ -69,7 +69,7 @@ exports.handler = async (event) => {
       type: tipoDocumento,
       date: today,
       currency: { id: 'EUR', exchange_rate: '1.00', symbol: '€' },
-      language: { code: 'IT', name: 'Italiano' },
+      language: { code: 'it', name: 'Italiano' },
       client: buildClient(ospite, isAzienda),
       items_list: [
         {
