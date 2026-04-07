@@ -483,18 +483,25 @@ function startInactivity() {
   }, 1000);
 }
 
-sb.auth.onAuthStateChange(async (_,session)=>{
-  S.session=session;
-  if (session) { renderDashboard(); startInactivity(); await loadData(); }
-  else { clearInterval(S.cdTimer); clearTimeout(S.inTimer); S.rows=[];S.selected=null;S.form={}; renderLogin(); }
-});
-
 (async()=>{
   const {data:{session}} = await sb.auth.getSession();
   S.session=session;
   if (session) { renderDashboard(); startInactivity(); await loadData(); }
   else renderLogin();
 })();
+
+sb.auth.onAuthStateChange(async (_,session)=>{
+  if (!session && S.session) {
+    S.session=null;
+    clearInterval(S.cdTimer); clearTimeout(S.inTimer);
+    S.rows=[]; S.selected=null; S.form={};
+    renderLogin();
+  }
+  if (session && !S.session) {
+    S.session=session;
+    renderDashboard(); startInactivity(); await loadData();
+  }
+});
 </script>
 </body>
 </html>
