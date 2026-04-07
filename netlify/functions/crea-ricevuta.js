@@ -101,7 +101,7 @@ const companyId = process.env.FATTURE_CLOUD_COMPANY_ID;
       date: docDate,
       currency: { id: "EUR" },
       language: { code: "it", name: "Italiano" },
-      client: buildClient(client_name, client_cf, client_email),
+      entity: buildClient(client_name, client_cf, client_email),
       items_list: [
         {
           name: itemName,
