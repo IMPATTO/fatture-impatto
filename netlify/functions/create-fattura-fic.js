@@ -43,20 +43,6 @@ exports.handler = async (event) => {
   const isAzienda = ospite.tipo_cliente === 'azienda' && ospite.piva_cliente;
   const tipoDocumento = isAzienda ? 'invoice' : 'receipt';
 
-  let vatId = null;
-  try {
-    const vatRes = await fetch(`${FIC_BASE}/c/${FIC_COMPANY_ID}/vat_types`, {
-      headers: { Authorization: `Bearer ${FIC_TOKEN}` }
-    });
-    const vatData = await vatRes.json();
-    const vatTypes = vatData?.data || [];
-    const ivaPercTarget = ospite.iva_percentuale ?? 22;
-    const match = vatTypes.find(v => v.value === ivaPercTarget && v.is_disabled === false);
-    vatId = match?.id ?? null;
-  } catch (e) {
-    console.error('Errore recupero VAT types:', e);
-  }
-
   const ivaPerc = ospite.iva_percentuale ?? 22;
   const importoLordo = parseFloat(ospite.importo_lordo ?? 0);
   const importoIva = parseFloat((importoLordo * ivaPerc / 100).toFixed(2));
@@ -78,7 +64,7 @@ exports.handler = async (event) => {
           qty: 1,
           net_price: importoLordo,
           gross_price: importoTotale,
-          vat: vatId ? { id: vatId } : { value: ivaPerc },
+          vat: { value: ivaPerc },
           discount: 0,
           order: 1
         }
