@@ -1,4 +1,4 @@
-// crea-ricevuta.js — Netlify Function per creare ricevute su Fatture in Cloud API v2
+// crea-ricevuta.js — Netlify Function per creare FATTURE IN BOZZA su Fatture in Cloud API v2
 // Variabili d'ambiente richieste in Netlify:
 //   FATTURE_CLOUD_TOKEN    = token Fatture in Cloud
 //   FATTURE_CLOUD_COMPANY_ID   = Company ID (es. 1581288)
@@ -82,7 +82,7 @@ exports.handler = async (event) => {
   // ---------- Payload FiC ----------
   const payload = {
     data: {
-      type: "receipt",
+      type: "invoice",
       date: docDate,
       currency: { id: "EUR" },
       language: { code: "it", name: "Italiano" },
@@ -94,13 +94,6 @@ exports.handler = async (event) => {
           net_price: Number(net_price),
           vat: { id: vatId },
           order: 1,
-        },
-      ],
-      payments_list: [
-        {
-          amount: Number((Number(net_price) * (1 + Number(vat_rate) / 100)).toFixed(2)),
-          due_date: docDate,
-          paid_date: docDate,
         },
       ],
       is_marked: false,
