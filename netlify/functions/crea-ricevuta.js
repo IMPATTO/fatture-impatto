@@ -1,7 +1,7 @@
 // crea-ricevuta.js — Netlify Function per creare ricevute su Fatture in Cloud API v2
 // Variabili d'ambiente richieste in Netlify:
-//   FATTURE_CLOUD_TOKEN    = Bearer token Fatture in Cloud
-//   FATTURE_CLOUD_COMPANY_ID   = Company ID (es. 1581288)
+//   FATTURE_CLOUD_TOKEN       = token Fatture in Cloud
+//   FATTURE_CLOUD_COMPANY_ID  = Company ID (es. 1581288)
 
 const FIC_BASE = "https://api-v2.fattureincloud.it";
 
@@ -23,7 +23,6 @@ const headers = (token) => ({
 // ---------- HANDLER ----------
 
 exports.handler = async (event) => {
-  // Solo POST
   if (event.httpMethod !== "POST") {
     return respond(405, { error: "Method not allowed" });
   }
@@ -32,7 +31,9 @@ exports.handler = async (event) => {
   const companyId = process.env.FATTURE_CLOUD_COMPANY_ID;
 
   if (!token || !companyId) {
-    return respond(500, { error: "Variabili d'ambiente FATTURE_CLOUD_TOKEN e FATTURE_CLOUD_COMPANY_ID mancanti" });
+    return respond(500, {
+      error: "Variabili d'ambiente FATTURE_CLOUD_TOKEN e FATTURE_CLOUD_COMPANY_ID mancanti",
+    });
   }
 
   let body;
@@ -56,10 +57,10 @@ exports.handler = async (event) => {
     notes,
   } = body;
 
-  // Validazione
   if (!client_name || typeof client_name !== "string") {
     return respond(400, { error: "client_name è obbligatorio" });
   }
+
   if (net_price == null || isNaN(Number(net_price)) || Number(net_price) <= 0) {
     return respond(400, { error: "net_price deve essere un numero > 0" });
   }
@@ -71,15 +72,15 @@ exports.handler = async (event) => {
     });
   }
 
-  // Costruisci descrizione riga
   let itemName = description || "Soggiorno appartamento";
   if (apartment) itemName += ` — ${apartment}`;
   if (check_in && check_out) itemName += ` (${check_in} → ${check_out})`;
 
-  // Data documento
   const docDate = date || new Date().toISOString().split("T")[0];
 
-  // ---------- Payload FiC ----------
+  const net = Number(net_price);
+  const gross = Number((net * (1 + Number(vat_rate) / 100)).toFixed(2));
+
   const payload = {
     data: {
       type: "receipt",
@@ -91,9 +92,15 @@ exports.handler = async (event) => {
         {
           name: itemName,
           qty: 1,
-          net_price: Number(net_price),
+          net_price: net,
           vat: { id: vatId },
           order: 1,
+        },
+      ],
+      payments_list: [
+        {
+          amount: gross,
+          paid_date: docDate,
         },
       ],
       is_marked: false,
@@ -102,7 +109,6 @@ exports.handler = async (event) => {
     },
   };
 
-  // ---------- Chiamata API ----------
   try {
     const url = `${FIC_BASE}/c/${companyId}/issued_documents`;
     const res = await fetch(url, {
@@ -129,7 +135,7 @@ exports.handler = async (event) => {
         type: doc.type,
         number: doc.number,
         date: doc.date,
-        client_name: doc.client?.name,
+        client_name: doc.entity?.name || doc.client?.name || null,
         net_worth: doc.amount_net,
         gross_worth: doc.amount_gross,
         url: doc.url,
@@ -137,7 +143,10 @@ exports.handler = async (event) => {
     });
   } catch (err) {
     console.error("Network error:", err);
-    return respond(500, { error: "Errore di rete verso Fatture in Cloud", message: err.message });
+    return respond(500, {
+      error: "Errore di rete verso Fatture in Cloud",
+      message: err.message,
+    });
   }
 };
 
