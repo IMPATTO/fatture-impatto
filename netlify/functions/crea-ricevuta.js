@@ -1,7 +1,7 @@
 // crea-ricevuta.js — Netlify Function per creare ricevute su Fatture in Cloud API v2
 // Variabili d'ambiente richieste in Netlify:
-//   FIC_API_TOKEN    = Bearer token Fatture in Cloud
-//   FIC_COMPANY_ID   = Company ID (es. 1581288)
+//   FATTURE_CLOUD_TOKEN    = Bearer token Fatture in Cloud
+//   FATTURE_CLOUD_COMPANY_ID   = Company ID (es. 1581288)
 
 const FIC_BASE = "https://api-v2.fattureincloud.it";
 
@@ -29,7 +29,7 @@ exports.handler = async (event) => {
   }
 
   const token = process.env.FATTURE_CLOUD_TOKEN;
-const companyId = process.env.FATTURE_CLOUD_COMPANY_ID;
+  const companyId = process.env.FATTURE_CLOUD_COMPANY_ID;
 
   if (!token || !companyId) {
     return respond(500, { error: "Variabili d'ambiente FATTURE_CLOUD_TOKEN e FATTURE_CLOUD_COMPANY_ID mancanti" });
@@ -41,21 +41,6 @@ const companyId = process.env.FATTURE_CLOUD_COMPANY_ID;
   } catch {
     return respond(400, { error: "JSON body non valido" });
   }
-
-  // ---------- Parametri attesi ----------
-  // {
-  //   client_name:    "Mario Rossi"           (obbligatorio)
-  //   client_cf:      "RSSMRA80A01H501Z"      (opzionale)
-  //   client_email:   "mario@email.com"        (opzionale)
-  //   description:    "Soggiorno appartamento" (opzionale, default fornito)
-  //   net_price:      100                      (obbligatorio)
-  //   vat_rate:       22                       (opzionale, default 22)
-  //   date:           "2026-04-07"             (opzionale, default oggi)
-  //   apartment:      "Bilocale Vista Mare"    (opzionale, aggiunto alla descrizione)
-  //   check_in:       "2026-04-01"             (opzionale)
-  //   check_out:      "2026-04-07"             (opzionale)
-  //   notes:          "Nota interna"           (opzionale)
-  // }
 
   const {
     client_name,
@@ -136,7 +121,6 @@ const companyId = process.env.FATTURE_CLOUD_COMPANY_ID;
       });
     }
 
-    // Risposta con i dati essenziali del documento creato
     const doc = data.data;
     return respond(201, {
       success: true,
