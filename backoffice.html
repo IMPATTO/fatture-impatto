@@ -152,6 +152,9 @@ const SUPABASE_URL      = 'https://tysxeikqbgebpfyblgeb.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5c3hlaWtxYmdlYnBmeWJsZ2ViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyODczODAsImV4cCI6MjA5MDg2MzM4MH0.yXmS2MFh47eRkCX2voemdBkK5m_tyJiKAFhfyp1YEbw';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// ⚠️ Sostituisci con la tua SUPABASE_SERVICE_ROLE_KEY reale
+const SERVICE_KEY = 'INSERISCI_QUI_SERVICE_ROLE_KEY';
+
 const TIMEOUT_MS = 30 * 60 * 1000;
 const PAESI = ['Italia','Germania','Francia','Spagna','Regno Unito','Russia','Polonia',
   'Ucraina','Romania','Paesi Bassi','Belgio','Svizzera','Austria','Repubblica Ceca',
@@ -251,6 +254,32 @@ async function setStato(stato) {
   if (stato !== 'DA_VERIFICARE') { S.selected=null; S.form={}; }
   else { S.selected=S.rows[i]; }
   partialTable(); partialStats(); partialDrawer();
+}
+
+async function creaFattura() {
+  if (!S.selected) return;
+  const btn = document.getElementById('dFatt');
+  if (btn) { btn.disabled=true; btn.textContent='⏳ Creo…'; }
+  try {
+    const res = await fetch('/.netlify/functions/create-fattura-fic', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-internal-key': SERVICE_KEY
+      },
+      body: JSON.stringify({ ospiti_check_in_id: S.selected.id })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail?.message ?? data.error ?? 'Errore sconosciuto');
+    toast(`✓ Bozza creata! N° ${data.numero_fattura ?? '-'}`, 'ok');
+    if (data.fic_url) window.open(data.fic_url, '_blank');
+    await loadData();
+    S.selected = null; S.form = {};
+    partialDrawer(); highlightSelected();
+  } catch(err) {
+    toast('❌ ' + err.message, 'err');
+    if (btn) { btn.disabled=false; btn.textContent='🧾 Fattura'; }
+  }
 }
 
 function renderLogin() {
@@ -436,6 +465,7 @@ function partialDrawer() {
     <button id="dSegn" class="btn btn-yellow" ${S.saving?'disabled':''}>⚑ Segnala</button>
     <button id="dScar" class="btn btn-red"    ${S.saving?'disabled':''}>✗ Scarta</button>
     <button id="dAppr" class="btn btn-green"  ${S.saving?'disabled':''}>✓ Approva</button>
+    ${r.stato==='APPROVATA'?`<button id="dFatt" class="btn btn-primary" ${S.saving?'disabled':''} style="background:#7c3aed">🧾 Fattura</button>`:''}
   </div>`;
 
   document.getElementById('dClose').addEventListener('click', ()=>{ S.selected=null; S.form={}; partialDrawer(); highlightSelected(); });
@@ -443,6 +473,7 @@ function partialDrawer() {
   document.getElementById('dAppr').addEventListener('click', ()=>setStato('APPROVATA'));
   document.getElementById('dScar').addEventListener('click', ()=>setStato('SCARTATA'));
   document.getElementById('dSegn').addEventListener('click', ()=>setStato('DA_VERIFICARE'));
+  document.getElementById('dFatt')?.addEventListener('click', creaFattura);
 
   d.querySelectorAll('.df').forEach(el=>{
     el.addEventListener('input',  e=>{ S.form[e.target.dataset.k]=e.target.value; });
@@ -462,7 +493,7 @@ function updateFooter() {
   const s=document.getElementById('dSave'); if(!s) return;
   s.innerHTML = S.saving ? '<span class="spin"></span> Salvo…' : '💾 Salva';
   s.disabled  = S.saving;
-  ['dAppr','dScar','dSegn'].forEach(id=>{ const b=document.getElementById(id); if(b) b.disabled=S.saving; });
+  ['dAppr','dScar','dSegn','dFatt'].forEach(id=>{ const b=document.getElementById(id); if(b) b.disabled=S.saving; });
 }
 
 function startInactivity() {
