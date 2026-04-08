@@ -116,6 +116,7 @@ if (!internalKey || internalKey !== process.env.INTERNAL_API_KEY) {
   const today = new Date().toISOString().split('T')[0];
   const nomeApp = ospite.apartments?.nome_appartamento ?? 'Appartamento';
   const paymentStatus = ospite.payment_status === 'not_paid' ? 'not_paid' : 'paid';
+const PAYMENT_ACCOUNT_ID = process.env.FIC_PAYMENT_ACCOUNT_ID;
 
   const ficPayload = {
     data: {
@@ -136,13 +137,16 @@ if (!internalKey || internalKey !== process.env.INTERNAL_API_KEY) {
           order: 1
         }
       ],
-      payments_list: [
+            payments_list: [
         paymentStatus === 'paid'
           ? {
               amount: importoTotale,
               due_date: today,
               paid_date: today,
-              status: 'paid'
+              status: 'paid',
+              payment_account: PAYMENT_ACCOUNT_ID && PAYMENT_ACCOUNT_ID !== 'TEST'
+                ? { id: Number(PAYMENT_ACCOUNT_ID) }
+                : undefined
             }
           : {
               amount: importoTotale,
