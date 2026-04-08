@@ -57,6 +57,34 @@ if (!internalKey || internalKey !== process.env.INTERNAL_API_KEY) {
   }
 
   const isAzienda = ospite.tipo_cliente === 'azienda' && ospite.piva_cliente;
+  const { data: existingStaging, error: existingStagingError } = await supabase
+    .from('fatture_staging')
+    .select('id, numero_fattura, link_fatture_cloud, stato')
+    .eq('ospiti_check_in_id', ospiti_check_in_id)
+    .maybeSingle();
+
+  if (existingStagingError) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        error: 'Errore controllo fattura esistente',
+        detail: existingStagingError.message
+      })
+    };
+  }
+
+  if (existingStaging) {
+    return {
+      statusCode: 409,
+      body: JSON.stringify({
+        error: 'Fattura già presente',
+        fattura_staging_id: existingStaging.id,
+        numero_fattura: existingStaging.numero_fattura ?? null,
+        link_fatture_cloud: existingStaging.link_fatture_cloud ?? null,
+        stato: existingStaging.stato ?? null
+      })
+    };
+  }
   const tipoDocumento = 'invoice';
 
   const ivaPerc = Number(ospite.iva_percentuale ?? 22);
