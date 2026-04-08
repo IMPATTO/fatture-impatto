@@ -19,10 +19,15 @@ exports.handler = async (event) => {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
-  const authHeader = event.headers['x-internal-key'];
-  if (authHeader !== process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
-  }
+  const internalKey =
+  event.headers["x-internal-key"] || event.headers["X-Internal-Key"];
+
+if (!internalKey || internalKey !== process.env.INTERNAL_API_KEY) {
+  return {
+    statusCode: 401,
+    body: JSON.stringify({ error: "Unauthorized" }),
+  };
+}
 
   let body;
   try {
