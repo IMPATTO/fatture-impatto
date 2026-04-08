@@ -150,22 +150,12 @@ const PAYMENT_ACCOUNT_ID = process.env.FIC_PAYMENT_ACCOUNT_ID;
         }
       ],
             payments_list: [
-        paymentStatus === 'paid'
-          ? {
-              amount: importoTotale,
-              due_date: today,
-              paid_date: today,
-              status: 'paid',
-              payment_account: PAYMENT_ACCOUNT_ID && PAYMENT_ACCOUNT_ID !== 'TEST'
-                ? { id: Number(PAYMENT_ACCOUNT_ID) }
-                : undefined
-            }
-          : {
-              amount: importoTotale,
-              due_date: today,
-              status: 'not_paid'
-            }
-      ],
+  {
+    amount: importoTotale,
+    due_date: today,
+    status: 'not_paid'
+  }
+],
       gross_worth: importoTotale,
       net_worth: imponibile,
       is_marked: false,
