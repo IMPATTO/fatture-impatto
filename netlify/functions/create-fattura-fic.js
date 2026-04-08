@@ -6,6 +6,14 @@ const FIC_TOKEN = process.env.FATTURE_CLOUD_TOKEN;
 const FIC_COMPANY_ID = process.env.FATTURE_CLOUD_COMPANY_ID;
 const FIC_BASE = 'https://api-v2.fattureincloud.it';
 
+const VAT_IDS = {
+  22: 0,
+  10: 3,
+  4: 4,
+  5: 54,
+  0: 6
+};
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
@@ -37,40 +45,81 @@ exports.handler = async (event) => {
     .single();
 
   if (ospiteError || !ospite) {
-    return { statusCode: 404, body: JSON.stringify({ error: 'Ospite non trovato', detail: ospiteError?.message }) };
+    return {
+      statusCode: 404,
+      body: JSON.stringify({ error: 'Ospite non trovato', detail: ospiteError?.message })
+    };
   }
 
   const isAzienda = ospite.tipo_cliente === 'azienda' && ospite.piva_cliente;
-  const tipoDocumento = isAzienda ? 'invoice' : 'receipt';
+  const tipoDocumento = 'invoice';
 
-  const ivaPerc = ospite.iva_percentuale ?? 22;
+  const ivaPerc = Number(ospite.iva_percentuale ?? 22);
+  const vatId = VAT_IDS[ivaPerc];
+
+  if (vatId === undefined) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({
+        error: `iva_percentuale ${ivaPerc} non supportata`,
+        allowed: Object.keys(VAT_IDS)
+      })
+    };
+  }
+
+  // ORA importo_lordo viene trattato come LORDO IVA INCLUSA
   const importoLordo = parseFloat(ospite.importo_lordo ?? 0);
-  const importoIva = parseFloat((importoLordo * ivaPerc / 100).toFixed(2));
-  const importoTotale = parseFloat((importoLordo + importoIva).toFixed(2));
+
+  if (!Number.isFinite(importoLordo) || importoLordo <= 0) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'importo_lordo non valido' })
+    };
+  }
+
+  // Calcolo imponibile partendo dal lordo IVA inclusa
+  const imponibile = parseFloat((importoLordo / (1 + ivaPerc / 100)).toFixed(2));
+  const importoTotale = parseFloat(importoLordo.toFixed(2));
+
   const today = new Date().toISOString().split('T')[0];
   const nomeApp = ospite.apartments?.nome_appartamento ?? 'Appartamento';
+  const paymentStatus = ospite.payment_status === 'not_paid' ? 'not_paid' : 'paid';
 
   const ficPayload = {
     data: {
       type: tipoDocumento,
       date: today,
-      currency: { id: 'EUR', exchange_rate: '1.00', symbol: '€' },
+      currency: { id: 'EUR' },
       language: { code: 'it', name: 'Italiano' },
-      client: buildClient(ospite, isAzienda),
+      entity: buildClient(ospite, isAzienda),
+      use_gross_prices: true,
       items_list: [
         {
           name: `Soggiorno presso ${nomeApp}`,
           description: `Check-in: ${ospite.data_checkin ?? '-'} | Check-out: ${ospite.data_checkout ?? '-'}`,
           qty: 1,
-          net_price: importoLordo,
           gross_price: importoTotale,
-          vat: { value: ivaPerc },
+          vat: { id: vatId },
           discount: 0,
           order: 1
         }
       ],
+      payments_list: [
+        paymentStatus === 'paid'
+          ? {
+              amount: importoTotale,
+              due_date: today,
+              paid_date: today,
+              status: 'paid'
+            }
+          : {
+              amount: importoTotale,
+              due_date: today,
+              status: 'not_paid'
+            }
+      ],
       gross_worth: importoTotale,
-      net_worth: importoLordo,
+      net_worth: imponibile,
       is_marked: false,
       e_invoice: false
     }
@@ -81,19 +130,27 @@ exports.handler = async (event) => {
     const res = await fetch(`${FIC_BASE}/c/${FIC_COMPANY_ID}/issued_documents`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${FIC_TOKEN}`,
+        Authorization: `Bearer ${FIC_TOKEN}`,
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        Accept: 'application/json'
       },
       body: JSON.stringify(ficPayload)
     });
+
     ficResponse = await res.json();
+
     if (!res.ok) {
       console.error('FiC API error:', JSON.stringify(ficResponse));
-      return { statusCode: res.status, body: JSON.stringify({ error: 'Errore FiC API', detail: ficResponse }) };
+      return {
+        statusCode: res.status,
+        body: JSON.stringify({ error: 'Errore FiC API', detail: ficResponse })
+      };
     }
   } catch (e) {
-    return { statusCode: 500, body: JSON.stringify({ error: 'Errore chiamata FiC', detail: e.message }) };
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: 'Errore chiamata FiC', detail: e.message })
+    };
   }
 
   const ficDoc = ficResponse?.data;
@@ -103,21 +160,24 @@ exports.handler = async (event) => {
 
   const { data: staging, error: stagingError } = await supabase
     .from('fatture_staging')
-    .upsert({
-      ospiti_check_in_id: ospiti_check_in_id,
-      numero_fattura: ficNumero ? String(ficNumero) : null,
-      data_fattura: today,
-      importo_lordo: importoLordo,
-      iva_percentuale: ivaPerc,
-      importo_totale_con_iva: importoTotale,
-      nome_cliente: ospite.nome,
-      cognome_cliente: ospite.cognome,
-      stato: 'BOZZA_CREATA',
-      link_fatture_cloud: ficDocUrl ?? `https://secure.fattureincloud.it/issued_documents/${ficDocId}`
-    }, {
-      onConflict: 'ospiti_check_in_id',
-      returning: 'representation'
-    })
+    .upsert(
+      {
+        ospiti_check_in_id: ospiti_check_in_id,
+        numero_fattura: ficNumero ? String(ficNumero) : null,
+        data_fattura: today,
+        importo_lordo: importoTotale,
+        iva_percentuale: ivaPerc,
+        importo_totale_con_iva: importoTotale,
+        nome_cliente: ospite.nome,
+        cognome_cliente: ospite.cognome,
+        stato: 'BOZZA_CREATA',
+        link_fatture_cloud: ficDocUrl ?? `https://secure.fattureincloud.it/issued_documents/${ficDocId}`
+      },
+      {
+        onConflict: 'ospiti_check_in_id',
+        returning: 'representation'
+      }
+    )
     .select()
     .single();
 
@@ -146,7 +206,10 @@ exports.handler = async (event) => {
       fic_document_id: ficDocId,
       fic_url: ficDocUrl,
       numero_fattura: ficNumero,
-      fattura_staging_id: staging?.id ?? null
+      fattura_staging_id: staging?.id ?? null,
+      payment_status: paymentStatus,
+      importo_lordo: importoTotale,
+      imponibile_calcolato: imponibile
     })
   };
 };
@@ -160,13 +223,17 @@ function buildClient(ospite, isAzienda) {
     address_street: ospite.indirizzo_residenza ?? null,
     country: mapPaeseToISO(ospite.paese_residenza)
   };
+
   if (!isAzienda && ospite.codice_fiscale && ospite.codice_fiscale_verificato) {
     client.tax_code = ospite.codice_fiscale;
   }
+
   if (isAzienda && ospite.piva_cliente) {
     client.vat_number = ospite.piva_cliente;
   }
+
   if (ospite.email) client.email = ospite.email;
+
   return client;
 }
 
@@ -174,17 +241,17 @@ function mapPaeseToISO(paese) {
   if (!paese) return 'IT';
   const p = paese.toUpperCase();
   const map = {
-    'ITALY': 'IT', 'ITALIA': 'IT', 'IT': 'IT',
-    'GERMANY': 'DE', 'GERMANIA': 'DE', 'DE': 'DE', 'DEUTSCHLAND': 'DE',
-    'FRANCE': 'FR', 'FRANCIA': 'FR', 'FR': 'FR',
-    'SPAIN': 'ES', 'SPAGNA': 'ES', 'ES': 'ES',
-    'RUSSIA': 'RU', 'RU': 'RU',
-    'UNITED KINGDOM': 'GB', 'UK': 'GB', 'GB': 'GB',
-    'AUSTRIA': 'AT', 'AT': 'AT',
-    'SWITZERLAND': 'CH', 'SVIZZERA': 'CH', 'CH': 'CH',
-    'NETHERLANDS': 'NL', 'OLANDA': 'NL', 'NL': 'NL',
-    'POLAND': 'PL', 'POLONIA': 'PL', 'PL': 'PL',
-    'USA': 'US', 'UNITED STATES': 'US', 'US': 'US'
+    ITALY: 'IT', ITALIA: 'IT', IT: 'IT',
+    GERMANY: 'DE', GERMANIA: 'DE', DE: 'DE', DEUTSCHLAND: 'DE',
+    FRANCE: 'FR', FRANCIA: 'FR', FR: 'FR',
+    SPAIN: 'ES', SPAGNA: 'ES', ES: 'ES',
+    RUSSIA: 'RU', RU: 'RU',
+    'UNITED KINGDOM': 'GB', UK: 'GB', GB: 'GB',
+    AUSTRIA: 'AT', AT: 'AT',
+    SWITZERLAND: 'CH', SVIZZERA: 'CH', CH: 'CH',
+    NETHERLANDS: 'NL', OLANDA: 'NL', NL: 'NL',
+    POLAND: 'PL', POLONIA: 'PL', PL: 'PL',
+    USA: 'US', 'UNITED STATES': 'US', US: 'US'
   };
   return map[p] ?? 'IT';
 }
