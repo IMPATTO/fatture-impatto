@@ -262,8 +262,11 @@ async function creaFattura() {
   try {
     const res = await fetch('/.netlify/functions/create-fattura-fic', {
       method: 'POST',
-      headers: {
-  'Content-Type': 'application/json'
+      const session = await sb.auth.getSession();
+
+headers: {
+  'Content-Type': 'application/json',
+  'Authorization': `Bearer ${session.data.session.access_token}`
 },
       body: JSON.stringify({ ospiti_check_in_id: S.selected.id })
     });
