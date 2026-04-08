@@ -19,16 +19,6 @@ exports.handler = async (event) => {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
-  const internalKey =
-  event.headers["x-internal-key"] || event.headers["X-Internal-Key"];
-
-if (!internalKey || internalKey !== process.env.INTERNAL_API_KEY) {
-  return {
-    statusCode: 401,
-    body: JSON.stringify({ error: "Unauthorized" }),
-  };
-}
-
   let body;
   try {
     body = JSON.parse(event.body);
@@ -42,6 +32,28 @@ if (!internalKey || internalKey !== process.env.INTERNAL_API_KEY) {
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  const authHeader = event.headers.authorization || event.headers.Authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return {
+      statusCode: 401,
+      body: JSON.stringify({ error: 'Unauthorized' })
+    };
+  }
+
+  const token = authHeader.replace('Bearer ', '').trim();
+
+  const {
+    data: { user },
+    error: userError
+  } = await supabase.auth.getUser(token);
+
+  if (userError || !user) {
+    return {
+      statusCode: 401,
+      body: JSON.stringify({ error: 'Unauthorized' })
+    };
+  }
 
   const { data: ospite, error: ospiteError } = await supabase
     .from('ospiti_check_in')
