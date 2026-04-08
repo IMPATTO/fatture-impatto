@@ -216,12 +216,12 @@ exports.handler = async (event) => {
 
 function buildClient(ospite, isAzienda) {
   const client = {
-    name: isAzienda
-      ? (ospite.piva_cliente ?? ospite.nome)
-      : [ospite.nome, ospite.cognome].filter(Boolean).join(' '),
-    type: isAzienda ? 'company' : 'person',
-    address_street: ospite.indirizzo_residenza ?? null,
-    country: mapPaeseToISO(ospite.paese_residenza)
+  name: isAzienda
+    ? (ospite.piva_cliente ?? ospite.nome)
+    : [ospite.nome, ospite.cognome].filter(Boolean).join(' '),
+  type: isAzienda ? 'company' : 'person',
+  address_street: ospite.indirizzo_residenza ?? null
+};
   };
 
   if (!isAzienda && ospite.codice_fiscale && ospite.codice_fiscale_verificato) {
