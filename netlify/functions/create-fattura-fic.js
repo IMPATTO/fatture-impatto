@@ -67,7 +67,7 @@ exports.handler = async (event) => {
     };
   }
 
-  // ORA importo_lordo viene trattato come LORDO IVA INCLUSA
+  // importo_lordo viene trattato come LORDO IVA INCLUSA
   const importoLordo = parseFloat(ospite.importo_lordo ?? 0);
 
   if (!Number.isFinite(importoLordo) || importoLordo <= 0) {
@@ -77,7 +77,6 @@ exports.handler = async (event) => {
     };
   }
 
-  // Calcolo imponibile partendo dal lordo IVA inclusa
   const imponibile = parseFloat((importoLordo / (1 + ivaPerc / 100)).toFixed(2));
   const importoTotale = parseFloat(importoLordo.toFixed(2));
 
@@ -162,7 +161,7 @@ exports.handler = async (event) => {
     .from('fatture_staging')
     .upsert(
       {
-        ospiti_check_in_id: ospiti_check_in_id,
+        ospiti_check_in_id,
         numero_fattura: ficNumero ? String(ficNumero) : null,
         data_fattura: today,
         importo_lordo: importoTotale,
@@ -216,12 +215,11 @@ exports.handler = async (event) => {
 
 function buildClient(ospite, isAzienda) {
   const client = {
-  name: isAzienda
-    ? (ospite.piva_cliente ?? ospite.nome)
-    : [ospite.nome, ospite.cognome].filter(Boolean).join(' '),
-  type: isAzienda ? 'company' : 'person',
-  address_street: ospite.indirizzo_residenza ?? null
-};
+    name: isAzienda
+      ? (ospite.piva_cliente ?? ospite.nome)
+      : [ospite.nome, ospite.cognome].filter(Boolean).join(' '),
+    type: isAzienda ? 'company' : 'person',
+    address_street: ospite.indirizzo_residenza ?? null
   };
 
   if (!isAzienda && ospite.codice_fiscale && ospite.codice_fiscale_verificato) {
@@ -235,23 +233,4 @@ function buildClient(ospite, isAzienda) {
   if (ospite.email) client.email = ospite.email;
 
   return client;
-}
-
-function mapPaeseToISO(paese) {
-  if (!paese) return 'IT';
-  const p = paese.toUpperCase();
-  const map = {
-    ITALY: 'IT', ITALIA: 'IT', IT: 'IT',
-    GERMANY: 'DE', GERMANIA: 'DE', DE: 'DE', DEUTSCHLAND: 'DE',
-    FRANCE: 'FR', FRANCIA: 'FR', FR: 'FR',
-    SPAIN: 'ES', SPAGNA: 'ES', ES: 'ES',
-    RUSSIA: 'RU', RU: 'RU',
-    'UNITED KINGDOM': 'GB', UK: 'GB', GB: 'GB',
-    AUSTRIA: 'AT', AT: 'AT',
-    SWITZERLAND: 'CH', SVIZZERA: 'CH', CH: 'CH',
-    NETHERLANDS: 'NL', OLANDA: 'NL', NL: 'NL',
-    POLAND: 'PL', POLONIA: 'PL', PL: 'PL',
-    USA: 'US', 'UNITED STATES': 'US', US: 'US'
-  };
-  return map[p] ?? 'IT';
 }
