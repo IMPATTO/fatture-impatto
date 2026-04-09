@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Backoffice Documenti · Impatto</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #f5f4f1;
+      --white:    #ffffff;
+      --surf:     #fafaf8;
+      --border:   #e2e0db;
+      --border2:  #d0cdc6;
+      --accent:   #2563eb;
+      --accent-l: #eff4ff;
+      --green:    #16a34a;
+      --green-l:  #f0fdf4;
+      --red:      #dc2626;
+      --red-l:    #fef2f2;
+      --yellow:   #d97706;
+      --yellow-l: #fffbeb;
+      --purple:   #9333ea;
+      --purple-l: #fdf4ff;
+      --blue-l:   #eff6ff;
+      --teal:     #0d9488;
+      --teal-l:   #f0fdfa;
+      --text:     #1a1917;
+      --text2:    #57534e;
+      --muted:    #a8a29e;
+      --serif:    'Cormorant Garamond', Georgia, serif;
+      --sans:     'DM Sans', sans-serif;
+      --mono:     'DM Mono', monospace;
+    }
+
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; }
+
+    .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg); }
+    .login-card { width: 400px; background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 48px 44px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+    .login-logo { font-family: var(--serif); font-size: 30px; font-weight: 500; margin-bottom: 4px; }
+    .login-sub  { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 36px; }
+
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text2); margin-bottom: 6px; }
+    .field input, .field select, .field textarea { width: 100%; background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 10px 13px; font-size: 14px; font-family: var(--sans); color: var(--text); transition: border-color 0.15s, box-shadow 0.15s; outline: none; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+    .field textarea { resize: vertical; min-height: 78px; }
+    .field select { appearance: none; cursor: pointer; padding-right: 28px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a8a29e' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
+    .field-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; font-family: var(--sans); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.38; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: #1d4ed8; }
+    .btn-green  { background: var(--green);  color: #fff; font-weight: 600; }
+    .btn-green:hover:not(:disabled)  { background: #15803d; }
+    .btn-red    { background: var(--red);    color: #fff; }
+    .btn-red:hover:not(:disabled)    { background: #b91c1c; }
+    .btn-yellow { background: var(--yellow); color: #fff; }
+    .btn-yellow:hover:not(:disabled) { background: #b45309; }
+    .btn-teal   { background: var(--teal); color: #fff; }
+    .btn-teal:hover:not(:disabled)   { background: #0f766e; }
+    .btn-ghost  { background: var(--white); color: var(--text2); border: 1px solid var(--border); }
+    .btn-ghost:hover:not(:disabled)  { border-color: var(--border2); color: var(--text); }
+    .btn-full { width: 100%; margin-top: 8px; padding: 12px; font-size: 14px; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    .msg-err { background: var(--red-l); border: 1px solid #fecaca; color: var(--red); border-radius: 6px; padding: 10px 13px; font-size: 13px; margin-bottom: 12px; display: none; }
+
+    .header { display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 56px; background: var(--white); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
+    .header-left { display: flex; align-items: baseline; gap: 10px; }
+    .header-brand { font-family: var(--serif); font-size: 22px; font-weight: 500; }
+    .header-tag { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--teal); background: var(--teal-l); padding: 2px 8px; border-radius: 4px; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .header-user { font-size: 12px; font-family: var(--mono); color: var(--muted); }
+
+    .tabs { display: flex; gap: 0; background: var(--white); border-bottom: 1px solid var(--border); padding: 0 24px; }
+    .tab { padding: 12px 20px; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; user-select: none; }
+    .tab:hover { color: var(--text2); }
+    .tab.active { color: var(--teal); border-bottom-color: var(--teal); }
+
+    .stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; padding: 16px 24px; background: var(--white); border-bottom: 1px solid var(--border); }
+    .stat-card { background: var(--surf); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; }
+    .stat-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+    .stat-val { font-size: 28px; font-family: var(--serif); font-weight: 600; }
+    .stat-val.warn { color: var(--yellow); }
+    .stat-val.err  { color: var(--red); }
+    .stat-val.ok   { color: var(--green); }
+
+    .filters { display: flex; gap: 10px; padding: 12px 24px; background: var(--white); border-bottom: 1px solid var(--border); flex-wrap: wrap; align-items: center; }
+    .filters input, .filters select { background: var(--surf); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; font-size: 13px; font-family: var(--sans); color: var(--text); outline: none; transition: border-color 0.15s; }
+    .filters input:focus, .filters select:focus { border-color: var(--accent); }
+    .filters input { min-width: 220px; }
+    .filters select { appearance: none; cursor: pointer; padding-right: 28px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a8a29e' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
+
+    .content { padding: 0; min-height: calc(100vh - 56px - 46px); }
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .body-wrap { display: flex; height: calc(100vh - 56px - 46px - 80px - 52px); overflow: hidden; }
+    .table-panel { flex: 1; overflow-y: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th { text-align: left; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--surf); position: sticky; top: 0; z-index: 10; white-space: nowrap; }
+    tbody tr { border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; }
+    tbody tr:hover { background: var(--blue-l); }
+    tbody tr.selected { background: var(--accent-l); border-left: 3px solid var(--accent); }
+    tbody td { padding: 11px 16px; vertical-align: middle; }
+    .td-name { font-weight: 500; }
+    .td-apt  { font-size: 12px; color: var(--text2); }
+    .td-date { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+    .badge { display: inline-block; font-family: var(--mono); font-size: 10px; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 500; }
+    .b-dainviare { background: var(--yellow-l); color: var(--yellow); }
+    .b-inviata   { background: var(--green-l);  color: var(--green); }
+    .b-errore    { background: var(--red-l);    color: var(--red); }
+    .b-non       { background: var(--surf);     color: var(--muted); }
+
+    .drawer { width: 0; min-width: 0; overflow: hidden; background: var(--white); border-left: 1px solid var(--border); display: flex; flex-direction: column; transition: width 0.25s ease, min-width 0.25s ease; }
+    .drawer.open { width: 480px; min-width: 480px; overflow-y: auto; }
+    .drawer-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 20px 24px 16px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--white); z-index: 10; }
+    .drawer-title { font-family: var(--serif); font-size: 22px; font-weight: 500; }
+    .drawer-sub { font-size: 11px; font-family: var(--mono); color: var(--muted); margin-top: 2px; }
+    .drawer-close { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 18px; padding: 3px 7px; border-radius: 4px; transition: background 0.15s; }
+    .drawer-close:hover { background: var(--border); color: var(--text); }
+    .drawer-body { padding: 20px 24px; flex: 1; }
+    .drawer-footer { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-wrap: wrap; position: sticky; bottom: 0; background: var(--white); }
+    .drawer-sec { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin: 18px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .drawer-sec:first-child { margin-top: 0; }
+
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; padding: 24px; }
+    .account-card { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 20px 22px; transition: box-shadow 0.15s; cursor: pointer; }
+    .account-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+    .account-card.active-card { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(13,148,136,0.1); }
+    .ac-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .ac-name { font-family: var(--serif); font-size: 20px; font-weight: 500; }
+    .ac-questura { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--teal); background: var(--teal-l); padding: 2px 8px; border-radius: 4px; }
+    .ac-row { display: flex; gap: 16px; margin-top: 6px; font-size: 12px; color: var(--text2); }
+    .ac-label { font-family: var(--mono); font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .ac-val { font-size: 13px; margin-top: 2px; }
+    .ac-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+    .ac-dot.on { background: var(--green); }
+    .ac-dot.off { background: var(--red); }
+    .ac-apartments { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+    .ac-apt-tag { display: inline-block; background: var(--surf); border: 1px solid var(--border); padding: 3px 10px; border-radius: 4px; font-size: 11px; font-family: var(--mono); margin: 3px 4px 3px 0; color: var(--text2); }
+
+    .empty { text-align: center; padding: 80px 0; color: var(--muted); }
+    .empty-ico { font-size: 36px; margin-bottom: 12px; }
+    .loading { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; padding: 48px 24px; }
+    .spin { display: inline-block; width: 15px; height: 15px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: rot 0.7s linear infinite; flex-shrink: 0; }
+    @keyframes rot { to { transform: rotate(360deg); } }
+
+    .toast { position: fixed; bottom: 20px; right: 20px; background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 12px 18px; font-size: 13px; z-index: 9999; box-shadow: 0 8px 24px rgba(0,0,0,0.1); animation: tup 0.2s ease; max-width: 360px; }
+    .toast-ok   { border-left: 3px solid var(--green);  color: var(--green); }
+    .toast-err  { border-left: 3px solid var(--red);    color: var(--red); }
+    .toast-info { border-left: 3px solid var(--teal);   color: var(--teal); }
+    @keyframes tup { from { transform: translateY(8px); opacity: 0; } }
+    .mono-sm { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+    .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; z-index: 200; }
+    .modal { background: var(--white); border-radius: 12px; width: 520px; max-height: 85vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.15); }
+    .modal-head { padding: 20px 24px 14px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .modal-title { font-family: var(--serif); font-size: 20px; font-weight: 500; }
+    .modal-body { padding: 20px 24px; }
+    .modal-foot { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+
+    .pw-field { position: relative; }
+    .pw-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--muted); font-size: 13px; padding: 4px; }
+  </style>
+</head>
+<body>
+<div id="app"></div>
+<div id="modal-root"></div>
+<div id="_toast"></div>
+
+<script>
+const SUPABASE_URL      = 'https://tysxeikqbgebpfyblgeb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5c3hlaWtxYmdlYnBmeWJsZ2ViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyODczODAsImV4cCI6MjA5MDg2MzM4MH0.yXmS2MFh47eRkCX2voemdBkK5m_tyJiKAFhfyp1YEbw';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const QUESTURE = ['Rimini','Pesaro','Verona','Aosta'];
+const ALLOGGIATI_STATI = ['DA_INVIARE','INVIATA','ERRORE','NON_NECESSARIA'];
+
+const S = {
+  session: null,
+  tab: 'schedine',
+  // Schedine
+  rows: [], apartments: [], accounts: [], links: [],
+  selected: null, form: {},
+  loading: true, saving: false,
+  fSearch: '', fStatoPS: '', fApt: '', fAccount: '',
+  // Accounts
+  editAccount: null,
+};
+
+// ── Helpers ──
+function fmt(d) { if(!d) return '—'; return new Date(d).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+function esc(s) { if(s==null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function psBadgeCls(s) { return {DA_INVIARE:'b-dainviare',INVIATA:'b-inviata',ERRORE:'b-errore',NON_NECESSARIA:'b-non'}[s]||'b-non'; }
+function psBadgeLbl(s) { return {DA_INVIARE:'Da inviare',INVIATA:'Inviata',ERRORE:'Errore',NON_NECESSARIA:'N/A'}[s]||s; }
+
+function toast(msg, type='ok') {
+  const el = document.getElementById('_toast');
+  el.innerHTML = `<div class="toast toast-${type}">${esc(msg)}</div>`;
+  clearTimeout(S.toastTimer);
+  S.toastTimer = setTimeout(()=>{ el.innerHTML=''; }, 3500);
+}
+
+// ── Data loading ──
+async function loadAll() {
+  S.loading = true;
+  const [ospiti, apts, accs, lnks] = await Promise.all([
+    sb.from('ospiti_check_in')
+      .select('id,nome,cognome,email,sesso,data_nascita,luogo_nascita,luogo_nascita_codice,cittadinanza,cittadinanza_codice,tipo_documento,tipo_documento_codice,numero_documento,luogo_rilascio_documento,luogo_rilascio_codice,tipo_alloggiato,capogruppo_id,data_checkin,data_checkout,apartment_id,stato,alloggiati_stato,alloggiati_errore,alloggiati_inviata_at,tag_prenotazione,paese_residenza,telefono')
+      .in('stato', ['APPROVATA','CREDENZIALI_INVIATE','BOZZA_CREATA','CHECK_IN_COMPLETATO'])
+      .order('data_checkin', {ascending: false})
+      .limit(500),
+    sb.from('apartments').select('id,nome_appartamento').order('nome_appartamento'),
+    sb.from('alloggiati_accounts').select('*').order('nome_account'),
+    sb.from('apartment_alloggiati').select('*'),
+  ]);
+  S.rows = ospiti.data || [];
+  S.apartments = apts.data || [];
+  S.accounts = accs.data || [];
+  S.links = lnks.data || [];
+  S.loading = false;
+}
+
+function getAccountForApt(aptId) {
+  const link = S.links.find(l => l.apartment_id === aptId);
+  if (!link) return null;
+  return S.accounts.find(a => a.id === link.alloggiati_account_id) || null;
+}
+
+function getLinkedApts(accountId) {
+  const aptIds = S.links.filter(l => l.alloggiati_account_id === accountId).map(l => l.apartment_id);
+  return S.apartments.filter(a => aptIds.includes(a.id));
+}
+
+// ── Filter ──
+function filtered() {
+  return S.rows.filter(r => {
+    if (S.fStatoPS && r.alloggiati_stato !== S.fStatoPS) return false;
+    if (S.fApt && String(r.apartment_id) !== S.fApt) return false;
+    if (S.fAccount) {
+      const link = S.links.find(l => l.apartment_id === r.apartment_id);
+      if (!link || String(link.alloggiati_account_id) !== S.fAccount) return false;
+    }
+    if (S.fSearch) {
+      const q = S.fSearch.toLowerCase();
+      if (!`${r.nome||''} ${r.cognome||''} ${r.email||''} ${r.tag_prenotazione||''}`.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function stats() {
+  const today = new Date().toISOString().slice(0,10);
+  return {
+    daInviare: S.rows.filter(r => r.alloggiati_stato === 'DA_INVIARE').length,
+    daiOggi:   S.rows.filter(r => r.alloggiati_stato === 'DA_INVIARE' && r.data_checkin === today).length,
+    inviate:   S.rows.filter(r => r.alloggiati_stato === 'INVIATA').length,
+    errori:    S.rows.filter(r => r.alloggiati_stato === 'ERRORE').length,
+  };
+}
+
+// ── Login ──
+function renderLogin() {
+  document.getElementById('app').innerHTML = `
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo">Impatto</div>
+      <div class="login-sub">Backoffice · Documenti</div>
+      <div id="lerr" class="msg-err"></div>
+      <div class="field"><label>Email</label>
+        <input id="lem" type="email" value="fatturazione@illupoaffitta.com" autocomplete="username"/></div>
+      <div class="field"><label>Password</label>
+        <input id="lpw" type="password" autocomplete="current-password"/></div>
+      <button id="lbtn" class="btn btn-teal btn-full">Entra →</button>
+    </div>
+  </div>`;
+  const doLogin = async () => {
+    const btn=document.getElementById('lbtn'), err=document.getElementById('lerr');
+    btn.disabled=true; btn.textContent='Accesso…';
+    const {error} = await sb.auth.signInWithPassword({email:document.getElementById('lem').value, password:document.getElementById('lpw').value});
+    if (error) { err.textContent=error.message; err.style.display='block'; btn.disabled=false; btn.textContent='Entra →'; }
+  };
+  document.getElementById('lbtn').addEventListener('click', doLogin);
+  document.getElementById('lpw').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+}
+
+// ── Main Dashboard ──
+function renderDashboard() {
+  const st = stats();
+  const email = S.session?.user?.email || '';
+  document.getElementById('app').innerHTML = `
+  <header class="header">
+    <div class="header-left">
+      <span class="header-brand">Impatto</span>
+      <span class="header-tag">Documenti</span>
+    </div>
+    <div class="header-right">
+      <span class="header-user">${esc(email)}</span>
+      <a href="backoffice.html" class="btn btn-ghost btn-sm">Fatture →</a>
+      <button id="btnLogout" class="btn btn-ghost btn-sm">Esci</button>
+    </div>
+  </header>
+  <div class="tabs">
+    <div class="tab ${S.tab==='schedine'?'active':''}" data-tab="schedine">Schedine PS</div>
+    <div class="tab ${S.tab==='accounts'?'active':''}" data-tab="accounts">Account Alloggiati</div>
+    <div class="tab ${S.tab==='config'?'active':''}" data-tab="config">Collega Appartamenti</div>
+  </div>
+  <div class="content">
+    <div class="panel ${S.tab==='schedine'?'active':''}" id="panSchedine"></div>
+    <div class="panel ${S.tab==='accounts'?'active':''}" id="panAccounts"></div>
+    <div class="panel ${S.tab==='config'?'active':''}" id="panConfig"></div>
+  </div>`;
+
+  document.getElementById('btnLogout').addEventListener('click', ()=>sb.auth.signOut());
+  document.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => {
+      S.tab = t.dataset.tab;
+      S.selected = null; S.form = {};
+      renderDashboard();
+    });
+  });
+
+  if (S.tab === 'schedine') renderSchedine();
+  else if (S.tab === 'accounts') renderAccounts();
+  else if (S.tab === 'config') renderConfig();
+}
+
+// ── TAB 1: Schedine ──
+function renderSchedine() {
+  const st = stats();
+  const pan = document.getElementById('panSchedine');
+  pan.innerHTML = `
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-label">Da inviare</div><div class="stat-val warn">${st.daInviare}</div></div>
+    <div class="stat-card"><div class="stat-label">Da inviare oggi</div><div class="stat-val ${st.daiOggi>0?'warn':''}">${st.daiOggi}</div></div>
+    <div class="stat-card"><div class="stat-label">Inviate</div><div class="stat-val ok">${st.inviate}</div></div>
+    <div class="stat-card"><div class="stat-label">Errori</div><div class="stat-val ${st.errori>0?'err':''}">${st.errori}</div></div>
+  </div>
+  <div class="filters">
+    <input id="fSearch" type="text" placeholder="Cerca nome, tag prenotazione…" value="${esc(S.fSearch)}"/>
+    <select id="fStatoPS">
+      <option value="">Tutti gli stati</option>
+      ${ALLOGGIATI_STATI.map(s=>`<option value="${s}" ${S.fStatoPS===s?'selected':''}>${psBadgeLbl(s)}</option>`).join('')}
+    </select>
+    <select id="fApt">
+      <option value="">Tutti gli appartamenti</option>
+      ${S.apartments.map(a=>`<option value="${a.id}" ${S.fApt===a.id?'selected':''}>${esc(a.nome_appartamento)}</option>`).join('')}
+    </select>
+    <select id="fAccount">
+      <option value="">Tutti gli account</option>
+      ${S.accounts.map(a=>`<option value="${a.id}" ${S.fAccount===a.id?'selected':''}>${esc(a.nome_account)} (${esc(a.questura)})</option>`).join('')}
+    </select>
+    <button id="btnRefresh" class="btn btn-ghost btn-sm">↻ Aggiorna</button>
+  </div>
+  <div class="body-wrap">
+    <div class="table-panel" id="tablePanel"></div>
+    <div class="drawer ${S.selected?'open':''}" id="drawer"></div>
+  </div>`;
+
+  document.getElementById('fSearch').addEventListener('input', e=>{ S.fSearch=e.target.value; renderTable(); });
+  document.getElementById('fStatoPS').addEventListener('change', e=>{ S.fStatoPS=e.target.value; renderTable(); });
+  document.getElementById('fApt').addEventListener('change', e=>{ S.fApt=e.target.value; renderTable(); });
+  document.getElementById('fAccount').addEventListener('change', e=>{ S.fAccount=e.target.value; renderTable(); });
+  document.getElementById('btnRefresh').addEventListener('click', async ()=>{ await loadAll(); renderSchedine(); });
+  renderTable();
+  renderDrawer();
+}
+
+function renderTable() {
+  const panel = document.getElementById('tablePanel'); if(!panel) return;
+  const rows = filtered();
+  if (S.loading) { panel.innerHTML=`<div class="loading"><span class="spin"></span> Caricamento…</div>`; return; }
+  if (!rows.length) { panel.innerHTML=`<div class="empty"><div class="empty-ico">📋</div><div>Nessuna schedina trovata</div></div>`; return; }
+  panel.innerHTML = `<table>
+    <thead><tr>
+      <th>Ospite</th><th>Appartamento</th><th>Account PS</th><th>Check-in</th><th>Tag</th><th>Stato PS</th>
+    </tr></thead>
+    <tbody>
+      ${rows.map(r=>{
+        const acc = getAccountForApt(r.apartment_id);
+        return `
+        <tr class="row-item${S.selected?.id===r.id?' selected':''}" data-id="${r.id}">
+          <td><div class="td-name">${esc(r.nome||'')} ${esc(r.cognome||'')}</div><div class="mono-sm">${esc(r.email||'')}</div></td>
+          <td class="td-apt">${esc(S.apartments.find(a=>a.id===r.apartment_id)?.nome_appartamento||'—')}</td>
+          <td class="td-apt">${acc ? esc(acc.nome_account) : '<span style="color:var(--red)">Non collegato</span>'}</td>
+          <td class="td-date">${fmt(r.data_checkin)}</td>
+          <td><span class="mono-sm">${esc(r.tag_prenotazione||'—')}</span></td>
+          <td><span class="badge ${psBadgeCls(r.alloggiati_stato)}">${psBadgeLbl(r.alloggiati_stato)}</span></td>
+        </tr>`;
+      }).join('')}
+    </tbody></table>`;
+
+  panel.querySelectorAll('.row-item').forEach(tr => {
+    tr.addEventListener('click', () => {
+      const row = S.rows.find(r=>String(r.id)===String(tr.dataset.id)); if(!row) return;
+      S.selected = row;
+      const acc = getAccountForApt(row.apartment_id);
+      S.form = {
+        sesso: row.sesso||'',
+        data_nascita: row.data_nascita||'',
+        luogo_nascita: row.luogo_nascita||'',
+        cittadinanza: row.cittadinanza||'Italia',
+        tipo_documento: row.tipo_documento||'',
+        numero_documento: row.numero_documento||'',
+        luogo_rilascio_documento: row.luogo_rilascio_documento||'',
+        tipo_alloggiato: row.tipo_alloggiato||16,
+        tag_prenotazione: row.tag_prenotazione||'',
+        alloggiati_stato: row.alloggiati_stato||'DA_INVIARE',
+        _account: acc,
+      };
+      renderDrawer();
+      panel.querySelectorAll('.row-item').forEach(t=>t.classList.toggle('selected', t.dataset.id===tr.dataset.id));
+    });
+  });
+}
+
+function renderDrawer() {
+  const d = document.getElementById('drawer'); if(!d) return;
+  if (!S.selected) { d.classList.remove('open'); d.innerHTML=''; return; }
+  const r = S.selected, f = S.form;
+  const acc = f._account;
+  d.classList.add('open');
+  d.innerHTML = `
+  <div class="drawer-header">
+    <div>
+      <div class="drawer-title">${esc(r.nome||'')} ${esc(r.cognome||'')}</div>
+      <div class="drawer-sub">Check-in ${fmt(r.data_checkin)} · ${esc(S.apartments.find(a=>a.id===r.apartment_id)?.nome_appartamento||'')}</div>
+    </div>
+    <button id="dClose" class="drawer-close">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="drawer-sec">Account Questura</div>
+    <div style="padding:10px 14px;background:${acc?'var(--teal-l)':'var(--red-l)'};border-radius:6px;font-size:13px;margin-bottom:14px">
+      ${acc ? `<strong>${esc(acc.nome_account)}</strong> — Questura di ${esc(acc.questura)}<br><span class="mono-sm">Username: ${esc(acc.username)}</span>` : '<strong style="color:var(--red)">Appartamento non collegato a nessun account</strong><br>Vai nel tab "Collega Appartamenti" per configurarlo.'}
+    </div>
+
+    <div class="drawer-sec">Dati schedina alloggiati</div>
+    <div class="field-2">
+      <div class="field"><label>Sesso</label>
+        <select class="df" data-k="sesso"><option value="">—</option><option value="M" ${f.sesso==='M'?'selected':''}>M</option><option value="F" ${f.sesso==='F'?'selected':''}>F</option></select>
+      </div>
+      <div class="field"><label>Data di nascita</label><input class="df" type="date" data-k="data_nascita" value="${esc(f.data_nascita)}"/></div>
+    </div>
+    <div class="field-2">
+      <div class="field"><label>Luogo di nascita</label><input class="df" data-k="luogo_nascita" value="${esc(f.luogo_nascita)}"/></div>
+      <div class="field"><label>Cittadinanza</label><input class="df" data-k="cittadinanza" value="${esc(f.cittadinanza)}"/></div>
+    </div>
+    <div class="field-2">
+      <div class="field"><label>Tipo documento</label>
+        <select class="df" data-k="tipo_documento">
+          <option value="">—</option>
+          <option value="Carta d'identita" ${f.tipo_documento==="Carta d'identita"?'selected':''}>Carta d'identita</option>
+          <option value="Passaporto" ${f.tipo_documento==='Passaporto'?'selected':''}>Passaporto</option>
+          <option value="Patente" ${f.tipo_documento==='Patente'?'selected':''}>Patente</option>
+        </select>
+      </div>
+      <div class="field"><label>Numero documento</label><input class="df" data-k="numero_documento" value="${esc(f.numero_documento)}"/></div>
+    </div>
+    <div class="field"><label>Luogo rilascio documento</label><input class="df" data-k="luogo_rilascio_documento" value="${esc(f.luogo_rilascio_documento)}"/></div>
+    <div class="field-2">
+      <div class="field"><label>Tipo alloggiato</label>
+        <select class="df" data-k="tipo_alloggiato">
+          <option value="16" ${f.tipo_alloggiato==16?'selected':''}>Ospite singolo</option>
+          <option value="17" ${f.tipo_alloggiato==17?'selected':''}>Capofamiglia</option>
+          <option value="18" ${f.tipo_alloggiato==18?'selected':''}>Capogruppo</option>
+          <option value="19" ${f.tipo_alloggiato==19?'selected':''}>Familiare</option>
+          <option value="20" ${f.tipo_alloggiato==20?'selected':''}>Membro gruppo</option>
+        </select>
+      </div>
+      <div class="field"><label>Tag prenotazione</label><input class="df" data-k="tag_prenotazione" value="${esc(f.tag_prenotazione)}"/></div>
+    </div>
+
+    ${r.alloggiati_errore ? `<div class="drawer-sec">Ultimo errore</div><div style="padding:10px 14px;background:var(--red-l);border-radius:6px;font-size:12px;color:var(--red);font-family:var(--mono)">${esc(r.alloggiati_errore)}</div>` : ''}
+    ${r.alloggiati_inviata_at ? `<div class="mono-sm" style="margin-top:12px">Ultimo invio: ${fmt(r.alloggiati_inviata_at)}</div>` : ''}
+  </div>
+  <div class="drawer-footer">
+    <button id="dSave" class="btn btn-ghost" style="margin-right:auto">Salva dati</button>
+    <span class="badge ${psBadgeCls(r.alloggiati_stato)}" style="font-size:12px;padding:4px 12px;align-self:center">${psBadgeLbl(r.alloggiati_stato)}</span>
+  </div>`;
+
+  document.getElementById('dClose').addEventListener('click', ()=>{ S.selected=null; S.form={}; renderDrawer(); renderTable(); });
+  document.getElementById('dSave').addEventListener('click', saveSchedina);
+
+  d.querySelectorAll('.df').forEach(el=>{
+    el.addEventListener('input', e=>{ S.form[e.target.dataset.k]=e.target.value; });
+    el.addEventListener('change', e=>{ S.form[e.target.dataset.k]=e.target.value; });
+  });
+}
+
+async function saveSchedina() {
+  if (!S.selected) return;
+  const btn = document.getElementById('dSave'); if(btn){ btn.disabled=true; btn.textContent='Salvo…'; }
+  const { _account, alloggiati_stato, ...payload } = S.form;
+  payload.tipo_alloggiato = Number(payload.tipo_alloggiato) || 16;
+
+  // Map tipo_documento to codice
+  const docMap = {"Carta d'identita":'IDENT','Passaporto':'PASOR','Patente':'PATEN'};
+  if (payload.tipo_documento) payload.tipo_documento_codice = docMap[payload.tipo_documento] || '';
+
+  const {error} = await sb.from('ospiti_check_in').update(payload).eq('id', S.selected.id);
+  if (error) { toast('Errore: '+error.message,'err'); }
+  else {
+    toast('Dati schedina salvati','ok');
+    const i = S.rows.findIndex(r=>r.id===S.selected.id);
+    if (i>=0) Object.assign(S.rows[i], payload);
+    S.selected = S.rows[i] || S.selected;
+  }
+  if(btn){ btn.disabled=false; btn.textContent='Salva dati'; }
+}
+
+
+// ── TAB 2: Accounts ──
+function renderAccounts() {
+  const pan = document.getElementById('panAccounts');
+  pan.innerHTML = `
+  <div style="padding:16px 24px;display:flex;justify-content:space-between;align-items:center;background:var(--white);border-bottom:1px solid var(--border)">
+    <div><strong>${S.accounts.length}</strong> account configurati</div>
+    <button id="btnNewAcc" class="btn btn-teal btn-sm">+ Nuovo account</button>
+  </div>
+  <div class="card-grid" id="accGrid"></div>`;
+
+  document.getElementById('btnNewAcc').addEventListener('click', ()=>openAccountModal(null));
+  renderAccountCards();
+}
+
+function renderAccountCards() {
+  const grid = document.getElementById('accGrid'); if(!grid) return;
+  if (!S.accounts.length) {
+    grid.innerHTML = `<div class="empty"><div class="empty-ico">🔑</div><div>Nessun account configurato.<br>Clicca "+ Nuovo account" per aggiungerne uno.</div></div>`;
+    return;
+  }
+  grid.innerHTML = S.accounts.map(a => {
+    const apts = getLinkedApts(a.id);
+    return `
+    <div class="account-card" data-id="${a.id}">
+      <div class="ac-header">
+        <div class="ac-name">${esc(a.nome_account)}</div>
+        <span class="ac-questura">${esc(a.questura)}</span>
+      </div>
+      <div class="ac-row">
+        <div><div class="ac-label">Username</div><div class="ac-val" style="font-family:var(--mono)">${esc(a.username)}</div></div>
+        <div><div class="ac-label">WSKEY</div><div class="ac-val" style="font-family:var(--mono)">${a.wskey ? a.wskey.slice(0,8)+'…' : '—'}</div></div>
+        <div><div class="ac-label">Stato</div><div class="ac-val"><span class="ac-dot ${a.attivo?'on':'off'}"></span>${a.attivo?'Attivo':'Disattivo'}</div></div>
+      </div>
+      ${apts.length ? `<div class="ac-apartments"><div class="ac-label" style="margin-bottom:6px">Appartamenti collegati (${apts.length})</div>${apts.map(ap=>`<span class="ac-apt-tag">${esc(ap.nome_appartamento)}</span>`).join('')}</div>` : `<div class="ac-apartments"><div class="ac-label" style="color:var(--yellow)">Nessun appartamento collegato</div></div>`}
+    </div>`;
+  }).join('');
+
+  grid.querySelectorAll('.account-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const acc = S.accounts.find(a=>a.id===card.dataset.id);
+      if (acc) openAccountModal(acc);
+    });
+  });
+}
+
+function openAccountModal(account) {
+  const isNew = !account;
+  const a = account || { nome_account:'', questura:'Rimini', username:'', password_encrypted:'', wskey:'', attivo:true, istat_sistema:'', istat_regione:'', istat_username:'', istat_password_encrypted:'', istat_codice_struttura:'' };
+  const root = document.getElementById('modal-root');
+  root.innerHTML = `
+  <div class="modal-bg" id="modalBg">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-title">${isNew ? 'Nuovo account' : 'Modifica account'}</div>
+        <button id="mClose" class="drawer-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="field"><label>Nome account</label><input id="mNome" value="${esc(a.nome_account)}" placeholder="Es. Mario Rossi - Rimini"/></div>
+        <div class="field"><label>Questura</label>
+          <select id="mQuestura">${QUESTURE.map(q=>`<option ${a.questura===q?'selected':''}>${q}</option>`).join('')}<option ${!QUESTURE.includes(a.questura)?'selected':''} value="">Altra…</option></select>
+        </div>
+        <div class="drawer-sec" style="margin-top:20px">Credenziali AlloggiatiWeb</div>
+        <div class="field-2">
+          <div class="field"><label>Username</label><input id="mUser" value="${esc(a.username)}"/></div>
+          <div class="field"><label>Password</label>
+            <div class="pw-field"><input id="mPass" type="password" value="${esc(a.password_encrypted)}" autocomplete="off"/><button class="pw-toggle" onclick="var i=document.getElementById('mPass');i.type=i.type==='password'?'text':'password'">👁</button></div>
+          </div>
+        </div>
+        <div class="field"><label>WSKEY</label><input id="mWskey" value="${esc(a.wskey)}" style="font-family:var(--mono)"/></div>
+        <div class="drawer-sec" style="margin-top:20px">ISTAT (opzionale)</div>
+        <div class="field-3">
+          <div class="field"><label>Sistema</label>
+            <select id="mIstatSys"><option value="">—</option><option value="ross1000" ${a.istat_sistema==='ross1000'?'selected':''}>Ross 1000</option><option value="altro" ${a.istat_sistema==='altro'?'selected':''}>Altro</option></select>
+          </div>
+          <div class="field"><label>Regione</label><input id="mIstatReg" value="${esc(a.istat_regione||'')}" placeholder="emilia-romagna"/></div>
+          <div class="field"><label>Cod. struttura</label><input id="mIstatCod" value="${esc(a.istat_codice_struttura||'')}"/></div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        ${!isNew ? `<button id="mDel" class="btn btn-red btn-sm" style="margin-right:auto">Elimina</button>` : ''}
+        <button id="mCancel" class="btn btn-ghost">Annulla</button>
+        <button id="mSave" class="btn btn-teal">${isNew ? 'Crea account' : 'Salva modifiche'}</button>
+      </div>
+    </div>
+  </div>`;
+
+  const close = () => { root.innerHTML = ''; };
+  document.getElementById('mClose').addEventListener('click', close);
+  document.getElementById('mCancel').addEventListener('click', close);
+  document.getElementById('modalBg').addEventListener('click', e=>{ if(e.target.id==='modalBg') close(); });
+
+  document.getElementById('mSave').addEventListener('click', async () => {
+    const payload = {
+      nome_account: document.getElementById('mNome').value.trim(),
+      questura: document.getElementById('mQuestura').value,
+      username: document.getElementById('mUser').value.trim(),
+      password_encrypted: document.getElementById('mPass').value,
+      wskey: document.getElementById('mWskey').value.trim(),
+      attivo: true,
+      istat_sistema: document.getElementById('mIstatSys').value || null,
+      istat_regione: document.getElementById('mIstatReg').value.trim() || null,
+      istat_codice_struttura: document.getElementById('mIstatCod').value.trim() || null,
+    };
+    if (!payload.nome_account || !payload.username || !payload.wskey) {
+      toast('Compila nome, username e WSKEY','err'); return;
+    }
+    const btn = document.getElementById('mSave'); btn.disabled=true; btn.textContent='Salvo…';
+
+    let error;
+    if (isNew) {
+      ({error} = await sb.from('alloggiati_accounts').insert(payload));
+    } else {
+      ({error} = await sb.from('alloggiati_accounts').update(payload).eq('id', account.id));
+    }
+    if (error) { toast('Errore: '+error.message,'err'); btn.disabled=false; btn.textContent=isNew?'Crea account':'Salva modifiche'; return; }
+    toast(isNew ? 'Account creato' : 'Account aggiornato', 'ok');
+    close();
+    await loadAll();
+    renderAccounts();
+  });
+
+  if (!isNew) {
+    document.getElementById('mDel')?.addEventListener('click', async () => {
+      if (!confirm('Eliminare questo account? Gli appartamenti collegati verranno scollegati.')) return;
+      await sb.from('apartment_alloggiati').delete().eq('alloggiati_account_id', account.id);
+      await sb.from('alloggiati_accounts').delete().eq('id', account.id);
+      toast('Account eliminato','info');
+      close();
+      await loadAll();
+      renderAccounts();
+    });
+  }
+}
+
+
+// ── TAB 3: Config (Collega Appartamenti) ──
+function renderConfig() {
+  const pan = document.getElementById('panConfig');
+  pan.innerHTML = `
+  <div style="padding:16px 24px;background:var(--white);border-bottom:1px solid var(--border)">
+    <div style="font-size:13px;color:var(--text2)">Collega ogni appartamento all'account AlloggiatiWeb del proprietario. Le schedine verranno inviate con le credenziali dell'account collegato.</div>
+  </div>
+  <div style="padding:24px;overflow-y:auto">
+    <table>
+      <thead><tr>
+        <th>Appartamento</th><th>Account AlloggiatiWeb</th><th>ID portale</th><th>Invio auto</th><th></th>
+      </tr></thead>
+      <tbody id="configBody"></tbody>
+    </table>
+  </div>`;
+  renderConfigRows();
+}
+
+function renderConfigRows() {
+  const body = document.getElementById('configBody'); if(!body) return;
+  body.innerHTML = S.apartments.map(apt => {
+    const link = S.links.find(l => l.apartment_id === apt.id);
+    const accId = link?.alloggiati_account_id || '';
+    const idPortale = link?.id_appartamento_portale || '';
+    const autoInvio = link?.invio_automatico || false;
+    return `
+    <tr data-apt="${apt.id}">
+      <td><strong>${esc(apt.nome_appartamento)}</strong></td>
+      <td>
+        <select class="cfg-acc" data-apt="${apt.id}" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--sans)">
+          <option value="">— Non collegato —</option>
+          ${S.accounts.map(a=>`<option value="${a.id}" ${accId===a.id?'selected':''}>${esc(a.nome_account)} (${esc(a.questura)})</option>`).join('')}
+        </select>
+      </td>
+      <td><input class="cfg-idp" data-apt="${apt.id}" value="${esc(idPortale)}" placeholder="000001" style="width:80px;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:var(--mono);text-align:center"/></td>
+      <td style="text-align:center"><input type="checkbox" class="cfg-auto" data-apt="${apt.id}" ${autoInvio?'checked':''} style="width:16px;height:16px;cursor:pointer;accent-color:var(--teal)"/></td>
+      <td><button class="btn btn-ghost btn-sm cfg-save" data-apt="${apt.id}">Salva</button></td>
+    </tr>`;
+  }).join('');
+
+  body.querySelectorAll('.cfg-save').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const aptId = btn.dataset.apt;
+      const accSel = body.querySelector(`.cfg-acc[data-apt="${aptId}"]`);
+      const idpInp = body.querySelector(`.cfg-idp[data-apt="${aptId}"]`);
+      const autoChk = body.querySelector(`.cfg-auto[data-apt="${aptId}"]`);
+      const accId = accSel.value;
+
+      btn.disabled = true; btn.textContent = '…';
+
+      if (!accId) {
+        // Rimuovi collegamento
+        await sb.from('apartment_alloggiati').delete().eq('apartment_id', aptId);
+        toast('Collegamento rimosso','info');
+      } else {
+        const payload = {
+          apartment_id: aptId,
+          alloggiati_account_id: accId,
+          id_appartamento_portale: idpInp.value.trim() || null,
+          invio_automatico: autoChk.checked,
+        };
+        const existing = S.links.find(l => l.apartment_id === aptId);
+        if (existing) {
+          await sb.from('apartment_alloggiati').update(payload).eq('id', existing.id);
+        } else {
+          await sb.from('apartment_alloggiati').insert(payload);
+        }
+        toast('Collegamento salvato','ok');
+      }
+
+      await loadAll();
+      renderConfigRows();
+      btn.disabled = false; btn.textContent = 'Salva';
+    });
+  });
+}
+
+
+// ── Init ──
+(async()=>{
+  const {data:{session}} = await sb.auth.getSession();
+  S.session = session;
+  if (session) { await loadAll(); renderDashboard(); }
+  else renderLogin();
+})();
+
+sb.auth.onAuthStateChange(async (_, session) => {
+  if (!session && S.session) {
+    S.session = null;
+    S.rows=[]; S.selected=null; S.form={};
+    renderLogin();
+  }
+  if (session && !S.session) {
+    S.session = session;
+    await loadAll();
+    renderDashboard();
+  }
+});
+</script>
+</body>
+</html>
