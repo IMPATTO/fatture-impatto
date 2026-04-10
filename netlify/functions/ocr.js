@@ -25,8 +25,16 @@ exports.handler = async (event) => {
     }
 
     const prompt = tipo === 'privato'
-      ? `Sei un assistente per l'estrazione dati da documenti italiani. Analizza questa immagine di un documento d'identità italiano (carta d'identità, passaporto, patente o tessera sanitaria) e restituisci SOLO un JSON con questi campi:
-{"nome":"","cognome":"","codice_fiscale":"","data_nascita":"YYYY-MM-DD","indirizzo":"","cap":"","citta":"","provincia":"","paese":"Italia"}
+      ? `Sei un assistente per l'estrazione dati da documenti italiani e stranieri. Analizza questa immagine di un documento d'identità (carta d'identità, passaporto, patente o tessera sanitaria) e restituisci SOLO un JSON con questi campi:
+{"nome":"","cognome":"","codice_fiscale":"","data_nascita":"YYYY-MM-DD","sesso":"M o F","luogo_nascita":"","cittadinanza":"","tipo_documento":"IDENT o PASOR o PATEN","numero_documento":"","luogo_rilascio":"","indirizzo":"","cap":"","citta":"","provincia":"","paese":"Italia"}
+Note importanti:
+- sesso: usa solo "M" o "F"
+- data_nascita: formato YYYY-MM-DD
+- tipo_documento: usa IDENT per carta d'identita, PASOR per passaporto, PATEN per patente
+- cittadinanza: scrivi il nome del paese in italiano (es. "Italia", "Germania", "Francia")
+- luogo_nascita: scrivi solo il nome della citta o comune
+- luogo_rilascio: ente o comune che ha rilasciato il documento
+- numero_documento: il numero identificativo del documento
 Se un campo non è leggibile lascialo stringa vuota. Rispondi SOLO con il JSON, niente altro.`
       : `Sei un assistente per l'estrazione dati da documenti aziendali italiani. Analizza questa immagine (visura camerale, documento aziendale, carta intestata) e restituisci SOLO un JSON:
 {"ragione_sociale":"","partita_iva":"","codice_fiscale":"","indirizzo":"","cap":"","citta":"","provincia":"","paese":"Italia","sdi":"","pec":""}
