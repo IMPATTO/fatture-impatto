@@ -409,6 +409,30 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
       </div>
     </div>
 
+    <!-- FOTO DOCUMENTO — step 1, dopo i campi documento -->
+    <div class="card" id="fotoDocCard">
+      <div class="card-header">
+        <span class="card-title" data-t="fotoLabel">FOTO DOCUMENTO</span>
+        <span class="card-opt">OPZIONALE — compila i campi automaticamente</span>
+      </div>
+      <div class="card-body">
+        <div class="img-preview-small" id="imgPreviewSmall">
+          <img id="previewImgSmall" src="" alt="documento">
+          <button class="remove-img" onclick="removeImage()">X</button>
+        </div>
+        <div class="upload-optional" id="uploadAreaSmall">
+          <input type="file" id="fileInput" accept="image/*" capture="environment" onchange="handleFile(this.files[0])">
+          <div class="upload-icon">&#128196;</div>
+          <h3 data-t="uploadTitle">Aggiungi foto documento</h3>
+          <p data-t="uploadSub">Carta d'identita - Passaporto - Patente</p>
+        </div>
+        <div class="ocr-status" id="ocrStatus">
+          <div class="spinner" id="ocrSpinner"></div>
+          <span id="ocrMsg"></span>
+        </div>
+      </div>
+    </div>
+
     <div class="card">
       <div class="card-header"><span class="card-title" data-t="soggiornoLabel">SOGGIORNO</span></div>
       <div class="card-body">
@@ -438,29 +462,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
     <div class="card">
       <div class="card-header"><span class="card-title" data-t="riepilogoLabel">RIEPILOGO</span></div>
       <div class="card-body"><div class="review-box" id="reviewBox"></div></div>
-    </div>
-
-    <div class="card">
-      <div class="card-header">
-        <span class="card-title" data-t="fotoLabel">FOTO DOCUMENTO</span>
-        <span class="card-opt">OPZIONALE</span>
-      </div>
-      <div class="card-body">
-        <div class="img-preview-small" id="imgPreviewSmall">
-          <img id="previewImgSmall" src="" alt="documento">
-          <button class="remove-img" onclick="removeImage()">X</button>
-        </div>
-        <div class="upload-optional" id="uploadAreaSmall">
-          <input type="file" id="fileInput" accept="image/*" capture="environment" onchange="handleFile(this.files[0])">
-          <div class="upload-icon">&#128196;</div>
-          <h3 data-t="uploadTitle">Aggiungi foto documento</h3>
-          <p data-t="uploadSub">Carta d'identita - Passaporto - Patente</p>
-        </div>
-        <div class="ocr-status" id="ocrStatus">
-          <div class="spinner" id="ocrSpinner"></div>
-          <span id="ocrMsg"></span>
-        </div>
-      </div>
     </div>
 
     <button class="btn-primary" onclick="submitForm()" id="submitBtn" data-t="invia">Invia dati</button>
@@ -493,7 +494,8 @@ var T={
 };
 
 var lang='it',currentType='privato',currentStep=1,isItalian=true,cfAttempts=0,uploadedImageBase64=null;
-var aptId=new URLSearchParams(window.location.search).get('apt')||null;
+var urlParams=new URLSearchParams(window.location.search);
+var aptId=urlParams.get('apt')||'27663c90-8936-4556-b05f-dddc9ae9e1e0';
 function t(k){return(T[lang]&&T[lang][k]!==undefined)?T[lang][k]:(T.it[k]||k);}
 
 function setLang(l){
@@ -525,6 +527,7 @@ function setType(type){
   document.getElementById('btn-azienda').classList.toggle('active',type==='azienda');
   document.getElementById('fields-privato').style.display=type==='privato'?'':'none';
   document.getElementById('fields-azienda').style.display=type==='azienda'?'':'none';
+  document.getElementById('fotoDocCard').style.display=type==='privato'?'':'none';
 }
 
 function onPaeseChange(){
@@ -582,6 +585,19 @@ function buildReview(){
       rows.push([t('CF'),document.getElementById('cf').value.toUpperCase()]);
       rows.push([t('INDIRIZZO'),[document.getElementById('indirizzo').value,document.getElementById('citta').value,document.getElementById('cap').value,document.getElementById('provincia').value].filter(Boolean).join(', ')]);
     }
+    // Campi schedina alloggiati
+    var sessoVal = document.getElementById('sesso').value;
+    rows.push([t('sessoLabel'), sessoVal==='M'?'M — Maschio / Male':'F — Femmina / Female']);
+    rows.push([t('dataNascitaLabel'), document.getElementById('dataNascita').value]);
+    rows.push([t('luogoNascitaLabel'), document.getElementById('luogoNascita').value]);
+    var cittVal = document.getElementById('cittadinanza').value==='Altro'
+      ? document.getElementById('cittadinanzaAltro').value
+      : document.getElementById('cittadinanza').value;
+    rows.push([t('cittadinanzaLabel'), cittVal]);
+    var tipoDocSel = document.getElementById('tipoDoc');
+    rows.push([t('tipoDocLabel'), tipoDocSel.options[tipoDocSel.selectedIndex]?.text || tipoDocSel.value]);
+    rows.push([t('numDocLabel'), document.getElementById('numDoc').value.toUpperCase()]);
+    rows.push([t('luogoRilascioLabel'), document.getElementById('luogoRilascio').value]);
   }else{
     rows.push([t('RAGIONE'),document.getElementById('ragioneSociale').value]);
     rows.push([t('PIVA'),document.getElementById('piva').value]);
@@ -726,11 +742,12 @@ async function submitForm(){
       paese_residenza:'IT',
       indirizzo_residenza:document.getElementById('indirizzoAz').value.trim(),
       piva_cliente:document.getElementById('piva').value.trim(),
+      codice_sdi:document.getElementById('sdi').value.trim().toUpperCase(),
+      pec:document.getElementById('pec').value.trim()||null,
       tipo_cliente:'azienda',iva_percentuale:22,codice_fiscale:null,
-      segnalazione_jessica:'SDI:'+document.getElementById('sdi').value+(document.getElementById('pec').value?'|PEC:'+document.getElementById('pec').value:'')
+      alloggiati_stato:'NON_NECESSARIA'
     });
   }
-  payload.apartment_id = '27663c90-8936-4556-b05f-dddc9ae9e1e0';
   try{
     var res=await fetch(SUPABASE_URL+'/rest/v1/ospiti_check_in',{
       method:'POST',
@@ -765,8 +782,7 @@ function showToast(msg){
 }
 
 setLang('it');
-var urlParams=new URLSearchParams(window.location.search);
-var urlLang=urlParams.get('lingua');
+var urlLang=urlParams.get('lingua')||urlParams.get('lang');
 if(urlLang&&T[urlLang.toLowerCase()])setLang(urlLang.toLowerCase());
 if(urlParams.get('checkin'))document.getElementById('checkin').value=urlParams.get('checkin');
 if(urlParams.get('checkout'))document.getElementById('checkout').value=urlParams.get('checkout');
