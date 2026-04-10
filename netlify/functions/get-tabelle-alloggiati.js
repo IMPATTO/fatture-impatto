@@ -75,11 +75,24 @@ exports.handler = async (event) => {
 
     // 2. Scarica e importa ogni tabella richiesta
     for (const tipoTabella of tipiDaScaricane) {
-      const csvResult = await soapDownloadTabella(
-        process.env.ALLOGGIATI_USERNAME,
-        tokenResult.token,
-        tipoTabella
-      );
+      // Il WS AlloggiatiWeb usa nomi specifici — proviamo alias se il primo fallisce
+      const nomiDaProvare = tipoTabella === 'Nazioni'
+        ? ['Nazioni', 'Stati', 'Nazione', 'nazioni']
+        : [tipoTabella];
+
+      let csvResult = { error: 'Non trovato' };
+      for (const nomeWS of nomiDaProvare) {
+        csvResult = await soapDownloadTabella(
+          process.env.ALLOGGIATI_USERNAME,
+          tokenResult.token,
+          nomeWS
+        );
+        if (!csvResult.error) {
+          console.log(`Tabella ${tipoTabella} trovata con nome WS: ${nomeWS}`);
+          break;
+        }
+        console.log(`Tabella ${tipoTabella} con nome "${nomeWS}": ${csvResult.error}`);
+      }
 
       if (csvResult.error) {
         results[tipoTabella] = { error: csvResult.error };
@@ -230,9 +243,11 @@ async function importLuoghi(supabase, rows, header) {
     // Il CSV di Luoghi ha: codice (9 chars), nome, provincia
     // L'indice lo ricaviamo dall'header, con fallback posizionale
     const codiceIdx = header.indexOf('codice') !== -1 ? header.indexOf('codice') : 0;
-    const nomeIdx   = header.indexOf('nome')   !== -1 ? header.indexOf('nome')   : 1;
-    const provIdx   = header.indexOf('prov')   !== -1 ? header.indexOf('prov')   :
-                      header.indexOf('provincia') !== -1 ? header.indexOf('provincia') : 2;
+    // Il WS restituisce 'descrizione' come nome del comune
+    const nomeIdx   = header.indexOf('descrizione') !== -1 ? header.indexOf('descrizione') :
+                      header.indexOf('nome')        !== -1 ? header.indexOf('nome')        : 1;
+    const provIdx   = header.indexOf('provincia')   !== -1 ? header.indexOf('provincia')   :
+                      header.indexOf('prov')        !== -1 ? header.indexOf('prov')        : 2;
 
     const codice = cols[codiceIdx]?.trim();
     const nome   = cols[nomeIdx]?.trim();
@@ -281,8 +296,10 @@ async function importNazioni(supabase, rows, header) {
   for (const line of rows) {
     const cols = line.split(';');
     const codiceIdx = header.indexOf('codice') !== -1 ? header.indexOf('codice') : 0;
-    const nomeIdx   = header.indexOf('nome')   !== -1 ? header.indexOf('nome')   : 1;
-    const nomeItIdx = header.indexOf('nomeit') !== -1 ? header.indexOf('nomeit') :
+    // Il WS può usare 'descrizione' o 'nome'
+    const nomeIdx   = header.indexOf('descrizione') !== -1 ? header.indexOf('descrizione') :
+                      header.indexOf('nome')        !== -1 ? header.indexOf('nome')        : 1;
+    const nomeItIdx = header.indexOf('nomeit')  !== -1 ? header.indexOf('nomeit')  :
                       header.indexOf('nome_it') !== -1 ? header.indexOf('nome_it') : -1;
 
     const codice = cols[codiceIdx]?.trim();
