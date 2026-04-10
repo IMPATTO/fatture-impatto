@@ -1230,23 +1230,23 @@ function renderCodici() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': \`Bearer \${session.data.session.access_token}\`
+          'Authorization': 'Bearer ' + session.data.session.access_token
         },
         body: JSON.stringify({ tipo })
       });
       const data = await res.json();
 
       if (!res.ok) {
-        resultEl.innerHTML = \`<span style="color:var(--red)">❌ Errore: \${esc(data.error||'Sconosciuto')}</span>\`;
+        resultEl.innerHTML = '<span style="color:var(--red)">❌ Errore: ' + esc(data.error||'Sconosciuto') + '</span>';
         return;
       }
 
       let html = '';
       for (const [t, r] of Object.entries(data.results || {})) {
         if (r.error) {
-          html += \`<div style="color:var(--red)">❌ \${esc(t)}: \${esc(r.error)}</div>\`;
+          html += '<div style="color:var(--red)">❌ ' + esc(t) + ': ' + esc(r.error) + '</div>';
         } else {
-          html += \`<div style="color:var(--green)">✅ \${esc(t)}: \${r.righe.toLocaleString('it')} record importati</div>\`;
+          html += '<div style="color:var(--green)">✅ ' + esc(t) + ': ' + r.righe.toLocaleString('it') + ' record importati</div>';
         }
       }
       resultEl.innerHTML = html || '<span style="color:var(--green)">✅ Import completato</span>';
@@ -1256,7 +1256,7 @@ function renderCodici() {
       setTimeout(() => renderCodici(), 500); // aggiorna i contatori
 
     } catch(err) {
-      resultEl.innerHTML = \`<span style="color:var(--red)">❌ Errore di rete: \${esc(err.message)}</span>\`;
+      resultEl.innerHTML = '<span style="color:var(--red)">❌ Errore di rete: ' + esc(err.message) + '</span>';
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = btn.id === 'btnImportAll' ? '↓ Importa tutte e 3' : btn.textContent.replace('Importo…', btn.dataset.orig||'Importa'); }
     }
@@ -1277,58 +1277,60 @@ function renderCodici() {
   // Test autocomplete
   if (comuni > 0) {
     setupAutocompleteComuni('testComuneInput', null, 'testComuneDrop', (nome, codice) => {
-      document.getElementById('testComuneResult').textContent = \`✓ Selezionato: "\${nome}" → codice: \${codice}\`;
+      document.getElementById('testComuneResult').textContent = '✓ Selezionato: "' + nome + '" → codice: ' + codice;
     });
   }
 }
 
 // SQL DDL embed
-const SQL_DDL_CODICI = \`-- Abilita estensione trigram per autocomplete fuzzy
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
-
--- 1. Codici Comuni (tabella Luoghi)
-CREATE TABLE IF NOT EXISTS public.codici_comuni (
-  codice      TEXT PRIMARY KEY,
-  nome        TEXT NOT NULL,
-  provincia   TEXT,
-  updated_at  TIMESTAMPTZ DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_codici_comuni_nome ON public.codici_comuni(nome);
-CREATE INDEX IF NOT EXISTS idx_codici_comuni_nome_trgm ON public.codici_comuni USING gin(nome gin_trgm_ops);
-
--- 2. Codici Stati / Nazioni
-CREATE TABLE IF NOT EXISTS public.codici_stati (
-  codice      TEXT PRIMARY KEY,
-  nome        TEXT NOT NULL,
-  nome_it     TEXT,
-  updated_at  TIMESTAMPTZ DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_codici_stati_nome_trgm ON public.codici_stati USING gin(nome_it gin_trgm_ops);
-
--- 3. Tipi Documento
-CREATE TABLE IF NOT EXISTS public.codici_documenti (
-  codice      TEXT PRIMARY KEY,
-  descrizione TEXT NOT NULL,
-  updated_at  TIMESTAMPTZ DEFAULT NOW()
-);
-
--- RLS
-ALTER TABLE public.codici_comuni    ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.codici_stati     ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.codici_documenti ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "autenticati_read_codici_comuni" ON public.codici_comuni
-  FOR SELECT TO authenticated USING (true);
-CREATE POLICY "autenticati_read_codici_stati" ON public.codici_stati
-  FOR SELECT TO authenticated USING (true);
-CREATE POLICY "autenticati_read_codici_documenti" ON public.codici_documenti
-  FOR SELECT TO authenticated USING (true);
-CREATE POLICY "service_all_codici_comuni" ON public.codici_comuni
-  FOR ALL TO service_role USING (true);
-CREATE POLICY "service_all_codici_stati" ON public.codici_stati
-  FOR ALL TO service_role USING (true);
-CREATE POLICY "service_all_codici_documenti" ON public.codici_documenti
-  FOR ALL TO service_role USING (true);\`;
+const SQL_DDL_CODICI = [
+  '-- Abilita estensione trigram per autocomplete fuzzy',
+  'CREATE EXTENSION IF NOT EXISTS pg_trgm;',
+  '',
+  '-- 1. Codici Comuni (tabella Luoghi)',
+  'CREATE TABLE IF NOT EXISTS public.codici_comuni (',
+  '  codice      TEXT PRIMARY KEY,',
+  '  nome        TEXT NOT NULL,',
+  '  provincia   TEXT,',
+  '  updated_at  TIMESTAMPTZ DEFAULT NOW()',
+  ');',
+  'CREATE INDEX IF NOT EXISTS idx_codici_comuni_nome ON public.codici_comuni(nome);',
+  'CREATE INDEX IF NOT EXISTS idx_codici_comuni_nome_trgm ON public.codici_comuni USING gin(nome gin_trgm_ops);',
+  '',
+  '-- 2. Codici Stati / Nazioni',
+  'CREATE TABLE IF NOT EXISTS public.codici_stati (',
+  '  codice      TEXT PRIMARY KEY,',
+  '  nome        TEXT NOT NULL,',
+  '  nome_it     TEXT,',
+  '  updated_at  TIMESTAMPTZ DEFAULT NOW()',
+  ');',
+  'CREATE INDEX IF NOT EXISTS idx_codici_stati_nome_trgm ON public.codici_stati USING gin(nome_it gin_trgm_ops);',
+  '',
+  '-- 3. Tipi Documento',
+  'CREATE TABLE IF NOT EXISTS public.codici_documenti (',
+  '  codice      TEXT PRIMARY KEY,',
+  '  descrizione TEXT NOT NULL,',
+  '  updated_at  TIMESTAMPTZ DEFAULT NOW()',
+  ');',
+  '',
+  '-- RLS',
+  'ALTER TABLE public.codici_comuni    ENABLE ROW LEVEL SECURITY;',
+  'ALTER TABLE public.codici_stati     ENABLE ROW LEVEL SECURITY;',
+  'ALTER TABLE public.codici_documenti ENABLE ROW LEVEL SECURITY;',
+  '',
+  'CREATE POLICY "autenticati_read_codici_comuni" ON public.codici_comuni',
+  '  FOR SELECT TO authenticated USING (true);',
+  'CREATE POLICY "autenticati_read_codici_stati" ON public.codici_stati',
+  '  FOR SELECT TO authenticated USING (true);',
+  'CREATE POLICY "autenticati_read_codici_documenti" ON public.codici_documenti',
+  '  FOR SELECT TO authenticated USING (true);',
+  'CREATE POLICY "service_all_codici_comuni" ON public.codici_comuni',
+  '  FOR ALL TO service_role USING (true);',
+  'CREATE POLICY "service_all_codici_stati" ON public.codici_stati',
+  '  FOR ALL TO service_role USING (true);',
+  'CREATE POLICY "service_all_codici_documenti" ON public.codici_documenti',
+  '  FOR ALL TO service_role USING (true);',
+].join('\n');
 
 
 // ── Init ──
