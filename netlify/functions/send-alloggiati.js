@@ -1,6 +1,6 @@
 // netlify/functions/send-alloggiati.js
 // Invia schedine al web service SOAP di AlloggiatiWeb
-// Flusso: GenerateToken → GestioneAppartamenti_Test / GestioneAppartamenti_Send
+// Flusso: GenerateToken → Test (validazione) → Send (invio reale)
 //
 // Variabili d'ambiente richieste:
 //   SUPABASE_URL
@@ -10,7 +10,7 @@ const { createClient } = require('@supabase/supabase-js');
 
 const ENDPOINT = 'https://alloggiatiweb.poliziadistato.it/service/service.asmx';
 
-// ── Security: Rate limiting (in-memory, per-function instance) ──
+// ── Security: Rate limiting ──
 const rateLimits = {};
 function checkRateLimit(userId, maxPerHour = 60) {
   const now = Date.now();
@@ -31,7 +31,6 @@ exports.handler = async (event) => {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
-  // Auth check
   const authHeader = event.headers.authorization || event.headers.Authorization;
   if (!authHeader?.startsWith('Bearer ')) {
     return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
@@ -41,7 +40,6 @@ exports.handler = async (event) => {
     return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
   }
 
-  // Rate limiting
   if (!checkRateLimit(user.id, 60)) {
     return { statusCode: 429, body: JSON.stringify({ error: 'Troppe richieste. Riprova tra qualche minuto.' }) };
   }
@@ -56,7 +54,6 @@ exports.handler = async (event) => {
   }
 
   try {
-    // 1. Recupera dati ospiti
     const { data: ospiti, error: ospErr } = await supabase
       .from('ospiti_check_in')
       .select('*, apartments(nome_appartamento)')
@@ -66,14 +63,12 @@ exports.handler = async (event) => {
       return { statusCode: 404, body: JSON.stringify({ error: 'Ospiti non trovati', detail: ospErr?.message }) };
     }
 
-    // 2. Verifica stesso appartamento
     const aptIds = [...new Set(ospiti.map(o => o.apartment_id))];
     if (aptIds.length > 1) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Tutti gli ospiti devono appartenere allo stesso appartamento' }) };
     }
     const apartmentId = aptIds[0];
 
-    // 3. Recupera collegamento appartamento → account
     const { data: link } = await supabase
       .from('apartment_alloggiati')
       .select('*, alloggiati_accounts(*)')
@@ -89,20 +84,17 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Account AlloggiatiWeb disattivato' }) };
     }
 
-    // ID appartamento sul portale AlloggiatiWeb (es. "000001")
-    const idAppartamento = String(link.id_appartamento_portale || '000001').padStart(6, '0');
-
-    // 4. Genera token
+    // Genera token
     const tokenResult = await soapGenerateToken(account.username, account.password_encrypted, account.wskey);
     if (tokenResult.error) {
       await supabase.from('alloggiati_accounts').update({ ultimo_errore: tokenResult.error }).eq('id', account.id);
       return { statusCode: 401, body: JSON.stringify({ error: 'Autenticazione AlloggiatiWeb fallita', detail: tokenResult.error }) };
     }
 
-    // 5. Costruisci tracciato record (168 caratteri per ospite)
+    // Costruisci tracciato record (168 caratteri)
     const schedine = ospiti.map(o => buildSchedina(o));
 
-    // 6. Validazione locale
+    // Validazione locale
     const validationErrors = [];
     ospiti.forEach((o) => {
       if (!o.sesso) validationErrors.push(`${o.nome} ${o.cognome}: sesso mancante`);
@@ -120,13 +112,12 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Dati incompleti', validationErrors }) };
     }
 
-    // 7. Invio SOAP con metodi GestioneAppartamenti
-    const soapAction = mode === 'send' ? 'GestioneAppartamenti_Send' : 'GestioneAppartamenti_Test';
-    const result = await soapSendOrTest(soapAction, account.username, tokenResult.token, schedine, idAppartamento);
+    // Invio SOAP
+    const soapAction = mode === 'send' ? 'Send' : 'Test';
+    const result = await soapSendOrTest(soapAction, account.username, tokenResult.token, schedine);
 
     const esito = result.error ? 'ERRORE' : (result.schedineValide === ospiti.length ? 'OK' : 'PARZIALE');
 
-    // 8. Aggiorna stato ospiti
     if (mode === 'send' && !result.error) {
       await supabase
         .from('ospiti_check_in')
@@ -151,7 +142,6 @@ exports.handler = async (event) => {
         .in('id', ospiti_ids);
     }
 
-    // 9. Log invio
     await supabase.from('alloggiati_invii').insert({
       apartment_id: apartmentId,
       alloggiati_account_id: account.id,
@@ -162,12 +152,11 @@ exports.handler = async (event) => {
       esito,
       errore_dettaglio: result.error || (result.dettaglio?.length ? JSON.stringify(result.dettaglio) : null),
       ricevuta_id: result.ricevutaId || null,
-      payload_inviato: JSON.stringify({ action: soapAction, num_schedine: schedine.length, apartment: apartmentId, idAppartamento }),
+      payload_inviato: JSON.stringify({ action: soapAction, num_schedine: schedine.length, apartment: apartmentId }),
       risposta_ricevuta: maskSensitiveData(result.rawResponse?.substring(0, 2000) || ''),
       inviato_da: user.email,
     });
 
-    // Audit
     await supabase.from('audit_log').insert({
       user_email: user.email,
       action: mode === 'send' ? 'SEND_ALLOGGIATI' : 'TEST_ALLOGGIATI',
@@ -187,7 +176,6 @@ exports.handler = async (event) => {
         dettaglio: result.dettaglio || [],
         account: account.nome_account,
         questura: account.questura,
-        idAppartamento,
       })
     };
 
@@ -198,18 +186,16 @@ exports.handler = async (event) => {
 };
 
 
-// ──────────────────────────────────────────────────────
-// SOAP: GenerateToken
-// ──────────────────────────────────────────────────────
+// ── SOAP: GenerateToken ──
 async function soapGenerateToken(utente, password, wskey) {
   const xml = `<?xml version="1.0" encoding="utf-8"?>
-<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:all="AlloggiatiService">
   <soap:Body>
-    <GenerateToken xmlns="AlloggiatiService">
-      <Utente>${escXml(utente)}</Utente>
-      <Password>${escXml(password)}</Password>
-      <WsKey>${escXml(wskey)}</WsKey>
-    </GenerateToken>
+    <all:GenerateToken>
+      <all:Utente>${escXml(utente)}</all:Utente>
+      <all:Password>${escXml(password)}</all:Password>
+      <all:WsKey>${escXml(wskey)}</all:WsKey>
+    </all:GenerateToken>
   </soap:Body>
 </soap:Envelope>`;
 
@@ -223,7 +209,7 @@ async function soapGenerateToken(utente, password, wskey) {
   });
 
   const text = await res.text();
-  console.log('GenerateToken response:', maskSensitiveData(text.substring(0, 500)));
+  console.log('GenerateToken response:', maskSensitiveData(text.substring(0, 800)));
 
   const tokenMatch = text.match(/<token>([\s\S]*?)<\/token>/);
   const errorMatch = text.match(/<ErroreDettaglio>([\s\S]*?)<\/ErroreDettaglio>/);
@@ -231,15 +217,12 @@ async function soapGenerateToken(utente, password, wskey) {
   if (tokenMatch?.[1]?.trim()) {
     return { token: tokenMatch[1].trim(), error: null };
   }
-
   return { token: null, error: errorMatch?.[1]?.trim() || 'Token non ricevuto' };
 }
 
 
-// ──────────────────────────────────────────────────────
-// SOAP: GestioneAppartamenti_Test / GestioneAppartamenti_Send
-// ──────────────────────────────────────────────────────
-async function soapSendOrTest(action, utente, token, schedine, idAppartamento) {
+// ── SOAP: Test / Send ──
+async function soapSendOrTest(action, utente, token, schedine) {
   const schedineXml = schedine.map(s => `<all:string>${escXml(s)}</all:string>`).join('\n        ');
 
   const xml = `<?xml version="1.0" encoding="utf-8"?>
@@ -251,7 +234,6 @@ async function soapSendOrTest(action, utente, token, schedine, idAppartamento) {
       <all:ElencoSchedine>
         ${schedineXml}
       </all:ElencoSchedine>
-      <all:IdAppartamento>${escXml(idAppartamento)}</all:IdAppartamento>
     </all:${action}>
   </soap:Body>
 </soap:Envelope>`;
@@ -270,7 +252,6 @@ async function soapSendOrTest(action, utente, token, schedine, idAppartamento) {
 
   const valideMatch = text.match(/<SchedineValide>(\d+)<\/SchedineValide>/);
   const errorMatches = text.match(/<ErroreDettaglio>([\s\S]*?)<\/ErroreDettaglio>/g);
-  const mainErrorMatch = text.match(/<ErroreDettaglio>([\s\S]*?)<\/ErroreDettaglio>/);
 
   const dettaglio = [];
   if (errorMatches) {
@@ -281,117 +262,49 @@ async function soapSendOrTest(action, utente, token, schedine, idAppartamento) {
   }
 
   const schedineValide = valideMatch ? parseInt(valideMatch[1]) : 0;
-  const error = mainErrorMatch?.[1]?.trim() || null;
+  const error = dettaglio.find(d => d.length > 0) || null;
 
-  return {
-    schedineValide,
-    error: error || null,
-    dettaglio,
-    rawResponse: text,
-  };
+  return { schedineValide, error: error || null, dettaglio, rawResponse: text };
 }
 
 
-// ──────────────────────────────────────────────────────
-// Tracciato record: 168 caratteri per ospite
-// (Tabella 1 del manuale WS_ALLOGGIATI Rev.01)
-//
-//  Pos  Len  Campo
-//  0    2    Tipo alloggiato (16/17/18/19/20)
-//  2    10   Data arrivo (gg/mm/aaaa)
-//  12   2    Permanenza (gg, max 30)
-//  14   50   Cognome
-//  64   30   Nome
-//  94   1    Sesso (1=M, 2=F)
-//  95   10   Data nascita (gg/mm/aaaa)
-//  105  9    Comune nascita (codice ISTAT, o 9 spazi se estero)
-//  114  2    Provincia nascita (sigla, o 2 spazi se estero)
-//  116  9    Stato nascita (codice 9 char)
-//  125  9    Cittadinanza (codice 9 char)
-//  --- Solo tipo 16/17/18 ---
-//  134  5    Tipo documento (IDENT/PASOR/PATEN ecc)
-//  139  20   Numero documento
-//  159  9    Luogo rilascio doc (codice comune o stato, 9 char)
-//  --- Tipo 19/20: campi 134-167 = 34 spazi ---
-//  TOTALE: 168 caratteri
-// ──────────────────────────────────────────────────────
+// ── Tracciato record: 168 caratteri ──
 function buildSchedina(ospite) {
-  // Tipo alloggiato (2 chars)
   const tipo = String(ospite.tipo_alloggiato || 16).padStart(2, '0');
-
-  // Data arrivo (10 chars)
   const dataArr = formatDateIT(ospite.data_checkin);
-
-  // Permanenza (2 chars, max 30)
   const perm = calcPermanenza(ospite.data_checkin, ospite.data_checkout);
-
-  // Cognome (50 chars)
   const cognome = pad(cleanStr(ospite.cognome || '').toUpperCase(), 50);
-
-  // Nome (30 chars)
   const nome = pad(cleanStr(ospite.nome || '').toUpperCase(), 30);
-
-  // Sesso (1 char: 1=M, 2=F)
   const sesso = ospite.sesso === 'M' ? '1' : ospite.sesso === 'F' ? '2' : '1';
-
-  // Data nascita (10 chars)
   const dataNascita = formatDateIT(ospite.data_nascita);
-
-  // Cittadinanza italiana = codice 100000100
   const isItaliano = ospite.cittadinanza_codice === '100000100';
-
-  // Comune nascita (9 chars) - solo se italiano
   const comuneNascita = isItaliano && ospite.luogo_nascita_codice
-    ? pad(ospite.luogo_nascita_codice.trim(), 9)
-    : pad('', 9);
-
-  // Provincia nascita (2 chars) - solo se italiano
+    ? pad(ospite.luogo_nascita_codice.trim(), 9) : pad('', 9);
   const provNascita = isItaliano && ospite.luogo_nascita
-    ? pad(extractProv(ospite.luogo_nascita), 2)
-    : pad('', 2);
-
-  // Stato nascita (9 chars)
+    ? pad(extractProv(ospite.luogo_nascita), 2) : pad('', 2);
   const statoNascita = pad(ospite.cittadinanza_codice || '100000100', 9);
-
-  // Cittadinanza (9 chars)
   const cittadinanza = pad(ospite.cittadinanza_codice || '100000100', 9);
 
-  // Parte comune: 2+10+2+50+30+1+10+9+2+9+9 = 134 chars
   let riga = tipo + dataArr + perm + cognome + nome + sesso + dataNascita +
              comuneNascita + provNascita + statoNascita + cittadinanza;
 
   const tipoNum = parseInt(tipo);
-
   if ([16, 17, 18].includes(tipoNum)) {
-    // Tipo documento (5 chars): IDENT, PASOR, PATEN, ecc.
     const tipoDoc = pad(ospite.tipo_documento_codice || 'IDENT', 5);
-
-    // Numero documento (20 chars)
     const numDoc = pad(cleanStr(ospite.numero_documento || '').toUpperCase(), 20);
-
-    // Luogo rilascio documento (9 chars): codice comune o stato
     const luogoRil = ospite.luogo_rilascio_codice
-      ? pad(ospite.luogo_rilascio_codice.trim(), 9)
-      : pad('', 9);
-
-    // 134 + 5 + 20 + 9 = 168
+      ? pad(ospite.luogo_rilascio_codice.trim(), 9) : pad('', 9);
     riga += tipoDoc + numDoc + luogoRil;
   } else {
-    // Tipo 19/20 (familiari/membri): 34 spazi
     riga += pad('', 34);
   }
 
-  // Verifica lunghezza
-  if (riga.length !== 168) {
-    console.warn(`Schedina lunghezza errata: ${riga.length} (attesa 168) per ${ospite.nome} ${ospite.cognome}`);
-  }
-
+  console.log(`Schedina ${ospite.cognome}: ${riga.length} chars`);
   return riga;
 }
 
 
 // ── Utilities ──
-
 function pad(str, len) {
   const s = String(str || '');
   if (s.length >= len) return s.substring(0, len);
@@ -401,13 +314,13 @@ function pad(str, len) {
 function cleanStr(s) {
   return (s || '')
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // rimuovi accenti
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^\w\s\-']/g, '')
     .trim();
 }
 
 function formatDateIT(dateStr) {
-  if (!dateStr) return '          '; // 10 spazi
+  if (!dateStr) return '          ';
   const d = new Date(dateStr + 'T12:00:00');
   const gg = String(d.getDate()).padStart(2, '0');
   const mm = String(d.getMonth() + 1).padStart(2, '0');
