@@ -97,7 +97,7 @@ exports.handler = async (event) => {
       })
     };
   }
-  const tipoDocumento = 'invoice';
+  const tipoDocumento = body.document_type || 'invoice';
 
   const ivaPerc = Number(ospite.iva_percentuale ?? 22);
   const vatId = VAT_IDS[ivaPerc];
@@ -127,7 +127,7 @@ exports.handler = async (event) => {
 
   const today = new Date().toISOString().split('T')[0];
   const nomeApp = ospite.apartments?.nome_appartamento ?? 'Appartamento';
-  const paymentStatus = ospite.payment_status === 'not_paid' ? 'not_paid' : 'paid';
+  const paymentStatus = body.payment_status === 'not_paid' ? 'not_paid' : 'paid';
 const PAYMENT_ACCOUNT_ID = process.env.FIC_PAYMENT_ACCOUNT_ID;
 
   const ficPayload = {
@@ -138,9 +138,9 @@ const PAYMENT_ACCOUNT_ID = process.env.FIC_PAYMENT_ACCOUNT_ID;
       language: { code: 'it', name: 'Italiano' },
       entity: buildClient(ospite, isAzienda),
       use_gross_prices: true,
-      items_list: [
+            items_list: [
         {
-          name: `Soggiorno presso ${nomeApp}`,
+          name: `Soggiorno`,
           description: `Check-in: ${ospite.data_checkin ?? '-'} | Check-out: ${ospite.data_checkout ?? '-'}`,
           qty: 1,
           gross_price: importoTotale,
@@ -148,14 +148,17 @@ const PAYMENT_ACCOUNT_ID = process.env.FIC_PAYMENT_ACCOUNT_ID;
           discount: 0,
           order: 1
         }
+  ],
+         payments_list: [
+        {
+          amount: importoTotale,
+          due_date: today,
+          status: paymentStatus,
+          payment_account: {
+            id: Number(PAYMENT_ACCOUNT_ID)
+          }
+        }
       ],
-            payments_list: [
-  {
-    amount: importoTotale,
-    due_date: today,
-    status: 'not_paid'
-  }
-],
       gross_worth: importoTotale,
       net_worth: imponibile,
       is_marked: false,
@@ -181,7 +184,7 @@ const PAYMENT_ACCOUNT_ID = process.env.FIC_PAYMENT_ACCOUNT_ID;
       console.error('FiC API error:', JSON.stringify(ficResponse));
       return {
         statusCode: res.status,
-        body: JSON.stringify({ error: 'Errore FiC API', detail: ficResponse })
+        body: JSON.stringify({ error: 'Errore FiC API', detail: ficResponse, tipoDocumento })
       };
     }
   } catch (e) {
@@ -209,6 +212,7 @@ const PAYMENT_ACCOUNT_ID = process.env.FIC_PAYMENT_ACCOUNT_ID;
         nome_cliente: ospite.nome,
         cognome_cliente: ospite.cognome,
         stato: 'BOZZA_CREATA',
+        payment_status: paymentStatus,
         link_fatture_cloud: ficDocUrl ?? `https://secure.fattureincloud.it/issued_documents/${ficDocId}`
       },
       {

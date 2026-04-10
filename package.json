@@ -2,6 +2,6 @@
   "name": "fatture-impatto",
   "version": "1.0.0",
   "dependencies": {
-    "@supabase/supabase-js": "^2.49.4"
+    "@supabase/supabase-js": "^2.102.1"
   }
 }

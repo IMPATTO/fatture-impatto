@@ -102,6 +102,11 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .success-screen p{font-size:13px;color:var(--text2);line-height:1.7;max-width:340px;margin:0 auto;}
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface3);border:1px solid var(--border2);color:var(--text);padding:10px 18px;border-radius:var(--radius-sm);font-size:12px;font-family:'DM Mono',monospace;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);z-index:999;white-space:nowrap;max-width:90vw;}
 .toast.show{transform:translateX(-50%) translateY(0);}
+.privacy-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:14px;display:flex;align-items:flex-start;gap:12px;}
+.privacy-block input[type="checkbox"]{width:16px;height:16px;margin-top:2px;accent-color:var(--accent);flex-shrink:0;cursor:pointer;}
+.privacy-block label{font-size:12px;color:var(--text2);line-height:1.55;cursor:pointer;}
+.privacy-block label a{color:var(--accent);text-decoration:underline;}
+.privacy-block.err{border-color:var(--red-border);background:var(--red-bg);}
 @media(max-width:500px){
   .header{padding:16px 14px;}
   .main{padding:28px 14px 0;}
@@ -109,12 +114,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
   .field-row,.field-row-3{grid-template-columns:1fr;}
   .step-label{display:none;}
 }
-/* RTL per arabo */
-[dir="rtl"] .header{flex-direction:row-reverse;}
-[dir="rtl"] .steps{flex-direction:row-reverse;}
-[dir="rtl"] .review-row{flex-direction:row-reverse;}
-[dir="rtl"] .field input,[dir="rtl"] .field select{text-align:right;}
-[dir="rtl"] .type-btn{text-align:right;}
 </style>
 </head>
 <body>
@@ -131,9 +130,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
     <button class="lang-btn" onclick="setLang('fr')">FR</button>
     <button class="lang-btn" onclick="setLang('es')">ES</button>
     <button class="lang-btn" onclick="setLang('ru')">RU</button>
-    <button class="lang-btn" onclick="setLang('uk')">UK</button>
-    <button class="lang-btn" onclick="setLang('zh')">中文</button>
-    <button class="lang-btn" onclick="setLang('ar')">AR</button>
   </div>
 </div>
 
@@ -234,115 +230,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
             <input type="text" id="cf" placeholder="RSSMRA80A01H501Z" oninput="markFilled(this)" style="font-family:'DM Mono',monospace;letter-spacing:0.05em;text-transform:uppercase" autocomplete="off">
             <div class="cf-warning" id="cfWarning">&#9888; <span data-t="cfWarning">Il codice fiscale non sembra valido. Correggi o prosegui se sei sicuro.</span></div>
           </div>
-          <!-- ── Campi schedina alloggiati ── -->
-          <div class="field-row">
-            <div class="field">
-              <label><span data-t="sessoLabel">Sesso</span> <span class="req">*</span></label>
-              <select id="sesso" oninput="markFilled(this)">
-                <option value="">—</option>
-                <option value="M">M</option>
-                <option value="F">F</option>
-              </select>
-            </div>
-            <div class="field">
-              <label><span data-t="dataNascitaLabel">Data di nascita</span> <span class="req">*</span></label>
-              <input type="date" id="dataNascita" oninput="markFilled(this)" autocomplete="bday">
-            </div>
-          </div>
-          <div class="field-row">
-            <div class="field">
-              <label><span data-t="luogoNascitaLabel">Luogo di nascita</span> <span class="req">*</span></label>
-              <input type="text" id="luogoNascita" placeholder="Es. Roma, Parigi, Berlino" oninput="markFilled(this)" autocomplete="off">
-            </div>
-            <div class="field">
-              <label><span data-t="cittadinanzaLabel">Cittadinanza</span> <span class="req">*</span></label>
-              <select id="cittadinanza" oninput="markFilled(this)">
-                <option value="Italia">Italia</option>
-                <option value="Germania">Germania</option>
-                <option value="Francia">Francia</option>
-                <option value="Spagna">Spagna</option>
-                <option value="Austria">Austria</option>
-                <option value="Svizzera">Svizzera</option>
-                <option value="Paesi Bassi">Paesi Bassi</option>
-                <option value="Belgio">Belgio</option>
-                <option value="Polonia">Polonia</option>
-                <option value="Rep. Ceca">Rep. Ceca</option>
-                <option value="Romania">Romania</option>
-                <option value="Russia">Russia</option>
-                <option value="Ucraina">Ucraina</option>
-                <option value="Regno Unito">Regno Unito</option>
-                <option value="Portogallo">Portogallo</option>
-                <option value="Grecia">Grecia</option>
-                <option value="Ungheria">Ungheria</option>
-                <option value="Croazia">Croazia</option>
-                <option value="Bulgaria">Bulgaria</option>
-                <option value="Serbia">Serbia</option>
-                <option value="Albania">Albania</option>
-                <option value="Turchia">Turchia</option>
-                <option value="Norvegia">Norvegia</option>
-                <option value="Svezia">Svezia</option>
-                <option value="Danimarca">Danimarca</option>
-                <option value="Finlandia">Finlandia</option>
-                <option value="Irlanda">Irlanda</option>
-                <option value="USA">Stati Uniti</option>
-                <option value="Canada">Canada</option>
-                <option value="Brasile">Brasile</option>
-                <option value="Argentina">Argentina</option>
-                <option value="Cile">Cile</option>
-                <option value="Colombia">Colombia</option>
-                <option value="Messico">Messico</option>
-                <option value="Cina">Cina</option>
-                <option value="Giappone">Giappone</option>
-                <option value="India">India</option>
-                <option value="Corea del Sud">Corea del Sud</option>
-                <option value="Filippine">Filippine</option>
-                <option value="Vietnam">Vietnam</option>
-                <option value="Thailandia">Thailandia</option>
-                <option value="Indonesia">Indonesia</option>
-                <option value="Bangladesh">Bangladesh</option>
-                <option value="Pakistan">Pakistan</option>
-                <option value="Sri Lanka">Sri Lanka</option>
-                <option value="Israele">Israele</option>
-                <option value="Emirati Arabi Uniti">Emirati Arabi Uniti</option>
-                <option value="Marocco">Marocco</option>
-                <option value="Egitto">Egitto</option>
-                <option value="Tunisia">Tunisia</option>
-                <option value="Nigeria">Nigeria</option>
-                <option value="Senegal">Senegal</option>
-                <option value="Etiopia">Etiopia</option>
-                <option value="Kenya">Kenya</option>
-                <option value="Sudafrica">Sudafrica</option>
-                <option value="Australia">Australia</option>
-                <option value="Nuova Zelanda">Nuova Zelanda</option>
-                <option value="Altro">Altro…</option>
-              </select>
-            </div>
-          </div>
-          <div class="field" id="cittadinanzaAltroField" style="display:none">
-            <label><span data-t="cittadinanzaAltroLabel">Specifica cittadinanza</span> <span class="req">*</span></label>
-            <input type="text" id="cittadinanzaAltro" placeholder="Es. Marocco, Egitto..." oninput="markFilled(this)">
-          </div>
-          <div class="field-row">
-            <div class="field">
-              <label><span data-t="tipoDocLabel">Tipo documento</span> <span class="req">*</span></label>
-              <select id="tipoDoc" oninput="markFilled(this)">
-                <option value="">—</option>
-                <option value="IDENT">Carta d'identita</option>
-                <option value="PASOR">Passaporto</option>
-                <option value="PATEN">Patente</option>
-                <option value="PERMESSO">Permesso di soggiorno</option>
-                <option value="ALTRO">Altro</option>
-              </select>
-            </div>
-            <div class="field">
-              <label><span data-t="numDocLabel">Numero documento</span> <span class="req">*</span></label>
-              <input type="text" id="numDoc" placeholder="Es. AA1234567" oninput="markFilled(this)" style="font-family:'DM Mono',monospace;text-transform:uppercase" autocomplete="off">
-            </div>
-          </div>
-          <div class="field">
-            <label><span data-t="luogoRilascioLabel">Luogo rilascio documento</span> <span class="req">*</span></label>
-            <input type="text" id="luogoRilascio" placeholder="Es. Roma, Milano, Comune di..." oninput="markFilled(this)" autocomplete="off">
-          </div>
         </div>
       </div>
       <div class="card" id="indirizzoCard">
@@ -409,11 +296,45 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
       </div>
     </div>
 
-    <!-- FOTO DOCUMENTO — step 1, dopo i campi documento -->
-    <div class="card" id="fotoDocCard">
+    <div class="card">
+      <div class="card-header"><span class="card-title" data-t="soggiornoLabel">SOGGIORNO</span></div>
+      <div class="card-body">
+        <div class="field-row">
+          <div class="field">
+            <label><span data-t="checkin">Check-in</span> <span class="req">*</span></label>
+            <input type="date" id="checkin">
+          </div>
+          <div class="field">
+            <label><span data-t="checkout">Check-out</span> <span class="req">*</span></label>
+            <input type="date" id="checkout">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="privacy-block" id="privacyBlock">
+      <input type="checkbox" id="privacyCheck" onchange="onPrivacyChange()">
+      <label for="privacyCheck" id="privacyLabel" data-t="privacyLabel">Ho letto e compreso l'<a href="privacy-policy.html" target="_blank" rel="noopener">informativa sul trattamento dei dati personali</a> ai sensi dell'art. 13 GDPR. I miei dati saranno comunicati all'Autorità di Pubblica Sicurezza ai sensi dell'art. 109 TULPS.</label>
+    </div>
+    <button class="btn-primary" onclick="goToStep2()" data-t="continua">Continua</button>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="step-panel" id="panel2">
+    <div class="intro">
+      <h2 data-t="title2">Conferma<br><em>i tuoi dati</em></h2>
+      <p data-t="sub2">Controlla che tutto sia corretto.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title" data-t="riepilogoLabel">RIEPILOGO</span></div>
+      <div class="card-body"><div class="review-box" id="reviewBox"></div></div>
+    </div>
+
+    <div class="card">
       <div class="card-header">
         <span class="card-title" data-t="fotoLabel">FOTO DOCUMENTO</span>
-        <span class="card-opt">OPZIONALE — compila i campi automaticamente</span>
+        <span class="card-opt">OPZIONALE</span>
       </div>
       <div class="card-body">
         <div class="img-preview-small" id="imgPreviewSmall">
@@ -431,37 +352,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
           <span id="ocrMsg"></span>
         </div>
       </div>
-    </div>
-
-    <div class="card">
-      <div class="card-header"><span class="card-title" data-t="soggiornoLabel">SOGGIORNO</span></div>
-      <div class="card-body">
-        <div class="field-row">
-          <div class="field">
-            <label><span data-t="checkin">Check-in</span> <span class="req">*</span></label>
-            <input type="date" id="checkin">
-          </div>
-          <div class="field">
-            <label><span data-t="checkout">Check-out</span> <span class="req">*</span></label>
-            <input type="date" id="checkout">
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <button class="btn-primary" onclick="goToStep2()" data-t="continua">Continua</button>
-  </div>
-
-  <!-- STEP 2 -->
-  <div class="step-panel" id="panel2">
-    <div class="intro">
-      <h2 data-t="title2">Conferma<br><em>i tuoi dati</em></h2>
-      <p data-t="sub2">Controlla che tutto sia corretto.</p>
-    </div>
-
-    <div class="card">
-      <div class="card-header"><span class="card-title" data-t="riepilogoLabel">RIEPILOGO</span></div>
-      <div class="card-body"><div class="review-box" id="reviewBox"></div></div>
     </div>
 
     <button class="btn-primary" onclick="submitForm()" id="submitBtn" data-t="invia">Invia dati</button>
@@ -482,28 +372,27 @@ var SUPABASE_URL='https://tysxeikqbgebpfyblgeb.supabase.co';
 var SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5c3hlaWtxYmdlYnBmeWJsZ2ViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyODczODAsImV4cCI6MjA5MDg2MzM4MH0.yXmS2MFh47eRkCX2voemdBkK5m_tyJiKAFhfyp1YEbw';
 
 var T={
-  it:{step1:'DATI',step2:'CONFERMA',title1:'I tuoi dati<br><em>check-in</em>',sub1:'Compila i campi per completare il check-in.',title2:'Conferma<br><em>i tuoi dati</em>',sub2:'Controlla che tutto sia corretto.',tipoLabel:'TIPO SOGGETTO',privato:'Privato',privatoDesc:'CF / documento',azienda:'Azienda',aziendaDesc:'Fattura B2B / P.IVA',residenzaLabel:'PAESE DI RESIDENZA',paese:'Paese',countryNotice:'Per ospiti non residenti in Italia, codice fiscale e indirizzo non sono obbligatori.',anagraficaLabel:'DATI ANAGRAFICI',nome:'Nome',cognome:'Cognome',email:'Email',telefono:'Telefono',cf:'Codice fiscale',cfWarning:'Il codice fiscale non sembra valido. Correggi o prosegui se sei sicuro.',indirizzoLabel:'INDIRIZZO DI RESIDENZA',indirizzo:'Indirizzo',citta:'Citta',cap:'CAP',prov:'Prov.',aziendaLabel:'DATI AZIENDA',ragSoc:'Ragione sociale',piva:'Partita IVA',sdi:'Codice SDI',pecLabel:'PEC',indirizzoAzLabel:'Sede legale',soggiornoLabel:'SOGGIORNO',checkin:'Check-in',checkout:'Check-out',riepilogoLabel:'RIEPILOGO',fotoLabel:'FOTO DOCUMENTO',uploadTitle:'Aggiungi foto documento',uploadSub:"Carta d'identita - Passaporto - Patente",continua:'Continua',indietro:'Indietro',invia:'Invia dati',ocrLoading:'Caricamento...',ocrOk:'Documento allegato',ocrErr:'Errore caricamento',successTitle:'Dati ricevuti',successMsg:"I tuoi dati sono stati inviati correttamente.<br>Riceverai a breve una email con le istruzioni per il check-in.<br><br>Grazie per aver scelto Il Lupo Affitta.",errRequired:'Compila tutti i campi obbligatori',errDate:'Inserisci le date di soggiorno',errSending:'Errore di invio - riprova',NOME:'NOME',EMAIL:'EMAIL',TELEFONO:'TELEFONO',CF:'CODICE FISCALE',INDIRIZZO:'INDIRIZZO',CHECKIN:'CHECK-IN',CHECKOUT:'CHECK-OUT',PAESE:'PAESE',RAGIONE:'RAGIONE SOCIALE',PIVA:'PARTITA IVA',SDI:'SDI',sessoLabel:'SESSO',dataNascitaLabel:'DATA DI NASCITA',luogoNascitaLabel:'LUOGO DI NASCITA',cittadinanzaLabel:'CITTADINANZA',cittadinanzaAltroLabel:'SPECIFICA CITTADINANZA',tipoDocLabel:'TIPO DOCUMENTO',numDocLabel:'NUMERO DOCUMENTO',luogoRilascioLabel:'LUOGO RILASCIO'},
-  en:{step1:'DATA',step2:'CONFIRM',title1:'Your fiscal<br><em>details</em>',sub1:'Fill in the fields to complete your check-in.',title2:'Confirm<br><em>your details</em>',sub2:'Make sure everything is correct.',tipoLabel:'SUBJECT TYPE',privato:'Private',privatoDesc:'Tax ID / document',azienda:'Company',aziendaDesc:'B2B invoice / VAT',residenzaLabel:'COUNTRY OF RESIDENCE',paese:'Country',countryNotice:'For guests not residing in Italy, tax code and address are not required.',anagraficaLabel:'PERSONAL DETAILS',nome:'First name',cognome:'Last name',email:'Email',telefono:'Phone',cf:'Tax code (Codice fiscale)',cfWarning:'The tax code does not appear valid. Please check or continue if sure.',indirizzoLabel:'HOME ADDRESS',indirizzo:'Address',citta:'City',cap:'Postal code',prov:'Prov.',aziendaLabel:'COMPANY DETAILS',ragSoc:'Company name',piva:'VAT number',sdi:'SDI code',pecLabel:'PEC email',indirizzoAzLabel:'Registered address',soggiornoLabel:'STAY',checkin:'Check-in',checkout:'Check-out',riepilogoLabel:'SUMMARY',fotoLabel:'DOCUMENT PHOTO',uploadTitle:'Add document photo',uploadSub:'ID card - Passport - Driving licence',continua:'Continue',indietro:'Back',invia:'Submit',ocrLoading:'Uploading...',ocrOk:'Document attached',ocrErr:'Upload error',successTitle:'Data received',successMsg:"Your details have been submitted.<br>You will receive an email shortly with check-in instructions.<br><br>Thank you for choosing Il Lupo Affitta.",errRequired:'Please fill in all required fields',errDate:'Please enter your stay dates',errSending:'Submission error - please try again',NOME:'NAME',EMAIL:'EMAIL',TELEFONO:'PHONE',CF:'TAX CODE',INDIRIZZO:'ADDRESS',CHECKIN:'CHECK-IN',CHECKOUT:'CHECK-OUT',PAESE:'COUNTRY',RAGIONE:'COMPANY',PIVA:'VAT NUMBER',SDI:'SDI CODE',sessoLabel:'SEX',dataNascitaLabel:'DATE OF BIRTH',luogoNascitaLabel:'PLACE OF BIRTH',cittadinanzaLabel:'NATIONALITY',cittadinanzaAltroLabel:'SPECIFY NATIONALITY',tipoDocLabel:'DOCUMENT TYPE',numDocLabel:'DOCUMENT NUMBER',luogoRilascioLabel:'PLACE OF ISSUE'},
-  de:{step1:'DATEN',step2:'BESTATIGUNG',title1:'Ihr<br><em>Check-in</em>',sub1:'Bitte fullen Sie die Felder aus, um den Check-in abzuschliessen.',title2:'Angaben<br><em>bestatigen</em>',sub2:'Stellen Sie sicher, dass alles korrekt ist.',tipoLabel:'ART DES SUBJEKTS',privato:'Privatperson',privatoDesc:'Steuer-ID / Dok.',azienda:'Unternehmen',aziendaDesc:'B2B-Rechnung / USt-ID',residenzaLabel:'WOHNSITZLAND',paese:'Land',countryNotice:'Fur Gaste ausserhalb Italiens sind Steuernummer und Adresse nicht erforderlich.',anagraficaLabel:'PERSONLICHE DATEN',nome:'Vorname',cognome:'Nachname',email:'E-Mail',telefono:'Telefon',cf:'Steuernummer',cfWarning:'Die Steuernummer scheint ungultig. Prufen Sie sie oder fahren Sie fort.',indirizzoLabel:'HEIMATADRESSE',indirizzo:'Adresse',citta:'Stadt',cap:'PLZ',prov:'Prov.',aziendaLabel:'UNTERNEHMENSDATEN',ragSoc:'Firmenname',piva:'USt-ID',sdi:'SDI-Code',pecLabel:'PEC',indirizzoAzLabel:'Geschaftssitz',soggiornoLabel:'AUFENTHALT',checkin:'Check-in',checkout:'Check-out',riepilogoLabel:'ZUSAMMENFASSUNG',fotoLabel:'DOKUMENTFOTO',uploadTitle:'Dokumentfoto hinzufugen',uploadSub:'Personalausweis - Reisepass - Fuhrerschein',continua:'Weiter',indietro:'Zuruck',invia:'Absenden',ocrLoading:'Wird hochgeladen...',ocrOk:'Dokument angehangt',ocrErr:'Fehler beim Hochladen',successTitle:'Daten erhalten',successMsg:'Ihre Angaben wurden ubermittelt.<br>Sie erhalten eine E-Mail mit Check-in-Anweisungen.<br><br>Vielen Dank.',errRequired:'Bitte alle Pflichtfelder ausfullen',errDate:'Bitte Aufenthaltsdaten eingeben',errSending:'Ubermittlungsfehler - erneut versuchen',NOME:'NAME',EMAIL:'E-MAIL',TELEFONO:'TELEFON',CF:'STEUERNUMMER',INDIRIZZO:'ADRESSE',CHECKIN:'CHECK-IN',CHECKOUT:'CHECK-OUT',PAESE:'LAND',RAGIONE:'FIRMA',PIVA:'UST-ID',SDI:'SDI-CODE',sessoLabel:'GESCHLECHT',dataNascitaLabel:'GEBURTSDATUM',luogoNascitaLabel:'GEBURTSORT',cittadinanzaLabel:'STAATSANGEHORIGKEIT',cittadinanzaAltroLabel:'STAATSANGEHORIGKEIT ANGEBEN',tipoDocLabel:'DOKUMENTTYP',numDocLabel:'DOKUMENTNUMMER',luogoRilascioLabel:'AUSSTELLUNGSORT'},
-  fr:{step1:'DONNEES',step2:'CONFIRMATION',title1:'Votre<br><em>check-in</em>',sub1:'Remplissez les champs pour finaliser votre check-in.',title2:'Confirmez<br><em>vos donnees</em>',sub2:'Assurez-vous que tout est correct.',tipoLabel:'TYPE DE SUJET',privato:'Particulier',privatoDesc:'Code fiscal / doc.',azienda:'Entreprise',aziendaDesc:'Facture B2B / TVA',residenzaLabel:'PAYS DE RESIDENCE',paese:'Pays',countryNotice:"Pour les clients ne residant pas en Italie, le code fiscal et l'adresse ne sont pas obligatoires.",anagraficaLabel:'DONNEES PERSONNELLES',nome:'Prenom',cognome:'Nom',email:'Email',telefono:'Telephone',cf:'Code fiscal',cfWarning:'Le code fiscal ne semble pas valide. Verifiez ou continuez.',indirizzoLabel:'ADRESSE DE RESIDENCE',indirizzo:'Adresse',citta:'Ville',cap:'Code postal',prov:'Prov.',aziendaLabel:"DONNEES D'ENTREPRISE",ragSoc:'Raison sociale',piva:'Numero TVA',sdi:'Code SDI',pecLabel:'PEC',indirizzoAzLabel:'Siege social',soggiornoLabel:'SEJOUR',checkin:'Arrivee',checkout:'Depart',riepilogoLabel:'RECAPITULATIF',fotoLabel:'PHOTO DU DOCUMENT',uploadTitle:'Ajouter photo document',uploadSub:"Carte d'identite - Passeport - Permis",continua:'Continuer',indietro:'Retour',invia:'Envoyer',ocrLoading:'Chargement...',ocrOk:'Document joint',ocrErr:'Erreur de chargement',successTitle:'Donnees recues',successMsg:'Vos donnees ont ete soumises.<br>Vous recevrez un email avec les instructions.<br><br>Merci.',errRequired:'Veuillez remplir tous les champs obligatoires',errDate:'Veuillez saisir les dates',errSending:"Erreur d'envoi - reessayez",NOME:'PRENOM / NOM',EMAIL:'EMAIL',TELEFONO:'TELEPHONE',CF:'CODE FISCAL',INDIRIZZO:'ADRESSE',CHECKIN:'ARRIVEE',CHECKOUT:'DEPART',PAESE:'PAYS',RAGIONE:'RAISON SOCIALE',PIVA:'TVA',SDI:'CODE SDI',sessoLabel:'SEXE',dataNascitaLabel:'DATE DE NAISSANCE',luogoNascitaLabel:'LIEU DE NAISSANCE',cittadinanzaLabel:'NATIONALITE',cittadinanzaAltroLabel:'PRECISER LA NATIONALITE',tipoDocLabel:'TYPE DE DOCUMENT',numDocLabel:'NUMERO DE DOCUMENT',luogoRilascioLabel:'LIEU DE DELIVRANCE'},
-  es:{step1:'DATOS',step2:'CONFIRMACION',title1:'Su<br><em>check-in</em>',sub1:'Complete los campos para finalizar su check-in.',title2:'Confirme<br><em>sus datos</em>',sub2:'Asegurese de que todo sea correcto.',tipoLabel:'TIPO DE SUJETO',privato:'Particular',privatoDesc:'NIF / documento',azienda:'Empresa',aziendaDesc:'Factura B2B / IVA',residenzaLabel:'PAIS DE RESIDENCIA',paese:'Pais',countryNotice:'Para huespedes no residentes en Italia, el codigo fiscal y la direccion no son obligatorios.',anagraficaLabel:'DATOS PERSONALES',nome:'Nombre',cognome:'Apellido',email:'Email',telefono:'Telefono',cf:'Codigo fiscal',cfWarning:'El codigo fiscal no parece valido. Verifique o continue.',indirizzoLabel:'DIRECCION DE RESIDENCIA',indirizzo:'Direccion',citta:'Ciudad',cap:'Codigo postal',prov:'Prov.',aziendaLabel:'DATOS DE EMPRESA',ragSoc:'Razon social',piva:'Numero IVA',sdi:'Codigo SDI',pecLabel:'PEC',indirizzoAzLabel:'Domicilio social',soggiornoLabel:'ESTANCIA',checkin:'Llegada',checkout:'Salida',riepilogoLabel:'RESUMEN',fotoLabel:'FOTO DEL DOCUMENTO',uploadTitle:'Anadir foto documento',uploadSub:'DNI - Pasaporte - Carne de conducir',continua:'Continuar',indietro:'Atras',invia:'Enviar',ocrLoading:'Cargando...',ocrOk:'Documento adjunto',ocrErr:'Error al cargar',successTitle:'Datos recibidos',successMsg:'Sus datos han sido enviados.<br>Recibira un email con las instrucciones.<br><br>Gracias.',errRequired:'Complete todos los campos obligatorios',errDate:'Introduzca las fechas de estancia',errSending:'Error de envio - intentelo de nuevo',NOME:'NOMBRE',EMAIL:'EMAIL',TELEFONO:'TELEFONO',CF:'CODIGO FISCAL',INDIRIZZO:'DIRECCION',CHECKIN:'LLEGADA',CHECKOUT:'SALIDA',PAESE:'PAIS',RAGIONE:'RAZON SOCIAL',PIVA:'IVA',SDI:'SDI',sessoLabel:'SEXO',dataNascitaLabel:'FECHA DE NACIMIENTO',luogoNascitaLabel:'LUGAR DE NACIMIENTO',cittadinanzaLabel:'NACIONALIDAD',cittadinanzaAltroLabel:'INDICAR NACIONALIDAD',tipoDocLabel:'TIPO DE DOCUMENTO',numDocLabel:'NUMERO DE DOCUMENTO',luogoRilascioLabel:'LUGAR DE EXPEDICION'},
-  ru:{step1:'DANNYE',step2:'PODTVERZHDENIE',title1:'Vash<br><em>chek-in</em>',sub1:'Zapolnite polya dlya zaversheniya registratsii.',title2:'Podtverdite<br><em>dannye</em>',sub2:'Ubedites, chto vse verno.',tipoLabel:'TIP SUBEKTA',privato:'Fizlitso',privatoDesc:'INN / dokument',azienda:'Yurlitso',aziendaDesc:'B2B schet / NDS',residenzaLabel:'STRANA PROZHIVANIYA',paese:'Strana',countryNotice:'Dlya gostey ne iz Italii nalogovyy kod i adres ne obyazatelny.',anagraficaLabel:'LICHNYE DANNYE',nome:'Imya',cognome:'Familiya',email:'Email',telefono:'Telefon',cf:'Nalogovyy kod',cfWarning:'Nalogovyy kod kazhetsya nedeystvitelnym. Proverte ili prodolzhite.',indirizzoLabel:'ADRES PROZHIVANIYA',indirizzo:'Adres',citta:'Gorod',cap:'Indeks',prov:'Provinciya',aziendaLabel:'DANNYE KOMPANII',ragSoc:'Nazvanie',piva:'NDS nomer',sdi:'Kod SDI',pecLabel:'PEC',indirizzoAzLabel:'Yur. adres',soggiornoLabel:'PROZHIVANIE',checkin:'Vselenie',checkout:'Vyselenie',riepilogoLabel:'SVODNAYA',fotoLabel:'FOTO DOKUMENTA',uploadTitle:'Dobavit foto dokumenta',uploadSub:'Pasport - Udostoverenie lichnosti',continua:'Dalee',indietro:'Nazad',invia:'Otpravit',ocrLoading:'Zagruzka...',ocrOk:'Dokument prikreplyon',ocrErr:'Oshibka zagruzki',successTitle:'Dannye polucheny',successMsg:'Vashi dannye uspeshno otpravleny.<br>Skoro vy poluchite email s instruktsiyami.<br><br>Spasibo.',errRequired:'Zapolnite vse obyazatelnye polya',errDate:'Vvedite daty prozhivaniya',errSending:'Oshibka otpravki - povtorite',NOME:'IMYA / FAMILIYA',EMAIL:'EMAIL',TELEFONO:'TELEFON',CF:'NAL. KOD',INDIRIZZO:'ADRES',CHECKIN:'VSELENIE',CHECKOUT:'VYSELENIE',PAESE:'STRANA',RAGIONE:'KOMPANIYA',PIVA:'NDS',SDI:'KOD SDI',sessoLabel:'POL',dataNascitaLabel:'DATA ROZHDENIYA',luogoNascitaLabel:'MESTO ROZHDENIYA',cittadinanzaLabel:'GRAZHDANSTVO',cittadinanzaAltroLabel:'UKAZAT GRAZHDANSTVO',tipoDocLabel:'TIP DOKUMENTA',numDocLabel:'NOMER DOKUMENTA',luogoRilascioLabel:'MESTO VYDACHI'},
-  uk:{step1:'DANI',step2:'PIDTVERDZHENNYA',title1:'Vash<br><em>chek-in</em>',sub1:'Zaповніть поля для завершення реєстрації.',title2:'Підтвердіть<br><em>дані</em>',sub2:'Переконайтесь, що все вірно.',tipoLabel:'ТИП СУБ\'ЄКТА',privato:'Фізична особа',privatoDesc:'ІПН / документ',azienda:'Юридична особа',aziendaDesc:'Рахунок B2B / ПДВ',residenzaLabel:'КРАЇНА ПРОЖИВАННЯ',paese:'Країна',countryNotice:'Для гостей не з Італії податковий код та адреса не обов\'язкові.',anagraficaLabel:'ОСОБИСТІ ДАНІ',nome:'Ім\'я',cognome:'Прізвище',email:'Email',telefono:'Телефон',cf:'Податковий код',cfWarning:'Податковий код здається недійсним. Перевірте або продовжте.',indirizzoLabel:'АДРЕСА ПРОЖИВАННЯ',indirizzo:'Адреса',citta:'Місто',cap:'Індекс',prov:'Провінція',aziendaLabel:'ДАНІ КОМПАНІЇ',ragSoc:'Назва',piva:'ПДВ номер',sdi:'Код SDI',pecLabel:'PEC',indirizzoAzLabel:'Юр. адреса',soggiornoLabel:'ПРОЖИВАННЯ',checkin:'Заселення',checkout:'Виселення',riepilogoLabel:'ЗВЕДЕННЯ',fotoLabel:'ФОТО ДОКУМЕНТА',uploadTitle:'Додати фото документа',uploadSub:'Паспорт - Посвідчення особи',continua:'Далі',indietro:'Назад',invia:'Надіслати',ocrLoading:'Завантаження...',ocrOk:'Документ прикріплено',ocrErr:'Помилка завантаження',successTitle:'Дані отримано',successMsg:'Ваші дані успішно надіслано.<br>Незабаром ви отримаєте email з інструкціями.<br><br>Дякуємо.',errRequired:'Заповніть всі обов\'язкові поля',errDate:'Введіть дати проживання',errSending:'Помилка надсилання - повторіть',NOME:'ІМ\'Я / ПРІЗВИЩЕ',EMAIL:'EMAIL',TELEFONO:'ТЕЛЕФОН',CF:'ПОД. КОД',INDIRIZZO:'АДРЕСА',CHECKIN:'ЗАСЕЛЕННЯ',CHECKOUT:'ВИСЕЛЕННЯ',PAESE:'КРАЇНА',RAGIONE:'КОМПАНІЯ',PIVA:'ПДВ',SDI:'КОД SDI',sessoLabel:'СТАТЬ',dataNascitaLabel:'ДАТА НАРОДЖЕННЯ',luogoNascitaLabel:'МІСЦЕ НАРОДЖЕННЯ',cittadinanzaLabel:'ГРОМАДЯНСТВО',cittadinanzaAltroLabel:'ВКАЗАТИ ГРОМАДЯНСТВО',tipoDocLabel:'ТИП ДОКУМЕНТА',numDocLabel:'НОМЕР ДОКУМЕНТА',luogoRilascioLabel:'МІСЦЕ ВИДАЧІ'},
-  zh:{step1:'信息',step2:'确认',title1:'您的<br><em>入住登记</em>',sub1:'请填写以下信息完成入住。',title2:'确认<br><em>您的信息</em>',sub2:'请确认所有信息正确。',tipoLabel:'主体类型',privato:'个人',privatoDesc:'税号 / 证件',azienda:'公司',aziendaDesc:'B2B发票 / 增值税',residenzaLabel:'居住国家',paese:'国家',countryNotice:'非意大利居民无需提供税号和地址。',anagraficaLabel:'个人信息',nome:'名字',cognome:'姓氏',email:'电子邮件',telefono:'电话',cf:'税号',cfWarning:'税号似乎无效，请核实或继续。',indirizzoLabel:'居住地址',indirizzo:'地址',citta:'城市',cap:'邮编',prov:'省份',aziendaLabel:'公司信息',ragSoc:'公司名称',piva:'增值税号',sdi:'SDI代码',pecLabel:'PEC邮箱',indirizzoAzLabel:'注册地址',soggiornoLabel:'住宿',checkin:'入住',checkout:'退房',riepilogoLabel:'摘要',fotoLabel:'证件照片',uploadTitle:'上传证件照片',uploadSub:'身份证 - 护照 - 驾照',continua:'继续',indietro:'返回',invia:'提交',ocrLoading:'上传中...',ocrOk:'证件已上传',ocrErr:'上传错误',successTitle:'信息已收到',successMsg:'您的信息已成功提交。<br>您将很快收到包含入住说明的电子邮件。<br><br>感谢您的选择。',errRequired:'请填写所有必填项',errDate:'请输入住宿日期',errSending:'提交错误，请重试',NOME:'姓名',EMAIL:'电子邮件',TELEFONO:'电话',CF:'税号',INDIRIZZO:'地址',CHECKIN:'入住',CHECKOUT:'退房',PAESE:'国家',RAGIONE:'公司名称',PIVA:'增值税',SDI:'SDI',sessoLabel:'性别',dataNascitaLabel:'出生日期',luogoNascitaLabel:'出生地',cittadinanzaLabel:'国籍',cittadinanzaAltroLabel:'请注明国籍',tipoDocLabel:'证件类型',numDocLabel:'证件号码',luogoRilascioLabel:'签发地'},
-  ar:{step1:'البيانات',step2:'التأكيد',title1:'تسجيل<br><em>الوصول</em>',sub1:'يرجى ملء الحقول لإتمام تسجيل الوصول.',title2:'تأكيد<br><em>البيانات</em>',sub2:'تأكد من صحة جميع البيانات.',tipoLabel:'نوع الكيان',privato:'فرد',privatoDesc:'رقم ضريبي / وثيقة',azienda:'شركة',aziendaDesc:'فاتورة B2B / ضريبة القيمة المضافة',residenzaLabel:'بلد الإقامة',paese:'البلد',countryNotice:'للضيوف غير المقيمين في إيطاليا، الرقم الضريبي والعنوان غير إلزاميين.',anagraficaLabel:'البيانات الشخصية',nome:'الاسم',cognome:'اللقب',email:'البريد الإلكتروني',telefono:'الهاتف',cf:'الرقم الضريبي',cfWarning:'الرقم الضريبي يبدو غير صحيح. تحقق منه أو تابع.',indirizzoLabel:'عنوان الإقامة',indirizzo:'العنوان',citta:'المدينة',cap:'الرمز البريدي',prov:'المقاطعة',aziendaLabel:'بيانات الشركة',ragSoc:'اسم الشركة',piva:'رقم ضريبة القيمة المضافة',sdi:'رمز SDI',pecLabel:'PEC',indirizzoAzLabel:'العنوان القانوني',soggiornoLabel:'الإقامة',checkin:'تسجيل الوصول',checkout:'تسجيل المغادرة',riepilogoLabel:'ملخص',fotoLabel:'صورة الوثيقة',uploadTitle:'أضف صورة الوثيقة',uploadSub:'بطاقة الهوية - جواز السفر - رخصة القيادة',continua:'متابعة',indietro:'رجوع',invia:'إرسال',ocrLoading:'جارٍ التحميل...',ocrOk:'تم إرفاق الوثيقة',ocrErr:'خطأ في التحميل',successTitle:'تم استلام البيانات',successMsg:'تم إرسال بياناتك بنجاح.<br>ستتلقى قريباً بريداً إلكترونياً مع تعليمات تسجيل الوصول.<br><br>شكراً لاختيارك.',errRequired:'يرجى ملء جميع الحقول الإلزامية',errDate:'يرجى إدخال تواريخ الإقامة',errSending:'خطأ في الإرسال - أعد المحاولة',NOME:'الاسم / اللقب',EMAIL:'البريد الإلكتروني',TELEFONO:'الهاتف',CF:'الرقم الضريبي',INDIRIZZO:'العنوان',CHECKIN:'الوصول',CHECKOUT:'المغادرة',PAESE:'البلد',RAGIONE:'اسم الشركة',PIVA:'ضريبة القيمة المضافة',SDI:'SDI',sessoLabel:'الجنس',dataNascitaLabel:'تاريخ الميلاد',luogoNascitaLabel:'مكان الميلاد',cittadinanzaLabel:'الجنسية',cittadinanzaAltroLabel:'حدد الجنسية',tipoDocLabel:'نوع الوثيقة',numDocLabel:'رقم الوثيقة',luogoRilascioLabel:'مكان الإصدار'}
+  it:{step1:'DATI',step2:'CONFERMA',title1:'I tuoi dati<br><em>check-in</em>',sub1:'Compila i campi per completare il check-in.',title2:'Conferma<br><em>i tuoi dati</em>',sub2:'Controlla che tutto sia corretto.',tipoLabel:'TIPO SOGGETTO',privato:'Privato',privatoDesc:'CF / documento',azienda:'Azienda',aziendaDesc:'Fattura B2B / P.IVA',residenzaLabel:'PAESE DI RESIDENZA',paese:'Paese',countryNotice:'Per ospiti non residenti in Italia, codice fiscale e indirizzo non sono obbligatori.',anagraficaLabel:'DATI ANAGRAFICI',nome:'Nome',cognome:'Cognome',email:'Email',telefono:'Telefono',cf:'Codice fiscale',cfWarning:'Il codice fiscale non sembra valido. Correggi o prosegui se sei sicuro.',indirizzoLabel:'INDIRIZZO DI RESIDENZA',indirizzo:'Indirizzo',citta:'Citta',cap:'CAP',prov:'Prov.',aziendaLabel:'DATI AZIENDA',ragSoc:'Ragione sociale',piva:'Partita IVA',sdi:'Codice SDI',pecLabel:'PEC',indirizzoAzLabel:'Sede legale',soggiornoLabel:'SOGGIORNO',checkin:'Check-in',checkout:'Check-out',riepilogoLabel:'RIEPILOGO',fotoLabel:'FOTO DOCUMENTO',uploadTitle:'Aggiungi foto documento',uploadSub:"Carta d'identita - Passaporto - Patente",continua:'Continua',indietro:'Indietro',invia:'Invia dati',ocrLoading:'Caricamento...',ocrOk:'Documento allegato',ocrErr:'Errore caricamento',successTitle:'Dati ricevuti',successMsg:"I tuoi dati sono stati inviati correttamente.<br>Riceverai a breve una email con le istruzioni per il check-in.<br><br>Grazie per aver scelto Il Lupo Affitta.",errRequired:'Compila tutti i campi obbligatori',errDate:'Inserisci le date di soggiorno',errSending:'Errore di invio - riprova',errPrivacy:'Accetta l\'informativa privacy per continuare',privacyLabel:'Ho letto e compreso l\'<a href="privacy-policy.html" target="_blank" rel="noopener">informativa sul trattamento dei dati personali</a> ai sensi dell\'art. 13 GDPR. I miei dati saranno comunicati all\'Autorità di Pubblica Sicurezza ai sensi dell\'art. 109 TULPS.',NOME:'NOME',EMAIL:'EMAIL',TELEFONO:'TELEFONO',CF:'CODICE FISCALE',INDIRIZZO:'INDIRIZZO',CHECKIN:'CHECK-IN',CHECKOUT:'CHECK-OUT',PAESE:'PAESE',RAGIONE:'RAGIONE SOCIALE',PIVA:'PARTITA IVA',SDI:'SDI'},
+  en:{step1:'DATA',step2:'CONFIRM',title1:'Your fiscal<br><em>details</em>',sub1:'Fill in the fields to complete your check-in.',title2:'Confirm<br><em>your details</em>',sub2:'Make sure everything is correct.',tipoLabel:'SUBJECT TYPE',privato:'Private',privatoDesc:'Tax ID / document',azienda:'Company',aziendaDesc:'B2B invoice / VAT',residenzaLabel:'COUNTRY OF RESIDENCE',paese:'Country',countryNotice:'For guests not residing in Italy, tax code and address are not required.',anagraficaLabel:'PERSONAL DETAILS',nome:'First name',cognome:'Last name',email:'Email',telefono:'Phone',cf:'Tax code (Codice fiscale)',cfWarning:'The tax code does not appear valid. Please check or continue if sure.',indirizzoLabel:'HOME ADDRESS',indirizzo:'Address',citta:'City',cap:'Postal code',prov:'Prov.',aziendaLabel:'COMPANY DETAILS',ragSoc:'Company name',piva:'VAT number',sdi:'SDI code',pecLabel:'PEC email',indirizzoAzLabel:'Registered address',soggiornoLabel:'STAY',checkin:'Check-in',checkout:'Check-out',riepilogoLabel:'SUMMARY',fotoLabel:'DOCUMENT PHOTO',uploadTitle:'Add document photo',uploadSub:'ID card - Passport - Driving licence',continua:'Continue',indietro:'Back',invia:'Submit',ocrLoading:'Uploading...',ocrOk:'Document attached',ocrErr:'Upload error',successTitle:'Data received',successMsg:"Your details have been submitted.<br>You will receive an email shortly with check-in instructions.<br><br>Thank you for choosing Il Lupo Affitta.",errRequired:'Please fill in all required fields',errDate:'Please enter your stay dates',errSending:'Submission error - please try again',errPrivacy:'Please accept the privacy policy to continue',privacyLabel:'I have read and understood the <a href="privacy-policy.html" target="_blank" rel="noopener">privacy policy</a> (art. 13 GDPR). My personal data will be communicated to the Public Security Authority as required by Italian law.',NOME:'NAME',EMAIL:'EMAIL',TELEFONO:'PHONE',CF:'TAX CODE',INDIRIZZO:'ADDRESS',CHECKIN:'CHECK-IN',CHECKOUT:'CHECK-OUT',PAESE:'COUNTRY',RAGIONE:'COMPANY',PIVA:'VAT NUMBER',SDI:'SDI CODE'},
+  de:{step1:'DATEN',step2:'BESTATIGUNG',title1:'Ihr<br><em>Check-in</em>',sub1:'Bitte fullen Sie die Felder aus, um den Check-in abzuschliessen.',title2:'Angaben<br><em>bestatigen</em>',sub2:'Stellen Sie sicher, dass alles korrekt ist.',tipoLabel:'ART DES SUBJEKTS',privato:'Privatperson',privatoDesc:'Steuer-ID / Dok.',azienda:'Unternehmen',aziendaDesc:'B2B-Rechnung / USt-ID',residenzaLabel:'WOHNSITZLAND',paese:'Land',countryNotice:'Fur Gaste ausserhalb Italiens sind Steuernummer und Adresse nicht erforderlich.',anagraficaLabel:'PERSONLICHE DATEN',nome:'Vorname',cognome:'Nachname',email:'E-Mail',telefono:'Telefon',cf:'Steuernummer',cfWarning:'Die Steuernummer scheint ungultig. Prufen Sie sie oder fahren Sie fort.',indirizzoLabel:'HEIMATADRESSE',indirizzo:'Adresse',citta:'Stadt',cap:'PLZ',prov:'Prov.',aziendaLabel:'UNTERNEHMENSDATEN',ragSoc:'Firmenname',piva:'USt-ID',sdi:'SDI-Code',pecLabel:'PEC',indirizzoAzLabel:'Geschaftssitz',soggiornoLabel:'AUFENTHALT',checkin:'Check-in',checkout:'Check-out',riepilogoLabel:'ZUSAMMENFASSUNG',fotoLabel:'DOKUMENTFOTO',uploadTitle:'Dokumentfoto hinzufugen',uploadSub:'Personalausweis - Reisepass - Fuhrerschein',continua:'Weiter',indietro:'Zuruck',invia:'Absenden',ocrLoading:'Wird hochgeladen...',ocrOk:'Dokument angehangt',ocrErr:'Fehler beim Hochladen',successTitle:'Daten erhalten',successMsg:'Ihre Angaben wurden ubermittelt.<br>Sie erhalten eine E-Mail mit Check-in-Anweisungen.<br><br>Vielen Dank.',errRequired:'Bitte alle Pflichtfelder ausfullen',errDate:'Bitte Aufenthaltsdaten eingeben',errSending:'Ubermittlungsfehler - erneut versuchen',errPrivacy:'Bitte akzeptieren Sie die Datenschutzerklarung um fortzufahren',privacyLabel:'Ich habe die <a href="privacy-policy.html" target="_blank" rel="noopener">Datenschutzerklarung</a> (Art. 13 DSGVO) gelesen. Meine Daten werden gemaß dem italienischen TULPS an die Behorden ubermittelt.',NOME:'NAME',EMAIL:'E-MAIL',TELEFONO:'TELEFON',CF:'STEUERNUMMER',INDIRIZZO:'ADRESSE',CHECKIN:'CHECK-IN',CHECKOUT:'CHECK-OUT',PAESE:'LAND',RAGIONE:'FIRMA',PIVA:'UST-ID',SDI:'SDI-CODE'},
+  fr:{step1:'DONNEES',step2:'CONFIRMATION',title1:'Votre<br><em>check-in</em>',sub1:'Remplissez les champs pour finaliser votre check-in.',title2:'Confirmez<br><em>vos donnees</em>',sub2:'Assurez-vous que tout est correct.',tipoLabel:'TYPE DE SUJET',privato:'Particulier',privatoDesc:'Code fiscal / doc.',azienda:'Entreprise',aziendaDesc:'Facture B2B / TVA',residenzaLabel:'PAYS DE RESIDENCE',paese:'Pays',countryNotice:"Pour les clients ne residant pas en Italie, le code fiscal et l'adresse ne sont pas obligatoires.",anagraficaLabel:'DONNEES PERSONNELLES',nome:'Prenom',cognome:'Nom',email:'Email',telefono:'Telephone',cf:'Code fiscal',cfWarning:'Le code fiscal ne semble pas valide. Verifiez ou continuez.',indirizzoLabel:'ADRESSE DE RESIDENCE',indirizzo:'Adresse',citta:'Ville',cap:'Code postal',prov:'Prov.',aziendaLabel:"DONNEES D'ENTREPRISE",ragSoc:'Raison sociale',piva:'Numero TVA',sdi:'Code SDI',pecLabel:'PEC',indirizzoAzLabel:'Siege social',soggiornoLabel:'SEJOUR',checkin:'Arrivee',checkout:'Depart',riepilogoLabel:'RECAPITULATIF',fotoLabel:'PHOTO DU DOCUMENT',uploadTitle:'Ajouter photo document',uploadSub:"Carte d'identite - Passeport - Permis",continua:'Continuer',indietro:'Retour',invia:'Envoyer',ocrLoading:'Chargement...',ocrOk:'Document joint',ocrErr:'Erreur de chargement',successTitle:'Donnees recues',successMsg:'Vos donnees ont ete soumises.<br>Vous recevrez un email avec les instructions.<br><br>Merci.',errRequired:'Veuillez remplir tous les champs obligatoires',errDate:'Veuillez saisir les dates',errSending:"Erreur d'envoi - reessayez",errPrivacy:'Veuillez accepter la politique de confidentialite pour continuer',privacyLabel:"J'ai lu et compris la <a href=\"privacy-policy.html\" target=\"_blank\" rel=\"noopener\">politique de confidentialite</a> (art. 13 RGPD). Mes donnees seront communiquees aux autorites de securite publique conformement a la loi italienne.",NOME:'PRENOM / NOM',EMAIL:'EMAIL',TELEFONO:'TELEPHONE',CF:'CODE FISCAL',INDIRIZZO:'ADRESSE',CHECKIN:'ARRIVEE',CHECKOUT:'DEPART',PAESE:'PAYS',RAGIONE:'RAISON SOCIALE',PIVA:'TVA',SDI:'CODE SDI'},
+  es:{step1:'DATOS',step2:'CONFIRMACION',title1:'Su<br><em>check-in</em>',sub1:'Complete los campos para finalizar su check-in.',title2:'Confirme<br><em>sus datos</em>',sub2:'Asegurese de que todo sea correcto.',tipoLabel:'TIPO DE SUJETO',privato:'Particular',privatoDesc:'NIF / documento',azienda:'Empresa',aziendaDesc:'Factura B2B / IVA',residenzaLabel:'PAIS DE RESIDENCIA',paese:'Pais',countryNotice:'Para huespedes no residentes en Italia, el codigo fiscal y la direccion no son obligatorios.',anagraficaLabel:'DATOS PERSONALES',nome:'Nombre',cognome:'Apellido',email:'Email',telefono:'Telefono',cf:'Codigo fiscal',cfWarning:'El codigo fiscal no parece valido. Verifique o continue.',indirizzoLabel:'DIRECCION DE RESIDENCIA',indirizzo:'Direccion',citta:'Ciudad',cap:'Codigo postal',prov:'Prov.',aziendaLabel:'DATOS DE EMPRESA',ragSoc:'Razon social',piva:'Numero IVA',sdi:'Codigo SDI',pecLabel:'PEC',indirizzoAzLabel:'Domicilio social',soggiornoLabel:'ESTANCIA',checkin:'Llegada',checkout:'Salida',riepilogoLabel:'RESUMEN',fotoLabel:'FOTO DEL DOCUMENTO',uploadTitle:'Anadir foto documento',uploadSub:'DNI - Pasaporte - Carne de conducir',continua:'Continuar',indietro:'Atras',invia:'Enviar',ocrLoading:'Cargando...',ocrOk:'Documento adjunto',ocrErr:'Error al cargar',successTitle:'Datos recibidos',successMsg:'Sus datos han sido enviados.<br>Recibira un email con las instrucciones.<br><br>Gracias.',errRequired:'Complete todos los campos obligatorios',errDate:'Introduzca las fechas de estancia',errSending:'Error de envio - intentelo de nuevo',errPrivacy:'Por favor acepte la politica de privacidad para continuar',privacyLabel:'He leido y comprendido la <a href="privacy-policy.html" target="_blank" rel="noopener">politica de privacidad</a> (art. 13 RGPD). Mis datos seran comunicados a la Autoridad de Seguridad Publica segun la ley italiana.',NOME:'NOMBRE',EMAIL:'EMAIL',TELEFONO:'TELEFONO',CF:'CODIGO FISCAL',INDIRIZZO:'DIRECCION',CHECKIN:'LLEGADA',CHECKOUT:'SALIDA',PAESE:'PAIS',RAGIONE:'RAZON SOCIAL',PIVA:'IVA',SDI:'SDI'},
+  ru:{step1:'DANNYE',step2:'PODTVERZHDENIE',title1:'Vash<br><em>chek-in</em>',sub1:'Zapolnite polya dlya zaversheniya registratsii.',title2:'Podtverdite<br><em>dannye</em>',sub2:'Ubedites, chto vse verno.',tipoLabel:'TIP SUBEKTA',privato:'Fizlitso',privatoDesc:'INN / dokument',azienda:'Yurlitso',aziendaDesc:'B2B schet / NDS',residenzaLabel:'STRANA PROZHIVANIYA',paese:'Strana',countryNotice:'Dlya gostey ne iz Italii nalogovyy kod i adres ne obyazatelny.',anagraficaLabel:'LICHNYE DANNYE',nome:'Imya',cognome:'Familiya',email:'Email',telefono:'Telefon',cf:'Nalogovyy kod',cfWarning:'Nalogovyy kod kazhetsya nedeystvitelnym. Proverte ili prodolzhite.',indirizzoLabel:'ADRES PROZHIVANIYA',indirizzo:'Adres',citta:'Gorod',cap:'Indeks',prov:'Provinciya',aziendaLabel:'DANNYE KOMPANII',ragSoc:'Nazvanie',piva:'NDS nomer',sdi:'Kod SDI',pecLabel:'PEC',indirizzoAzLabel:'Yur. adres',soggiornoLabel:'PROZHIVANIE',checkin:'Vselenie',checkout:'Vyselenie',riepilogoLabel:'SVODNAYA',fotoLabel:'FOTO DOKUMENTA',uploadTitle:'Dobavit foto dokumenta',uploadSub:'Pasport - Udostoverenie lichnosti',continua:'Dalee',indietro:'Nazad',invia:'Otpravit',ocrLoading:'Zagruzka...',ocrOk:'Dokument prikreplyon',ocrErr:'Oshibka zagruzki',successTitle:'Dannye polucheny',successMsg:'Vashi dannye uspeshno otpravleny.<br>Skoro vy poluchite email s instruktsiyami.<br><br>Spasibo.',errRequired:'Zapolnite vse obyazatelnye polya',errDate:'Vvedite daty prozhivaniya',errSending:'Oshibka otpravki - povtorite',errPrivacy:'Pozhaluysta, primite politiku konfidentsialnosti dlya prodolzheniya',privacyLabel:'Ya oznakomilsya s <a href="privacy-policy.html" target="_blank" rel="noopener">politikoy konfidentsialnosti</a> (st. 13 GDPR). Moi dannye budut peredany organam publichnoy bezopasnosti v sootvetstvii s zakonodatelstvom Italii.',NOME:'IMYA / FAMILIYA',EMAIL:'EMAIL',TELEFONO:'TELEFON',CF:'NAL. KOD',INDIRIZZO:'ADRES',CHECKIN:'VSELENIE',CHECKOUT:'VYSELENIE',PAESE:'STRANA',RAGIONE:'KOMPANIYA',PIVA:'NDS',SDI:'KOD SDI'}
 };
 
 var lang='it',currentType='privato',currentStep=1,isItalian=true,cfAttempts=0,uploadedImageBase64=null;
-var urlParams=new URLSearchParams(window.location.search);
-var aptId=urlParams.get('apt')||'27663c90-8936-4556-b05f-dddc9ae9e1e0';
+var aptId=new URLSearchParams(window.location.search).get('apt')||null;
 function t(k){return(T[lang]&&T[lang][k]!==undefined)?T[lang][k]:(T.it[k]||k);}
+
+function onPrivacyChange(){
+  var cb=document.getElementById('privacyCheck');
+  var bl=document.getElementById('privacyBlock');
+  if(cb.checked) bl.classList.remove('err');
+}
 
 function setLang(l){
   lang=l;
-  // RTL per arabo
-  document.documentElement.dir = l==='ar' ? 'rtl' : 'ltr';
-  document.documentElement.lang = l;
-  document.querySelectorAll('.lang-btn').forEach(function(b){b.classList.toggle('active',b.textContent.trim()===l.toUpperCase()||b.textContent.trim()==='中文'&&l==='zh'||b.textContent.trim()==='AR'&&l==='ar'||b.textContent.trim()==='UK'&&l==='uk');});
+  document.querySelectorAll('.lang-btn').forEach(function(b){b.classList.toggle('active',b.textContent.trim()===l.toUpperCase());});
   document.querySelectorAll('[data-t]').forEach(function(el){
     var k=el.getAttribute('data-t');
     var v=T[l]&&T[l][k]!==undefined?T[l][k]:(T.it[k]!==undefined?T.it[k]:null);
@@ -527,7 +416,6 @@ function setType(type){
   document.getElementById('btn-azienda').classList.toggle('active',type==='azienda');
   document.getElementById('fields-privato').style.display=type==='privato'?'':'none';
   document.getElementById('fields-azienda').style.display=type==='azienda'?'':'none';
-  document.getElementById('fotoDocCard').style.display=type==='privato'?'':'none';
 }
 
 function onPaeseChange(){
@@ -547,6 +435,15 @@ function validateCF(){
 }
 
 function goToStep2(){
+  // Controlla checkbox privacy
+  var privCb=document.getElementById('privacyCheck');
+  var privBl=document.getElementById('privacyBlock');
+  if(!privCb.checked){
+    privBl.classList.add('err');
+    privBl.scrollIntoView({behavior:'smooth',block:'center'});
+    showToast(t('errPrivacy'));
+    return;
+  }
   if(currentType==='privato'){
     var req=['nome','cognome','email','telefono'];
     if(isItalian)req.push('indirizzo','cap','citta');
@@ -556,13 +453,6 @@ function goToStep2(){
       if(!cfEl.value.trim()){showToast(t('errRequired'));cfEl.focus();return;}
       if(!validateCF()){cfAttempts++;if(cfAttempts<2){document.getElementById('cfWarning').style.display='flex';showToast(t('cfWarning'));return;}}
       else{document.getElementById('cfWarning').style.display='none';}
-    }
-    // Validazione campi schedina alloggiati
-    var reqSched=['sesso','dataNascita','luogoNascita','tipoDoc','numDoc','luogoRilascio'];
-    for(var s=0;s<reqSched.length;s++){var es=document.getElementById(reqSched[s]);if(!es||!es.value.trim()){showToast(t('errRequired'));if(es)es.focus();return;}}
-    if(document.getElementById('cittadinanza').value==='Altro'){
-      var altroEl=document.getElementById('cittadinanzaAltro');
-      if(!altroEl||!altroEl.value.trim()){showToast(t('errRequired'));if(altroEl)altroEl.focus();return;}
     }
   }else{
     var req2=['ragioneSociale','piva','sdi','indirizzoAz','emailAz','telefonoAz'];
@@ -585,19 +475,6 @@ function buildReview(){
       rows.push([t('CF'),document.getElementById('cf').value.toUpperCase()]);
       rows.push([t('INDIRIZZO'),[document.getElementById('indirizzo').value,document.getElementById('citta').value,document.getElementById('cap').value,document.getElementById('provincia').value].filter(Boolean).join(', ')]);
     }
-    // Campi schedina alloggiati
-    var sessoVal = document.getElementById('sesso').value;
-    rows.push([t('sessoLabel'), sessoVal==='M'?'M — Maschio / Male':'F — Femmina / Female']);
-    rows.push([t('dataNascitaLabel'), document.getElementById('dataNascita').value]);
-    rows.push([t('luogoNascitaLabel'), document.getElementById('luogoNascita').value]);
-    var cittVal = document.getElementById('cittadinanza').value==='Altro'
-      ? document.getElementById('cittadinanzaAltro').value
-      : document.getElementById('cittadinanza').value;
-    rows.push([t('cittadinanzaLabel'), cittVal]);
-    var tipoDocSel = document.getElementById('tipoDoc');
-    rows.push([t('tipoDocLabel'), tipoDocSel.options[tipoDocSel.selectedIndex]?.text || tipoDocSel.value]);
-    rows.push([t('numDocLabel'), document.getElementById('numDoc').value.toUpperCase()]);
-    rows.push([t('luogoRilascioLabel'), document.getElementById('luogoRilascio').value]);
   }else{
     rows.push([t('RAGIONE'),document.getElementById('ragioneSociale').value]);
     rows.push([t('PIVA'),document.getElementById('piva').value]);
@@ -632,7 +509,7 @@ function handleFile(file){
       });
       if(!res.ok)throw new Error('OCR error');
       var data=await res.json();
-      // Auto-compila i campi base
+      // Auto-compila i campi
       if(data.nome)        { var el=document.getElementById('nome');        if(el){el.value=data.nome;        markFilled(el);} }
       if(data.cognome)     { var el=document.getElementById('cognome');     if(el){el.value=data.cognome;     markFilled(el);} }
       if(data.codice_fiscale){ var el=document.getElementById('cf');        if(el){el.value=data.codice_fiscale.toUpperCase(); markFilled(el);} }
@@ -640,30 +517,6 @@ function handleFile(file){
       if(data.citta)       { var el=document.getElementById('citta');       if(el){el.value=data.citta;       markFilled(el);} }
       if(data.cap)         { var el=document.getElementById('cap');         if(el){el.value=data.cap;         markFilled(el);} }
       if(data.provincia)   { var el=document.getElementById('provincia');   if(el){el.value=data.provincia.toUpperCase(); markFilled(el);} }
-      // Campi schedina alloggiati
-      if(data.sesso) { var el=document.getElementById('sesso'); if(el&&(data.sesso==='M'||data.sesso==='F')){el.value=data.sesso; markFilled(el);} }
-      if(data.data_nascita) { var el=document.getElementById('dataNascita'); if(el){el.value=data.data_nascita; markFilled(el);} }
-      if(data.luogo_nascita) { var el=document.getElementById('luogoNascita'); if(el){el.value=data.luogo_nascita; markFilled(el);} }
-      if(data.cittadinanza) {
-        var sel=document.getElementById('cittadinanza');
-        if(sel) {
-          var found=false;
-          for(var i=0;i<sel.options.length;i++){
-            if(sel.options[i].value.toLowerCase()===data.cittadinanza.toLowerCase()){
-              sel.value=sel.options[i].value; found=true; markFilled(sel); break;
-            }
-          }
-          if(!found&&data.cittadinanza) {
-            sel.value='Altro'; markFilled(sel);
-            document.getElementById('cittadinanzaAltroField').style.display='block';
-            var altroEl=document.getElementById('cittadinanzaAltro');
-            if(altroEl){altroEl.value=data.cittadinanza; markFilled(altroEl);}
-          }
-        }
-      }
-      if(data.tipo_documento) { var el=document.getElementById('tipoDoc'); if(el){el.value=data.tipo_documento; markFilled(el);} }
-      if(data.numero_documento) { var el=document.getElementById('numDoc'); if(el){el.value=data.numero_documento.toUpperCase(); markFilled(el);} }
-      if(data.luogo_rilascio) { var el=document.getElementById('luogoRilascio'); if(el){el.value=data.luogo_rilascio; markFilled(el);} }
       // Azienda
       if(data.ragione_sociale){ var el=document.getElementById('ragioneSociale'); if(el){el.value=data.ragione_sociale; markFilled(el);} }
       if(data.partita_iva) { var el=document.getElementById('piva');        if(el){el.value=data.partita_iva; markFilled(el);} }
@@ -720,18 +573,7 @@ async function submitForm(){
       paese_residenza:pEl?pEl.value:'IT',
       codice_fiscale:isItalian?cfVal:null,
       indirizzo_residenza:isItalian?[document.getElementById('indirizzo').value,document.getElementById('citta').value,document.getElementById('cap').value,document.getElementById('provincia').value].filter(Boolean).join(', '):null,
-      tipo_cliente:'privato',iva_percentuale:10,
-      // Campi schedina alloggiati
-      sesso: document.getElementById('sesso').value || null,
-      data_nascita: document.getElementById('dataNascita').value || null,
-      luogo_nascita: document.getElementById('luogoNascita').value.trim() || null,
-      cittadinanza: (document.getElementById('cittadinanza').value === 'Altro'
-        ? document.getElementById('cittadinanzaAltro').value.trim()
-        : document.getElementById('cittadinanza').value) || null,
-      tipo_documento_codice: document.getElementById('tipoDoc').value || null,
-      numero_documento: document.getElementById('numDoc').value.trim().toUpperCase() || null,
-      luogo_rilascio_documento: document.getElementById('luogoRilascio').value.trim() || null,
-      alloggiati_stato: 'DA_INVIARE'
+      tipo_cliente:'privato',iva_percentuale:10
     });
   }else{
     Object.assign(payload,{
@@ -742,12 +584,11 @@ async function submitForm(){
       paese_residenza:'IT',
       indirizzo_residenza:document.getElementById('indirizzoAz').value.trim(),
       piva_cliente:document.getElementById('piva').value.trim(),
-      codice_sdi:document.getElementById('sdi').value.trim().toUpperCase(),
-      pec:document.getElementById('pec').value.trim()||null,
       tipo_cliente:'azienda',iva_percentuale:22,codice_fiscale:null,
-      alloggiati_stato:'NON_NECESSARIA'
+      segnalazione_jessica:'SDI:'+document.getElementById('sdi').value+(document.getElementById('pec').value?'|PEC:'+document.getElementById('pec').value:'')
     });
   }
+  payload.apartment_id = '27663c90-8936-4556-b05f-dddc9ae9e1e0';
   try{
     var res=await fetch(SUPABASE_URL+'/rest/v1/ospiti_check_in',{
       method:'POST',
@@ -782,22 +623,11 @@ function showToast(msg){
 }
 
 setLang('it');
-var urlLang=urlParams.get('lingua')||urlParams.get('lang');
+var urlParams=new URLSearchParams(window.location.search);
+var urlLang=urlParams.get('lingua');
 if(urlLang&&T[urlLang.toLowerCase()])setLang(urlLang.toLowerCase());
 if(urlParams.get('checkin'))document.getElementById('checkin').value=urlParams.get('checkin');
 if(urlParams.get('checkout'))document.getElementById('checkout').value=urlParams.get('checkout');
-
-// Gestione "Altro" cittadinanza
-document.getElementById('cittadinanza').addEventListener('change', function() {
-  var altroField = document.getElementById('cittadinanzaAltroField');
-  if (this.value === 'Altro') {
-    altroField.style.display = 'block';
-    document.getElementById('cittadinanzaAltro').focus();
-  } else {
-    altroField.style.display = 'none';
-    document.getElementById('cittadinanzaAltro').value = '';
-  }
-});
 </script>
 </body>
 </html>
