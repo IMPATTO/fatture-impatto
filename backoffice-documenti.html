@@ -363,6 +363,9 @@ function renderSchedine() {
       ${S.accounts.map(a=>`<option value="${a.id}" ${S.fAccount===a.id?'selected':''}>${esc(a.nome_account)} (${esc(a.questura)})</option>`).join('')}
     </select>
     <button id="btnRefresh" class="btn btn-ghost btn-sm">↻ Aggiorna</button>
+    <span style="border-left:1px solid var(--border);height:28px;margin:0 4px"></span>
+    <button id="btnBulkTest" class="btn btn-yellow btn-sm">Testa tutti da inviare</button>
+    <button id="btnBulkSend" class="btn btn-teal btn-sm">Invia tutti alla Questura</button>
   </div>
   <div class="body-wrap">
     <div class="table-panel" id="tablePanel"></div>
@@ -374,6 +377,8 @@ function renderSchedine() {
   document.getElementById('fApt').addEventListener('change', e=>{ S.fApt=e.target.value; renderTable(); });
   document.getElementById('fAccount').addEventListener('change', e=>{ S.fAccount=e.target.value; renderTable(); });
   document.getElementById('btnRefresh').addEventListener('click', async ()=>{ await loadAll(); renderSchedine(); });
+  document.getElementById('btnBulkTest').addEventListener('click', ()=>bulkSend('test'));
+  document.getElementById('btnBulkSend').addEventListener('click', ()=>bulkSend('send'));
   renderTable();
   renderDrawer();
 }
@@ -484,19 +489,122 @@ function renderDrawer() {
 
     ${r.alloggiati_errore ? `<div class="drawer-sec">Ultimo errore</div><div style="padding:10px 14px;background:var(--red-l);border-radius:6px;font-size:12px;color:var(--red);font-family:var(--mono)">${esc(r.alloggiati_errore)}</div>` : ''}
     ${r.alloggiati_inviata_at ? `<div class="mono-sm" style="margin-top:12px">Ultimo invio: ${fmt(r.alloggiati_inviata_at)}</div>` : ''}
+
+    <div class="drawer-sec">Validazione dati</div>
+    <div id="dValidation" style="font-size:12px"></div>
   </div>
   <div class="drawer-footer">
     <button id="dSave" class="btn btn-ghost" style="margin-right:auto">Salva dati</button>
+    ${r.alloggiati_stato === 'DA_INVIARE' || r.alloggiati_stato === 'ERRORE' ? `
+      <button id="dTest" class="btn btn-yellow btn-sm" ${!acc?'disabled title="Collega prima un account"':''}>Testa</button>
+      <button id="dSend" class="btn btn-teal btn-sm" ${!acc?'disabled title="Collega prima un account"':''}>Invia alla Questura</button>
+    ` : ''}
     <span class="badge ${psBadgeCls(r.alloggiati_stato)}" style="font-size:12px;padding:4px 12px;align-self:center">${psBadgeLbl(r.alloggiati_stato)}</span>
   </div>`;
 
   document.getElementById('dClose').addEventListener('click', ()=>{ S.selected=null; S.form={}; renderDrawer(); renderTable(); });
   document.getElementById('dSave').addEventListener('click', saveSchedina);
+  document.getElementById('dTest')?.addEventListener('click', ()=>sendToQuestura('test'));
+  document.getElementById('dSend')?.addEventListener('click', ()=>sendToQuestura('send'));
+
+  // Live validation
+  validateDrawer();
 
   d.querySelectorAll('.df').forEach(el=>{
-    el.addEventListener('input', e=>{ S.form[e.target.dataset.k]=e.target.value; });
-    el.addEventListener('change', e=>{ S.form[e.target.dataset.k]=e.target.value; });
+    el.addEventListener('input', e=>{ S.form[e.target.dataset.k]=e.target.value; validateDrawer(); });
+    el.addEventListener('change', e=>{ S.form[e.target.dataset.k]=e.target.value; validateDrawer(); });
   });
+}
+
+function validateDrawer() {
+  const el = document.getElementById('dValidation'); if(!el) return;
+  const r = S.selected, f = S.form;
+  const errs = [];
+  if (!f.sesso) errs.push('Sesso mancante');
+  if (!f.data_nascita) errs.push('Data di nascita mancante');
+  if (!f.cittadinanza) errs.push('Cittadinanza mancante');
+  const tipo = parseInt(f.tipo_alloggiato) || 16;
+  if ([16,17,18].includes(tipo)) {
+    if (!f.tipo_documento) errs.push('Tipo documento mancante');
+    if (!f.numero_documento) errs.push('Numero documento mancante');
+  }
+  if (!r.data_checkin) errs.push('Data check-in mancante');
+  if (!r.cognome) errs.push('Cognome mancante');
+  if (!r.nome) errs.push('Nome mancante');
+
+  if (errs.length === 0) {
+    el.innerHTML = '<span style="color:var(--green)">Tutti i dati sono completi</span>';
+    const testBtn = document.getElementById('dTest');
+    const sendBtn = document.getElementById('dSend');
+    if(testBtn) testBtn.disabled = !S.form._account;
+    if(sendBtn) sendBtn.disabled = !S.form._account;
+  } else {
+    el.innerHTML = errs.map(e=>`<div style="color:var(--yellow);margin:2px 0">- ${esc(e)}</div>`).join('');
+    const testBtn = document.getElementById('dTest');
+    const sendBtn = document.getElementById('dSend');
+    if(testBtn) testBtn.disabled = true;
+    if(sendBtn) sendBtn.disabled = true;
+  }
+}
+
+async function sendToQuestura(mode) {
+  if (!S.selected) return;
+  const btnId = mode === 'send' ? 'dSend' : 'dTest';
+  const btn = document.getElementById(btnId);
+
+  // Conferma per invio reale
+  if (mode === 'send') {
+    if (!confirm(`Confermi l'invio della schedina di ${S.selected.nome} ${S.selected.cognome} alla Questura?\n\nQuesta azione è irreversibile.`)) return;
+  }
+
+  if(btn) { btn.disabled=true; btn.textContent=mode==='send'?'Invio…':'Testo…'; }
+
+  // Salva prima i dati aggiornati
+  await saveSchedina();
+
+  try {
+    const session = await sb.auth.getSession();
+    const res = await fetch('/.netlify/functions/send-alloggiati', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.data.session.access_token}`
+      },
+      body: JSON.stringify({
+        ospiti_ids: [S.selected.id],
+        mode
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      const errMsg = data.validationErrors ? data.validationErrors.join(', ') : (data.detail || data.error || 'Errore sconosciuto');
+      toast(`Errore: ${errMsg}`, 'err');
+      if(btn) { btn.disabled=false; btn.textContent=mode==='send'?'Invia alla Questura':'Testa'; }
+      return;
+    }
+
+    if (data.success) {
+      if (mode === 'test') {
+        toast(`Test OK — ${data.schedineValide} schedina valida su ${data.schedineInviate}`, 'ok');
+      } else {
+        toast(`Inviata alla Questura di ${data.questura} — ${data.schedineValide} schedina`, 'ok');
+      }
+    } else {
+      toast(`Errore dal portale: ${data.errore || 'vedi dettaglio'}`, 'err');
+    }
+
+    // Ricarica dati
+    await loadAll();
+    if (mode === 'send') { S.selected = null; S.form = {}; }
+    else { S.selected = S.rows.find(r=>r.id===S.selected?.id) || null; }
+    renderSchedine();
+
+  } catch(err) {
+    toast('Errore di rete: ' + err.message, 'err');
+    if(btn) { btn.disabled=false; btn.textContent=mode==='send'?'Invia alla Questura':'Testa'; }
+  }
 }
 
 async function saveSchedina() {
@@ -656,7 +764,66 @@ function openAccountModal(account) {
 }
 
 
-// ── TAB 3: Config (Collega Appartamenti) ──
+// ── Bulk Send ──
+async function bulkSend(mode) {
+  const daInviare = S.rows.filter(r => r.alloggiati_stato === 'DA_INVIARE' || r.alloggiati_stato === 'ERRORE');
+  if (daInviare.length === 0) { toast('Nessuna schedina da inviare','info'); return; }
+
+  // Raggruppa per appartamento (ogni invio usa le credenziali di quell'apt)
+  const perApt = {};
+  daInviare.forEach(r => {
+    if (!perApt[r.apartment_id]) perApt[r.apartment_id] = [];
+    perApt[r.apartment_id].push(r);
+  });
+
+  // Conferma
+  const numApts = Object.keys(perApt).length;
+  if (mode === 'send') {
+    if (!confirm(`Confermi l'invio di ${daInviare.length} schedine per ${numApts} appartamento/i alla Questura?\n\nQuesta azione è irreversibile.`)) return;
+  }
+
+  const btnT = document.getElementById('btnBulkTest');
+  const btnS = document.getElementById('btnBulkSend');
+  if(btnT) btnT.disabled = true;
+  if(btnS) btnS.disabled = true;
+  toast(`${mode==='send'?'Invio':'Test'} in corso per ${daInviare.length} schedine…`, 'info');
+
+  let totOk = 0, totErr = 0;
+  const session = await sb.auth.getSession();
+
+  for (const [aptId, ospiti] of Object.entries(perApt)) {
+    try {
+      const res = await fetch('/.netlify/functions/send-alloggiati', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.data.session.access_token}`
+        },
+        body: JSON.stringify({
+          ospiti_ids: ospiti.map(o => o.id),
+          mode
+        })
+      });
+      const data = await res.json();
+      if (data.success) totOk += data.schedineValide || ospiti.length;
+      else totErr += ospiti.length;
+    } catch(err) {
+      totErr += ospiti.length;
+    }
+  }
+
+  await loadAll();
+  renderSchedine();
+
+  if (mode === 'test') {
+    toast(`Test completato: ${totOk} valide, ${totErr} con errori`, totErr > 0 ? 'err' : 'ok');
+  } else {
+    toast(`Invio completato: ${totOk} inviate, ${totErr} con errori`, totErr > 0 ? 'err' : 'ok');
+  }
+}
+
+
+// ── TAB 3: Config (Collega Appartamenti) — with auto/manual toggle ──
 function renderConfig() {
   const pan = document.getElementById('panConfig');
   pan.innerHTML = `
