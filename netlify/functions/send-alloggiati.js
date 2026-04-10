@@ -1,6 +1,6 @@
 // netlify/functions/send-alloggiati.js
 // Invia schedine al web service SOAP di AlloggiatiWeb
-// Flusso: GenerateToken → Test (validazione) → Send (invio reale)
+// Flusso: GenerateToken → GestioneAppartamenti_Test / GestioneAppartamenti_Send
 //
 // Variabili d'ambiente richieste:
 //   SUPABASE_URL
@@ -41,7 +41,7 @@ exports.handler = async (event) => {
     return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
   }
 
-  // Security: Rate limiting
+  // Rate limiting
   if (!checkRateLimit(user.id, 60)) {
     return { statusCode: 429, body: JSON.stringify({ error: 'Troppe richieste. Riprova tra qualche minuto.' }) };
   }
@@ -56,6 +56,7 @@ exports.handler = async (event) => {
   }
 
   try {
+    // 1. Recupera dati ospiti
     const { data: ospiti, error: ospErr } = await supabase
       .from('ospiti_check_in')
       .select('*, apartments(nome_appartamento)')
@@ -65,12 +66,14 @@ exports.handler = async (event) => {
       return { statusCode: 404, body: JSON.stringify({ error: 'Ospiti non trovati', detail: ospErr?.message }) };
     }
 
+    // 2. Verifica stesso appartamento
     const aptIds = [...new Set(ospiti.map(o => o.apartment_id))];
     if (aptIds.length > 1) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Tutti gli ospiti devono appartenere allo stesso appartamento' }) };
     }
     const apartmentId = aptIds[0];
 
+    // 3. Recupera collegamento appartamento → account
     const { data: link } = await supabase
       .from('apartment_alloggiati')
       .select('*, alloggiati_accounts(*)')
@@ -86,21 +89,27 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Account AlloggiatiWeb disattivato' }) };
     }
 
+    // ID appartamento sul portale AlloggiatiWeb (es. "000001")
+    const idAppartamento = String(link.id_appartamento_portale || '000001').padStart(6, '0');
+
+    // 4. Genera token
     const tokenResult = await soapGenerateToken(account.username, account.password_encrypted, account.wskey);
     if (tokenResult.error) {
       await supabase.from('alloggiati_accounts').update({ ultimo_errore: tokenResult.error }).eq('id', account.id);
       return { statusCode: 401, body: JSON.stringify({ error: 'Autenticazione AlloggiatiWeb fallita', detail: tokenResult.error }) };
     }
 
-    const schedine = ospiti.map(o => buildSchedina(o, link.id_appartamento_portale));
+    // 5. Costruisci tracciato record (168 caratteri per ospite)
+    const schedine = ospiti.map(o => buildSchedina(o));
 
+    // 6. Validazione locale
     const validationErrors = [];
     ospiti.forEach((o) => {
       if (!o.sesso) validationErrors.push(`${o.nome} ${o.cognome}: sesso mancante`);
       if (!o.data_nascita) validationErrors.push(`${o.nome} ${o.cognome}: data di nascita mancante`);
       if (!o.cittadinanza_codice) validationErrors.push(`${o.nome} ${o.cognome}: codice cittadinanza mancante`);
       if (!o.data_checkin) validationErrors.push(`${o.nome} ${o.cognome}: data check-in mancante`);
-      const tipo = o.tipo_alloggiato || 16;
+      const tipo = parseInt(o.tipo_alloggiato) || 16;
       if ([16, 17, 18].includes(tipo)) {
         if (!o.tipo_documento_codice) validationErrors.push(`${o.nome} ${o.cognome}: tipo documento mancante`);
         if (!o.numero_documento) validationErrors.push(`${o.nome} ${o.cognome}: numero documento mancante`);
@@ -111,11 +120,13 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Dati incompleti', validationErrors }) };
     }
 
-    const soapAction = mode === 'send' ? 'Send' : 'Test';
-    const result = await soapSendOrTest(soapAction, account.username, tokenResult.token, schedine);
+    // 7. Invio SOAP con metodi GestioneAppartamenti
+    const soapAction = mode === 'send' ? 'GestioneAppartamenti_Send' : 'GestioneAppartamenti_Test';
+    const result = await soapSendOrTest(soapAction, account.username, tokenResult.token, schedine, idAppartamento);
 
     const esito = result.error ? 'ERRORE' : (result.schedineValide === ospiti.length ? 'OK' : 'PARZIALE');
 
+    // 8. Aggiorna stato ospiti
     if (mode === 'send' && !result.error) {
       await supabase
         .from('ospiti_check_in')
@@ -140,6 +151,7 @@ exports.handler = async (event) => {
         .in('id', ospiti_ids);
     }
 
+    // 9. Log invio
     await supabase.from('alloggiati_invii').insert({
       apartment_id: apartmentId,
       alloggiati_account_id: account.id,
@@ -150,11 +162,12 @@ exports.handler = async (event) => {
       esito,
       errore_dettaglio: result.error || (result.dettaglio?.length ? JSON.stringify(result.dettaglio) : null),
       ricevuta_id: result.ricevutaId || null,
-      payload_inviato: JSON.stringify({ action: soapAction, num_schedine: schedine.length, apartment: apartmentId }),
+      payload_inviato: JSON.stringify({ action: soapAction, num_schedine: schedine.length, apartment: apartmentId, idAppartamento }),
       risposta_ricevuta: maskSensitiveData(result.rawResponse?.substring(0, 2000) || ''),
       inviato_da: user.email,
     });
 
+    // Audit
     await supabase.from('audit_log').insert({
       user_email: user.email,
       action: mode === 'send' ? 'SEND_ALLOGGIATI' : 'TEST_ALLOGGIATI',
@@ -174,6 +187,7 @@ exports.handler = async (event) => {
         dettaglio: result.dettaglio || [],
         account: account.nome_account,
         questura: account.questura,
+        idAppartamento,
       })
     };
 
@@ -184,15 +198,17 @@ exports.handler = async (event) => {
 };
 
 
+// ──────────────────────────────────────────────────────
+// SOAP: GenerateToken
+// ──────────────────────────────────────────────────────
 async function soapGenerateToken(utente, password, wskey) {
   const xml = `<?xml version="1.0" encoding="utf-8"?>
-<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
   <soap:Body>
     <GenerateToken xmlns="AlloggiatiService">
       <Utente>${escXml(utente)}</Utente>
       <Password>${escXml(password)}</Password>
       <WsKey>${escXml(wskey)}</WsKey>
-      <r><ErroreDettaglio></ErroreDettaglio></r>
     </GenerateToken>
   </soap:Body>
 </soap:Envelope>`;
@@ -200,117 +216,181 @@ async function soapGenerateToken(utente, password, wskey) {
   const res = await fetch(ENDPOINT, {
     method: 'POST',
     headers: {
-      'Content-Type': 'text/xml; charset=utf-8',
+      'Content-Type': 'application/soap+xml; charset=utf-8',
       'SOAPAction': 'AlloggiatiService/GenerateToken',
     },
     body: xml,
   });
 
   const text = await res.text();
-  const tokenMatch = text.match(/<GenerateTokenResult>(.*?)<\/GenerateTokenResult>/s);
-  const errorMatch = text.match(/<ErroreDettaglio>(.*?)<\/ErroreDettaglio>/);
+  console.log('GenerateToken response:', maskSensitiveData(text.substring(0, 500)));
 
-  const token = tokenMatch?.[1]?.trim();
-  const error = errorMatch?.[1]?.trim() || (!token ? 'Token non ricevuto' : null);
+  const tokenMatch = text.match(/<token>([\s\S]*?)<\/token>/);
+  const errorMatch = text.match(/<ErroreDettaglio>([\s\S]*?)<\/ErroreDettaglio>/);
 
-  return { token, error: error || null };
+  if (tokenMatch?.[1]?.trim()) {
+    return { token: tokenMatch[1].trim(), error: null };
+  }
+
+  return { token: null, error: errorMatch?.[1]?.trim() || 'Token non ricevuto' };
 }
 
 
-async function soapSendOrTest(action, utente, token, schedine) {
-  const righe = schedine.join('\r\n');
+// ──────────────────────────────────────────────────────
+// SOAP: GestioneAppartamenti_Test / GestioneAppartamenti_Send
+// ──────────────────────────────────────────────────────
+async function soapSendOrTest(action, utente, token, schedine, idAppartamento) {
+  const schedineXml = schedine.map(s => `<all:string>${escXml(s)}</all:string>`).join('\n        ');
+
   const xml = `<?xml version="1.0" encoding="utf-8"?>
-<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:all="AlloggiatiService">
   <soap:Body>
-    <${action} xmlns="AlloggiatiService">
-      <Utente>${escXml(utente)}</Utente>
-      <token>${escXml(token)}</token>
-      <Schedine>${escXml(righe)}</Schedine>
-      <r>
-        <SchedineValide>0</SchedineValide>
-        <ErroreDettaglio></ErroreDettaglio>
-      </r>
-    </${action}>
+    <all:${action}>
+      <all:Utente>${escXml(utente)}</all:Utente>
+      <all:token>${escXml(token)}</all:token>
+      <all:ElencoSchedine>
+        ${schedineXml}
+      </all:ElencoSchedine>
+      <all:IdAppartamento>${escXml(idAppartamento)}</all:IdAppartamento>
+    </all:${action}>
   </soap:Body>
 </soap:Envelope>`;
 
   const res = await fetch(ENDPOINT, {
     method: 'POST',
     headers: {
-      'Content-Type': 'text/xml; charset=utf-8',
+      'Content-Type': 'application/soap+xml; charset=utf-8',
       'SOAPAction': `AlloggiatiService/${action}`,
     },
     body: xml,
   });
 
   const text = await res.text();
+  console.log(`${action} response:`, text.substring(0, 1000));
 
   const valideMatch = text.match(/<SchedineValide>(\d+)<\/SchedineValide>/);
-  const errorMatch = text.match(/<ErroreDettaglio>(.*?)<\/ErroreDettaglio>/g);
-  const mainError = text.match(new RegExp(`<${action}Result>.*?<ErroreDettaglio>(.*?)<\/${action}Result>`, 's'));
+  const errorMatches = text.match(/<ErroreDettaglio>([\s\S]*?)<\/ErroreDettaglio>/g);
+  const mainErrorMatch = text.match(/<ErroreDettaglio>([\s\S]*?)<\/ErroreDettaglio>/);
 
   const dettaglio = [];
-  if (errorMatch) {
-    errorMatch.forEach(m => {
-      const val = m.match(/<ErroreDettaglio>(.*?)<\/ErroreDettaglio>/)?.[1];
-      if (val && val.trim()) dettaglio.push(val);
+  if (errorMatches) {
+    errorMatches.forEach(m => {
+      const val = m.match(/<ErroreDettaglio>([\s\S]*?)<\/ErroreDettaglio>/)?.[1]?.trim();
+      if (val) dettaglio.push(val);
     });
   }
 
   const schedineValide = valideMatch ? parseInt(valideMatch[1]) : 0;
-  const error = mainError?.[1]?.trim() || (schedineValide === 0 && dettaglio.length ? dettaglio[0] : null);
+  const error = mainErrorMatch?.[1]?.trim() || null;
 
-  return { schedineValide, error: error || null, dettaglio, rawResponse: text };
+  return {
+    schedineValide,
+    error: error || null,
+    dettaglio,
+    rawResponse: text,
+  };
 }
 
 
-function buildSchedina(ospite, idAppartamento) {
+// ──────────────────────────────────────────────────────
+// Tracciato record: 168 caratteri per ospite
+// (Tabella 1 del manuale WS_ALLOGGIATI Rev.01)
+//
+//  Pos  Len  Campo
+//  0    2    Tipo alloggiato (16/17/18/19/20)
+//  2    10   Data arrivo (gg/mm/aaaa)
+//  12   2    Permanenza (gg, max 30)
+//  14   50   Cognome
+//  64   30   Nome
+//  94   1    Sesso (1=M, 2=F)
+//  95   10   Data nascita (gg/mm/aaaa)
+//  105  9    Comune nascita (codice ISTAT, o 9 spazi se estero)
+//  114  2    Provincia nascita (sigla, o 2 spazi se estero)
+//  116  9    Stato nascita (codice 9 char)
+//  125  9    Cittadinanza (codice 9 char)
+//  --- Solo tipo 16/17/18 ---
+//  134  5    Tipo documento (IDENT/PASOR/PATEN ecc)
+//  139  20   Numero documento
+//  159  9    Luogo rilascio doc (codice comune o stato, 9 char)
+//  --- Tipo 19/20: campi 134-167 = 34 spazi ---
+//  TOTALE: 168 caratteri
+// ──────────────────────────────────────────────────────
+function buildSchedina(ospite) {
+  // Tipo alloggiato (2 chars)
   const tipo = String(ospite.tipo_alloggiato || 16).padStart(2, '0');
+
+  // Data arrivo (10 chars)
   const dataArr = formatDateIT(ospite.data_checkin);
+
+  // Permanenza (2 chars, max 30)
   const perm = calcPermanenza(ospite.data_checkin, ospite.data_checkout);
+
+  // Cognome (50 chars)
   const cognome = pad(cleanStr(ospite.cognome || '').toUpperCase(), 50);
+
+  // Nome (30 chars)
   const nome = pad(cleanStr(ospite.nome || '').toUpperCase(), 30);
+
+  // Sesso (1 char: 1=M, 2=F)
   const sesso = ospite.sesso === 'M' ? '1' : ospite.sesso === 'F' ? '2' : '1';
+
+  // Data nascita (10 chars)
   const dataNascita = formatDateIT(ospite.data_nascita);
 
-  const natoInItalia = ospite.cittadinanza_codice === '100000100' ||
-                       (ospite.luogo_nascita_codice && !ospite.luogo_nascita_codice.startsWith(' '));
-  const comuneNascita = natoInItalia && ospite.luogo_nascita_codice
-    ? pad(ospite.luogo_nascita_codice, 9) : pad('', 9);
-  const provNascita = natoInItalia && ospite.luogo_nascita
-    ? pad(extractProv(ospite.luogo_nascita), 2) : pad('', 2);
+  // Cittadinanza italiana = codice 100000100
+  const isItaliano = ospite.cittadinanza_codice === '100000100';
+
+  // Comune nascita (9 chars) - solo se italiano
+  const comuneNascita = isItaliano && ospite.luogo_nascita_codice
+    ? pad(ospite.luogo_nascita_codice.trim(), 9)
+    : pad('', 9);
+
+  // Provincia nascita (2 chars) - solo se italiano
+  const provNascita = isItaliano && ospite.luogo_nascita
+    ? pad(extractProv(ospite.luogo_nascita), 2)
+    : pad('', 2);
+
+  // Stato nascita (9 chars)
   const statoNascita = pad(ospite.cittadinanza_codice || '100000100', 9);
+
+  // Cittadinanza (9 chars)
   const cittadinanza = pad(ospite.cittadinanza_codice || '100000100', 9);
 
+  // Parte comune: 2+10+2+50+30+1+10+9+2+9+9 = 134 chars
   let riga = tipo + dataArr + perm + cognome + nome + sesso + dataNascita +
              comuneNascita + provNascita + statoNascita + cittadinanza;
 
   const tipoNum = parseInt(tipo);
 
   if ([16, 17, 18].includes(tipoNum)) {
+    // Tipo documento (5 chars): IDENT, PASOR, PATEN, ecc.
     const tipoDoc = pad(ospite.tipo_documento_codice || 'IDENT', 5);
+
+    // Numero documento (20 chars)
     const numDoc = pad(cleanStr(ospite.numero_documento || '').toUpperCase(), 20);
-    const luogoRilCom = ospite.luogo_rilascio_codice ? pad(ospite.luogo_rilascio_codice, 9) : pad('', 9);
-    const luogoRilProv = ospite.luogo_rilascio_documento ? pad(extractProv(ospite.luogo_rilascio_documento), 2) : pad('', 2);
-    const indirizzo = pad(cleanStr(ospite.indirizzo_residenza || '').toUpperCase(), 30);
-    const comuneRes = pad('', 9);
-    const provRes = pad('', 2);
-    const statoResMap = {
-      'IT': '100000100', 'DE': '200001009', 'FR': '200001008', 'ES': '200002714',
-      'GB': '200002305', 'US': '300000100', 'AT': '200000203', 'CH': '200002909',
-      'NL': '200002008', 'BE': '200000206', 'PL': '200002205', 'CZ': '200002306',
-      'RU': '200002507', 'UA': '200003009', 'CN': '400000100', 'JP': '400000804',
-      'AU': '500000100', 'BR': '300000605', 'AR': '300000108', 'CA': '300000206',
-    };
-    const statoRes = pad(statoResMap[ospite.paese_residenza || 'IT'] || '100000100', 9);
-    riga += tipoDoc + numDoc + luogoRilCom + luogoRilProv + indirizzo + comuneRes + provRes + statoRes;
+
+    // Luogo rilascio documento (9 chars): codice comune o stato
+    const luogoRil = ospite.luogo_rilascio_codice
+      ? pad(ospite.luogo_rilascio_codice.trim(), 9)
+      : pad('', 9);
+
+    // 134 + 5 + 20 + 9 = 168
+    riga += tipoDoc + numDoc + luogoRil;
   } else {
-    riga += pad('', 104);
+    // Tipo 19/20 (familiari/membri): 34 spazi
+    riga += pad('', 34);
+  }
+
+  // Verifica lunghezza
+  if (riga.length !== 168) {
+    console.warn(`Schedina lunghezza errata: ${riga.length} (attesa 168) per ${ospite.nome} ${ospite.cognome}`);
   }
 
   return riga;
 }
 
+
+// ── Utilities ──
 
 function pad(str, len) {
   const s = String(str || '');
@@ -319,11 +399,15 @@ function pad(str, len) {
 }
 
 function cleanStr(s) {
-  return (s || '').replace(/[^\w\s\-']/g, '').trim();
+  return (s || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // rimuovi accenti
+    .replace(/[^\w\s\-']/g, '')
+    .trim();
 }
 
 function formatDateIT(dateStr) {
-  if (!dateStr) return '          ';
+  if (!dateStr) return '          '; // 10 spazi
   const d = new Date(dateStr + 'T12:00:00');
   const gg = String(d.getDate()).padStart(2, '0');
   const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -335,7 +419,7 @@ function calcPermanenza(checkin, checkout) {
   if (!checkin || !checkout) return '01';
   const d1 = new Date(checkin + 'T12:00:00');
   const d2 = new Date(checkout + 'T12:00:00');
-  const diff = Math.max(1, Math.round((d2 - d1) / 86400000));
+  const diff = Math.min(30, Math.max(1, Math.round((d2 - d1) / 86400000)));
   return String(diff).padStart(2, '0');
 }
 
@@ -359,7 +443,7 @@ function escXml(s) {
 function maskSensitiveData(str) {
   if (!str) return '';
   return str
-    .replace(/<Password>.*?<\/Password>/gi, '<Password>***</Password>')
-    .replace(/<WsKey>.*?<\/WsKey>/gi, '<WsKey>***</WsKey>')
-    .replace(/<token>.*?<\/token>/gi, '<token>***</token>');
+    .replace(/<Password>[\s\S]*?<\/Password>/gi, '<Password>***</Password>')
+    .replace(/<WsKey>[\s\S]*?<\/WsKey>/gi, '<WsKey>***</WsKey>')
+    .replace(/<token>[\s\S]*?<\/token>/gi, '<token>***</token>');
 }
