@@ -1,6 +1,6 @@
 // netlify/functions/send-alloggiati.js
 // Invia schedine al web service SOAP di AlloggiatiWeb
-// Flusso: GenerateToken → Test (validazione) → Send (invio reale)
+// Flusso: GenerateToken → GestioneAppartamenti_Test / GestioneAppartamenti_Send
 //
 // Variabili d'ambiente richieste:
 //   SUPABASE_URL
@@ -10,7 +10,6 @@ const { createClient } = require('@supabase/supabase-js');
 
 const ENDPOINT = 'https://alloggiatiweb.poliziadistato.it/service/service.asmx';
 
-// ── Security: Rate limiting ──
 const rateLimits = {};
 function checkRateLimit(userId, maxPerHour = 60) {
   const now = Date.now();
@@ -84,6 +83,11 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Account AlloggiatiWeb disattivato' }) };
     }
 
+    // ID appartamento sul portale (null = Residence, non serve)
+    const idAppartamento = link.id_appartamento_portale
+      ? String(link.id_appartamento_portale).padStart(6, '0')
+      : null;
+
     // Genera token
     const tokenResult = await soapGenerateToken(account.username, account.password_encrypted, account.wskey);
     if (tokenResult.error) {
@@ -113,8 +117,8 @@ exports.handler = async (event) => {
     }
 
     // Invio SOAP
-    const soapAction = mode === 'send' ? 'Send' : 'Test';
-    const result = await soapSendOrTest(soapAction, account.username, tokenResult.token, schedine);
+    const soapAction = mode === 'send' ? 'GestioneAppartamenti_Send' : 'GestioneAppartamenti_Test';
+    const result = await soapSendOrTest(soapAction, account.username, tokenResult.token, schedine, idAppartamento);
 
     const esito = result.error ? 'ERRORE' : (result.schedineValide === ospiti.length ? 'OK' : 'PARZIALE');
 
@@ -221,9 +225,14 @@ async function soapGenerateToken(utente, password, wskey) {
 }
 
 
-// ── SOAP: Test / Send ──
-async function soapSendOrTest(action, utente, token, schedine) {
+// ── SOAP: GestioneAppartamenti_Test / GestioneAppartamenti_Send ──
+async function soapSendOrTest(action, utente, token, schedine, idAppartamento) {
   const schedineXml = schedine.map(s => `<all:string>${escXml(s)}</all:string>`).join('\n        ');
+
+  // IdAppartamento: obbligatorio per appartamenti, opzionale per residence
+  const idAptXml = idAppartamento
+    ? `<all:IdAppartamento>${escXml(idAppartamento)}</all:IdAppartamento>`
+    : '';
 
   const xml = `<?xml version="1.0" encoding="utf-8"?>
 <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:all="AlloggiatiService">
@@ -234,6 +243,7 @@ async function soapSendOrTest(action, utente, token, schedine) {
       <all:ElencoSchedine>
         ${schedineXml}
       </all:ElencoSchedine>
+      ${idAptXml}
     </all:${action}>
   </soap:Body>
 </soap:Envelope>`;
