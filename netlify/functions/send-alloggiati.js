@@ -1,6 +1,7 @@
 // netlify/functions/send-alloggiati.js
 // Invia schedine al web service SOAP di AlloggiatiWeb
-// Flusso: GenerateToken → GestioneAppartamenti_Test / GestioneAppartamenti_Send
+// Flusso: GenerateToken → Test (validazione) → Send (invio reale)
+// Tracciato record: 168 caratteri per ospite (manuale WS_ALLOGGIATI Rev.01)
 //
 // Variabili d'ambiente richieste:
 //   SUPABASE_URL
@@ -83,11 +84,6 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Account AlloggiatiWeb disattivato' }) };
     }
 
-    // ID appartamento sul portale (null = Residence, non serve)
-    const idAppartamento = link.id_appartamento_portale
-      ? String(link.id_appartamento_portale).padStart(6, '0')
-      : null;
-
     // Genera token
     const tokenResult = await soapGenerateToken(account.username, account.password_encrypted, account.wskey);
     if (tokenResult.error) {
@@ -117,8 +113,8 @@ exports.handler = async (event) => {
     }
 
     // Invio SOAP
-    const soapAction = mode === 'send' ? 'GestioneAppartamenti_Send' : 'GestioneAppartamenti_Test';
-    const result = await soapSendOrTest(soapAction, account.username, tokenResult.token, schedine, idAppartamento);
+    const soapAction = mode === 'send' ? 'Send' : 'Test';
+    const result = await soapSendOrTest(soapAction, account.username, tokenResult.token, schedine);
 
     const esito = result.error ? 'ERRORE' : (result.schedineValide === ospiti.length ? 'OK' : 'PARZIALE');
 
@@ -193,7 +189,8 @@ exports.handler = async (event) => {
 // ── SOAP: GenerateToken ──
 async function soapGenerateToken(utente, password, wskey) {
   const xml = `<?xml version="1.0" encoding="utf-8"?>
-<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:all="AlloggiatiService">
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:all="AlloggiatiService">
+  <soap:Header/>
   <soap:Body>
     <all:GenerateToken>
       <all:Utente>${escXml(utente)}</all:Utente>
@@ -213,7 +210,7 @@ async function soapGenerateToken(utente, password, wskey) {
   });
 
   const text = await res.text();
-  console.log('GenerateToken response:', maskSensitiveData(text.substring(0, 800)));
+  console.log('GenerateToken response:', maskSensitiveData(text.substring(0, 500)));
 
   const tokenMatch = text.match(/<token>([\s\S]*?)<\/token>/);
   const errorMatch = text.match(/<ErroreDettaglio>([\s\S]*?)<\/ErroreDettaglio>/);
@@ -225,17 +222,13 @@ async function soapGenerateToken(utente, password, wskey) {
 }
 
 
-// ── SOAP: GestioneAppartamenti_Test / GestioneAppartamenti_Send ──
-async function soapSendOrTest(action, utente, token, schedine, idAppartamento) {
+// ── SOAP: Test / Send ──
+async function soapSendOrTest(action, utente, token, schedine) {
   const schedineXml = schedine.map(s => `<all:string>${escXml(s)}</all:string>`).join('\n        ');
 
-  // IdAppartamento: obbligatorio per appartamenti, opzionale per residence
-  const idAptXml = idAppartamento
-    ? `<all:IdAppartamento>${escXml(idAppartamento)}</all:IdAppartamento>`
-    : '';
-
   const xml = `<?xml version="1.0" encoding="utf-8"?>
-<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:all="AlloggiatiService">
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:all="AlloggiatiService">
+  <soap:Header/>
   <soap:Body>
     <all:${action}>
       <all:Utente>${escXml(utente)}</all:Utente>
@@ -243,7 +236,6 @@ async function soapSendOrTest(action, utente, token, schedine, idAppartamento) {
       <all:ElencoSchedine>
         ${schedineXml}
       </all:ElencoSchedine>
-      ${idAptXml}
     </all:${action}>
   </soap:Body>
 </soap:Envelope>`;
@@ -296,7 +288,7 @@ function buildSchedina(ospite) {
   const cittadinanza = pad(ospite.cittadinanza_codice || '100000100', 9);
 
   let riga = tipo + dataArr + perm + cognome + nome + sesso + dataNascita +
-             comuneNascita + provNascita + statoNascita + cittadinanza;
+             comuneNascita + provNascita + statoNascita + cittadinanza; // 134 chars
 
   const tipoNum = parseInt(tipo);
   if ([16, 17, 18].includes(tipoNum)) {
@@ -304,12 +296,17 @@ function buildSchedina(ospite) {
     const numDoc = pad(cleanStr(ospite.numero_documento || '').toUpperCase(), 20);
     const luogoRil = ospite.luogo_rilascio_codice
       ? pad(ospite.luogo_rilascio_codice.trim(), 9) : pad('', 9);
-    riga += tipoDoc + numDoc + luogoRil;
+    riga += tipoDoc + numDoc + luogoRil; // +34 = 168
   } else {
-    riga += pad('', 34);
+    riga += pad('', 34); // familiari: 34 spazi = 168
   }
 
-  console.log(`Schedina ${ospite.cognome}: ${riga.length} chars`);
+  if (riga.length !== 168) {
+    console.error(`ERRORE schedina ${ospite.cognome}: ${riga.length} chars (attesi 168)`);
+  } else {
+    console.log(`Schedina ${ospite.cognome}: 168 chars OK`);
+  }
+
   return riga;
 }
 
