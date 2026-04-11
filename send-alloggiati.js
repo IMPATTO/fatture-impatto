@@ -124,6 +124,7 @@ exports.handler = async (event) => {
     const result = await soapSendOrTest(soapAction, account.username, tokenResult.token, schedine);
 
     // 8. Salva esito
+    console.log('DEBUG branch:', JSON.stringify({ mode, schedineValide: result.schedineValide, ospiti_length: ospiti.length, error: result.error }));
     const esito = result.error ? 'ERRORE' : (result.schedineValide === ospiti.length ? 'OK' : 'PARZIALE');
 
     // Aggiorna stato ospiti
