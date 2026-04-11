@@ -217,6 +217,14 @@ async function loadData() {
     sb.from('ospiti_da_lavorare').select('*').order('created_at',{ascending:false}),
     sb.from('apartments').select('id,nome_appartamento').order('nome_appartamento'),
   ]);
+  // Se il token è scaduto, Supabase restituisce errore JWT
+  if (o.error && (o.error.message?.includes('JWT') || o.error.code === 'PGRST301')) {
+    console.warn('Token scaduto durante loadData, redirect a login');
+    await sb.auth.signOut();
+    return;
+  }
+  if (o.error) console.error('Errore ospiti:', o.error);
+  if (a.error) console.error('Errore apartments:', a.error);
   S.rows = o.data||[]; S.apartments = a.data||[];
   S.loading = false; partialTable(); partialStats();
 }
@@ -275,6 +283,7 @@ async function creaFattura() {
       body: JSON.stringify({
   ospiti_check_in_id: S.selected.id,
   payment_status: S.form.payment_status,
+  document_type: S.form.document_type
 })
     });
 
@@ -393,6 +402,7 @@ function partialTable() {
         piva_cliente:row.piva_cliente||'', importo_lordo:row.importo_lordo||'',
         data_checkin:row.data_checkin||'', data_checkout:row.data_checkout||'',
         segnalazione_jessica:row.segnalazione_jessica||'',
+        document_type: row.document_type || 'proforma'
       };
       partialDrawer(); highlightSelected();
     });
@@ -467,16 +477,25 @@ function partialDrawer() {
   </select>
 </div>
 
-<div class="field-2">
-  <div class="field"><label>Importo lordo (€)</label><input class="df" type="number" step="0.01" data-k="importo_lordo" value="${esc(f.importo_lordo)}"/></div>
-  <div class="field"><label>Data check-in</label><input class="df" type="date" data-k="data_checkin" value="${esc(f.data_checkin)}"/></div>
+<div class="field">
+  <label>Tipo documento</label>
+  <select class="df" data-k="document_type">
+  <option value="proforma" ${f.document_type === 'proforma' ? 'selected' : ''}>Proforma</option>
+  <option value="invoice" ${f.document_type === 'invoice' ? 'selected' : ''}>Invoice</option>
+</select>
 </div>
 
 <div class="field-2">
-  <div class="field"><label>Data check-out</label><input class="df" type="date" data-k="data_checkout" value="${esc(f.data_checkout)}"/></div>
+  <div class="field"><label>Importo lordo (€)</label> ... </div>
+  <div class="field"><label>Data check-in</label> ... </div>
 </div>
-
-<div class="drawer-sec">Segnalazione</div>
+      <div class="field"><label>Importo lordo (€)</label><input class="df" type="number" step="0.01" data-k="importo_lordo" value="${esc(f.importo_lordo)}"/></div>
+      <div class="field"><label>Data check-in</label><input class="df" type="date" data-k="data_checkin" value="${esc(f.data_checkin)}"/></div>
+    </div>
+    <div class="field-2">
+      <div class="field"><label>Data check-out</label><input class="df" type="date" data-k="data_checkout" value="${esc(f.data_checkout)}"/></div>
+    </div>
+    <div class="drawer-sec">Segnalazione</div>
     <div class="field"><textarea class="df" data-k="segnalazione_jessica" placeholder="Note o segnalazione…">${esc(f.segnalazione_jessica)}</textarea></div>
     <div class="drawer-sec">Stato corrente</div>
     <span class="badge ${badgeCls(r.stato)}" style="font-size:12px;padding:4px 12px">${badgeLbl(r.stato)}</span>
@@ -536,10 +555,23 @@ function startInactivity() {
 }
 
 (async()=>{
-  const {data:{session}} = await sb.auth.getSession();
-  S.session=session;
-  if (session) { renderDashboard(); startInactivity(); await loadData(); }
-  else renderLogin();
+  const {data:{session}, error} = await sb.auth.getSession();
+  if (error || !session) {
+    S.session = null;
+    renderLogin();
+    return;
+  }
+  // Verifica che il token sia ancora valido tentando un refresh
+  const {data: refreshData, error: refreshError} = await sb.auth.refreshSession();
+  if (refreshError || !refreshData.session) {
+    console.warn('Sessione scaduta, redirect a login', refreshError?.message);
+    await sb.auth.signOut();
+    S.session = null;
+    renderLogin();
+    return;
+  }
+  S.session = refreshData.session;
+  renderDashboard(); startInactivity(); await loadData();
 })();
 
 sb.auth.onAuthStateChange(async (_,session)=>{

@@ -98,17 +98,6 @@
     .filters { display: flex; gap: 10px; padding: 12px 24px; background: var(--white); border-bottom: 1px solid var(--border); flex-wrap: wrap; align-items: center; }
     .filters input, .filters select { background: var(--surf); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; font-size: 13px; font-family: var(--sans); color: var(--text); outline: none; transition: border-color 0.15s; }
     .filters input:focus, .filters select:focus { border-color: var(--accent); }
-
-    /* ── Autocomplete ── */
-    .autocomplete-wrap { position: relative; }
-    .autocomplete-wrap input { width: 100%; }
-    .ac-dropdown { display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--white); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 4px 20px rgba(0,0,0,0.12); z-index: 200; max-height: 240px; overflow-y: auto; margin-top: 2px; }
-    .ac-item { padding: 9px 13px; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--border); }
-    .ac-item:last-child { border-bottom: none; }
-    .ac-item:hover { background: var(--accent-l); color: var(--accent); }
-    .ac-item-sub { font-family: var(--mono); font-size: 10px; color: var(--muted); white-space: nowrap; }
-    .ac-item:hover .ac-item-sub { color: var(--accent); opacity: 0.7; }
-    .ac-selected-badge { display: inline-block; margin-top: 4px; font-family: var(--mono); font-size: 10px; color: var(--teal); background: var(--teal-l); padding: 2px 7px; border-radius: 4px; letter-spacing: 0.05em; }
     .filters input { min-width: 220px; }
     .filters select { appearance: none; cursor: pointer; padding-right: 28px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a8a29e' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
 
@@ -209,11 +198,6 @@ const S = {
   fSearch: '', fStatoPS: '', fApt: '', fAccount: '',
   // Accounts
   editAccount: null,
-  // Tabelle codici per autocomplete
-  codiciComuni: [],    // { codice, nome, provincia }
-  codiciStati: [],     // { codice, nome, nome_it }
-  codiciDocumenti: [], // { codice, descrizione }
-  tabLoaded: false,
 };
 
 // ── Helpers ──
@@ -242,46 +226,21 @@ async function loadAll() {
     sb.from('alloggiati_accounts').select('*').order('nome_account'),
     sb.from('apartment_alloggiati').select('*'),
   ]);
+  // Se il token è scaduto, Supabase restituisce errore JWT
+  if (ospiti.error && (ospiti.error.message?.includes('JWT') || ospiti.error.code === 'PGRST301')) {
+    console.warn('Token scaduto durante loadAll, redirect a login');
+    await sb.auth.signOut();
+    return;
+  }
+  if (ospiti.error) console.error('Errore ospiti:', ospiti.error);
+  if (apts.error) console.error('Errore apartments:', apts.error);
+  if (accs.error) console.error('Errore accounts:', accs.error);
+  if (lnks.error) console.error('Errore links:', lnks.error);
   S.rows = ospiti.data || [];
   S.apartments = apts.data || [];
   S.accounts = accs.data || [];
   S.links = lnks.data || [];
   S.loading = false;
-
-  // Carica tabelle codici (solo la prima volta o se vuote)
-  if (!S.tabLoaded) {
-    loadTabelleCodici();
-  }
-}
-
-async function loadTabelleCodici() {
-  // Carica stati e documenti (pochi record, una sola query)
-  const [stati, docs] = await Promise.all([
-    sb.from('codici_stati').select('codice,nome,nome_it').order('nome_it').limit(300),
-    sb.from('codici_documenti').select('codice,descrizione').order('descrizione'),
-  ]);
-  if (stati.data?.length)  S.codiciStati  = stati.data;
-  if (docs.data?.length)   S.codiciDocumenti = docs.data;
-
-  // Carica tutti i comuni in più pagine da 1000
-  let allComuni = [];
-  let page = 0;
-  const PAGE = 1000;
-  while (true) {
-    const { data, error } = await sb
-      .from('codici_comuni')
-      .select('codice,nome,provincia')
-      .order('nome')
-      .range(page * PAGE, (page + 1) * PAGE - 1);
-    if (error || !data?.length) break;
-    allComuni = allComuni.concat(data);
-    if (data.length < PAGE) break;
-    page++;
-  }
-  if (allComuni.length) {
-    S.codiciComuni = allComuni;
-    S.tabLoaded = true;
-  }
 }
 
 function getAccountForApt(aptId) {
@@ -367,13 +326,11 @@ function renderDashboard() {
     <div class="tab ${S.tab==='schedine'?'active':''}" data-tab="schedine">Schedine PS</div>
     <div class="tab ${S.tab==='accounts'?'active':''}" data-tab="accounts">Account Alloggiati</div>
     <div class="tab ${S.tab==='config'?'active':''}" data-tab="config">Collega Appartamenti</div>
-    <div class="tab ${S.tab==='codici'?'active':''}" data-tab="codici">Tabelle Codici</div>
   </div>
   <div class="content">
     <div class="panel ${S.tab==='schedine'?'active':''}" id="panSchedine"></div>
     <div class="panel ${S.tab==='accounts'?'active':''}" id="panAccounts"></div>
     <div class="panel ${S.tab==='config'?'active':''}" id="panConfig"></div>
-    <div class="panel ${S.tab==='codici'?'active':''}" id="panCodici"></div>
   </div>`;
 
   document.getElementById('btnLogout').addEventListener('click', ()=>sb.auth.signOut());
@@ -388,7 +345,6 @@ function renderDashboard() {
   if (S.tab === 'schedine') renderSchedine();
   else if (S.tab === 'accounts') renderAccounts();
   else if (S.tab === 'config') renderConfig();
-  else if (S.tab === 'codici') renderCodici();
 }
 
 // ── TAB 1: Schedine ──
@@ -490,16 +446,7 @@ function renderDrawer() {
   if (!S.selected) { d.classList.remove('open'); d.innerHTML=''; return; }
   const r = S.selected, f = S.form;
   const acc = f._account;
-  const hasTabelle = S.codiciComuni.length > 0;
   d.classList.add('open');
-
-  // Build select opzioni tipi documento
-  const docOpts = S.codiciDocumenti.length > 0
-    ? S.codiciDocumenti.map(dc => `<option value="${esc(dc.codice)}" ${f.tipo_documento_codice===dc.codice?'selected':''}>${esc(dc.descrizione)} (${esc(dc.codice)})</option>`).join('')
-    : `<option value="IDENT" ${(f.tipo_documento_codice||f.tipo_documento)==='IDENT'||f.tipo_documento==="Carta d'identita"?'selected':''}>Carta d'identità (IDENT)</option>
-       <option value="PASOR" ${(f.tipo_documento_codice||f.tipo_documento)==='PASOR'||f.tipo_documento==='Passaporto'?'selected':''}>Passaporto (PASOR)</option>
-       <option value="PATEN" ${(f.tipo_documento_codice||f.tipo_documento)==='PATEN'||f.tipo_documento==='Patente'?'selected':''}>Patente (PATEN)</option>`;
-
   d.innerHTML = `
   <div class="drawer-header">
     <div>
@@ -521,66 +468,34 @@ function renderDrawer() {
       </div>
       <div class="field"><label>Data di nascita</label><input class="df" type="date" data-k="data_nascita" value="${esc(f.data_nascita)}"/></div>
     </div>
-
-    <!-- Luogo di nascita con autocomplete -->
     <div class="field-2">
-      <div class="field">
-        <label>Luogo di nascita ${hasTabelle?'<span style="color:var(--teal);font-size:9px;margin-left:4px">↓ autocomplete</span>':''}</label>
-        <div class="autocomplete-wrap">
-          <input class="df" id="dLuogoNascitaInput" data-k="luogo_nascita" value="${esc(f.luogo_nascita)}" placeholder="Es. Rimini" autocomplete="off"/>
-          <input type="hidden" id="dLuogoNascitaCodice" data-k="luogo_nascita_codice" value="${esc(f.luogo_nascita_codice||'')}"/>
-          <div class="ac-dropdown" id="dLuogoNascitaDrop"></div>
-          ${f.luogo_nascita_codice ? `<div class="ac-selected-badge">cod. ${esc(f.luogo_nascita_codice)}</div>` : ''}
-        </div>
-      </div>
-      <div class="field">
-        <label>Cittadinanza / Nazionalità ${hasTabelle?'<span style="color:var(--teal);font-size:9px;margin-left:4px">↓ autocomplete</span>':''}</label>
-        <div class="autocomplete-wrap">
-          <input class="df" id="dCittadinanzaInput" data-k="cittadinanza" value="${esc(f.cittadinanza)}" placeholder="Es. Italia" autocomplete="off"/>
-          <input type="hidden" id="dCittadinanzaCodice" data-k="cittadinanza_codice" value="${esc(f.cittadinanza_codice||'')}"/>
-          <div class="ac-dropdown" id="dCittadinanzaDrop"></div>
-          ${f.cittadinanza_codice ? `<div class="ac-selected-badge">cod. ${esc(f.cittadinanza_codice)}</div>` : ''}
-        </div>
-      </div>
+      <div class="field"><label>Luogo di nascita</label><input class="df" data-k="luogo_nascita" value="${esc(f.luogo_nascita)}"/></div>
+      <div class="field"><label>Cittadinanza</label><input class="df" data-k="cittadinanza" value="${esc(f.cittadinanza)}"/></div>
     </div>
-
     <div class="field-2">
       <div class="field"><label>Tipo documento</label>
-        <select class="df" data-k="tipo_documento_codice" id="dTipoDoc">
+        <select class="df" data-k="tipo_documento">
           <option value="">—</option>
-          ${docOpts}
+          <option value="Carta d'identita" ${f.tipo_documento==="Carta d'identita"?'selected':''}>Carta d'identita</option>
+          <option value="Passaporto" ${f.tipo_documento==='Passaporto'?'selected':''}>Passaporto</option>
+          <option value="Patente" ${f.tipo_documento==='Patente'?'selected':''}>Patente</option>
         </select>
       </div>
-      <div class="field"><label>Numero documento</label><input class="df" data-k="numero_documento" value="${esc(f.numero_documento)}" style="font-family:var(--mono);text-transform:uppercase"/></div>
+      <div class="field"><label>Numero documento</label><input class="df" data-k="numero_documento" value="${esc(f.numero_documento)}"/></div>
     </div>
-
-    <!-- Luogo rilascio documento con autocomplete -->
-    <div class="field">
-      <label>Luogo rilascio documento ${hasTabelle?'<span style="color:var(--teal);font-size:9px;margin-left:4px">↓ autocomplete (comune italiano o stato estero)</span>':''}</label>
-      <div class="autocomplete-wrap">
-        <input class="df" id="dLuogoRilascioInput" data-k="luogo_rilascio_documento" value="${esc(f.luogo_rilascio_documento)}" placeholder="Es. Rimini oppure Italia" autocomplete="off"/>
-        <input type="hidden" id="dLuogoRilascioCodice" data-k="luogo_rilascio_codice" value="${esc(f.luogo_rilascio_codice||'')}"/>
-        <div class="ac-dropdown" id="dLuogoRilascioDrop"></div>
-        ${f.luogo_rilascio_codice ? `<div class="ac-selected-badge">cod. ${esc(f.luogo_rilascio_codice)}</div>` : ''}
-      </div>
-    </div>
-
+    <div class="field"><label>Luogo rilascio documento</label><input class="df" data-k="luogo_rilascio_documento" value="${esc(f.luogo_rilascio_documento)}"/></div>
     <div class="field-2">
       <div class="field"><label>Tipo alloggiato</label>
         <select class="df" data-k="tipo_alloggiato">
-          <option value="16" ${f.tipo_alloggiato==16?'selected':''}>16 — Ospite singolo</option>
-          <option value="17" ${f.tipo_alloggiato==17?'selected':''}>17 — Capofamiglia</option>
-          <option value="18" ${f.tipo_alloggiato==18?'selected':''}>18 — Capogruppo</option>
-          <option value="19" ${f.tipo_alloggiato==19?'selected':''}>19 — Familiare</option>
-          <option value="20" ${f.tipo_alloggiato==20?'selected':''}>20 — Membro gruppo</option>
+          <option value="16" ${f.tipo_alloggiato==16?'selected':''}>Ospite singolo</option>
+          <option value="17" ${f.tipo_alloggiato==17?'selected':''}>Capofamiglia</option>
+          <option value="18" ${f.tipo_alloggiato==18?'selected':''}>Capogruppo</option>
+          <option value="19" ${f.tipo_alloggiato==19?'selected':''}>Familiare</option>
+          <option value="20" ${f.tipo_alloggiato==20?'selected':''}>Membro gruppo</option>
         </select>
       </div>
       <div class="field"><label>Tag prenotazione</label><input class="df" data-k="tag_prenotazione" value="${esc(f.tag_prenotazione)}"/></div>
     </div>
-
-    ${!hasTabelle ? `<div style="padding:8px 12px;background:var(--yellow-l);border:1px solid #fde68a;border-radius:6px;font-size:12px;color:var(--yellow);margin-bottom:8px">
-      ⚠ Tabelle codici non ancora importate. Vai nel tab <strong>Tabelle Codici</strong> per scaricarle da AlloggiatiWeb. L'autocomplete per comune e nazionalità richiede le tabelle.
-    </div>` : ''}
 
     ${r.alloggiati_errore ? `<div class="drawer-sec">Ultimo errore</div><div style="padding:10px 14px;background:var(--red-l);border-radius:6px;font-size:12px;color:var(--red);font-family:var(--mono)">${esc(r.alloggiati_errore)}</div>` : ''}
     ${r.alloggiati_inviata_at ? `<div class="mono-sm" style="margin-top:12px">Ultimo invio: ${fmt(r.alloggiati_inviata_at)}</div>` : ''}
@@ -605,38 +520,10 @@ function renderDrawer() {
   // Live validation
   validateDrawer();
 
-  // Bind campi normali
   d.querySelectorAll('.df').forEach(el=>{
     el.addEventListener('input', e=>{ S.form[e.target.dataset.k]=e.target.value; validateDrawer(); });
     el.addEventListener('change', e=>{ S.form[e.target.dataset.k]=e.target.value; validateDrawer(); });
   });
-
-  // Setup autocomplete comuni (luogo nascita)
-  setupAutocompleteComuni('dLuogoNascitaInput', 'dLuogoNascitaCodice', 'dLuogoNascitaDrop',
-    (nome, codice) => {
-      S.form.luogo_nascita = nome;
-      S.form.luogo_nascita_codice = codice;
-      validateDrawer();
-    }
-  );
-
-  // Setup autocomplete stati (cittadinanza)
-  setupAutocompleteStati('dCittadinanzaInput', 'dCittadinanzaCodice', 'dCittadinanzaDrop',
-    (nome, codice) => {
-      S.form.cittadinanza = nome;
-      S.form.cittadinanza_codice = codice;
-      validateDrawer();
-    }
-  );
-
-  // Setup autocomplete luogo rilascio (comune + stato)
-  setupAutocompleteMisto('dLuogoRilascioInput', 'dLuogoRilascioCodice', 'dLuogoRilascioDrop',
-    (nome, codice) => {
-      S.form.luogo_rilascio_documento = nome;
-      S.form.luogo_rilascio_codice = codice;
-      validateDrawer();
-    }
-  );
 }
 
 function validateDrawer() {
@@ -736,17 +623,9 @@ async function saveSchedina() {
   const { _account, alloggiati_stato, ...payload } = S.form;
   payload.tipo_alloggiato = Number(payload.tipo_alloggiato) || 16;
 
-  // tipo_documento_codice viene già gestito come codice diretto (IDENT/PASOR/PATEN ecc)
-  // Mantieni anche tipo_documento come label leggibile (retrocompatibilità)
-  if (payload.tipo_documento_codice && !payload.tipo_documento) {
-    const docEntry = S.codiciDocumenti.find(d => d.codice === payload.tipo_documento_codice);
-    if (docEntry) payload.tipo_documento = docEntry.descrizione;
-    else {
-      // Fallback mappa
-      const docMap = {'IDENT':"Carta d'identita",'PASOR':'Passaporto','PATEN':'Patente'};
-      payload.tipo_documento = docMap[payload.tipo_documento_codice] || payload.tipo_documento_codice;
-    }
-  }
+  // Map tipo_documento to codice
+  const docMap = {"Carta d'identita":'IDENT','Passaporto':'PASOR','Patente':'PATEN'};
+  if (payload.tipo_documento) payload.tipo_documento_codice = docMap[payload.tipo_documento] || '';
 
   const {error} = await sb.from('ospiti_check_in').update(payload).eq('id', S.selected.id);
   if (error) { toast('Errore: '+error.message,'err'); }
@@ -1032,332 +911,25 @@ function renderConfigRows() {
 }
 
 
-// ──────────────────────────────────────────────────────────────────────────────
-// AUTOCOMPLETE HELPERS
-// ──────────────────────────────────────────────────────────────────────────────
-
-function setupAutocompleteComuni(inputId, hiddenId, dropId, onSelect) {
-  const input  = document.getElementById(inputId);
-  const hidden = document.getElementById(hiddenId);
-  const drop   = document.getElementById(dropId);
-  if (!input || !drop) return;
-
-  let timer;
-  input.addEventListener('input', () => {
-    clearTimeout(timer);
-    const q = input.value.trim();
-    if (q.length < 2) { drop.innerHTML=''; drop.style.display='none'; return; }
-    timer = setTimeout(() => {
-      const results = S.codiciComuni
-        .filter(c => c.nome.toLowerCase().includes(q.toLowerCase()))
-        .sort((a,b) => {
-          const ai = a.nome.toLowerCase().indexOf(q.toLowerCase());
-          const bi = b.nome.toLowerCase().indexOf(q.toLowerCase());
-          return ai - bi || a.nome.localeCompare(b.nome);
-        })
-        .slice(0, 8);
-      renderDrop(drop, results, item => {
-        const label = item.provincia ? `${item.nome} (${item.provincia})` : item.nome;
-        input.value = label;
-        if (hidden) hidden.value = item.codice;
-        drop.innerHTML=''; drop.style.display='none';
-        onSelect(label, item.codice);
-      }, item => `${item.nome}${item.provincia?' ('+item.provincia+')':''}`, item => `cod. ${item.codice}`);
-    }, 180);
-  });
-
-  input.addEventListener('blur', () => setTimeout(()=>{ drop.style.display='none'; }, 200));
-  input.addEventListener('focus', () => { if (input.value.length >= 2) input.dispatchEvent(new Event('input')); });
-}
-
-function setupAutocompleteStati(inputId, hiddenId, dropId, onSelect) {
-  const input  = document.getElementById(inputId);
-  const hidden = document.getElementById(hiddenId);
-  const drop   = document.getElementById(dropId);
-  if (!input || !drop) return;
-
-  let timer;
-  input.addEventListener('input', () => {
-    clearTimeout(timer);
-    const q = input.value.trim();
-    if (q.length < 2) { drop.innerHTML=''; drop.style.display='none'; return; }
-    timer = setTimeout(() => {
-      const results = S.codiciStati
-        .filter(s => {
-          const n = (s.nome_it || s.nome || '').toLowerCase();
-          return n.includes(q.toLowerCase());
-        })
-        .sort((a,b) => {
-          const an = (a.nome_it||a.nome).toLowerCase();
-          const bn = (b.nome_it||b.nome).toLowerCase();
-          const ai = an.indexOf(q.toLowerCase());
-          const bi = bn.indexOf(q.toLowerCase());
-          return ai - bi || an.localeCompare(bn);
-        })
-        .slice(0, 8);
-      renderDrop(drop, results, item => {
-        const label = item.nome_it || item.nome;
-        input.value = label;
-        if (hidden) hidden.value = item.codice;
-        drop.innerHTML=''; drop.style.display='none';
-        onSelect(label, item.codice);
-      }, item => item.nome_it || item.nome, item => `cod. ${item.codice}`);
-    }, 180);
-  });
-
-  input.addEventListener('blur', () => setTimeout(()=>{ drop.style.display='none'; }, 200));
-  input.addEventListener('focus', () => { if (input.value.length >= 2) input.dispatchEvent(new Event('input')); });
-}
-
-// Misto: cerca sia comuni che stati (per luogo rilascio documento)
-function setupAutocompleteMisto(inputId, hiddenId, dropId, onSelect) {
-  const input  = document.getElementById(inputId);
-  const hidden = document.getElementById(hiddenId);
-  const drop   = document.getElementById(dropId);
-  if (!input || !drop) return;
-
-  let timer;
-  input.addEventListener('input', () => {
-    clearTimeout(timer);
-    const q = input.value.trim();
-    if (q.length < 2) { drop.innerHTML=''; drop.style.display='none'; return; }
-    timer = setTimeout(() => {
-      const comuni = S.codiciComuni
-        .filter(c => c.nome.toLowerCase().includes(q.toLowerCase()))
-        .slice(0, 5)
-        .map(c => ({ ...c, _type: 'comune', _label: c.provincia ? `${c.nome} (${c.provincia})` : c.nome }));
-      const stati = S.codiciStati
-        .filter(s => (s.nome_it||s.nome).toLowerCase().includes(q.toLowerCase()))
-        .slice(0, 3)
-        .map(s => ({ ...s, _type: 'stato', _label: s.nome_it || s.nome }));
-      const results = [...comuni, ...stati];
-      renderDrop(drop, results, item => {
-        input.value = item._label;
-        if (hidden) hidden.value = item.codice;
-        drop.innerHTML=''; drop.style.display='none';
-        onSelect(item._label, item.codice);
-      }, item => item._label, item => `${item._type === 'comune' ? '🏙 comune' : '🌍 stato'} · ${item.codice}`);
-    }, 180);
-  });
-
-  input.addEventListener('blur', () => setTimeout(()=>{ drop.style.display='none'; }, 200));
-  input.addEventListener('focus', () => { if (input.value.length >= 2) input.dispatchEvent(new Event('input')); });
-}
-
-function renderDrop(drop, results, onPick, labelFn, subFn) {
-  if (!results.length) { drop.innerHTML=''; drop.style.display='none'; return; }
-  drop.style.display = 'block';
-  drop.innerHTML = results.map((item, i) =>
-    `<div class="ac-item" data-i="${i}">${esc(labelFn(item))}<span class="ac-item-sub">${esc(subFn(item))}</span></div>`
-  ).join('');
-  drop.querySelectorAll('.ac-item').forEach((el, i) => {
-    el.addEventListener('mousedown', (e) => { e.preventDefault(); onPick(results[i]); });
-  });
-}
-
-
-// ── TAB 4: Tabelle Codici ──────────────────────────────────────────────────────
-function renderCodici() {
-  const pan = document.getElementById('panCodici');
-  const comuni  = S.codiciComuni.length;
-  const stati   = S.codiciStati.length;
-  const docs    = S.codiciDocumenti.length;
-
-  pan.innerHTML = `
-  <div style="padding:20px 24px;background:var(--white);border-bottom:1px solid var(--border)">
-    <div style="font-size:13px;color:var(--text2);max-width:600px">
-      Scarica e importa le tabelle di codici da AlloggiatiWeb in Supabase. Servono per l'autocomplete di comune di nascita, cittadinanza e tipo documento nelle schedine. L'operazione usa le credenziali dell'account PS004343 configurato nelle variabili d'ambiente di Netlify.
-    </div>
-  </div>
-
-  <div style="padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:800px">
-
-    <!-- Status cards -->
-    <div style="grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
-      <div class="stat-card">
-        <div class="stat-label">Comuni / Luoghi</div>
-        <div class="stat-val ${comuni>0?'ok':'warn'}">${comuni > 0 ? comuni.toLocaleString('it') : '—'}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">${comuni>0?'in Supabase':'non importata'}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Nazioni / Stati</div>
-        <div class="stat-val ${stati>0?'ok':'warn'}">${stati > 0 ? stati : '—'}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">${stati>0?'in Supabase':'non importata'}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Tipi Documento</div>
-        <div class="stat-val ${docs>0?'ok':'warn'}">${docs > 0 ? docs : '—'}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">${docs>0?'in Supabase':'non importata'}</div>
-      </div>
-    </div>
-
-    <!-- Import card -->
-    <div style="grid-column:1/-1;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:20px">
-      <div style="font-weight:600;margin-bottom:4px">Importa tabelle da AlloggiatiWeb</div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:16px">
-        Scarica direttamente dal WS ufficiale e popola Supabase. Richiede le variabili <code style="font-family:var(--mono);font-size:11px;background:var(--bg);padding:1px 4px;border-radius:3px">ALLOGGIATI_USERNAME</code>, <code style="font-family:var(--mono);font-size:11px;background:var(--bg);padding:1px 4px;border-radius:3px">ALLOGGIATI_PASSWORD</code>, <code style="font-family:var(--mono);font-size:11px;background:var(--bg);padding:1px 4px;border-radius:3px">ALLOGGIATI_WSKEY</code> nelle env di Netlify.
-      </div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <button id="btnImportAll" class="btn btn-teal">↓ Importa tutte e 3</button>
-        <button id="btnImportLuoghi" class="btn btn-ghost btn-sm">Solo Luoghi (comuni)</button>
-        <button id="btnImportNazioni" class="btn btn-ghost btn-sm">Solo Nazioni (stati)</button>
-        <button id="btnImportDocs" class="btn btn-ghost btn-sm">Solo Tipi Documento</button>
-      </div>
-      <div id="importResult" style="margin-top:14px;font-size:13px"></div>
-    </div>
-
-    <!-- SQL Card -->
-    <div style="grid-column:1/-1;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:20px">
-      <div style="font-weight:600;margin-bottom:4px">SQL da eseguire in Supabase prima di fare l'import</div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:12px">
-        Crea le tabelle <code style="font-family:var(--mono);font-size:11px">codici_comuni</code>, <code style="font-family:var(--mono);font-size:11px">codici_stati</code>, <code style="font-family:var(--mono);font-size:11px">codici_documenti</code> con RLS e indici trigram per l'autocomplete.
-      </div>
-      <a href="https://supabase.com/dashboard/project/tysxeikqbgebpfyblgeb/sql/new" target="_blank" class="btn btn-ghost btn-sm" style="margin-bottom:12px">Apri SQL Editor Supabase →</a>
-      <details>
-        <summary style="cursor:pointer;font-size:12px;color:var(--accent);user-select:none">Mostra SQL DDL completo</summary>
-        <pre id="sqlDdl" style="margin-top:10px;font-size:11px;font-family:var(--mono);background:var(--bg);padding:14px;border-radius:6px;overflow:auto;max-height:300px;color:var(--text2);line-height:1.6;white-space:pre-wrap"></pre>
-        <button id="btnCopySQL" class="btn btn-ghost btn-sm" style="margin-top:8px">Copia SQL</button>
-      </details>
-    </div>
-
-    <!-- Preview tabella -->
-    ${comuni > 0 ? `
-    <div style="grid-column:1/-1;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:20px">
-      <div style="font-weight:600;margin-bottom:12px">Test autocomplete</div>
-      <div class="field" style="max-width:320px">
-        <label>Cerca comune</label>
-        <div class="autocomplete-wrap">
-          <input id="testComuneInput" placeholder="Es. Rimini, Roma, Pesaro…" autocomplete="off"/>
-          <div class="ac-dropdown" id="testComuneDrop"></div>
-        </div>
-      </div>
-      <div id="testComuneResult" style="font-size:12px;margin-top:8px;font-family:var(--mono);color:var(--text2)"></div>
-    </div>
-    ` : ''}
-  </div>`;
-
-  // Import handlers
-  const doImport = async (tipo) => {
-    const btn = document.getElementById(tipo === 'all' ? 'btnImportAll' : `btnImport${tipo.charAt(0).toUpperCase()+tipo.slice(1)}`);
-    if (btn) { btn.disabled = true; btn.textContent = 'Importo…'; }
-    const resultEl = document.getElementById('importResult');
-    resultEl.innerHTML = `<span style="color:var(--yellow)">⏳ Download in corso da AlloggiatiWeb…</span>`;
-
-    try {
-      const session = await sb.auth.getSession();
-      const res = await fetch('/.netlify/functions/get-tabelle-alloggiati', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + session.data.session.access_token
-        },
-        body: JSON.stringify({ tipo })
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        resultEl.innerHTML = '<span style="color:var(--red)">❌ Errore: ' + esc(data.error||'Sconosciuto') + '</span>';
-        return;
-      }
-
-      let html = '';
-      for (const [t, r] of Object.entries(data.results || {})) {
-        if (r.error) {
-          html += '<div style="color:var(--red)">❌ ' + esc(t) + ': ' + esc(r.error) + '</div>';
-        } else {
-          html += '<div style="color:var(--green)">✅ ' + esc(t) + ': ' + r.righe.toLocaleString('it') + ' record importati</div>';
-        }
-      }
-      resultEl.innerHTML = html || '<span style="color:var(--green)">✅ Import completato</span>';
-
-      // Ricarica le tabelle in memoria
-      await loadTabelleCodici();
-      setTimeout(() => renderCodici(), 500); // aggiorna i contatori
-
-    } catch(err) {
-      resultEl.innerHTML = '<span style="color:var(--red)">❌ Errore di rete: ' + esc(err.message) + '</span>';
-    } finally {
-      if (btn) { btn.disabled = false; btn.textContent = btn.id === 'btnImportAll' ? '↓ Importa tutte e 3' : btn.textContent.replace('Importo…', btn.dataset.orig||'Importa'); }
-    }
-  };
-
-  document.getElementById('btnImportAll')?.addEventListener('click', () => doImport('all'));
-  document.getElementById('btnImportLuoghi')?.addEventListener('click', () => doImport('Luoghi'));
-  document.getElementById('btnImportNazioni')?.addEventListener('click', () => doImport('Nazioni'));
-  document.getElementById('btnImportDocs')?.addEventListener('click', () => doImport('Tipi_Documento'));
-
-  // SQL DDL
-  const sqlEl = document.getElementById('sqlDdl');
-  if (sqlEl) sqlEl.textContent = SQL_DDL_CODICI;
-  document.getElementById('btnCopySQL')?.addEventListener('click', () => {
-    navigator.clipboard.writeText(SQL_DDL_CODICI).then(() => toast('SQL copiato negli appunti','ok'));
-  });
-
-  // Test autocomplete
-  if (comuni > 0) {
-    setupAutocompleteComuni('testComuneInput', null, 'testComuneDrop', (nome, codice) => {
-      document.getElementById('testComuneResult').textContent = '✓ Selezionato: "' + nome + '" → codice: ' + codice;
-    });
-  }
-}
-
-// SQL DDL embed
-const SQL_DDL_CODICI = [
-  '-- Abilita estensione trigram per autocomplete fuzzy',
-  'CREATE EXTENSION IF NOT EXISTS pg_trgm;',
-  '',
-  '-- 1. Codici Comuni (tabella Luoghi)',
-  'CREATE TABLE IF NOT EXISTS public.codici_comuni (',
-  '  codice      TEXT PRIMARY KEY,',
-  '  nome        TEXT NOT NULL,',
-  '  provincia   TEXT,',
-  '  updated_at  TIMESTAMPTZ DEFAULT NOW()',
-  ');',
-  'CREATE INDEX IF NOT EXISTS idx_codici_comuni_nome ON public.codici_comuni(nome);',
-  'CREATE INDEX IF NOT EXISTS idx_codici_comuni_nome_trgm ON public.codici_comuni USING gin(nome gin_trgm_ops);',
-  '',
-  '-- 2. Codici Stati / Nazioni',
-  'CREATE TABLE IF NOT EXISTS public.codici_stati (',
-  '  codice      TEXT PRIMARY KEY,',
-  '  nome        TEXT NOT NULL,',
-  '  nome_it     TEXT,',
-  '  updated_at  TIMESTAMPTZ DEFAULT NOW()',
-  ');',
-  'CREATE INDEX IF NOT EXISTS idx_codici_stati_nome_trgm ON public.codici_stati USING gin(nome_it gin_trgm_ops);',
-  '',
-  '-- 3. Tipi Documento',
-  'CREATE TABLE IF NOT EXISTS public.codici_documenti (',
-  '  codice      TEXT PRIMARY KEY,',
-  '  descrizione TEXT NOT NULL,',
-  '  updated_at  TIMESTAMPTZ DEFAULT NOW()',
-  ');',
-  '',
-  '-- RLS',
-  'ALTER TABLE public.codici_comuni    ENABLE ROW LEVEL SECURITY;',
-  'ALTER TABLE public.codici_stati     ENABLE ROW LEVEL SECURITY;',
-  'ALTER TABLE public.codici_documenti ENABLE ROW LEVEL SECURITY;',
-  '',
-  'CREATE POLICY "autenticati_read_codici_comuni" ON public.codici_comuni',
-  '  FOR SELECT TO authenticated USING (true);',
-  'CREATE POLICY "autenticati_read_codici_stati" ON public.codici_stati',
-  '  FOR SELECT TO authenticated USING (true);',
-  'CREATE POLICY "autenticati_read_codici_documenti" ON public.codici_documenti',
-  '  FOR SELECT TO authenticated USING (true);',
-  'CREATE POLICY "service_all_codici_comuni" ON public.codici_comuni',
-  '  FOR ALL TO service_role USING (true);',
-  'CREATE POLICY "service_all_codici_stati" ON public.codici_stati',
-  '  FOR ALL TO service_role USING (true);',
-  'CREATE POLICY "service_all_codici_documenti" ON public.codici_documenti',
-  '  FOR ALL TO service_role USING (true);',
-].join('\n');
-
-
 // ── Init ──
 (async()=>{
-  const {data:{session}} = await sb.auth.getSession();
-  S.session = session;
-  if (session) { await loadAll(); renderDashboard(); }
-  else renderLogin();
+  const {data:{session}, error} = await sb.auth.getSession();
+  if (error || !session) {
+    S.session = null;
+    renderLogin();
+    return;
+  }
+  // Verifica che il token sia ancora valido tentando un refresh
+  const {data: refreshData, error: refreshError} = await sb.auth.refreshSession();
+  if (refreshError || !refreshData.session) {
+    console.warn('Sessione scaduta, redirect a login', refreshError?.message);
+    await sb.auth.signOut();
+    S.session = null;
+    renderLogin();
+    return;
+  }
+  S.session = refreshData.session;
+  await loadAll(); renderDashboard();
 })();
 
 sb.auth.onAuthStateChange(async (_, session) => {
