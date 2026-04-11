@@ -233,7 +233,8 @@ async function loadData() {
       await sb.auth.signOut();
       return;
     }
-    
+    if (o.error) console.error('Errore ospiti:', o.error);
+    if (a.error) console.error('Errore apartments:', a.error);
     S.rows = o.data||[]; S.apartments = a.data||[];
     console.log("✓ Dati caricati:", S.rows.length, S.apartments.length);
   } catch(e) {
@@ -241,11 +242,6 @@ async function loadData() {
     toast("Errore caricamento: " + e.message, 'err');
   }
   
-  S.loading = false; partialTable(); partialStats();
-}
-  if (o.error) console.error('Errore ospiti:', o.error);
-  if (a.error) console.error('Errore apartments:', a.error);
-  S.rows = o.data||[]; S.apartments = a.data||[];
   S.loading = false; partialTable(); partialStats();
 }
 
