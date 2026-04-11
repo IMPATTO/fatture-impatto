@@ -128,6 +128,8 @@ exports.handler = async (event) => {
 
     // 5. Costruisci le stringhe schedina (tracciato record 236 caratteri)
     const schedine = ospiti.map(o => buildSchedina(o, link.id_appartamento_portale));
+    const schedineDebug = schedine.map((s, idx) => ({ idx, len: s.length, raw: s }));
+console.log('[ALLOGGIATI DEBUG]', JSON.stringify(schedineDebug));
 
     // 6. Validazione: controlla che nessuna schedina abbia errori di formato
     const validationErrors = [];
