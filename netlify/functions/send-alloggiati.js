@@ -302,8 +302,7 @@ async function soapSendOrTest(action, utente, token, schedine) {
   });
 
   const text = await res.text();
-
-  // Parse response
+  console.log('SOAP response raw:', text.substring(0, 1000));
   const valideMatch = text.match(/<SchedineValide>(\d+)<\/SchedineValide>/);
   const errorMatch = text.match(/<ErroreDettaglio>(.*?)<\/ErroreDettaglio>/g);
   const mainError = text.match(new RegExp(`<${action}Result>.*?<ErroreDettaglio>(.*?)<\/ErroreDettaglio>.*?<\/${action}Result>`, 's'));
