@@ -5,35 +5,8 @@
 // Variabili d'ambiente richieste:
 //   SUPABASE_URL
 //   SUPABASE_SERVICE_ROLE_KEY
-//   ENCRYPTION_KEY  (chiave AES-256 hex, 64 chars)
 
 const { createClient } = require('@supabase/supabase-js');
-const crypto = require('crypto');
-
-// ── Cifratura AES-256-GCM ──
-// Il valore cifrato in DB ha formato: iv_hex:authTag_hex:encrypted_hex
-function encrypt(plaintext) {
-  const key = Buffer.from(process.env.ENCRYPTION_KEY, 'hex');
-  const iv = crypto.randomBytes(16);
-  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-  const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
-  const authTag = cipher.getAuthTag();
-  return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted.toString('hex');
-}
-
-function decrypt(ciphertext) {
-  // Se il valore non è nel formato cifrato (legacy in chiaro), lo restituisce as-is
-  if (!ciphertext || !ciphertext.includes(':')) return ciphertext;
-  const parts = ciphertext.split(':');
-  if (parts.length !== 3) return ciphertext;
-  const key = Buffer.from(process.env.ENCRYPTION_KEY, 'hex');
-  const iv = Buffer.from(parts[0], 'hex');
-  const authTag = Buffer.from(parts[1], 'hex');
-  const encrypted = Buffer.from(parts[2], 'hex');
-  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
-  decipher.setAuthTag(authTag);
-  return decipher.update(encrypted) + decipher.final('utf8');
-}
 
 const ENDPOINT = 'https://alloggiatiweb.poliziadistato.it/service/service.asmx';
 
@@ -117,22 +90,16 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Account AlloggiatiWeb disattivato' }) };
     }
 
-    // 4. Genera token — decifra la password prima dell'uso
-    const passwordDecrypted = decrypt(account.password_encrypted);
-    const tokenResult = await soapGenerateToken(account.username, passwordDecrypted, account.wskey);
+    // 4. Genera token
+    const tokenResult = await soapGenerateToken(account.username, account.password_encrypted, account.wskey);
     if (tokenResult.error) {
       // Aggiorna ultimo errore sull'account
       await supabase.from('alloggiati_accounts').update({ ultimo_errore: tokenResult.error }).eq('id', account.id);
       return { statusCode: 401, body: JSON.stringify({ error: 'Autenticazione AlloggiatiWeb fallita', detail: tokenResult.error }) };
     }
 
-    // 5. Costruisci le stringhe schedina (tracciato record 220 caratteri)
+    // 5. Costruisci le stringhe schedina (tracciato record 236 caratteri)
     const schedine = ospiti.map(o => buildSchedina(o, link.id_appartamento_portale));
-
-    // DEBUG: log lunghezza schedine
-    schedine.forEach((s, i) => {
-      console.log(`Schedina ${i+1}: ${s.length} chars — "${s}"`);
-    });
 
     // 6. Validazione: controlla che nessuna schedina abbia errori di formato
     const validationErrors = [];
@@ -157,6 +124,7 @@ exports.handler = async (event) => {
     const result = await soapSendOrTest(soapAction, account.username, tokenResult.token, schedine);
 
     // 8. Salva esito
+    console.log('DEBUG branch:', JSON.stringify({ mode, schedineValide: result.schedineValide, ospiti_length: ospiti.length, error: result.error }));
     const esito = result.error ? 'ERRORE' : (result.schedineValide === ospiti.length ? 'OK' : 'PARZIALE');
 
     // Aggiorna stato ospiti
@@ -174,6 +142,34 @@ exports.handler = async (event) => {
         ultimo_invio_ok: new Date().toISOString(),
         ultimo_errore: null
       }).eq('id', account.id);
+    } else if (mode === 'test' && result.schedineValide === ospiti.length) {
+      // Test OK: pulisci errore precedente e riporta a DA_INVIARE
+      const ids = ospiti.map(o => o.id);
+
+      console.log('ospiti_ids ricevuti:', JSON.stringify(ospiti_ids));
+      console.log('ids da DB:', JSON.stringify(ids));
+
+      const { data: resetRows, error: resetErr } = await supabase
+        .from('ospiti_check_in')
+        .update({
+          alloggiati_stato: 'DA_INVIARE',
+          alloggiati_errore: null
+        })
+        .in('id', ids)
+        .select('id, alloggiati_stato, alloggiati_errore');
+
+      if (resetErr) {
+        console.error('Errore update test OK:', resetErr);
+        return {
+          statusCode: 500,
+          body: JSON.stringify({
+            error: 'Test OK ma aggiornamento stato fallito',
+            detail: resetErr.message
+          })
+        };
+      }
+
+      console.log('Reset test OK eseguito:', JSON.stringify(resetRows));
     } else if (result.error) {
       await supabase
         .from('ospiti_check_in')
@@ -302,7 +298,8 @@ async function soapSendOrTest(action, utente, token, schedine) {
   });
 
   const text = await res.text();
-  console.log('SOAP response raw:', text.substring(0, 1000));
+
+  // Parse response
   const valideMatch = text.match(/<SchedineValide>(\d+)<\/SchedineValide>/);
   const errorMatch = text.match(/<ErroreDettaglio>(.*?)<\/ErroreDettaglio>/g);
   const mainError = text.match(new RegExp(`<${action}Result>.*?<ErroreDettaglio>(.*?)<\/ErroreDettaglio>.*?<\/${action}Result>`, 's'));
@@ -405,17 +402,39 @@ function buildSchedina(ospite, idAppartamento) {
     // Numero documento (20 chars)
     const numDoc = pad(cleanStr(ospite.numero_documento || '').toUpperCase(), 20);
 
-    // Luogo rilascio documento (9 chars) — codice comune o stato
+    // Luogo rilascio documento - comune (9 chars)
     const luogoRilCom = ospite.luogo_rilascio_codice
       ? pad(ospite.luogo_rilascio_codice, 9) : pad('', 9);
 
-    riga += tipoDoc + numDoc + luogoRilCom;
-    // TOTALE: 134 + 5 + 20 + 9 = 168 chars ✅ tracciato RESIDENCE Send/Test
+    // Luogo rilascio - provincia (2 chars)
+    const luogoRilProv = ospite.luogo_rilascio_documento
+      ? pad(extractProv(ospite.luogo_rilascio_documento), 2) : pad('', 2);
 
+    // Indirizzo residenza (30 chars)
+    const indirizzo = pad(cleanStr(ospite.indirizzo_residenza || '').toUpperCase(), 30);
+
+    // Comune residenza (9 chars)
+    // Per ora se italiano usiamo il codice se disponibile
+    const comuneRes = pad('', 9); // TODO: aggiungere codice comune residenza
+
+    // Provincia residenza (2 chars)
+    const provRes = pad('', 2); // TODO: estrarre dalla residenza
+
+    // Stato residenza (9 chars)
+    const statoResMap = {
+      'IT': '100000100', 'DE': '200001009', 'FR': '200001008', 'ES': '200002714',
+      'GB': '200002305', 'US': '300000100', 'AT': '200000203', 'CH': '200002909',
+      'NL': '200002008', 'BE': '200000206', 'PL': '200002205', 'CZ': '200002306',
+      'RU': '200002507', 'UA': '200003009', 'CN': '400000100', 'JP': '400000804',
+      'AU': '500000100', 'BR': '300000605', 'AR': '300000108', 'CA': '300000206',
+    };
+    const paeseRes = ospite.paese_residenza || 'IT';
+    const statoRes = pad(statoResMap[paeseRes] || '100000100', 9);
+
+    riga += tipoDoc + numDoc + luogoRilCom + luogoRilProv + indirizzo + comuneRes + provRes + statoRes;
   } else {
-    // Familiari/membri (tipo 19/20): 34 blank per tipo doc + num doc + luogo rilascio
-    riga += pad('', 34);
-    // TOTALE: 134 + 34 = 168 chars ✅
+    // Familiari/membri: 104 spazi
+    riga += pad('', 104);
   }
 
   return riga;
