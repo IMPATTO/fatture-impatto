@@ -213,16 +213,36 @@ function stats() {
 async function loadData() {
   S.loading = true; partialTable();
   console.log("LOAD DATA PARTITO");
-  const [o,a] = await Promise.all([
-    sb.from('ospiti_da_lavorare').select('*').order('created_at',{ascending:false}),
-    sb.from('apartments').select('id,nome_appartamento').order('nome_appartamento'),
-  ]);
-  // Se il token è scaduto, Supabase restituisce errore JWT
-  if (o.error && (o.error.message?.includes('JWT') || o.error.code === 'PGRST301')) {
-    console.warn('Token scaduto durante loadData, redirect a login');
-    await sb.auth.signOut();
-    return;
+  
+  try {
+    console.log("Verifico sb:", typeof sb, typeof sb.from);
+    
+    const [o,a] = await Promise.race([
+      Promise.all([
+        sb.from('ospiti_da_lavorare').select('*').order('created_at',{ascending:false}),
+        sb.from('apartments').select('id,nome_appartamento').order('nome_appartamento'),
+      ]),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("TIMEOUT loadData 15sec")), 15000)
+      )
+    ]);
+    
+    // Se il token è scaduto, Supabase restituisce errore JWT
+    if (o.error && (o.error.message?.includes('JWT') || o.error.code === 'PGRST301')) {
+      console.warn('Token scaduto durante loadData, redirect a login');
+      await sb.auth.signOut();
+      return;
+    }
+    
+    S.rows = o.data||[]; S.apartments = a.data||[];
+    console.log("✓ Dati caricati:", S.rows.length, S.apartments.length);
+  } catch(e) {
+    console.error("✗ loadData error:", e.message);
+    toast("Errore caricamento: " + e.message, 'err');
   }
+  
+  S.loading = false; partialTable(); partialStats();
+}
   if (o.error) console.error('Errore ospiti:', o.error);
   if (a.error) console.error('Errore apartments:', a.error);
   S.rows = o.data||[]; S.apartments = a.data||[];
