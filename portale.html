@@ -633,8 +633,12 @@
 
     const { createClient } = supabase;
     const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
-      realtime: { transport: null },
-      global: { headers: {} }
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        lock: async (_name, _acquireTimeout, fn) => await fn(),
+      },
     });
 
     // ─── i18n ───────────────────────────────────────────────────
