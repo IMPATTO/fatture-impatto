@@ -540,6 +540,55 @@
 </head>
 
 <body>
+<style>
+.navbar { background: #1a1917; color: #fff; padding: 0; display: flex; align-items: center; height: 44px; border-bottom: 1px solid #333; font-size: 13px; font-family: 'DM Sans', sans-serif; gap: 0; }
+.navbar-brand { padding: 0 20px; font-weight: 600; border-right: 1px solid #333; display: flex; align-items: center; height: 100%; white-space: nowrap; }
+.navbar-links { display: flex; gap: 0; flex: 1; align-items: stretch; }
+.navbar-link { padding: 0 18px; display: flex; align-items: center; color: #a8a29e; text-decoration: none; border-right: 1px solid #333; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+.navbar-link:hover { background: #2a2824; color: #fff; }
+.navbar-link.active { background: #2563eb; color: #fff; border-bottom: 2px solid #2563eb; }
+.navbar-user { margin-left: auto; padding-right: 20px; display: flex; align-items: center; gap: 12px; color: #a8a29e; font-size: 12px; }
+@media (max-width: 768px) {
+  .navbar { height: 48px; flex-wrap: wrap; }
+  .navbar-link { padding: 0 12px; font-size: 12px; }
+  .navbar-brand { padding: 0 12px; }
+}
+</style>
+
+<nav class="navbar">
+  <div class="navbar-brand">Impatto</div>
+  <div class="navbar-links">
+    <a href="/backoffice.html" class="navbar-link" id="nav-backoffice">📋 Fatturazione</a>
+    <a href="/backoffice-documenti.html" class="navbar-link" id="nav-documenti">📄 Documenti</a>
+    <a href="/portale.html" class="navbar-link active" id="nav-portale">🏠 Portale Ospiti</a>
+  </div>
+  <div class="navbar-user" id="navbar-user"></div>
+</nav>
+
+<script>
+function updateActiveNav() {
+  const path = window.location.pathname;
+  document.querySelectorAll('.navbar-link').forEach(link => {
+    link.classList.remove('active');
+    if (path.includes(link.id.split('-')[1])) {
+      link.classList.add('active');
+    }
+  });
+  
+  if (window.sb && typeof window.sb.auth !== 'undefined') {
+    window.sb.auth.getSession().then(({data}) => {
+      const email = data.session?.user?.email || '';
+      const userDiv = document.getElementById('navbar-user');
+      if (userDiv && email) {
+        userDiv.textContent = email;
+      }
+    });
+  }
+}
+updateActiveNav();
+</script>
+
+
 
   <!-- Loading Screen -->
   <div id="loading-screen">
