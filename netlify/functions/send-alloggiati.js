@@ -324,9 +324,9 @@ async function soapSendOrTest(action, utente, token, schedine) {
 
 
 // ──────────────────────────────────────────────────────
-// Tracciato record: 236 caratteri per ospite
+// Tracciato record: 220 caratteri per ospite
 // ──────────────────────────────────────────────────────
-// Formato (per ospite singolo/capofamiglia/capogruppo = 236 chars):
+// Formato (per ospite singolo/capofamiglia/capogruppo = 220 chars):
 //   Pos  Len  Campo
 //   1    2    Tipo alloggiato (16/17/18/19/20)
 //   3    10   Data arrivo (gg/mm/aaaa)
@@ -339,7 +339,7 @@ async function soapSendOrTest(action, utente, token, schedine) {
 //   115  2    Provincia nascita (sigla, o 2 spazi se estero)
 //   117  9    Stato nascita (codice 9 char)
 //   126  9    Cittadinanza (codice 9 char)
-//   -- Solo per tipo 16/17/18 (104 chars), per 19/20 → 104 spazi --
+//   -- Solo per tipo 16/17/18 (86 chars), per 19/20 →864 spazi --
 //   135  5    Tipo documento (IDENT/PASOR/PATEN ecc)
 //   140  20   Numero documento
 //   160  9    Luogo rilascio doc - comune (o 9 spazi)
@@ -433,7 +433,7 @@ function buildSchedina(ospite, idAppartamento) {
     riga += tipoDoc + numDoc + luogoRilCom + luogoRilProv + indirizzo + comuneRes + provRes + statoRes;
   } else {
     // Familiari/membri: 104 spazi
-    riga += pad('', 104);
+    riga += pad('', 86);
   }
 
   return riga;
