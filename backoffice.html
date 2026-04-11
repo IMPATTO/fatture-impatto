@@ -226,14 +226,24 @@ function stats() {
 }
 
 async function loadData() {
+  if (S._loadingLock) return;
+  S._loadingLock = true;
   S.loading = true; partialTable();
   console.log("LOAD DATA PARTITO");
-  const [o,a] = await Promise.all([
-    sb.from('ospiti_da_lavorare').select('*').order('created_at',{ascending:false}),
-    sb.from('apartments').select('id,nome_appartamento').order('nome_appartamento'),
-  ]);
-  S.rows = o.data||[]; S.apartments = a.data||[];
-  S.loading = false; partialTable(); partialStats();
+  try {
+    const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('Timeout')), 15000));
+    const query = Promise.all([
+      sb.from('ospiti_da_lavorare').select('*').order('created_at',{ascending:false}),
+      sb.from('apartments').select('id,nome_appartamento').order('nome_appartamento'),
+    ]);
+    const [o,a] = await Promise.race([query, timeout]);
+    S.rows = o.data||[]; S.apartments = a.data||[];
+  } catch(e) {
+    console.error('loadData error:', e);
+    toast('Errore caricamento dati, riprova','err');
+  }
+  S.loading = false; S._loadingLock = false;
+  partialTable(); partialStats();
 }
 
 async function saveForm() {
@@ -577,7 +587,8 @@ sb.auth.onAuthStateChange(async (_,session)=>{
   }
   if (session && !S.session) {
     S.session=session;
-    renderDashboard(); startInactivity(); await loadData();
+    renderDashboard(); startInactivity();
+    try { await loadData(); } catch(e) { console.error('auth load error:', e); }
   }
 });
 </script>

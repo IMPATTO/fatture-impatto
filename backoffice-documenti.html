@@ -230,22 +230,30 @@ function toast(msg, type='ok') {
 
 // ── Data loading ──
 async function loadAll() {
+  if (S._loadingLock) return;
+  S._loadingLock = true;
   S.loading = true;
-  const [ospiti, apts, accs, lnks] = await Promise.all([
-    sb.from('ospiti_check_in')
-      .select('id,nome,cognome,email,sesso,data_nascita,luogo_nascita,luogo_nascita_codice,cittadinanza,cittadinanza_codice,tipo_documento,tipo_documento_codice,numero_documento,luogo_rilascio_documento,luogo_rilascio_codice,tipo_alloggiato,capogruppo_id,data_checkin,data_checkout,apartment_id,stato,alloggiati_stato,alloggiati_errore,alloggiati_inviata_at,tag_prenotazione,paese_residenza,telefono')
-      .in('stato', ['APPROVATA','CREDENZIALI_INVIATE','BOZZA_CREATA','CHECK_IN_COMPLETATO'])
-      .order('data_checkin', {ascending: false})
-      .limit(500),
-    sb.from('apartments').select('id,nome_appartamento').order('nome_appartamento'),
-    sb.from('alloggiati_accounts').select('*').order('nome_account'),
-    sb.from('apartment_alloggiati').select('*'),
-  ]);
-  S.rows = ospiti.data || [];
-  S.apartments = apts.data || [];
-  S.accounts = accs.data || [];
-  S.links = lnks.data || [];
-  S.loading = false;
+  try {
+    const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('Timeout')), 15000));
+    const query = Promise.all([
+      sb.from('ospiti_check_in')
+        .select('id,nome,cognome,email,sesso,data_nascita,luogo_nascita,luogo_nascita_codice,cittadinanza,cittadinanza_codice,tipo_documento,tipo_documento_codice,numero_documento,luogo_rilascio_documento,luogo_rilascio_codice,tipo_alloggiato,capogruppo_id,data_checkin,data_checkout,apartment_id,stato,alloggiati_stato,alloggiati_errore,alloggiati_inviata_at,tag_prenotazione,paese_residenza,telefono')
+        .in('stato', ['APPROVATA','CREDENZIALI_INVIATE','BOZZA_CREATA','CHECK_IN_COMPLETATO'])
+        .order('data_checkin', {ascending: false})
+        .limit(500),
+      sb.from('apartments').select('id,nome_appartamento').order('nome_appartamento'),
+      sb.from('alloggiati_accounts').select('*').order('nome_account'),
+      sb.from('apartment_alloggiati').select('*'),
+    ]);
+    const [ospiti, apts, accs, lnks] = await Promise.race([query, timeout]);
+    S.rows = ospiti.data || [];
+    S.apartments = apts.data || [];
+    S.accounts = accs.data || [];
+    S.links = lnks.data || [];
+  } catch(e) {
+    console.error('loadAll error:', e);
+  }
+  S.loading = false; S._loadingLock = false;
 }
 
 function getAccountForApt(aptId) {
@@ -932,7 +940,7 @@ sb.auth.onAuthStateChange(async (_, session) => {
   }
   if (session && !S.session) {
     S.session = session;
-    await loadAll();
+    try { await loadAll(); } catch(e) { console.error('auth load error:', e); }
     renderDashboard();
   }
 });
