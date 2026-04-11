@@ -63,7 +63,6 @@ exports.handler = async (event) => {
   if (!authHeader?.startsWith('Bearer ')) {
     return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
   }
-
   const { data: { user }, error: userErr } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
   if (userErr || !user) {
     return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
@@ -127,10 +126,13 @@ exports.handler = async (event) => {
       return { statusCode: 401, body: JSON.stringify({ error: 'Autenticazione AlloggiatiWeb fallita', detail: tokenResult.error }) };
     }
 
-    // 5. Costruisci le stringhe schedina (tracciato record 236 caratteri)
+    // 5. Costruisci le stringhe schedina (tracciato record 220 caratteri)
     const schedine = ospiti.map(o => buildSchedina(o, link.id_appartamento_portale));
-    const schedineDebug = schedine.map((s, idx) => ({ idx, len: s.length, raw: s }));
-console.log('[ALLOGGIATI DEBUG]', JSON.stringify(schedineDebug));
+
+    // DEBUG: log lunghezza schedine
+    schedine.forEach((s, i) => {
+      console.log(`Schedina ${i+1}: ${s.length} chars — "${s}"`);
+    });
 
     // 6. Validazione: controlla che nessuna schedina abbia errori di formato
     const validationErrors = [];
@@ -214,7 +216,6 @@ console.log('[ALLOGGIATI DEBUG]', JSON.stringify(schedineDebug));
         mode,
         schedineInviate: ospiti.length,
         schedineValide: result.schedineValide || 0,
-        schedineDebug,
         errore: result.error || null,
         dettaglio: result.dettaglio || [],
         account: account.nome_account,
@@ -328,9 +329,9 @@ async function soapSendOrTest(action, utente, token, schedine) {
 
 
 // ──────────────────────────────────────────────────────
-// Tracciato record: 220 caratteri per ospite
+// Tracciato record: 236 caratteri per ospite
 // ──────────────────────────────────────────────────────
-// Formato (per ospite singolo/capofamiglia/capogruppo = 220 chars):
+// Formato (per ospite singolo/capofamiglia/capogruppo = 236 chars):
 //   Pos  Len  Campo
 //   1    2    Tipo alloggiato (16/17/18/19/20)
 //   3    10   Data arrivo (gg/mm/aaaa)
@@ -343,7 +344,7 @@ async function soapSendOrTest(action, utente, token, schedine) {
 //   115  2    Provincia nascita (sigla, o 2 spazi se estero)
 //   117  9    Stato nascita (codice 9 char)
 //   126  9    Cittadinanza (codice 9 char)
-//   -- Solo per tipo 16/17/18 (86 chars), per 19/20 →864 spazi --
+//   -- Solo per tipo 16/17/18 (104 chars), per 19/20 → 104 spazi --
 //   135  5    Tipo documento (IDENT/PASOR/PATEN ecc)
 //   140  20   Numero documento
 //   160  9    Luogo rilascio doc - comune (o 9 spazi)
@@ -437,7 +438,7 @@ function buildSchedina(ospite, idAppartamento) {
     riga += tipoDoc + numDoc + luogoRilCom + luogoRilProv + indirizzo + comuneRes + provRes + statoRes;
   } else {
     // Familiari/membri: 104 spazi
-    riga += pad('', 86);
+    riga += pad('', 104);
   }
 
   return riga;
