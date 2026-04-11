@@ -9,6 +9,38 @@
 const { createClient } = require('@supabase/supabase-js');
 
 const ENDPOINT = 'https://alloggiatiweb.poliziadistato.it/service/service.asmx';
+const crypto = require('crypto');
+
+function decrypt(encryptedValue) {
+  if (!encryptedValue || !encryptedValue.includes(':')) return encryptedValue;
+
+  const parts = encryptedValue.split(':');
+  if (parts.length !== 3) return encryptedValue;
+
+  if (!process.env.ENCRYPTION_KEY) {
+    throw new Error('ENCRYPTION_KEY mancante');
+  }
+
+  try {
+    const key = Buffer.from(process.env.ENCRYPTION_KEY, 'hex');
+    const iv = Buffer.from(parts[0], 'hex');
+    const authTag = Buffer.from(parts[1], 'hex');
+    const encrypted = Buffer.from(parts[2], 'hex');
+
+    const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+    decipher.setAuthTag(authTag);
+
+    const decrypted = Buffer.concat([
+      decipher.update(encrypted),
+      decipher.final()
+    ]);
+
+    return decrypted.toString('utf8');
+  } catch (e) {
+    console.error('Errore decifratura password:', e.message);
+    throw e;
+  }
+}
 
 // ── Security: Rate limiting (in-memory, per-function instance) ──
 const rateLimits = {};
@@ -91,7 +123,7 @@ exports.handler = async (event) => {
     }
 
     // 4. Genera token
-    const tokenResult = await soapGenerateToken(account.username, account.password_encrypted, account.wskey);
+    const tokenResult = await soapGenerateToken(account.username, decrypt(account.password_encrypted), account.wskey);
     if (tokenResult.error) {
       // Aggiorna ultimo errore sull'account
       await supabase.from('alloggiati_accounts').update({ ultimo_errore: tokenResult.error }).eq('id', account.id);
@@ -255,14 +287,24 @@ async function soapGenerateToken(utente, password, wskey) {
   console.log('GenerateToken raw:', text);
 
   // Parse token from response
-  const tokenMatch = text.match(/<token>(.*?)<\/token>/);
-  const errorMatch = text.match(/<ErroreDettaglio>(.*?)<\/ErroreDettaglio>/);
+  const tokenMatch = text.match(/<token>(.*?)<\/token>/i);
+  const errDetMatch = text.match(/<ErroreDettaglio>(.*?)<\/ErroreDettaglio>/i);
+  const errDesMatch = text.match(/<ErroreDes>(.*?)<\/ErroreDes>/i);
+  const esitoMatch  = text.match(/<esito>(.*?)<\/esito>/i);
 
   if (tokenMatch && tokenMatch[1]) {
     return { token: tokenMatch[1], error: null };
   }
 
-  return { token: null, error: errorMatch?.[1] || 'Token non ricevuto - risposta sconosciuta' };
+  const esito  = esitoMatch?.[1]?.trim()?.toLowerCase();
+  const errDet = errDetMatch?.[1]?.trim();
+  const errDes = errDesMatch?.[1]?.trim();
+
+  if (esito === 'false') {
+    return { token: null, error: errDet || errDes || 'GenerateToken fallito' };
+  }
+
+  return { token: null, error: errDet || errDes || 'Token non ricevuto - risposta sconosciuta' };
 }
 
 
