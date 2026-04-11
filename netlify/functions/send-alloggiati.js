@@ -50,7 +50,10 @@ function checkRateLimit(userId, maxPerHour = 60) {
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
+    return { statusCode: 405,   success: !result.error,
+  mode,
+  schedineInviate: ospiti.length,
+  schedineValide: result.schedineValide || 0,body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
   const supabase = createClient(
@@ -61,7 +64,13 @@ exports.handler = async (event) => {
   // Auth check
   const authHeader = event.headers.authorization || event.headers.Authorization;
   if (!authHeader?.startsWith('Bearer ')) {
-    return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
+      statusCode: 200,
+  body: JSON.stringify({
+    success: !result.error,
+    mode,
+    schedineInviate: ospiti.length,
+    schedineValide: result.schedineValide || 0,
+return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
   }
   const { data: { user }, error: userErr } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
   if (userErr || !user) {
@@ -213,6 +222,7 @@ console.log('[ALLOGGIATI DEBUG]', JSON.stringify(schedineDebug));
         mode,
         schedineInviate: ospiti.length,
         schedineValide: result.schedineValide || 0,
+        schedineDebug,
         errore: result.error || null,
         dettaglio: result.dettaglio || [],
         account: account.nome_account,
