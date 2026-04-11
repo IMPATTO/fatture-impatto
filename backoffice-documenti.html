@@ -6,6 +6,7 @@
   <title>Backoffice Documenti · Impatto</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/supabase-client.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 
@@ -173,17 +174,30 @@
 
     .pw-field { position: relative; }
     .pw-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--muted); font-size: 13px; padding: 4px; }
+
+    /* ── Navbar unificata ── */
+    .navbar { display:flex; align-items:center; gap:24px; padding:0 24px; height:44px; background:#1a1917; font-family:var(--sans); font-size:13px; }
+    .navbar-brand { font-family:var(--serif); font-size:18px; font-weight:500; color:#fff; margin-right:auto; text-decoration:none; }
+    .navbar a.navbar-link { color:#a8a29e; text-decoration:none; padding:4px 10px; border-radius:4px; transition:color .15s,background .15s; }
+    .navbar a.navbar-link:hover { color:#fff; background:rgba(255,255,255,.08); }
+    .navbar a.navbar-link.active { color:#fff; background:var(--teal); }
+    .navbar-user { font-family:var(--mono); font-size:10px; color:#78716c; letter-spacing:.06em; }
   </style>
 </head>
 <body>
+<nav class="navbar" id="mainNavbar">
+  <a href="/backoffice.html" class="navbar-brand">Impatto</a>
+  <a href="/backoffice.html" class="navbar-link">Fatturazione</a>
+  <a href="/backoffice-documenti.html" class="navbar-link">Documenti</a>
+  <a href="/portale.html" class="navbar-link">Portale</a>
+  <span class="navbar-user" id="navUser"></span>
+</nav>
 <div id="app"></div>
 <div id="modal-root"></div>
 <div id="_toast"></div>
 
 <script>
-const SUPABASE_URL      = 'https://tysxeikqbgebpfyblgeb.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5c3hlaWtxYmdlYnBmeWJsZ2ViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyODczODAsImV4cCI6MjA5MDg2MzM4MH0.yXmS2MFh47eRkCX2voemdBkK5m_tyJiKAFhfyp1YEbw';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = window.sb;
 
 const QUESTURE = ['Rimini','Pesaro','Verona','Aosta'];
 const ALLOGGIATI_STATI = ['DA_INVIARE','INVIATA','ERRORE','NON_NECESSARIA'];
@@ -215,22 +229,30 @@ function toast(msg, type='ok') {
 
 // ── Data loading ──
 async function loadAll() {
+  if (S._loadingLock) return;
+  S._loadingLock = true;
   S.loading = true;
-  const [ospiti, apts, accs, lnks] = await Promise.all([
-    sb.from('ospiti_check_in')
-      .select('id,nome,cognome,email,sesso,data_nascita,luogo_nascita,luogo_nascita_codice,cittadinanza,cittadinanza_codice,tipo_documento,tipo_documento_codice,numero_documento,luogo_rilascio_documento,luogo_rilascio_codice,tipo_alloggiato,capogruppo_id,data_checkin,data_checkout,apartment_id,stato,alloggiati_stato,alloggiati_errore,alloggiati_inviata_at,tag_prenotazione,paese_residenza,telefono')
-      .in('stato', ['APPROVATA','CREDENZIALI_INVIATE','BOZZA_CREATA','CHECK_IN_COMPLETATO'])
-      .order('data_checkin', {ascending: false})
-      .limit(500),
-    sb.from('apartments').select('id,nome_appartamento').order('nome_appartamento'),
-    sb.from('alloggiati_accounts').select('*').order('nome_account'),
-    sb.from('apartment_alloggiati').select('*'),
-  ]);
-  S.rows = ospiti.data || [];
-  S.apartments = apts.data || [];
-  S.accounts = accs.data || [];
-  S.links = lnks.data || [];
-  S.loading = false;
+  try {
+    const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('Timeout')), 120000));
+    const query = Promise.all([
+      sb.from('ospiti_check_in')
+        .select('id,nome,cognome,email,sesso,data_nascita,luogo_nascita,luogo_nascita_codice,cittadinanza,cittadinanza_codice,tipo_documento,tipo_documento_codice,numero_documento,luogo_rilascio_documento,luogo_rilascio_codice,tipo_alloggiato,capogruppo_id,data_checkin,data_checkout,apartment_id,stato,alloggiati_stato,alloggiati_errore,alloggiati_inviata_at,tag_prenotazione,paese_residenza,telefono')
+        .in('stato', ['APPROVATA','CREDENZIALI_INVIATE','BOZZA_CREATA','CHECK_IN_COMPLETATO'])
+        .order('data_checkin', {ascending: false})
+        .limit(500),
+      sb.from('apartments').select('id,nome_appartamento').order('nome_appartamento'),
+      sb.from('alloggiati_accounts').select('*').order('nome_account'),
+      sb.from('apartment_alloggiati').select('*'),
+    ]);
+    const [ospiti, apts, accs, lnks] = await Promise.race([query, timeout]);
+    S.rows = ospiti.data || [];
+    S.apartments = apts.data || [];
+    S.accounts = accs.data || [];
+    S.links = lnks.data || [];
+  } catch(e) {
+    console.error('loadAll error:', e);
+  }
+  S.loading = false; S._loadingLock = false;
 }
 
 function getAccountForApt(aptId) {
@@ -308,7 +330,6 @@ function renderDashboard() {
     </div>
     <div class="header-right">
       <span class="header-user">${esc(email)}</span>
-      <a href="backoffice.html" class="btn btn-ghost btn-sm">Fatture →</a>
       <button id="btnLogout" class="btn btn-ghost btn-sm">Esci</button>
     </div>
   </header>
@@ -324,6 +345,7 @@ function renderDashboard() {
   </div>`;
 
   document.getElementById('btnLogout').addEventListener('click', ()=>sb.auth.signOut());
+  document.getElementById('navUser').textContent = email;
   document.querySelectorAll('.tab').forEach(t => {
     t.addEventListener('click', () => {
       S.tab = t.dataset.tab;
@@ -487,9 +509,7 @@ function renderDrawer() {
       <div class="field"><label>Tag prenotazione</label><input class="df" data-k="tag_prenotazione" value="${esc(f.tag_prenotazione)}"/></div>
     </div>
 
-    ${r.alloggiati_errore && r.alloggiati_stato === 'ERRORE' ? `<div class="drawer-sec">Ultimo errore</div><div style="padding:10px 14px;background:var(--red-l);border-radius:6px;font-size:12px;color:var(--red);font-family:var(--mono)">${esc(r.alloggiati_errore)}</div>` : ''}
-    ${r.alloggiati_stato === 'DA_INVIARE' ? `<div style="padding:10px 14px;background:var(--green-l);border-radius:6px;font-size:12px;color:var(--green);margin-top:4px">✅ Pronta per l'invio — nessun errore pendente</div>` : ''}
-    ${r.alloggiati_stato === 'INVIATA' ? `<div style="padding:10px 14px;background:var(--green-l);border-radius:6px;font-size:12px;color:var(--green);margin-top:4px">✅ Schedina inviata alla Questura</div>` : ''}
+    ${r.alloggiati_errore ? `<div class="drawer-sec">Ultimo errore</div><div style="padding:10px 14px;background:var(--red-l);border-radius:6px;font-size:12px;color:var(--red);font-family:var(--mono)">${esc(r.alloggiati_errore)}</div>` : ''}
     ${r.alloggiati_inviata_at ? `<div class="mono-sm" style="margin-top:12px">Ultimo invio: ${fmt(r.alloggiati_inviata_at)}</div>` : ''}
 
     <div class="drawer-sec">Validazione dati</div>
@@ -589,19 +609,7 @@ async function sendToQuestura(mode) {
 
     if (data.success) {
       if (mode === 'test') {
-        toast(`✅ Test OK — schedina valida, pronta per l'invio`, 'ok');
-
-        // FIX: se il test passa e l'ospite era in ERRORE, aggiorna stato su Supabase e in cache locale
-        const ospiteId = S.selected.id;
-        const rowIdx = S.rows.findIndex(r => r.id === ospiteId);
-        if (rowIdx >= 0 && S.rows[rowIdx].alloggiati_stato === 'ERRORE') {
-          await sb.from('ospiti_check_in')
-            .update({ alloggiati_stato: 'DA_INVIARE', alloggiati_errore: null })
-            .eq('id', ospiteId);
-          S.rows[rowIdx].alloggiati_stato = 'DA_INVIARE';
-          S.rows[rowIdx].alloggiati_errore = null;
-        }
-
+        toast(`Test OK — ${data.schedineValide} schedina valida su ${data.schedineInviate}`, 'ok');
       } else {
         toast(`Inviata alla Questura di ${data.questura} — ${data.schedineValide} schedina`, 'ok');
       }
@@ -609,10 +617,10 @@ async function sendToQuestura(mode) {
       toast(`Errore dal portale: ${data.errore || 'vedi dettaglio'}`, 'err');
     }
 
-    // Ricarica dati freschi dal DB
+    // Ricarica dati
     await loadAll();
     if (mode === 'send') { S.selected = null; S.form = {}; }
-    else { S.selected = S.rows.find(r => r.id === S.selected?.id) || null; }
+    else { S.selected = S.rows.find(r=>r.id===S.selected?.id) || null; }
     renderSchedine();
 
   } catch(err) {
@@ -931,10 +939,20 @@ sb.auth.onAuthStateChange(async (_, session) => {
   }
   if (session && !S.session) {
     S.session = session;
-    await loadAll();
+    try { await loadAll(); } catch(e) { console.error('auth load error:', e); }
     renderDashboard();
   }
 });
+</script>
+<script>
+(function(){
+  var path=location.pathname;
+  document.querySelectorAll('.navbar-link').forEach(function(a){
+    if(path.endsWith(a.getAttribute('href').replace('/',''))||
+       (a.getAttribute('href')==='/backoffice.html'&&(path==='/'||path==='/backoffice.html')))
+      a.classList.add('active');
+  });
+})();
 </script>
 </body>
 </html>
