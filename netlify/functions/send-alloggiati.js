@@ -252,6 +252,7 @@ async function soapGenerateToken(utente, password, wskey) {
   });
 
   const text = await res.text();
+  console.log('GenerateToken raw:', text);
 
   // Parse token from response
   const tokenMatch = text.match(/<token>(.*?)<\/token>/);
