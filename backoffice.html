@@ -91,7 +91,7 @@
     .filters input { min-width: 220px; }
     .filters select { appearance: none; cursor: pointer; padding-right: 28px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a8a29e' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
 
-    .body-wrap { display: flex; height: calc(100vh - 56px - 3px - 80px - 52px - 48px); overflow: hidden; }
+    .body-wrap { display: flex; height: calc(100vh - 56px - 3px - 80px - 52px - 48px - 44px); overflow: hidden; }
 
     .table-panel { flex: 1; overflow-y: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -142,105 +142,24 @@
     .toast-info { border-left: 3px solid var(--purple); color: var(--purple); }
     @keyframes tup { from { transform: translateY(8px); opacity: 0; } }
     .mono-sm { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+    /* ── Navbar unificata ── */
+    .navbar { display:flex; align-items:center; gap:24px; padding:0 24px; height:44px; background:#1a1917; font-family:var(--sans); font-size:13px; }
+    .navbar-brand { font-family:var(--serif); font-size:18px; font-weight:500; color:#fff; margin-right:auto; text-decoration:none; }
+    .navbar a.navbar-link { color:#a8a29e; text-decoration:none; padding:4px 10px; border-radius:4px; transition:color .15s,background .15s; }
+    .navbar a.navbar-link:hover { color:#fff; background:rgba(255,255,255,.08); }
+    .navbar a.navbar-link.active { color:#fff; background:var(--accent); }
+    .navbar-user { font-family:var(--mono); font-size:10px; color:#78716c; letter-spacing:.06em; }
   </style>
-<style>
-.navbar { background: #1a1917; color: #fff; padding: 0; display: flex; align-items: center; height: 44px; border-bottom: 1px solid #333; font-size: 13px; font-family: 'DM Sans', sans-serif; gap: 0; }
-.navbar-brand { padding: 0 20px; font-weight: 600; border-right: 1px solid #333; display: flex; align-items: center; height: 100%; white-space: nowrap; }
-.navbar-links { display: flex; gap: 0; flex: 1; align-items: stretch; }
-.navbar-link { padding: 0 18px; display: flex; align-items: center; color: #a8a29e; text-decoration: none; border-right: 1px solid #333; transition: background 0.15s, color 0.15s; white-space: nowrap; }
-.navbar-link:hover { background: #2a2824; color: #fff; }
-.navbar-link.active { background: #2563eb; color: #fff; border-bottom: 2px solid #2563eb; }
-.navbar-user { margin-left: auto; padding-right: 20px; display: flex; align-items: center; gap: 12px; color: #a8a29e; font-size: 12px; }
-@media (max-width: 768px) {
-  .navbar { height: 48px; flex-wrap: wrap; }
-  .navbar-link { padding: 0 12px; font-size: 12px; }
-  .navbar-brand { padding: 0 12px; }
-}
-</style>
 </head>
 <body>
-<nav class="navbar">
-  <div class="navbar-brand">Impatto</div>
-  <div class="navbar-links">
-    <a href="/backoffice.html" class="navbar-link active" id="nav-backoffice">📋 Fatturazione</a>
-    <a href="/backoffice-documenti.html" class="navbar-link" id="nav-documenti">📄 Documenti</a>
-    <a href="/portale.html" class="navbar-link" id="nav-portale">🏠 Portale Ospiti</a>
-  </div>
-  <div class="navbar-user" id="navbar-user"></div>
+<nav class="navbar" id="mainNavbar">
+  <a href="/backoffice.html" class="navbar-brand">Impatto</a>
+  <a href="/backoffice.html" class="navbar-link">Fatturazione</a>
+  <a href="/backoffice-documenti.html" class="navbar-link">Documenti</a>
+  <a href="/portale.html" class="navbar-link">Portale</a>
+  <span class="navbar-user" id="navUser"></span>
 </nav>
-
-<script>
-function updateActiveNav() {
-  const path = window.location.pathname;
-  document.querySelectorAll('.navbar-link').forEach(link => {
-    link.classList.remove('active');
-    if (path.includes(link.id.split('-')[1])) {
-      link.classList.add('active');
-    }
-  });
-  
-  if (window.sb && typeof window.sb.auth !== 'undefined') {
-    window.sb.auth.getSession().then(({data}) => {
-      const email = data.session?.user?.email || '';
-      const userDiv = document.getElementById('navbar-user');
-      if (userDiv && email) {
-        userDiv.textContent = email;
-      }
-    });
-  }
-}
-updateActiveNav();
-</script>
-
-<style>
-.navbar { background: #1a1917; color: #fff; padding: 0; display: flex; align-items: center; height: 44px; border-bottom: 1px solid #333; font-size: 13px; font-family: 'DM Sans', sans-serif; gap: 0; }
-.navbar-brand { padding: 0 20px; font-weight: 600; border-right: 1px solid #333; display: flex; align-items: center; height: 100%; white-space: nowrap; }
-.navbar-links { display: flex; gap: 0; flex: 1; align-items: stretch; }
-.navbar-link { padding: 0 18px; display: flex; align-items: center; color: #a8a29e; text-decoration: none; border-right: 1px solid #333; transition: background 0.15s, color 0.15s; white-space: nowrap; }
-.navbar-link:hover { background: #2a2824; color: #fff; }
-.navbar-link.active { background: #2563eb; color: #fff; border-bottom: 2px solid #2563eb; }
-.navbar-user { margin-left: auto; padding-right: 20px; display: flex; align-items: center; gap: 12px; color: #a8a29e; font-size: 12px; }
-@media (max-width: 768px) {
-  .navbar { height: 48px; flex-wrap: wrap; }
-  .navbar-link { padding: 0 12px; font-size: 12px; }
-  .navbar-brand { padding: 0 12px; }
-}
-</style>
-
-<nav class="navbar">
-  <div class="navbar-brand">Impatto</div>
-  <div class="navbar-links">
-    <a href="/backoffice.html" class="navbar-link active" id="nav-backoffice">📋 Fatturazione</a>
-    <a href="/backoffice-documenti.html" class="navbar-link" id="nav-documenti">📄 Documenti</a>
-    <a href="/portale.html" class="navbar-link" id="nav-portale">🏠 Portale Ospiti</a>
-  </div>
-  <div class="navbar-user" id="navbar-user"></div>
-</nav>
-
-<script>
-function updateActiveNav() {
-  const path = window.location.pathname;
-  document.querySelectorAll('.navbar-link').forEach(link => {
-    link.classList.remove('active');
-    if (path.includes(link.id.split('-')[1])) {
-      link.classList.add('active');
-    }
-  });
-  
-  if (window.sb && typeof window.sb.auth !== 'undefined') {
-    window.sb.auth.getSession().then(({data}) => {
-      const email = data.session?.user?.email || '';
-      const userDiv = document.getElementById('navbar-user');
-      if (userDiv && email) {
-        userDiv.textContent = email;
-      }
-    });
-  }
-}
-updateActiveNav();
-</script>
-
-
 <div id="app"></div>
 
 <script>
@@ -309,35 +228,11 @@ function stats() {
 async function loadData() {
   S.loading = true; partialTable();
   console.log("LOAD DATA PARTITO");
-  
-  try {
-    console.log("Verifico sb:", typeof sb, typeof sb.from);
-    
-    const [o,a] = await Promise.race([
-      Promise.all([
-        sb.from('ospiti_da_lavorare').select('*').order('created_at',{ascending:false}),
-        sb.from('apartments').select('id,nome_appartamento').order('nome_appartamento'),
-      ]),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("TIMEOUT loadData 15sec")), 15000)
-      )
-    ]);
-    
-    // Se il token è scaduto, Supabase restituisce errore JWT
-    if (o.error && (o.error.message?.includes('JWT') || o.error.code === 'PGRST301')) {
-      console.warn('Token scaduto durante loadData, redirect a login');
-      await sb.auth.signOut();
-      return;
-    }
-    if (o.error) console.error('Errore ospiti:', o.error);
-    if (a.error) console.error('Errore apartments:', a.error);
-    S.rows = o.data||[]; S.apartments = a.data||[];
-    console.log("✓ Dati caricati:", S.rows.length, S.apartments.length);
-  } catch(e) {
-    console.error("✗ loadData error:", e.message);
-    toast("Errore caricamento: " + e.message, 'err');
-  }
-  
+  const [o,a] = await Promise.all([
+    sb.from('ospiti_da_lavorare').select('*').order('created_at',{ascending:false}),
+    sb.from('apartments').select('id,nome_appartamento').order('nome_appartamento'),
+  ]);
+  S.rows = o.data||[]; S.apartments = a.data||[];
   S.loading = false; partialTable(); partialStats();
 }
 
@@ -667,23 +562,10 @@ function startInactivity() {
 }
 
 (async()=>{
-  const {data:{session}, error} = await sb.auth.getSession();
-  if (error || !session) {
-    S.session = null;
-    renderLogin();
-    return;
-  }
-  // Verifica che il token sia ancora valido tentando un refresh
-  const {data: refreshData, error: refreshError} = await sb.auth.refreshSession();
-  if (refreshError || !refreshData.session) {
-    console.warn('Sessione scaduta, redirect a login', refreshError?.message);
-    await sb.auth.signOut();
-    S.session = null;
-    renderLogin();
-    return;
-  }
-  S.session = refreshData.session;
-  renderDashboard(); startInactivity(); await loadData();
+  const {data:{session}} = await sb.auth.getSession();
+  S.session=session;
+  if (session) { renderDashboard(); startInactivity(); await loadData(); }
+  else renderLogin();
 })();
 
 sb.auth.onAuthStateChange(async (_,session)=>{
@@ -698,6 +580,16 @@ sb.auth.onAuthStateChange(async (_,session)=>{
     renderDashboard(); startInactivity(); await loadData();
   }
 });
+</script>
+<script>
+(function(){
+  var path=location.pathname;
+  document.querySelectorAll('.navbar-link').forEach(function(a){
+    if(path.endsWith(a.getAttribute('href').replace('/',''))||
+       (a.getAttribute('href')==='/backoffice.html'&&(path==='/'||path==='/backoffice.html')))
+      a.classList.add('active');
+  });
+})();
 </script>
 </body>
 </html>
