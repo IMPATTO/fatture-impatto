@@ -396,88 +396,69 @@ async function soapSendOrTest(action, utente, token, schedine) {
 //   Non li aggiungiamo qui perché usiamo il metodo Send, non FileUnico
 
 function buildSchedina(ospite, idAppartamento) {
+  // Tracciato record 168 caratteri (manuale WS_ALLOGGIATI Rev.01)
+  // Pos  Len  Campo
+  //   1    2  Tipo alloggiato (16/17/18/19/20)
+  //   3   10  Data arrivo (gg/mm/aaaa)
+  //  13    2  Permanenza (gg)
+  //  15   50  Cognome
+  //  65   30  Nome
+  //  95    1  Sesso (1=M, 2=F)
+  //  96   10  Data nascita (gg/mm/aaaa)
+  // 106    9  Comune nascita (codice ISTAT, o 9 spazi se estero)
+  // 115    2  Provincia nascita (sigla, o 2 spazi se estero)
+  // 117    9  Stato nascita (codice 9 char)
+  // 126    9  Cittadinanza (codice 9 char)
+  // 135    5  Tipo documento (IDENT/PASOR/PATEN, solo tipo 16/17/18)
+  // 140   20  Numero documento (solo tipo 16/17/18)
+  // 160    9  Luogo rilascio documento (codice ISTAT, solo tipo 16/17/18)
+  // TOTALE: 168
+
   const tipo = String(ospite.tipo_alloggiato || 16).padStart(2, '0');
-
-  // Data arrivo
   const dataArr = formatDateIT(ospite.data_checkin);
-
-  // Permanenza (in giorni)
   const perm = calcPermanenza(ospite.data_checkin, ospite.data_checkout);
-
-  // Cognome (50 chars)
   const cognome = pad(cleanStr(ospite.cognome || '').toUpperCase(), 50);
-
-  // Nome (30 chars)
   const nome = pad(cleanStr(ospite.nome || '').toUpperCase(), 30);
-
-  // Sesso (1=M, 2=F)
   const sesso = ospite.sesso === 'M' ? '1' : ospite.sesso === 'F' ? '2' : '1';
-
-  // Data nascita
   const dataNascita = formatDateIT(ospite.data_nascita);
 
-  // Comune nascita (9 chars) - vuoto se nato all'estero
-  const natoInItalia = ospite.cittadinanza_codice === '100000100' ||
-                       (ospite.luogo_nascita_codice && !ospite.luogo_nascita_codice.startsWith(' '));
-  const comuneNascita = natoInItalia && ospite.luogo_nascita_codice
-    ? pad(ospite.luogo_nascita_codice, 9) : pad('', 9);
+  // Comune nascita (9 chars) - solo se italiano
+  const natoInItalia = ospite.luogo_nascita_codice && ospite.luogo_nascita_codice.trim() !== '';
+  const comuneNascita = natoInItalia ? pad(ospite.luogo_nascita_codice, 9) : pad('', 9);
 
-  // Provincia nascita (2 chars)
+  // Provincia nascita (2 chars) - solo se italiano
   const provNascita = natoInItalia && ospite.luogo_nascita
     ? pad(extractProv(ospite.luogo_nascita), 2) : pad('', 2);
 
-  // Stato nascita (9 chars)
-  const statoNascita = pad(ospite.cittadinanza_codice || '100000100', 9);
+  // Stato nascita (9 chars) - codice paese di nascita, distinto da cittadinanza
+  const statoNascita = pad(ospite.luogo_nascita_codice ? '100000100' : (ospite.cittadinanza_codice || '100000100'), 9);
 
   // Cittadinanza (9 chars)
   const cittadinanza = pad(ospite.cittadinanza_codice || '100000100', 9);
 
-  // Parte obbligatoria (132 chars)
+  // Parte fissa: 2+10+2+50+30+1+10+9+2+9+9 = 134 chars
   let riga = tipo + dataArr + perm + cognome + nome + sesso + dataNascita +
              comuneNascita + provNascita + statoNascita + cittadinanza;
 
   const tipoNum = parseInt(tipo);
 
   if ([16, 17, 18].includes(tipoNum)) {
-    // Documento (5 chars)
+    // Tipo documento (5 chars)
     const tipoDoc = pad(ospite.tipo_documento_codice || 'IDENT', 5);
-
     // Numero documento (20 chars)
     const numDoc = pad(cleanStr(ospite.numero_documento || '').toUpperCase(), 20);
+    // Luogo rilascio documento (9 chars) - codice ISTAT comune rilascio
+    const luogoRil = pad(ospite.luogo_rilascio_codice || '', 9);
 
-    // Luogo rilascio documento - comune (9 chars)
-    const luogoRilCom = ospite.luogo_rilascio_codice
-      ? pad(ospite.luogo_rilascio_codice, 9) : pad('', 9);
-
-    // Luogo rilascio - provincia (2 chars)
-    const luogoRilProv = ospite.luogo_rilascio_documento
-      ? pad(extractProv(ospite.luogo_rilascio_documento), 2) : pad('', 2);
-
-    // Indirizzo residenza (30 chars)
-    const indirizzo = pad(cleanStr(ospite.indirizzo_residenza || '').toUpperCase(), 30);
-
-    // Comune residenza (9 chars)
-    // Per ora se italiano usiamo il codice se disponibile
-    const comuneRes = pad('', 9); // TODO: aggiungere codice comune residenza
-
-    // Provincia residenza (2 chars)
-    const provRes = pad('', 2); // TODO: estrarre dalla residenza
-
-    // Stato residenza (9 chars)
-    const statoResMap = {
-      'IT': '100000100', 'DE': '200001009', 'FR': '200001008', 'ES': '200002714',
-      'GB': '200002305', 'US': '300000100', 'AT': '200000203', 'CH': '200002909',
-      'NL': '200002008', 'BE': '200000206', 'PL': '200002205', 'CZ': '200002306',
-      'RU': '200002507', 'UA': '200003009', 'CN': '400000100', 'JP': '400000804',
-      'AU': '500000100', 'BR': '300000605', 'AR': '300000108', 'CA': '300000206',
-    };
-    const paeseRes = ospite.paese_residenza || 'IT';
-    const statoRes = pad(statoResMap[paeseRes] || '100000100', 9);
-
-    riga += tipoDoc + numDoc + luogoRilCom + luogoRilProv + indirizzo + comuneRes + provRes + statoRes;
+    // 5+20+9 = 34 chars → totale 134+34 = 168
+    riga += tipoDoc + numDoc + luogoRil;
   } else {
-    // Familiari/membri: 104 spazi
-    riga += pad('', 104);
+    // Familiari/membri gruppo: 34 spazi
+    riga += pad('', 34);
+  }
+
+  if (riga.length !== 168) {
+    throw new Error(`Lunghezza riga errata: ${riga.length} invece di 168`);
   }
 
   return riga;
