@@ -234,7 +234,7 @@ async function loadAll() {
   S._loadingLock = true;
   S.loading = true;
   try {
-    const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('Timeout')), 15000));
+    const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('Timeout')), 120000));
     const query = Promise.all([
       sb.from('ospiti_check_in')
         .select('id,nome,cognome,email,sesso,data_nascita,luogo_nascita,luogo_nascita_codice,cittadinanza,cittadinanza_codice,tipo_documento,tipo_documento_codice,numero_documento,luogo_rilascio_documento,luogo_rilascio_codice,tipo_alloggiato,capogruppo_id,data_checkin,data_checkout,apartment_id,stato,alloggiati_stato,alloggiati_errore,alloggiati_inviata_at,tag_prenotazione,paese_residenza,telefono')
@@ -331,7 +331,6 @@ function renderDashboard() {
     </div>
     <div class="header-right">
       <span class="header-user">${esc(email)}</span>
-      <a href="backoffice.html" class="btn btn-ghost btn-sm">Fatture →</a>
       <button id="btnLogout" class="btn btn-ghost btn-sm">Esci</button>
     </div>
   </header>
@@ -347,6 +346,7 @@ function renderDashboard() {
   </div>`;
 
   document.getElementById('btnLogout').addEventListener('click', ()=>sb.auth.signOut());
+  document.getElementById('navUser').textContent = email;
   document.querySelectorAll('.tab').forEach(t => {
     t.addEventListener('click', () => {
       S.tab = t.dataset.tab;

@@ -231,7 +231,7 @@ async function loadData() {
   S.loading = true; partialTable();
   console.log("LOAD DATA PARTITO");
   try {
-    const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('Timeout')), 15000));
+    const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('Timeout')), 120000));
     const query = Promise.all([
       sb.from('ospiti_da_lavorare').select('*').order('created_at',{ascending:false}),
       sb.from('apartments').select('id,nome_appartamento').order('nome_appartamento'),
@@ -380,6 +380,7 @@ function renderDashboard() {
   </div>`;
 
   document.getElementById('btnLogout').addEventListener('click', ()=>sb.auth.signOut());
+  document.getElementById('navUser').textContent = email;
   document.getElementById('btnRefresh').addEventListener('click', loadData);
   document.getElementById('fSearch').addEventListener('input', e=>{ S.fSearch=e.target.value; partialTable(); });
   document.getElementById('fStato').addEventListener('change', e=>{ S.fStato=e.target.value; partialTable(); });
