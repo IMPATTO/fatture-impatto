@@ -405,39 +405,17 @@ function buildSchedina(ospite, idAppartamento) {
     // Numero documento (20 chars)
     const numDoc = pad(cleanStr(ospite.numero_documento || '').toUpperCase(), 20);
 
-    // Luogo rilascio documento - comune (9 chars)
+    // Luogo rilascio documento (9 chars) — codice comune o stato
     const luogoRilCom = ospite.luogo_rilascio_codice
       ? pad(ospite.luogo_rilascio_codice, 9) : pad('', 9);
 
-    // Luogo rilascio - provincia (2 chars)
-    const luogoRilProv = ospite.luogo_rilascio_documento
-      ? pad(extractProv(ospite.luogo_rilascio_documento), 2) : pad('', 2);
+    riga += tipoDoc + numDoc + luogoRilCom;
+    // TOTALE: 134 + 5 + 20 + 9 = 168 chars ✅ tracciato RESIDENCE Send/Test
 
-    // Indirizzo residenza (30 chars)
-    const indirizzo = pad(cleanStr(ospite.indirizzo_residenza || '').toUpperCase(), 30);
-
-    // Comune residenza (9 chars)
-    // Per ora se italiano usiamo il codice se disponibile
-    const comuneRes = pad('', 9); // TODO: aggiungere codice comune residenza
-
-    // Provincia residenza (2 chars)
-    const provRes = pad('', 2); // TODO: estrarre dalla residenza
-
-    // Stato residenza (9 chars)
-    const statoResMap = {
-      'IT': '100000100', 'DE': '200001009', 'FR': '200001008', 'ES': '200002714',
-      'GB': '200002305', 'US': '300000100', 'AT': '200000203', 'CH': '200002909',
-      'NL': '200002008', 'BE': '200000206', 'PL': '200002205', 'CZ': '200002306',
-      'RU': '200002507', 'UA': '200003009', 'CN': '400000100', 'JP': '400000804',
-      'AU': '500000100', 'BR': '300000605', 'AR': '300000108', 'CA': '300000206',
-    };
-    const paeseRes = ospite.paese_residenza || 'IT';
-    const statoRes = pad(statoResMap[paeseRes] || '100000100', 9);
-
-    riga += tipoDoc + numDoc + luogoRilCom + luogoRilProv + indirizzo + comuneRes + provRes + statoRes;
   } else {
-    // Familiari/membri: 104 spazi
-    riga += pad('', 104);
+    // Familiari/membri (tipo 19/20): 34 blank per tipo doc + num doc + luogo rilascio
+    riga += pad('', 34);
+    // TOTALE: 134 + 34 = 168 chars ✅
   }
 
   return riga;
