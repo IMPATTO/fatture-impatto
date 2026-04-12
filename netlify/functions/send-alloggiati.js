@@ -130,8 +130,8 @@ exports.handler = async (event) => {
       return { statusCode: 401, body: JSON.stringify({ error: 'Autenticazione AlloggiatiWeb fallita', detail: tokenResult.error }) };
     }
 
-    // 5. Costruisci le stringhe schedina (tracciato record 236 caratteri)
-    const schedine = ospiti.map(o => buildSchedina(o, link.id_appartamento_portale));
+    // 5. Costruisci le stringhe schedina (tracciato record 168 caratteri)
+    const schedine = ospiti.map(o => buildSchedina(o));
 
     // 6. Validazione: controlla che nessuna schedina abbia errori di formato
     const validationErrors = [];
@@ -156,7 +156,6 @@ exports.handler = async (event) => {
     const result = await soapSendOrTest(soapAction, account.username, tokenResult.token, schedine);
 
     // 8. Salva esito
-    console.log('DEBUG branch:', JSON.stringify({ mode, schedineValide: result.schedineValide, ospiti_length: ospiti.length, error: result.error }));
     const esito = result.error ? 'ERRORE' : (result.schedineValide === ospiti.length ? 'OK' : 'PARZIALE');
 
     // Aggiorna stato ospiti
@@ -178,17 +177,13 @@ exports.handler = async (event) => {
       // Test OK: pulisci errore precedente e riporta a DA_INVIARE
       const ids = ospiti.map(o => o.id);
 
-      console.log('ospiti_ids ricevuti:', JSON.stringify(ospiti_ids));
-      console.log('ids da DB:', JSON.stringify(ids));
-
-      const { data: resetRows, error: resetErr } = await supabase
+      const { error: resetErr } = await supabase
         .from('ospiti_check_in')
         .update({
           alloggiati_stato: 'DA_INVIARE',
           alloggiati_errore: null
         })
-        .in('id', ids)
-        .select('id, alloggiati_stato, alloggiati_errore');
+        .in('id', ids);
 
       if (resetErr) {
         console.error('Errore update test OK:', resetErr);
@@ -201,7 +196,6 @@ exports.handler = async (event) => {
         };
       }
 
-      console.log('Reset test OK eseguito:', JSON.stringify(resetRows));
     } else if (result.error) {
       await supabase
         .from('ospiti_check_in')
@@ -284,7 +278,6 @@ async function soapGenerateToken(utente, password, wskey) {
   });
 
   const text = await res.text();
-  console.log('GenerateToken raw:', text);
 
   // Parse token from response
   const tokenMatch = text.match(/<token>(.*?)<\/token>/i);
@@ -367,35 +360,9 @@ async function soapSendOrTest(action, utente, token, schedine) {
 }
 
 
-// ──────────────────────────────────────────────────────
-// Tracciato record: 236 caratteri per ospite
-// ──────────────────────────────────────────────────────
-// Formato (per ospite singolo/capofamiglia/capogruppo = 236 chars):
-//   Pos  Len  Campo
-//   1    2    Tipo alloggiato (16/17/18/19/20)
-//   3    10   Data arrivo (gg/mm/aaaa)
-//   13   2    Permanenza (gg)
-//   15   50   Cognome
-//   65   30   Nome
-//   95   1    Sesso (1=M, 2=F)
-//   96   10   Data nascita (gg/mm/aaaa)
-//   106  9    Comune nascita (codice ISTAT, o 9 spazi se estero)
-//   115  2    Provincia nascita (sigla, o 2 spazi se estero)
-//   117  9    Stato nascita (codice 9 char)
-//   126  9    Cittadinanza (codice 9 char)
-//   -- Solo per tipo 16/17/18 (104 chars), per 19/20 → 104 spazi --
-//   135  5    Tipo documento (IDENT/PASOR/PATEN ecc)
-//   140  20   Numero documento
-//   160  9    Luogo rilascio doc - comune (o 9 spazi)
-//   169  2    Luogo rilascio doc - provincia (o 2 spazi)
-//   171  30   Indirizzo residenza
-//   201  9    Comune residenza (codice ISTAT, o 9 spazi)
-//   210  2    Provincia residenza (o 2 spazi)
-//   212  9    Stato residenza (codice 9 char)
-//   -- Per File Unico (multi-appartamento) si aggiungono 6 chars --
-//   Non li aggiungiamo qui perché usiamo il metodo Send, non FileUnico
 
-function buildSchedina(ospite, idAppartamento) {
+
+function buildSchedina(ospite) {
   // Tracciato record 168 caratteri (manuale WS_ALLOGGIATI Rev.01)
   // Pos  Len  Campo
   //   1    2  Tipo alloggiato (16/17/18/19/20)
