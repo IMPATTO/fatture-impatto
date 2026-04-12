@@ -141,6 +141,18 @@ exports.handler = async (event) => {
       if (!o.cittadinanza_codice) validationErrors.push(`${o.nome} ${o.cognome}: codice cittadinanza mancante`);
       if (!o.data_checkin) validationErrors.push(`${o.nome} ${o.cognome}: data check-in mancante`);
 
+      const natoInItalia = !!(o.luogo_nascita_codice && o.luogo_nascita_codice.trim() !== '');
+
+      if (natoInItalia) {
+        if (!o.luogo_nascita) {
+          validationErrors.push(`${o.nome} ${o.cognome}: luogo nascita descrittivo mancante`);
+        }
+      } else {
+        if (!o.stato_nascita_codice || !o.stato_nascita_codice.trim()) {
+          validationErrors.push(`${o.nome} ${o.cognome}: stato nascita estero mancante`);
+        }
+      }
+
       const tipo = o.tipo_alloggiato || 16;
       if ([16, 17, 18].includes(tipo)) {
         if (!o.tipo_documento_codice) validationErrors.push(`${o.nome} ${o.cognome}: tipo documento mancante`);
@@ -391,17 +403,29 @@ function buildSchedina(ospite) {
   const sesso = ospite.sesso === 'M' ? '1' : ospite.sesso === 'F' ? '2' : '1';
   const dataNascita = formatDateIT(ospite.data_nascita);
 
-  // Comune nascita (9 chars) - solo se italiano
-  const natoInItalia = ospite.luogo_nascita_codice && ospite.luogo_nascita_codice.trim() !== '';
-  const comuneNascita = natoInItalia ? pad(ospite.luogo_nascita_codice, 9) : pad('', 9);
+  const natoInItalia = !!(ospite.luogo_nascita_codice && ospite.luogo_nascita_codice.trim() !== '');
 
-  // Provincia nascita (2 chars) - solo se italiano
+  // Comune nascita (9 chars) - solo se nato in Italia
+  const comuneNascita = natoInItalia
+    ? pad(ospite.luogo_nascita_codice, 9)
+    : pad('', 9);
+
+  // Provincia nascita (2 chars) - solo se nato in Italia
   const provNascita = natoInItalia && ospite.luogo_nascita
-    ? pad(extractProv(ospite.luogo_nascita), 2) : pad('', 2);
+    ? pad(extractProv(ospite.luogo_nascita), 2)
+    : pad('', 2);
 
-  // TODO: distinguere correttamente stato di nascita e cittadinanza per i nati all'estero.
-  // Per ora: se esiste luogo_nascita_codice assumiamo Italia (100000100), altrimenti fallback su cittadinanza.
-  const statoNascita = pad(ospite.luogo_nascita_codice ? '100000100' : (ospite.cittadinanza_codice || '100000100'), 9);
+  // Stato nascita (9 chars)
+  let statoNascitaRaw;
+  if (natoInItalia) {
+    statoNascitaRaw = '100000100'; // Italia
+  } else if (ospite.stato_nascita_codice && ospite.stato_nascita_codice.trim() !== '') {
+    statoNascitaRaw = ospite.stato_nascita_codice;
+  } else {
+    // fallback temporaneo per record vecchi non ancora completati
+    statoNascitaRaw = ospite.cittadinanza_codice || '100000100';
+  }
+  const statoNascita = pad(statoNascitaRaw, 9);
 
   // Cittadinanza (9 chars)
   const cittadinanza = pad(ospite.cittadinanza_codice || '100000100', 9);
