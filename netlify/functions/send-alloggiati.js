@@ -319,9 +319,9 @@ async function soapSendOrTest(action, utente, token, schedine) {
 
 
 // ──────────────────────────────────────────────────────
-// Tracciato record: 236 caratteri per ospite
+// Tracciato record: 168 caratteri per ospite (Tabella 1, WS_ALLOGGIATI Rev.01)
 // ──────────────────────────────────────────────────────
-// Formato (per ospite singolo/capofamiglia/capogruppo = 236 chars):
+// Formato (per ospite singolo/capofamiglia/capogruppo = 168 chars):
 //   Pos  Len  Campo
 //   1    2    Tipo alloggiato (16/17/18/19/20)
 //   3    10   Data arrivo (gg/mm/aaaa)
@@ -334,7 +334,7 @@ async function soapSendOrTest(action, utente, token, schedine) {
 //   115  2    Provincia nascita (sigla, o 2 spazi se estero)
 //   117  9    Stato nascita (codice 9 char)
 //   126  9    Cittadinanza (codice 9 char)
-//   -- Solo per tipo 16/17/18 (104 chars), per 19/20 → 104 spazi --
+//   -- Solo per tipo 16/17/18 (34 chars), per 19/20 → 34 spazi --
 //   135  5    Tipo documento (IDENT/PASOR/PATEN ecc)
 //   140  20   Numero documento
 //   160  9    Luogo rilascio doc - comune (o 9 spazi)
@@ -420,6 +420,10 @@ function buildSchedina(ospite) {
   console.log('schedina length:', riga.length);
   console.log('schedina first 14:', JSON.stringify(riga.slice(0, 14)));
   console.log('schedina first 20:', JSON.stringify(riga.slice(0, 20)));
+  console.log('schedina last 40:', JSON.stringify(riga.slice(-40)));
+  console.log('tipoDoc:', ospite.tipo_documento_codice);
+  console.log('numDoc:', ospite.numero_documento);
+  console.log('luogoRilascioCodice:', ospite.luogo_rilascio_codice);
 
   if (riga.length !== 168) {
     throw new Error(`Lunghezza riga errata: ${riga.length} invece di 168. Schedina: ${JSON.stringify(riga)}`);
