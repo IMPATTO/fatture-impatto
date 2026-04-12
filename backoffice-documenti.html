@@ -513,7 +513,7 @@ function renderDrawer() {
           <input class="df" data-k="cittadinanza" data-ac="stato" data-codice-k="cittadinanza_codice" value="${esc(f.cittadinanza)}" placeholder="Es. Italia" autocomplete="off"/>
         </div>
       </div>
-      <div class="field"><label>Cod. cittadinanza (9 char)</label><input class="df" data-k="cittadinanza_codice" value="${esc(f.cittadinanza_codice)}" placeholder="automatico" style="font-family:var(--mono)" readonly/></div>
+      <div class="field"><label>Cod. cittadinanza</label><input class="df" data-k="cittadinanza_codice" value="${esc(f.cittadinanza_codice)}" placeholder="automatico" style="font-family:var(--mono)" readonly/></div>
     </div>
     <div class="field-2">
       <div class="field"><label>Tipo documento</label>
@@ -618,11 +618,11 @@ function validateDrawer() {
   if (!f.sesso) errs.push('Sesso mancante');
   if (!f.data_nascita) errs.push('Data di nascita mancante');
   if (!f.cittadinanza) errs.push('Cittadinanza mancante');
-  if (!f.cittadinanza_codice) errs.push('Codice cittadinanza mancante (9 char)');
+  if (!f.cittadinanza_codice) errs.push('Codice cittadinanza mancante');
   else if (String(f.cittadinanza_codice).length !== 9) errs.push('Codice cittadinanza deve essere 9 caratteri');
   // Validazione luogo di nascita
   if (f.nato_in_italia !== false) {
-    if (!f.luogo_nascita_codice) errs.push('Codice ISTAT nascita mancante (9 char)');
+    if (!f.luogo_nascita_codice) errs.push('Codice ISTAT nascita mancante');
     else if (String(f.luogo_nascita_codice).replace(/\s/g,'').length < 6) errs.push('Cod. ISTAT nascita troppo corto');
   } else {
     if (!f.stato_nascita_codice) errs.push('Codice stato nascita estero mancante');
