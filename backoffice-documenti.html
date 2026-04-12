@@ -174,24 +174,9 @@
 
     .pw-field { position: relative; }
     .pw-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--muted); font-size: 13px; padding: 4px; }
-
-    /* ── Navbar unificata ── */
-    .navbar { display:flex; align-items:center; gap:24px; padding:0 24px; height:44px; background:#1a1917; font-family:var(--sans); font-size:13px; }
-    .navbar-brand { font-family:var(--serif); font-size:18px; font-weight:500; color:#fff; margin-right:auto; text-decoration:none; }
-    .navbar a.navbar-link { color:#a8a29e; text-decoration:none; padding:4px 10px; border-radius:4px; transition:color .15s,background .15s; }
-    .navbar a.navbar-link:hover { color:#fff; background:rgba(255,255,255,.08); }
-    .navbar a.navbar-link.active { color:#fff; background:var(--teal); }
-    .navbar-user { font-family:var(--mono); font-size:10px; color:#78716c; letter-spacing:.06em; }
   </style>
 </head>
 <body>
-<nav class="navbar" id="mainNavbar">
-  <a href="/backoffice.html" class="navbar-brand">Impatto</a>
-  <a href="/backoffice.html" class="navbar-link">Fatturazione</a>
-  <a href="/backoffice-documenti.html" class="navbar-link">Documenti</a>
-  <a href="/portale.html" class="navbar-link">Portale</a>
-  <span class="navbar-user" id="navUser"></span>
-</nav>
 <div id="app"></div>
 <div id="modal-root"></div>
 <div id="_toast"></div>
@@ -229,30 +214,22 @@ function toast(msg, type='ok') {
 
 // ── Data loading ──
 async function loadAll() {
-  if (S._loadingLock) return;
-  S._loadingLock = true;
   S.loading = true;
-  try {
-    const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('Timeout')), 120000));
-    const query = Promise.all([
-      sb.from('ospiti_check_in')
-        .select('id,nome,cognome,email,sesso,data_nascita,luogo_nascita,luogo_nascita_codice,cittadinanza,cittadinanza_codice,tipo_documento,tipo_documento_codice,numero_documento,luogo_rilascio_documento,luogo_rilascio_codice,tipo_alloggiato,capogruppo_id,data_checkin,data_checkout,apartment_id,stato,alloggiati_stato,alloggiati_errore,alloggiati_inviata_at,tag_prenotazione,paese_residenza,telefono')
-        .in('stato', ['APPROVATA','CREDENZIALI_INVIATE','BOZZA_CREATA','CHECK_IN_COMPLETATO'])
-        .order('data_checkin', {ascending: false})
-        .limit(500),
-      sb.from('apartments').select('id,nome_appartamento').order('nome_appartamento'),
-      sb.from('alloggiati_accounts').select('*').order('nome_account'),
-      sb.from('apartment_alloggiati').select('*'),
-    ]);
-    const [ospiti, apts, accs, lnks] = await Promise.race([query, timeout]);
-    S.rows = ospiti.data || [];
-    S.apartments = apts.data || [];
-    S.accounts = accs.data || [];
-    S.links = lnks.data || [];
-  } catch(e) {
-    console.error('loadAll error:', e);
-  }
-  S.loading = false; S._loadingLock = false;
+  const [ospiti, apts, accs, lnks] = await Promise.all([
+    sb.from('ospiti_check_in')
+      .select('id,nome,cognome,email,sesso,data_nascita,luogo_nascita,luogo_nascita_codice,stato_nascita_codice,cittadinanza,cittadinanza_codice,tipo_documento,tipo_documento_codice,numero_documento,luogo_rilascio_documento,luogo_rilascio_codice,tipo_alloggiato,capogruppo_id,data_checkin,data_checkout,apartment_id,stato,alloggiati_stato,alloggiati_errore,alloggiati_inviata_at,tag_prenotazione,paese_residenza,telefono')
+      .in('stato', ['APPROVATA','CREDENZIALI_INVIATE','BOZZA_CREATA','CHECK_IN_COMPLETATO'])
+      .order('data_checkin', {ascending: false})
+      .limit(500),
+    sb.from('apartments').select('id,nome_appartamento').order('nome_appartamento'),
+    sb.from('alloggiati_accounts').select('*').order('nome_account'),
+    sb.from('apartment_alloggiati').select('*'),
+  ]);
+  S.rows = ospiti.data || [];
+  S.apartments = apts.data || [];
+  S.accounts = accs.data || [];
+  S.links = lnks.data || [];
+  S.loading = false;
 }
 
 function getAccountForApt(aptId) {
@@ -330,6 +307,7 @@ function renderDashboard() {
     </div>
     <div class="header-right">
       <span class="header-user">${esc(email)}</span>
+      <a href="backoffice.html" class="btn btn-ghost btn-sm">Fatture →</a>
       <button id="btnLogout" class="btn btn-ghost btn-sm">Esci</button>
     </div>
   </header>
@@ -345,7 +323,6 @@ function renderDashboard() {
   </div>`;
 
   document.getElementById('btnLogout').addEventListener('click', ()=>sb.auth.signOut());
-  document.getElementById('navUser').textContent = email;
   document.querySelectorAll('.tab').forEach(t => {
     t.addEventListener('click', () => {
       S.tab = t.dataset.tab;
@@ -434,14 +411,22 @@ function renderTable() {
       const row = S.rows.find(r=>String(r.id)===String(tr.dataset.id)); if(!row) return;
       S.selected = row;
       const acc = getAccountForApt(row.apartment_id);
+      // Determina nato_in_italia: se stato_nascita_codice è '100000100' o assente → Italia
+      const statoNascitaCodice = row.stato_nascita_codice || '';
+      const natoInItalia = !statoNascitaCodice || statoNascitaCodice === '100000100';
       S.form = {
         sesso: row.sesso||'',
         data_nascita: row.data_nascita||'',
         luogo_nascita: row.luogo_nascita||'',
+        luogo_nascita_codice: row.luogo_nascita_codice||'',
+        stato_nascita_codice: statoNascitaCodice,
+        nato_in_italia: natoInItalia,
         cittadinanza: row.cittadinanza||'Italia',
+        cittadinanza_codice: row.cittadinanza_codice||'',
         tipo_documento: row.tipo_documento||'',
         numero_documento: row.numero_documento||'',
         luogo_rilascio_documento: row.luogo_rilascio_documento||'',
+        luogo_rilascio_codice: row.luogo_rilascio_codice||'',
         tipo_alloggiato: row.tipo_alloggiato||16,
         tag_prenotazione: row.tag_prenotazione||'',
         alloggiati_stato: row.alloggiati_stato||'DA_INVIARE',
@@ -480,9 +465,35 @@ function renderDrawer() {
       </div>
       <div class="field"><label>Data di nascita</label><input class="df" type="date" data-k="data_nascita" value="${esc(f.data_nascita)}"/></div>
     </div>
+    <!-- Toggle nato in Italia / estero -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 14px;background:var(--surf);border:1px solid var(--border);border-radius:6px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;font-size:13px;font-weight:500">
+        <input type="checkbox" id="toggleNatoItalia" ${f.nato_in_italia !== false ? 'checked' : ''} style="width:16px;height:16px;cursor:pointer;accent-color:var(--teal)"/>
+        Nato/a in Italia
+      </label>
+      <span id="toggleNatoHint" style="font-size:11px;color:var(--muted);font-family:var(--mono)">${f.nato_in_italia !== false ? 'stato_nascita_codice = 100000100 (auto)' : 'inserire codice paese estero'}</span>
+    </div>
+
+    <!-- Campi per nati IN ITALIA -->
+    <div id="birthFieldsItalia" style="display:${f.nato_in_italia !== false ? 'block' : 'none'}">
+      <div class="field-2">
+        <div class="field"><label>Luogo di nascita</label><input class="df" data-k="luogo_nascita" value="${esc(f.luogo_nascita)}" placeholder="Es. Roma (RM)"/></div>
+        <div class="field"><label>Cod. ISTAT nascita (9 char)</label><input class="df" data-k="luogo_nascita_codice" value="${esc(f.luogo_nascita_codice)}" placeholder="Es. 058091" style="font-family:var(--mono)"/></div>
+      </div>
+    </div>
+
+    <!-- Campi per nati ALL'ESTERO -->
+    <div id="birthFieldsEstero" style="display:${f.nato_in_italia !== false ? 'none' : 'block'}">
+      <div class="field">
+        <label>Codice stato nascita (9 char AlloggiatiWeb)</label>
+        <input class="df" data-k="stato_nascita_codice" value="${esc(f.stato_nascita_codice)}" placeholder="Es. 100000039" style="font-family:var(--mono)" maxlength="9"/>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;font-family:var(--mono)">Es: Francia=100000039 · Germania=100000083 · UK=100000999</div>
+      </div>
+    </div>
+
     <div class="field-2">
-      <div class="field"><label>Luogo di nascita</label><input class="df" data-k="luogo_nascita" value="${esc(f.luogo_nascita)}"/></div>
-      <div class="field"><label>Cittadinanza</label><input class="df" data-k="cittadinanza" value="${esc(f.cittadinanza)}"/></div>
+      <div class="field"><label>Cittadinanza</label><input class="df" data-k="cittadinanza" value="${esc(f.cittadinanza)}" placeholder="Es. Italia"/></div>
+      <div class="field"><label>Cod. cittadinanza (9 char)</label><input class="df" data-k="cittadinanza_codice" value="${esc(f.cittadinanza_codice)}" placeholder="Es. 100000100" style="font-family:var(--mono)" maxlength="9"/></div>
     </div>
     <div class="field-2">
       <div class="field"><label>Tipo documento</label>
@@ -495,7 +506,10 @@ function renderDrawer() {
       </div>
       <div class="field"><label>Numero documento</label><input class="df" data-k="numero_documento" value="${esc(f.numero_documento)}"/></div>
     </div>
-    <div class="field"><label>Luogo rilascio documento</label><input class="df" data-k="luogo_rilascio_documento" value="${esc(f.luogo_rilascio_documento)}"/></div>
+    <div class="field-2">
+      <div class="field"><label>Luogo rilascio documento</label><input class="df" data-k="luogo_rilascio_documento" value="${esc(f.luogo_rilascio_documento)}" placeholder="Es. Roma (RM)"/></div>
+      <div class="field"><label>Cod. ISTAT rilascio (9 char)</label><input class="df" data-k="luogo_rilascio_codice" value="${esc(f.luogo_rilascio_codice)}" placeholder="Es. 058091" style="font-family:var(--mono)" maxlength="9"/></div>
+    </div>
     <div class="field-2">
       <div class="field"><label>Tipo alloggiato</label>
         <select class="df" data-k="tipo_alloggiato">
@@ -509,7 +523,9 @@ function renderDrawer() {
       <div class="field"><label>Tag prenotazione</label><input class="df" data-k="tag_prenotazione" value="${esc(f.tag_prenotazione)}"/></div>
     </div>
 
-    ${r.alloggiati_errore ? `<div class="drawer-sec">Ultimo errore</div><div style="padding:10px 14px;background:var(--red-l);border-radius:6px;font-size:12px;color:var(--red);font-family:var(--mono)">${esc(r.alloggiati_errore)}</div>` : ''}
+    ${r.alloggiati_errore && r.alloggiati_stato === 'ERRORE' ? `<div class="drawer-sec">Ultimo errore</div><div style="padding:10px 14px;background:var(--red-l);border-radius:6px;font-size:12px;color:var(--red);font-family:var(--mono)">${esc(r.alloggiati_errore)}</div>` : ''}
+    ${r.alloggiati_stato === 'DA_INVIARE' ? `<div style="padding:10px 14px;background:var(--green-l);border-radius:6px;font-size:12px;color:var(--green);margin-top:4px">✅ Pronta per l'invio — nessun errore pendente</div>` : ''}
+    ${r.alloggiati_stato === 'INVIATA' ? `<div style="padding:10px 14px;background:var(--green-l);border-radius:6px;font-size:12px;color:var(--green);margin-top:4px">✅ Schedina inviata alla Questura</div>` : ''}
     ${r.alloggiati_inviata_at ? `<div class="mono-sm" style="margin-top:12px">Ultimo invio: ${fmt(r.alloggiati_inviata_at)}</div>` : ''}
 
     <div class="drawer-sec">Validazione dati</div>
@@ -536,6 +552,27 @@ function renderDrawer() {
     el.addEventListener('input', e=>{ S.form[e.target.dataset.k]=e.target.value; validateDrawer(); });
     el.addEventListener('change', e=>{ S.form[e.target.dataset.k]=e.target.value; validateDrawer(); });
   });
+
+  // Toggle nato in Italia / estero
+  const toggleNato = document.getElementById('toggleNatoItalia');
+  if (toggleNato) {
+    toggleNato.addEventListener('change', () => {
+      const isItalia = toggleNato.checked;
+      S.form.nato_in_italia = isItalia;
+      document.getElementById('birthFieldsItalia').style.display = isItalia ? 'block' : 'none';
+      document.getElementById('birthFieldsEstero').style.display = isItalia ? 'none' : 'block';
+      const hint = document.getElementById('toggleNatoHint');
+      if (hint) hint.textContent = isItalia ? 'stato_nascita_codice = 100000100 (auto)' : 'inserire codice paese estero';
+      if (isItalia) {
+        // Pulisce il codice estero, non serve più
+        S.form.stato_nascita_codice = '100000100';
+      } else {
+        // Pulisce i campi italiani
+        S.form.luogo_nascita_codice = '';
+      }
+      validateDrawer();
+    });
+  }
 }
 
 function validateDrawer() {
@@ -545,10 +582,22 @@ function validateDrawer() {
   if (!f.sesso) errs.push('Sesso mancante');
   if (!f.data_nascita) errs.push('Data di nascita mancante');
   if (!f.cittadinanza) errs.push('Cittadinanza mancante');
+  if (!f.cittadinanza_codice) errs.push('Codice cittadinanza mancante (9 char)');
+  else if (String(f.cittadinanza_codice).length !== 9) errs.push('Codice cittadinanza deve essere 9 caratteri');
+  // Validazione luogo di nascita
+  if (f.nato_in_italia !== false) {
+    if (!f.luogo_nascita_codice) errs.push('Codice ISTAT nascita mancante (9 char)');
+    else if (String(f.luogo_nascita_codice).replace(/\s/g,'').length < 6) errs.push('Cod. ISTAT nascita troppo corto');
+  } else {
+    if (!f.stato_nascita_codice) errs.push('Codice stato nascita estero mancante');
+    else if (String(f.stato_nascita_codice).length !== 9) errs.push('Codice stato nascita deve essere 9 caratteri');
+  }
   const tipo = parseInt(f.tipo_alloggiato) || 16;
   if ([16,17,18].includes(tipo)) {
     if (!f.tipo_documento) errs.push('Tipo documento mancante');
     if (!f.numero_documento) errs.push('Numero documento mancante');
+    if (!f.luogo_rilascio_codice) errs.push('Codice ISTAT rilascio documento mancante');
+    else if (String(f.luogo_rilascio_codice).replace(/\s/g,'').length < 6) errs.push('Cod. ISTAT rilascio troppo corto');
   }
   if (!r.data_checkin) errs.push('Data check-in mancante');
   if (!r.cognome) errs.push('Cognome mancante');
@@ -571,6 +620,7 @@ function validateDrawer() {
 
 async function sendToQuestura(mode) {
   if (!S.selected) return;
+
   const btnId = mode === 'send' ? 'dSend' : 'dTest';
   const btn = document.getElementById(btnId);
 
@@ -579,13 +629,17 @@ async function sendToQuestura(mode) {
     if (!confirm(`Confermi l'invio della schedina di ${S.selected.nome} ${S.selected.cognome} alla Questura?\n\nQuesta azione è irreversibile.`)) return;
   }
 
-  if(btn) { btn.disabled=true; btn.textContent=mode==='send'?'Invio…':'Testo…'; }
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = mode === 'send' ? 'Invio…' : 'Testo…';
+  }
 
   // Salva prima i dati aggiornati
   await saveSchedina();
 
   try {
     const session = await sb.auth.getSession();
+
     const res = await fetch('/.netlify/functions/send-alloggiati', {
       method: 'POST',
       headers: {
@@ -601,15 +655,33 @@ async function sendToQuestura(mode) {
     const data = await res.json();
 
     if (!res.ok) {
-      const errMsg = data.validationErrors ? data.validationErrors.join(', ') : (data.detail || data.error || 'Errore sconosciuto');
+      const errMsg = data.validationErrors
+        ? data.validationErrors.join(', ')
+        : (data.detail || data.error || 'Errore sconosciuto');
+
       toast(`Errore: ${errMsg}`, 'err');
-      if(btn) { btn.disabled=false; btn.textContent=mode==='send'?'Invia alla Questura':'Testa'; }
+
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = mode === 'send' ? 'Invia alla Questura' : 'Testa';
+      }
+
       return;
     }
 
     if (data.success) {
       if (mode === 'test') {
-        toast(`Test OK — ${data.schedineValide} schedina valida su ${data.schedineInviate}`, 'ok');
+        toast(`✅ Test OK — schedina valida, pronta per l'invio`, 'ok');
+
+        // Aggiornamento cache locale (il backend aggiorna già il DB)
+        const ospiteId = S.selected.id;
+        const rowIdx = S.rows.findIndex(r => r.id === ospiteId);
+
+        if (rowIdx >= 0) {
+          S.rows[rowIdx].alloggiati_stato = 'DA_INVIARE';
+          S.rows[rowIdx].alloggiati_errore = null;
+        }
+
       } else {
         toast(`Inviata alla Questura di ${data.questura} — ${data.schedineValide} schedina`, 'ok');
       }
@@ -617,27 +689,62 @@ async function sendToQuestura(mode) {
       toast(`Errore dal portale: ${data.errore || 'vedi dettaglio'}`, 'err');
     }
 
-    // Ricarica dati
+    // Ricarica dati dal DB (fonte di verità)
     await loadAll();
-    if (mode === 'send') { S.selected = null; S.form = {}; }
-    else { S.selected = S.rows.find(r=>r.id===S.selected?.id) || null; }
+
+    if (mode === 'send') {
+      S.selected = null;
+      S.form = {};
+    } else {
+      S.selected = S.rows.find(r => r.id === S.selected?.id) || null;
+    }
+
     renderSchedine();
 
-  } catch(err) {
+  } catch (err) {
     toast('Errore di rete: ' + err.message, 'err');
-    if(btn) { btn.disabled=false; btn.textContent=mode==='send'?'Invia alla Questura':'Testa'; }
+
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = mode === 'send' ? 'Invia alla Questura' : 'Testa';
+    }
   }
 }
 
 async function saveSchedina() {
   if (!S.selected) return;
   const btn = document.getElementById('dSave'); if(btn){ btn.disabled=true; btn.textContent='Salvo…'; }
-  const { _account, alloggiati_stato, ...payload } = S.form;
+  const { _account, alloggiati_stato, nato_in_italia, ...payload } = S.form;
   payload.tipo_alloggiato = Number(payload.tipo_alloggiato) || 16;
+
+  // Gestione stato_nascita_codice in base all'origine
+  if (nato_in_italia !== false) {
+    // Nato in Italia: codice fisso, luogo_nascita_codice dal form
+    payload.stato_nascita_codice = '100000100';
+    // luogo_nascita_codice già in payload
+  } else {
+    // Nato all'estero: stato_nascita_codice dal form, pulisce campi italiani
+    payload.luogo_nascita = payload.luogo_nascita || '';
+    payload.luogo_nascita_codice = '';
+  }
 
   // Map tipo_documento to codice
   const docMap = {"Carta d'identita":'IDENT','Passaporto':'PASOR','Patente':'PATEN'};
   if (payload.tipo_documento) payload.tipo_documento_codice = docMap[payload.tipo_documento] || '';
+
+  // Fallback automatico: se cittadinanza_codice è vuoto ma cittadinanza è 'Italia', imposta il codice
+  if (!payload.cittadinanza_codice && payload.cittadinanza) {
+    const cittMap = {
+      'italia': '100000100', 'germany': '100000083', 'germania': '100000083',
+      'france': '100000039', 'francia': '100000039', 'spain': '100000070',
+      'spagna': '100000070', 'uk': '100000999', 'united kingdom': '100000999',
+      'regno unito': '100000999', 'usa': '100002001', 'stati uniti': '100002001',
+      'svizzera': '100000756', 'switzerland': '100000756',
+      'austria': '100000040', 'belgio': '100000056', 'belgium': '100000056',
+      'olanda': '100000528', 'netherlands': '100000528', 'paesi bassi': '100000528',
+    };
+    payload.cittadinanza_codice = cittMap[payload.cittadinanza.toLowerCase()] || '';
+  }
 
   const {error} = await sb.from('ospiti_check_in').update(payload).eq('id', S.selected.id);
   if (error) { toast('Errore: '+error.message,'err'); }
@@ -939,20 +1046,10 @@ sb.auth.onAuthStateChange(async (_, session) => {
   }
   if (session && !S.session) {
     S.session = session;
-    try { await loadAll(); } catch(e) { console.error('auth load error:', e); }
+    await loadAll();
     renderDashboard();
   }
 });
-</script>
-<script>
-(function(){
-  var path=location.pathname;
-  document.querySelectorAll('.navbar-link').forEach(function(a){
-    if(path.endsWith(a.getAttribute('href').replace('/',''))||
-       (a.getAttribute('href')==='/backoffice.html'&&(path==='/'||path==='/backoffice.html')))
-      a.classList.add('active');
-  });
-})();
 </script>
 </body>
 </html>
