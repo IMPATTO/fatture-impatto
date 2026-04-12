@@ -135,15 +135,17 @@ exports.handler = async (event) => {
 
     // 6. Validazione: controlla che nessuna schedina abbia errori di formato
     const validationErrors = [];
-    ospiti.forEach((o, i) => {
+    ospiti.forEach((o) => {
       if (!o.sesso) validationErrors.push(`${o.nome} ${o.cognome}: sesso mancante`);
       if (!o.data_nascita) validationErrors.push(`${o.nome} ${o.cognome}: data di nascita mancante`);
       if (!o.cittadinanza_codice) validationErrors.push(`${o.nome} ${o.cognome}: codice cittadinanza mancante`);
       if (!o.data_checkin) validationErrors.push(`${o.nome} ${o.cognome}: data check-in mancante`);
+
       const tipo = o.tipo_alloggiato || 16;
       if ([16, 17, 18].includes(tipo)) {
         if (!o.tipo_documento_codice) validationErrors.push(`${o.nome} ${o.cognome}: tipo documento mancante`);
         if (!o.numero_documento) validationErrors.push(`${o.nome} ${o.cognome}: numero documento mancante`);
+        if (!o.luogo_rilascio_codice) validationErrors.push(`${o.nome} ${o.cognome}: luogo rilascio documento mancante`);
       }
     });
 
@@ -397,7 +399,8 @@ function buildSchedina(ospite) {
   const provNascita = natoInItalia && ospite.luogo_nascita
     ? pad(extractProv(ospite.luogo_nascita), 2) : pad('', 2);
 
-  // Stato nascita (9 chars) - codice paese di nascita, distinto da cittadinanza
+  // TODO: distinguere correttamente stato di nascita e cittadinanza per i nati all'estero.
+  // Per ora: se esiste luogo_nascita_codice assumiamo Italia (100000100), altrimenti fallback su cittadinanza.
   const statoNascita = pad(ospite.luogo_nascita_codice ? '100000100' : (ospite.cittadinanza_codice || '100000100'), 9);
 
   // Cittadinanza (9 chars)
