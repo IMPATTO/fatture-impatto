@@ -7,40 +7,9 @@
 //   SUPABASE_SERVICE_ROLE_KEY
 
 const { createClient } = require('@supabase/supabase-js');
-
-const ENDPOINT = 'https://alloggiatiweb.poliziadistato.it/service/service.asmx';
 const crypto = require('crypto');
 
-function decrypt(encryptedValue) {
-  if (!encryptedValue || !encryptedValue.includes(':')) return encryptedValue;
-
-  const parts = encryptedValue.split(':');
-  if (parts.length !== 3) return encryptedValue;
-
-  if (!process.env.ENCRYPTION_KEY) {
-    throw new Error('ENCRYPTION_KEY mancante');
-  }
-
-  try {
-    const key = Buffer.from(process.env.ENCRYPTION_KEY, 'hex');
-    const iv = Buffer.from(parts[0], 'hex');
-    const authTag = Buffer.from(parts[1], 'hex');
-    const encrypted = Buffer.from(parts[2], 'hex');
-
-    const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
-    decipher.setAuthTag(authTag);
-
-    const decrypted = Buffer.concat([
-      decipher.update(encrypted),
-      decipher.final()
-    ]);
-
-    return decrypted.toString('utf8');
-  } catch (e) {
-    console.error('Errore decifratura password:', e.message);
-    throw e;
-  }
-}
+const ENDPOINT = 'https://alloggiatiweb.poliziadistato.it/service/service.asmx';
 
 // ── Security: Rate limiting (in-memory, per-function instance) ──
 const rateLimits = {};
@@ -131,33 +100,19 @@ exports.handler = async (event) => {
     }
 
     // 5. Costruisci le stringhe schedina (tracciato record 168 caratteri)
-    const schedine = ospiti.map(o => buildSchedina(o));
+    const schedine = ospiti.map(o => buildSchedina(o, link.id_appartamento_portale));
 
     // 6. Validazione: controlla che nessuna schedina abbia errori di formato
     const validationErrors = [];
-    ospiti.forEach((o) => {
+    ospiti.forEach((o, i) => {
       if (!o.sesso) validationErrors.push(`${o.nome} ${o.cognome}: sesso mancante`);
       if (!o.data_nascita) validationErrors.push(`${o.nome} ${o.cognome}: data di nascita mancante`);
       if (!o.cittadinanza_codice) validationErrors.push(`${o.nome} ${o.cognome}: codice cittadinanza mancante`);
       if (!o.data_checkin) validationErrors.push(`${o.nome} ${o.cognome}: data check-in mancante`);
-
-      const natoInItalia = !!(o.luogo_nascita_codice && o.luogo_nascita_codice.trim() !== '');
-
-      if (natoInItalia) {
-        if (!o.luogo_nascita) {
-          validationErrors.push(`${o.nome} ${o.cognome}: luogo nascita descrittivo mancante`);
-        }
-      } else {
-        if (!o.stato_nascita_codice || !o.stato_nascita_codice.trim()) {
-          validationErrors.push(`${o.nome} ${o.cognome}: stato nascita estero mancante`);
-        }
-      }
-
       const tipo = o.tipo_alloggiato || 16;
       if ([16, 17, 18].includes(tipo)) {
         if (!o.tipo_documento_codice) validationErrors.push(`${o.nome} ${o.cognome}: tipo documento mancante`);
         if (!o.numero_documento) validationErrors.push(`${o.nome} ${o.cognome}: numero documento mancante`);
-        if (!o.luogo_rilascio_codice) validationErrors.push(`${o.nome} ${o.cognome}: luogo rilascio documento mancante`);
       }
     });
 
@@ -187,29 +142,6 @@ exports.handler = async (event) => {
         ultimo_invio_ok: new Date().toISOString(),
         ultimo_errore: null
       }).eq('id', account.id);
-    } else if (mode === 'test' && result.schedineValide === ospiti.length) {
-      // Test OK: pulisci errore precedente e riporta a DA_INVIARE
-      const ids = ospiti.map(o => o.id);
-
-      const { error: resetErr } = await supabase
-        .from('ospiti_check_in')
-        .update({
-          alloggiati_stato: 'DA_INVIARE',
-          alloggiati_errore: null
-        })
-        .in('id', ids);
-
-      if (resetErr) {
-        console.error('Errore update test OK:', resetErr);
-        return {
-          statusCode: 500,
-          body: JSON.stringify({
-            error: 'Test OK ma aggiornamento stato fallito',
-            detail: resetErr.message
-          })
-        };
-      }
-
     } else if (result.error) {
       await supabase
         .from('ospiti_check_in')
@@ -267,6 +199,28 @@ exports.handler = async (event) => {
 
 
 // ──────────────────────────────────────────────────────
+// Decrypt password (AES-256-GCM)
+// ──────────────────────────────────────────────────────
+function decrypt(encryptedStr) {
+  // Se non cifrata (testo plain, per retrocompatibilità) la restituisce com'è
+  if (!encryptedStr || !encryptedStr.includes(':')) return encryptedStr;
+  try {
+    const key = Buffer.from(process.env.ENCRYPTION_KEY || '', 'hex');
+    const [ivHex, authTagHex, ciphertext] = encryptedStr.split(':');
+    const iv = Buffer.from(ivHex, 'hex');
+    const authTag = Buffer.from(authTagHex, 'hex');
+    const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+    decipher.setAuthTag(authTag);
+    let decrypted = decipher.update(ciphertext, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+  } catch(e) {
+    console.error('decrypt() fallita:', e.message);
+    return encryptedStr; // fallback: usa com'è
+  }
+}
+
+// ──────────────────────────────────────────────────────
 // SOAP: GenerateToken
 // ──────────────────────────────────────────────────────
 async function soapGenerateToken(utente, password, wskey) {
@@ -294,24 +248,14 @@ async function soapGenerateToken(utente, password, wskey) {
   const text = await res.text();
 
   // Parse token from response
-  const tokenMatch = text.match(/<token>(.*?)<\/token>/i);
-  const errDetMatch = text.match(/<ErroreDettaglio>(.*?)<\/ErroreDettaglio>/i);
-  const errDesMatch = text.match(/<ErroreDes>(.*?)<\/ErroreDes>/i);
-  const esitoMatch  = text.match(/<esito>(.*?)<\/esito>/i);
+  const tokenMatch = text.match(/<token>(.*?)<\/token>/);
+  const errorMatch = text.match(/<ErroreDettaglio>(.*?)<\/ErroreDettaglio>/);
 
   if (tokenMatch && tokenMatch[1]) {
     return { token: tokenMatch[1], error: null };
   }
 
-  const esito  = esitoMatch?.[1]?.trim()?.toLowerCase();
-  const errDet = errDetMatch?.[1]?.trim();
-  const errDes = errDesMatch?.[1]?.trim();
-
-  if (esito === 'false') {
-    return { token: null, error: errDet || errDes || 'GenerateToken fallito' };
-  }
-
-  return { token: null, error: errDet || errDes || 'Token non ricevuto - risposta sconosciuta' };
+  return { token: null, error: errorMatch?.[1] || 'Token non ricevuto - risposta sconosciuta' };
 }
 
 
@@ -374,85 +318,111 @@ async function soapSendOrTest(action, utente, token, schedine) {
 }
 
 
-
+// ──────────────────────────────────────────────────────
+// Tracciato record: 236 caratteri per ospite
+// ──────────────────────────────────────────────────────
+// Formato (per ospite singolo/capofamiglia/capogruppo = 236 chars):
+//   Pos  Len  Campo
+//   1    2    Tipo alloggiato (16/17/18/19/20)
+//   3    10   Data arrivo (gg/mm/aaaa)
+//   13   2    Permanenza (gg)
+//   15   50   Cognome
+//   65   30   Nome
+//   95   1    Sesso (1=M, 2=F)
+//   96   10   Data nascita (gg/mm/aaaa)
+//   106  9    Comune nascita (codice ISTAT, o 9 spazi se estero)
+//   115  2    Provincia nascita (sigla, o 2 spazi se estero)
+//   117  9    Stato nascita (codice 9 char)
+//   126  9    Cittadinanza (codice 9 char)
+//   -- Solo per tipo 16/17/18 (104 chars), per 19/20 → 104 spazi --
+//   135  5    Tipo documento (IDENT/PASOR/PATEN ecc)
+//   140  20   Numero documento
+//   160  9    Luogo rilascio doc - comune (o 9 spazi)
+//   169  2    Luogo rilascio doc - provincia (o 2 spazi)
+//   171  30   Indirizzo residenza
+//   201  9    Comune residenza (codice ISTAT, o 9 spazi)
+//   210  2    Provincia residenza (o 2 spazi)
+//   212  9    Stato residenza (codice 9 char)
+//   -- Per File Unico (multi-appartamento) si aggiungono 6 chars --
+//   Non li aggiungiamo qui perché usiamo il metodo Send, non FileUnico
 
 function buildSchedina(ospite) {
-  // Tracciato record 168 caratteri (manuale WS_ALLOGGIATI Rev.01)
+  // Tracciato 168 caratteri (Tabella 1, WS_ALLOGGIATI Rev.01)
   // Pos  Len  Campo
-  //   1    2  Tipo alloggiato (16/17/18/19/20)
-  //   3   10  Data arrivo (gg/mm/aaaa)
-  //  13    2  Permanenza (gg)
-  //  15   50  Cognome
-  //  65   30  Nome
-  //  95    1  Sesso (1=M, 2=F)
-  //  96   10  Data nascita (gg/mm/aaaa)
-  // 106    9  Comune nascita (codice ISTAT, o 9 spazi se estero)
-  // 115    2  Provincia nascita (sigla, o 2 spazi se estero)
-  // 117    9  Stato nascita (codice 9 char)
-  // 126    9  Cittadinanza (codice 9 char)
-  // 135    5  Tipo documento (IDENT/PASOR/PATEN, solo tipo 16/17/18)
-  // 140   20  Numero documento (solo tipo 16/17/18)
-  // 160    9  Luogo rilascio documento (codice ISTAT, solo tipo 16/17/18)
+  //  1    2   Tipo alloggiato
+  //  3   10   Data arrivo (gg/mm/aaaa)
+  // 13    2   Permanenza (gg)
+  // 15   50   Cognome
+  // 65   30   Nome
+  // 95    1   Sesso (1=M, 2=F)
+  // 96   10   Data nascita (gg/mm/aaaa)
+  // 106   9   Comune nascita (ISTAT, o 9 spazi se estero)
+  // 115   2   Provincia nascita (sigla, o 2 spazi se estero)
+  // 117   9   Stato nascita (codice 9 char)
+  // 126   9   Cittadinanza (codice 9 char)
+  // --- Solo per tipo 16/17/18 (34 chars), per 19/20 → 34 spazi ---
+  // 135   5   Tipo documento
+  // 140  20   Numero documento
+  // 160   9   Luogo rilascio documento (comune o stato, codice 9 char)
   // TOTALE: 168
 
   const tipo = String(ospite.tipo_alloggiato || 16).padStart(2, '0');
-  const dataArr = formatDateIT(ospite.data_checkin);
-  const perm = calcPermanenza(ospite.data_checkin, ospite.data_checkout);
-  const cognome = pad(cleanStr(ospite.cognome || '').toUpperCase(), 50);
-  const nome = pad(cleanStr(ospite.nome || '').toUpperCase(), 30);
-  const sesso = ospite.sesso === 'M' ? '1' : ospite.sesso === 'F' ? '2' : '1';
+  const dataArr     = formatDateIT(ospite.data_checkin);
+  const perm        = calcPermanenza(ospite.data_checkin, ospite.data_checkout);
+  const cognome     = pad(cleanStr(ospite.cognome || '').toUpperCase(), 50);
+  const nome        = pad(cleanStr(ospite.nome || '').toUpperCase(), 30);
+  const sesso       = ospite.sesso === 'M' ? '1' : ospite.sesso === 'F' ? '2' : '1';
   const dataNascita = formatDateIT(ospite.data_nascita);
 
-  const natoInItalia = !!(ospite.luogo_nascita_codice && ospite.luogo_nascita_codice.trim() !== '');
-
-  // Comune nascita (9 chars) - solo se nato in Italia
-  const comuneNascita = natoInItalia
+  // Comune/Provincia nascita: valorizzati solo se nato in Italia
+  // Usa stato_nascita_codice se presente, altrimenti fallback su cittadinanza_codice
+  const codiceStatoNascita = ospite.stato_nascita_codice || ospite.cittadinanza_codice || '100000100';
+  const natoInItalia = codiceStatoNascita === '100000100';
+  const comuneNascita = natoInItalia && ospite.luogo_nascita_codice
     ? pad(ospite.luogo_nascita_codice, 9)
     : pad('', 9);
-
-  // Provincia nascita (2 chars) - solo se nato in Italia
   const provNascita = natoInItalia && ospite.luogo_nascita
     ? pad(extractProv(ospite.luogo_nascita), 2)
     : pad('', 2);
 
-  // Stato nascita (9 chars)
-  let statoNascitaRaw;
-  if (natoInItalia) {
-    statoNascitaRaw = '100000100'; // Italia
-  } else if (ospite.stato_nascita_codice && ospite.stato_nascita_codice.trim() !== '') {
-    statoNascitaRaw = ospite.stato_nascita_codice;
-  } else {
-    // fallback temporaneo per record vecchi non ancora completati
-    statoNascitaRaw = ospite.cittadinanza_codice || '100000100';
-  }
-  const statoNascita = pad(statoNascitaRaw, 9);
+  const statoNascita  = pad(codiceStatoNascita, 9);
+  const cittadinanza  = pad(ospite.cittadinanza_codice || '100000100', 9);
 
-  // Cittadinanza (9 chars)
-  const cittadinanza = pad(ospite.cittadinanza_codice || '100000100', 9);
-
-  // Parte fissa: 2+10+2+50+30+1+10+9+2+9+9 = 134 chars
+  // Parte fissa: 134 chars
   let riga = tipo + dataArr + perm + cognome + nome + sesso + dataNascita +
              comuneNascita + provNascita + statoNascita + cittadinanza;
 
   const tipoNum = parseInt(tipo);
 
   if ([16, 17, 18].includes(tipoNum)) {
-    // Tipo documento (5 chars)
-    const tipoDoc = pad(ospite.tipo_documento_codice || 'IDENT', 5);
-    // Numero documento (20 chars)
-    const numDoc = pad(cleanStr(ospite.numero_documento || '').toUpperCase(), 20);
-    // Luogo rilascio documento (9 chars) - codice ISTAT comune rilascio
-    const luogoRil = pad(ospite.luogo_rilascio_codice || '', 9);
-
-    // 5+20+9 = 34 chars → totale 134+34 = 168
+    // Parte documento: 34 chars → totale 168
+    const tipoDoc    = pad(ospite.tipo_documento_codice || '', 5);
+    const numDoc     = pad(cleanStr(ospite.numero_documento || '').toUpperCase(), 20);
+    // Luogo rilascio: codice ISTAT comune (9 char) — se straniero, codice stato
+    const luogoRil   = ospite.luogo_rilascio_codice
+      ? pad(ospite.luogo_rilascio_codice, 9)
+      : pad('', 9);
     riga += tipoDoc + numDoc + luogoRil;
   } else {
-    // Familiari/membri gruppo: 34 spazi
+    // Tipi 19/20: 34 spazi
     riga += pad('', 34);
   }
 
+  // Log debug
+  console.log('--- DEBUG ALLOGGIATI ---');
+  console.log('ospite.id:', ospite.id);
+  console.log('ospite:', ospite.nome, ospite.cognome);
+  console.log('data_checkin raw:', ospite.data_checkin);
+  console.log('dataArr formatted:', dataArr);
+  console.log('perm:', perm);
+  console.log('stato_nascita_codice:', ospite.stato_nascita_codice, '→ natoInItalia:', natoInItalia);
+  console.log('cittadinanza_codice:', ospite.cittadinanza_codice);
+  console.log('schedina length:', riga.length);
+  console.log('schedina first 14:', JSON.stringify(riga.slice(0, 14)));
+  console.log('schedina first 20:', JSON.stringify(riga.slice(0, 20)));
+
   if (riga.length !== 168) {
-    throw new Error(`Lunghezza riga errata: ${riga.length} invece di 168`);
+    throw new Error(`Lunghezza riga errata: ${riga.length} invece di 168. Schedina: ${JSON.stringify(riga)}`);
   }
 
   return riga;
@@ -473,18 +443,22 @@ function cleanStr(s) {
 }
 
 function formatDateIT(dateStr) {
-  if (!dateStr) return '          '; // 10 spazi
-  const d = new Date(dateStr + 'T12:00:00');
-  const gg = String(d.getDate()).padStart(2, '0');
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const aaaa = String(d.getFullYear());
-  return `${gg}/${mm}/${aaaa}`;
+  if (!dateStr) return '          ';
+  const base = String(dateStr).trim().slice(0, 10); // YYYY-MM-DD anche da ISO datetime
+  if (/^\d{4}-\d{2}-\d{2}$/.test(base)) {
+    const [yyyy, mm, dd] = base.split('-');
+    return `${dd}/${mm}/${yyyy}`;
+  }
+  return '          ';
 }
 
 function calcPermanenza(checkin, checkout) {
   if (!checkin || !checkout) return '01';
-  const d1 = new Date(checkin + 'T12:00:00');
-  const d2 = new Date(checkout + 'T12:00:00');
+  const c1 = String(checkin).trim().slice(0, 10);
+  const c2 = String(checkout).trim().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(c1) || !/^\d{4}-\d{2}-\d{2}$/.test(c2)) return '01';
+  const d1 = new Date(c1 + 'T12:00:00');
+  const d2 = new Date(c2 + 'T12:00:00');
   const diff = Math.max(1, Math.round((d2 - d1) / 86400000));
   return String(diff).padStart(2, '0');
 }
