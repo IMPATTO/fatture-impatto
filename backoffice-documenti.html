@@ -174,6 +174,16 @@
 
     .pw-field { position: relative; }
     .pw-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--muted); font-size: 13px; padding: 4px; }
+
+    /* Autocomplete */
+    .ac-wrap { position: relative; }
+    .ac-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: var(--white); border: 1px solid var(--border2); border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); z-index: 100; max-height: 200px; overflow-y: auto; margin-top: 2px; }
+    .ac-item { padding: 8px 12px; cursor: pointer; font-size: 13px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+    .ac-item:last-child { border-bottom: none; }
+    .ac-item:hover, .ac-item.ac-selected { background: var(--accent-l); }
+    .ac-item-name { font-weight: 500; }
+    .ac-item-code { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+    .ac-item-prov { font-size: 11px; color: var(--text2); margin-left: 6px; }
   </style>
 </head>
 <body>
@@ -420,6 +430,7 @@ function renderTable() {
         luogo_nascita: row.luogo_nascita||'',
         luogo_nascita_codice: row.luogo_nascita_codice||'',
         stato_nascita_codice: statoNascitaCodice,
+        _stato_nascita_desc: '',  // precaricato in AC.init se stato è già valorizzato
         nato_in_italia: natoInItalia,
         cittadinanza: row.cittadinanza||'Italia',
         cittadinanza_codice: row.cittadinanza_codice||'',
@@ -477,23 +488,32 @@ function renderDrawer() {
     <!-- Campi per nati IN ITALIA -->
     <div id="birthFieldsItalia" style="display:${f.nato_in_italia !== false ? 'block' : 'none'}">
       <div class="field-2">
-        <div class="field"><label>Luogo di nascita</label><input class="df" data-k="luogo_nascita" value="${esc(f.luogo_nascita)}" placeholder="Es. Roma (RM)"/></div>
-        <div class="field"><label>Cod. ISTAT nascita (9 char)</label><input class="df" data-k="luogo_nascita_codice" value="${esc(f.luogo_nascita_codice)}" placeholder="Es. 058091" style="font-family:var(--mono)"/></div>
+        <div class="field"><label>Luogo di nascita</label>
+          <div class="ac-wrap">
+            <input class="df" data-k="luogo_nascita" data-ac="comune" data-codice-k="luogo_nascita_codice" value="${esc(f.luogo_nascita)}" placeholder="Es. Roma" autocomplete="off"/>
+          </div>
+        </div>
+        <div class="field"><label>Cod. ISTAT nascita</label><input class="df" data-k="luogo_nascita_codice" value="${esc(f.luogo_nascita_codice)}" placeholder="automatico" style="font-family:var(--mono)" readonly/></div>
       </div>
     </div>
 
     <!-- Campi per nati ALL'ESTERO -->
     <div id="birthFieldsEstero" style="display:${f.nato_in_italia !== false ? 'none' : 'block'}">
-      <div class="field">
-        <label>Codice stato nascita (9 char AlloggiatiWeb)</label>
-        <input class="df" data-k="stato_nascita_codice" value="${esc(f.stato_nascita_codice)}" placeholder="Es. 100000039" style="font-family:var(--mono)" maxlength="9"/>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px;font-family:var(--mono)">Es: Francia=100000039 · Germania=100000083 · UK=100000999</div>
+      <div class="field"><label>Stato di nascita</label>
+        <div class="ac-wrap">
+          <input class="df" data-k="_stato_nascita_desc" data-ac="stato" data-codice-k="stato_nascita_codice" value="${esc(f._stato_nascita_desc||'')}" placeholder="Es. Francia" autocomplete="off"/>
+        </div>
+        <input class="df" data-k="stato_nascita_codice" value="${esc(f.stato_nascita_codice)}" placeholder="codice automatico" style="font-family:var(--mono);margin-top:6px" readonly/>
       </div>
     </div>
 
     <div class="field-2">
-      <div class="field"><label>Cittadinanza</label><input class="df" data-k="cittadinanza" value="${esc(f.cittadinanza)}" placeholder="Es. Italia"/></div>
-      <div class="field"><label>Cod. cittadinanza (9 char)</label><input class="df" data-k="cittadinanza_codice" value="${esc(f.cittadinanza_codice)}" placeholder="Es. 100000100" style="font-family:var(--mono)" maxlength="9"/></div>
+      <div class="field"><label>Cittadinanza</label>
+        <div class="ac-wrap">
+          <input class="df" data-k="cittadinanza" data-ac="stato" data-codice-k="cittadinanza_codice" value="${esc(f.cittadinanza)}" placeholder="Es. Italia" autocomplete="off"/>
+        </div>
+      </div>
+      <div class="field"><label>Cod. cittadinanza (9 char)</label><input class="df" data-k="cittadinanza_codice" value="${esc(f.cittadinanza_codice)}" placeholder="automatico" style="font-family:var(--mono)" readonly/></div>
     </div>
     <div class="field-2">
       <div class="field"><label>Tipo documento</label>
@@ -507,8 +527,12 @@ function renderDrawer() {
       <div class="field"><label>Numero documento</label><input class="df" data-k="numero_documento" value="${esc(f.numero_documento)}"/></div>
     </div>
     <div class="field-2">
-      <div class="field"><label>Luogo rilascio documento</label><input class="df" data-k="luogo_rilascio_documento" value="${esc(f.luogo_rilascio_documento)}" placeholder="Es. Roma (RM)"/></div>
-      <div class="field"><label>Cod. ISTAT rilascio (9 char)</label><input class="df" data-k="luogo_rilascio_codice" value="${esc(f.luogo_rilascio_codice)}" placeholder="Es. 058091" style="font-family:var(--mono)" maxlength="9"/></div>
+      <div class="field"><label>Luogo rilascio documento</label>
+        <div class="ac-wrap">
+          <input class="df" data-k="luogo_rilascio_documento" data-ac="comune" data-codice-k="luogo_rilascio_codice" value="${esc(f.luogo_rilascio_documento)}" placeholder="Es. Roma" autocomplete="off"/>
+        </div>
+      </div>
+      <div class="field"><label>Cod. ISTAT rilascio</label><input class="df" data-k="luogo_rilascio_codice" value="${esc(f.luogo_rilascio_codice)}" placeholder="automatico" style="font-family:var(--mono)" readonly/></div>
     </div>
     <div class="field-2">
       <div class="field"><label>Tipo alloggiato</label>
@@ -551,6 +575,18 @@ function renderDrawer() {
   d.querySelectorAll('.df').forEach(el=>{
     el.addEventListener('input', e=>{ S.form[e.target.dataset.k]=e.target.value; validateDrawer(); });
     el.addEventListener('change', e=>{ S.form[e.target.dataset.k]=e.target.value; validateDrawer(); });
+  });
+
+  // Attiva autocomplete
+  AC.init(d).then(() => {
+    if ((AC._comuniError || AC._statiError) && !document.getElementById('csvWarn')) {
+      const warn = document.createElement('div');
+      warn.id = 'csvWarn';
+      warn.style.cssText = 'margin:8px 0;padding:8px 12px;background:var(--yellow-l);border:1px solid #fde68a;border-radius:6px;font-size:12px;color:var(--yellow)';
+      warn.textContent = '⚠️ Tabelle non caricate — autocomplete non disponibile. ' +
+        `comuni.csv: HTTP ${AC._comuniStatus||'?'} · stati.csv: HTTP ${AC._statiStatus||'?'}`;
+      document.getElementById('dValidation')?.before(warn);
+    }
   });
 
   // Toggle nato in Italia / estero
@@ -603,18 +639,22 @@ function validateDrawer() {
   if (!r.cognome) errs.push('Cognome mancante');
   if (!r.nome) errs.push('Nome mancante');
 
+  const testBtn = document.getElementById('dTest');
+  const sendBtn = document.getElementById('dSend');
   if (errs.length === 0) {
-    el.innerHTML = '<span style="color:var(--green)">Tutti i dati sono completi</span>';
-    const testBtn = document.getElementById('dTest');
-    const sendBtn = document.getElementById('dSend');
+    el.innerHTML = '<span style="color:var(--green)">✓ Dati completi — pronta per test/invio</span>';
     if(testBtn) testBtn.disabled = !S.form._account;
     if(sendBtn) sendBtn.disabled = !S.form._account;
+    if(testBtn) testBtn.title = S.form._account ? '' : 'Collega prima un account AlloggiatiWeb';
+    if(sendBtn) sendBtn.title = S.form._account ? '' : 'Collega prima un account AlloggiatiWeb';
   } else {
-    el.innerHTML = errs.map(e=>`<div style="color:var(--yellow);margin:2px 0">- ${esc(e)}</div>`).join('');
-    const testBtn = document.getElementById('dTest');
-    const sendBtn = document.getElementById('dSend');
-    if(testBtn) testBtn.disabled = true;
-    if(sendBtn) sendBtn.disabled = true;
+    el.innerHTML = `<div style="background:var(--yellow-l);border:1px solid #fde68a;border-radius:6px;padding:8px 12px;margin-bottom:4px">
+      <div style="font-weight:600;color:var(--yellow);margin-bottom:4px">Campi mancanti (${errs.length}):</div>
+      ${errs.map(e=>`<div style="color:var(--yellow);margin:2px 0;font-size:12px">· ${esc(e)}</div>`).join('')}
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;font-family:var(--mono)">Completa i campi per abilitare test e invio</div>
+    </div>`;
+    if(testBtn) { testBtn.disabled = true; testBtn.title = 'Completa i campi richiesti'; }
+    if(sendBtn) { sendBtn.disabled = true; sendBtn.title = 'Completa i campi richiesti'; }
   }
 }
 
@@ -634,8 +674,12 @@ async function sendToQuestura(mode) {
     btn.textContent = mode === 'send' ? 'Invio…' : 'Testo…';
   }
 
-  // Salva prima i dati aggiornati
-  await saveSchedina();
+  // Salva prima i dati aggiornati — blocca se fallisce
+  const saved = await saveSchedina();
+  if (!saved) {
+    if (btn) { btn.disabled = false; btn.textContent = mode === 'send' ? 'Invia alla Questura' : 'Testa'; }
+    return;
+  }
 
   try {
     const session = await sb.auth.getSession();
@@ -696,7 +740,7 @@ async function sendToQuestura(mode) {
       S.selected = null;
       S.form = {};
     } else {
-      S.selected = S.rows.find(r => r.id === S.selected?.id) || null;
+      const _prevId = S.selected?.id; S.selected = S.rows.find(r => r.id === _prevId) || null;
     }
 
     renderSchedine();
@@ -712,9 +756,9 @@ async function sendToQuestura(mode) {
 }
 
 async function saveSchedina() {
-  if (!S.selected) return;
+  if (!S.selected) return false;
   const btn = document.getElementById('dSave'); if(btn){ btn.disabled=true; btn.textContent='Salvo…'; }
-  const { _account, alloggiati_stato, nato_in_italia, ...payload } = S.form;
+  const { _account, alloggiati_stato, nato_in_italia, _stato_nascita_desc, ...payload } = S.form;
   payload.tipo_alloggiato = Number(payload.tipo_alloggiato) || 16;
 
   // Gestione stato_nascita_codice in base all'origine
@@ -747,14 +791,17 @@ async function saveSchedina() {
   }
 
   const {error} = await sb.from('ospiti_check_in').update(payload).eq('id', S.selected.id);
-  if (error) { toast('Errore: '+error.message,'err'); }
-  else {
-    toast('Dati schedina salvati','ok');
-    const i = S.rows.findIndex(r=>r.id===S.selected.id);
-    if (i>=0) Object.assign(S.rows[i], payload);
-    S.selected = S.rows[i] || S.selected;
+  if (error) {
+    toast('Errore: '+error.message,'err');
+    if(btn){ btn.disabled=false; btn.textContent='Salva dati'; }
+    return false;
   }
+  toast('Dati schedina salvati','ok');
+  const i = S.rows.findIndex(r=>r.id===S.selected.id);
+  if (i>=0) Object.assign(S.rows[i], payload);
+  S.selected = S.rows[i] || S.selected;
   if(btn){ btn.disabled=false; btn.textContent='Salva dati'; }
+  return true;
 }
 
 
@@ -1030,24 +1077,208 @@ function renderConfigRows() {
 }
 
 
+
+// ── Autocomplete Engine ──
+const AC = {
+  comuni: null,   // [{codice, nome, prov}]
+  stati: null,    // [{codice, nome}]
+
+  async loadComuni() {
+    if (AC.comuni) return;
+    AC._comuniError = false;
+    try {
+      const res = await fetch('/comuni.csv');
+      if (!res.ok) { AC._comuniStatus = res.status; throw new Error(`HTTP ${res.status} su /comuni.csv`); }
+      const txt = await res.text();
+      AC.comuni = [];
+      const lines = txt.replace(/\r/g,'').split('\n').slice(1);
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        // Parsing robusto: prende i primi 4 campi separati da virgola
+        // I nomi non contengono virgole nei CSV AlloggiatiWeb
+        const parts = line.split(',');
+        if (parts.length < 2) continue;
+        const codice = parts[0].trim();
+        const desc   = parts[1].trim();
+        const prov   = (parts[2]||'').trim();
+        const fine   = (parts[3]||'').trim();
+        if (!codice || !desc) continue;
+        if (fine) continue; // comune soppresso
+        AC.comuni.push({ codice, nome: desc, prov });
+      }
+    } catch(e) { console.warn('comuni.csv non caricato', e); AC.comuni = []; AC._comuniError = true; AC._comuniStatus = AC._comuniStatus || '?'; }
+  },
+
+  async loadStati() {
+    if (AC.stati) return;
+    AC._statiError = false;
+    try {
+      const res = await fetch('/stati.csv');
+      if (!res.ok) { AC._statiStatus = res.status; throw new Error(`HTTP ${res.status} su /stati.csv`); }
+      const txt = await res.text();
+      AC.stati = [];
+      const lines = txt.replace(/\r/g,'').split('\n').slice(1);
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        const parts = line.split(',');
+        if (parts.length < 2) continue;
+        const codice = parts[0].trim();
+        const desc   = parts[1].trim();
+        const fine   = (parts[3]||'').trim();
+        if (!codice || !desc) continue;
+        if (fine) continue;
+        AC.stati.push({ codice, nome: desc });
+      }
+    } catch(e) { console.warn('stati.csv non caricato', e); AC.stati = []; AC._statiError = true; AC._statiStatus = AC._statiStatus || '?'; }
+  },
+
+  search(type, query) {
+    const q = query.trim().toUpperCase();
+    if (q.length < 2) return [];
+    const list = type === 'comune' ? AC.comuni : AC.stati;
+    if (!list) return [];
+    const exact = [], starts = [], contains = [];
+    for (const item of list) {
+      const n = item.nome.toUpperCase();
+      if (n === q) exact.push(item);
+      else if (n.startsWith(q)) starts.push(item);
+      else if (n.includes(q)) contains.push(item);
+    }
+    return [...exact, ...starts, ...contains].slice(0, 12);
+  },
+
+  // Chiude tutti i dropdown aperti
+  closeAll() {
+    document.querySelectorAll('.ac-dropdown').forEach(d => d.remove());
+  },
+
+  // Attiva autocomplete su tutti i campi data-ac nel drawer
+  async init(container) {
+    await Promise.all([AC.loadComuni(), AC.loadStati()]);
+
+    // Precarica descrizione stati esistenti (ospiti esteri già salvati)
+    if (AC.stati && AC.stati.length) {
+      const codiceNascitaInput = container.querySelector('[data-k="stato_nascita_codice"]');
+      const descNascitaInput   = container.querySelector('[data-k="_stato_nascita_desc"]');
+      if (codiceNascitaInput && descNascitaInput && codiceNascitaInput.value && !descNascitaInput.value) {
+        const match = AC.stati.find(s => s.codice === codiceNascitaInput.value.trim());
+        if (match) {
+          descNascitaInput.value = match.nome;
+          S.form._stato_nascita_desc = match.nome;
+        }
+      }
+    }
+
+    container.querySelectorAll('[data-ac]').forEach(input => {
+      const type = input.dataset.ac;       // 'comune' | 'stato'
+      const codiceKey = input.dataset.codiceK; // chiave del campo codice abbinato
+
+      input.addEventListener('input', () => {
+        AC.closeAll();
+        const q = input.value;
+        if (q.length < 2) return;
+        const results = AC.search(type, q);
+        if (!results.length) return;
+
+        const drop = document.createElement('div');
+        drop.className = 'ac-dropdown';
+
+        results.forEach((item, idx) => {
+          const div = document.createElement('div');
+          div.className = 'ac-item' + (idx === 0 ? ' ac-selected' : '');
+          div.innerHTML = type === 'comune'
+            ? `<span class="ac-item-name">${item.nome}<span class="ac-item-prov">${item.prov}</span></span><span class="ac-item-code">${item.codice}</span>`
+            : `<span class="ac-item-name">${item.nome}</span><span class="ac-item-code">${item.codice}</span>`;
+
+          div.addEventListener('mousedown', e => {
+            e.preventDefault();
+            // Imposta il valore visibile
+            const label = type === 'comune'
+              ? `${item.nome} (${item.prov})`
+              : item.nome;
+            input.value = label;
+            S.form[input.dataset.k] = label;
+
+            // Imposta il codice nel campo abbinato (readonly)
+            if (codiceKey) {
+              S.form[codiceKey] = item.codice;
+              // Aggiorna il DOM
+              const codiceInput = container.querySelector(`[data-k="${codiceKey}"]`);
+              if (codiceInput) codiceInput.value = item.codice;
+            }
+
+            AC.closeAll();
+            validateDrawer();
+          });
+          drop.appendChild(div);
+        });
+
+        input.parentElement.appendChild(drop);
+      });
+
+      input.addEventListener('blur', () => {
+        setTimeout(AC.closeAll, 150);
+      });
+
+      input.addEventListener('keydown', e => {
+        const drop = input.parentElement.querySelector('.ac-dropdown');
+        if (!drop) return;
+        const items = drop.querySelectorAll('.ac-item');
+        let sel = drop.querySelector('.ac-selected');
+        let idx = [...items].indexOf(sel);
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          if (sel) sel.classList.remove('ac-selected');
+          items[(idx + 1) % items.length]?.classList.add('ac-selected');
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          if (sel) sel.classList.remove('ac-selected');
+          items[(idx - 1 + items.length) % items.length]?.classList.add('ac-selected');
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          drop.querySelector('.ac-selected')?.dispatchEvent(new MouseEvent('mousedown'));
+        } else if (e.key === 'Escape') {
+          AC.closeAll();
+        }
+      });
+    });
+  }
+};
+
 // ── Init ──
 (async()=>{
-  const {data:{session}} = await sb.auth.getSession();
-  S.session = session;
-  if (session) { await loadAll(); renderDashboard(); }
-  else renderLogin();
+  try {
+    if (!window.sb) throw new Error('Supabase client non caricato — controlla /js/supabase-client.js');
+    const res = await sb.auth.getSession();
+    if (!res?.data?.session) console.warn('[init] nessuna sessione attiva');
+    const session = res?.data?.session;
+    S.session = session;
+    if (session) { await loadAll(); renderDashboard(); }
+    else renderLogin();
+  } catch(err) {
+    console.error('[init] ERRORE:', err);
+    document.getElementById('app').innerHTML =
+      `<div style="padding:40px;font-family:monospace;color:var(--red)">
+        <strong>Errore inizializzazione</strong><br><br>${err.message}
+        <br><br><small>Apri la console per i dettagli.</small>
+       </div>`;
+  }
 })();
 
 sb.auth.onAuthStateChange(async (_, session) => {
-  if (!session && S.session) {
-    S.session = null;
-    S.rows=[]; S.selected=null; S.form={};
-    renderLogin();
-  }
-  if (session && !S.session) {
-    S.session = session;
-    await loadAll();
-    renderDashboard();
+  try {
+    if (!session && S.session) {
+      S.session = null;
+      S.rows=[]; S.selected=null; S.form={};
+      renderLogin();
+    }
+    if (session && !S.session) {
+      S.session = session;
+      await loadAll();
+      renderDashboard();
+    }
+  } catch(err) {
+    console.error('[authStateChange] ERRORE:', err);
   }
 });
 </script>
