@@ -37,6 +37,8 @@
       --radius: 12px;
       --radius-sm: 8px;
       --transition: 0.22s ease;
+      --teal: #0d9488;
+      --purple: #9333ea;
       --font-display: 'DM Serif Display', Georgia, serif;
       --font-body: 'DM Sans', system-ui, sans-serif;
     }
@@ -169,32 +171,63 @@
     #app.loaded { opacity: 1; }
 
     /* ─── Header ─── */
-    .portal-header {
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      min-height: 72px;
       background: var(--surface);
       border-bottom: 1px solid var(--border);
-      padding: 16px 24px;
-      position: sticky; top: 0; z-index: 10;
     }
 
-    .header-inner {
-      max-width: 720px;
-      margin: 0 auto;
-      display: flex; align-items: center; justify-content: space-between;
+    .section-header-left {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      min-width: 0;
     }
 
-    .brand {
+    .section-header-brand {
       font-family: var(--font-display);
-      font-size: 20px;
-      color: var(--accent);
-      text-decoration: none;
+      font-size: 22px;
+      font-weight: 500;
+      color: var(--text-primary);
       letter-spacing: 0.02em;
     }
 
-    .header-stay {
-      font-size: 13px;
-      color: var(--text-muted);
-      text-align: right;
+    .section-header-tag {
+      font-family: var(--font-body);
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 6px;
     }
+
+    .tag-portale {
+      color: var(--purple);
+      background: rgba(147,51,234,0.10);
+    }
+
+    .section-header-right {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .section-header-user {
+      font-size: 12px;
+      font-family: var(--font-body);
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 320px;
+    }
+
 
     /* ─── Hero ─── */
     .portal-hero {
@@ -223,6 +256,12 @@
       line-height: 1.2;
       color: var(--text-primary);
       margin-bottom: 16px;
+    }
+
+    .hero-stay-note {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 14px;
     }
 
     .stay-pills {
@@ -533,18 +572,99 @@
     /* ─── Responsive ─── */
     @media (max-width: 480px) {
       .portal-hero { padding: 28px 16px 24px; }
+      .hero-stay-note { font-size: 12px; }
       .portal-main { padding: 20px 16px 48px; }
       .card-body { padding: 16px; }
       .card-header { padding: 14px 16px 12px; }
     }
 
     /* ── Navbar unificata ── */
-    .navbar { display:flex; align-items:center; gap:24px; padding:0 24px; height:44px; background:#1a1917; font-family:var(--font-body); font-size:13px; position:relative; z-index:1000; }
-    .navbar-brand { font-family:var(--font-display); font-size:18px; font-weight:500; color:#fff; margin-right:auto; text-decoration:none; }
+    .navbar {
+      display:flex;
+      align-items:center;
+      gap:24px;
+      padding:0 24px;
+      height:44px;
+      background:#1a1917;
+      font-family:var(--font-body);
+      font-size:13px;
+      position:relative;
+      z-index:1000;
+    }
+    .navbar-brand { font-family:var(--font-display); font-size:18px; font-weight:500; color:#fff; text-decoration:none; margin-right:auto; }
+    .navbar-menu { display:flex; align-items:center; gap:24px; }
     .navbar a.navbar-link { color:#a8a29e; text-decoration:none; padding:4px 10px; border-radius:4px; transition:color .15s,background .15s; }
     .navbar a.navbar-link:hover { color:#fff; background:rgba(255,255,255,.08); }
-    .navbar a.navbar-link.active { color:#fff; background:#3b82f6; }
-    .navbar-user { font-family:var(--font-body); font-size:10px; color:#78716c; letter-spacing:.06em; }
+    .navbar a.navbar-link.active { color:#fff; }
+    .navbar .active-portale { background: var(--purple); }
+    .navbar-user { font-family:var(--font-body); font-size:10px; color:#78716c; letter-spacing:.06em; white-space:nowrap; }
+    .navbar-toggle {
+      display:none;
+      background:transparent;
+      border:1px solid rgba(255,255,255,.12);
+      color:#fff;
+      border-radius:6px;
+      padding:6px 10px;
+      font-size:16px;
+      cursor:pointer;
+    }
+    .navbar-toggle:hover { background:rgba(255,255,255,.08); }
+    @media (max-width: 900px) {
+      .navbar { padding:0 16px; }
+      .navbar-toggle {
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+      }
+      .navbar-menu {
+        display:none;
+        position:absolute;
+        top:44px;
+        right:16px;
+        min-width:220px;
+        background:#1a1917;
+        border:1px solid rgba(255,255,255,.08);
+        border-radius:10px;
+        box-shadow:0 10px 30px rgba(0,0,0,.25);
+        padding:10px;
+        flex-direction:column;
+        align-items:stretch;
+        gap:8px;
+      }
+      .navbar-menu.open { display:flex; }
+      .navbar-menu .navbar-link {
+        display:block;
+        width:100%;
+      }
+      .navbar-user {
+        display:block;
+        margin-top:6px;
+        padding:8px 10px 0;
+        border-top:1px solid rgba(255,255,255,.08);
+        white-space:normal;
+        word-break:break-word;
+      }
+    }
+    @media (max-width: 768px) {
+      .section-header {
+        padding: 12px 16px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+      }
+      .section-header-left,
+      .section-header-right {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .section-header-brand { font-size: 18px; }
+      .section-header-user {
+        max-width: 58vw;
+        font-size: 11px;
+      }
+    }
   </style>
 </head>
 
@@ -552,10 +672,13 @@
 
 <nav class="navbar" id="mainNavbar">
   <a href="/backoffice.html" class="navbar-brand">Impatto</a>
-  <a href="/backoffice.html" class="navbar-link">Fatturazione</a>
-  <a href="/backoffice-documenti.html" class="navbar-link">Documenti</a>
-  <a href="/portale.html" class="navbar-link">Portale</a>
-  <span class="navbar-user" id="navUser"></span>
+  <button class="navbar-toggle" id="navbarToggle" aria-label="Apri menu" aria-expanded="false" aria-controls="navbarMenu">☰</button>
+  <div class="navbar-menu" id="navbarMenu">
+    <a href="/backoffice.html" class="navbar-link">Fatturazione</a>
+    <a href="/backoffice-documenti.html" class="navbar-link">Documenti</a>
+    <a href="/portale.html" class="navbar-link active active-portale">Portale</a>
+    <span class="navbar-user" id="navUser"></span>
+  </div>
 </nav>
 
   <!-- Loading Screen -->
@@ -584,10 +707,13 @@
   <div id="app">
 
     <!-- Header -->
-    <header class="portal-header">
-      <div class="header-inner">
-        <span class="brand">Impatto</span>
-        <div class="header-stay" id="header-stay"></div>
+    <header class="section-header">
+      <div class="section-header-left">
+        <span class="section-header-brand">Impatto</span>
+        <span class="section-header-tag tag-portale">PORTALE</span>
+      </div>
+      <div class="section-header-right">
+        <span class="section-header-user" id="sectionUser">fatturazione@illupoaffitta.com</span>
       </div>
     </header>
 
@@ -596,6 +722,7 @@
       <div class="hero-inner">
         <div class="welcome-label" id="label-welcome">Benvenuto</div>
         <h1 class="welcome-name" id="guest-name">—</h1>
+        <div class="hero-stay-note" id="header-stay"></div>
         <div class="stay-pills">
           <span class="pill" id="checkin-pill">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>
@@ -907,6 +1034,31 @@
       return '📞';
     }
 
+    function initNavbar(email = '') {
+      const toggle = document.getElementById('navbarToggle');
+      const menu = document.getElementById('navbarMenu');
+      const navUser = document.getElementById('navUser');
+      const sectionUser = document.getElementById('sectionUser');
+
+      if (navUser) navUser.textContent = email || '';
+      if (sectionUser) sectionUser.textContent = email || '';
+      if (!toggle || !menu) return;
+
+      toggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = menu.classList.toggle('open');
+        toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!menu.classList.contains('open')) return;
+        if (!menu.contains(e.target) && !toggle.contains(e.target)) {
+          menu.classList.remove('open');
+          toggle.setAttribute('aria-expanded', 'false');
+        }
+      });
+    }
+
     // ─── Main Load ──────────────────────────────────────────────
     async function init() {
       const params = new URLSearchParams(window.location.search);
@@ -927,7 +1079,8 @@
             apartments (
               nome_appartamento,
               indirizzo_completo,
-              latitudine, longitudine
+              latitudine, longitudine,
+              maps_url_override
             )
           `)
           .eq('portale_token', token)
@@ -940,6 +1093,7 @@
 
         const guest = guests[0];
         const apt   = guest.apartments;
+        initNavbar('fatturazione@illupoaffitta.com');
 
         // Set language
         lang = (guest.lingua || 'IT').toUpperCase();
@@ -1045,11 +1199,23 @@
         // ── Card 3: Map ──────────────────────────────────────────
         if (apt) {
           let mapHTML = '';
-          const address = apt.indirizzo_completo;
-          const lat = apt.latitudine;
-          const lng = apt.longitudine;
+          const address  = apt.indirizzo_completo;
+          const lat      = apt.latitudine;
+          const lng      = apt.longitudine;
+          const override = apt.maps_url_override;
 
-          if (lat && lng) {
+          if (override) {
+            mapHTML = `
+              <div class="map-fallback">
+                <div>
+                  ${address ? `<div style="color:var(--text-primary);font-size:15px;margin-bottom:8px">${escHtml(address)}</div>` : ''}
+                  <a href="${escHtml(override)}" target="_blank" rel="noopener" class="map-address-link">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+                    ${t('open_maps')}
+                  </a>
+                </div>
+              </div>`;
+          } else if (lat && lng) {
             const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
             mapHTML = `
               <div class="map-container">
@@ -1130,17 +1296,6 @@
 
     init();
   </script>
-
-<script>
-(function(){
-  var path=location.pathname;
-  document.querySelectorAll('.navbar-link').forEach(function(a){
-    if(path.endsWith(a.getAttribute('href').replace('/',''))||
-       (a.getAttribute('href')==='/backoffice.html'&&(path==='/'||path==='/backoffice.html')))
-      a.classList.add('active');
-  });
-})();
-</script>
 
 </body>
 </html>

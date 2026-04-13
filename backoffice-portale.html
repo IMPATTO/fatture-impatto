@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Portale Admin · Impatto</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/supabase-client.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #f5f4f1;
+      --white:    #ffffff;
+      --surf:     #fafaf8;
+      --border:   #e2e0db;
+      --border2:  #d0cdc6;
+      --accent:   #2563eb;
+      --accent-l: #eff4ff;
+      --green:    #16a34a;
+      --green-l:  #f0fdf4;
+      --red:      #dc2626;
+      --red-l:    #fef2f2;
+      --yellow:   #d97706;
+      --yellow-l: #fffbeb;
+      --purple:   #9333ea;
+      --purple-l: #fdf4ff;
+      --blue-l:   #eff6ff;
+      --text:     #1a1917;
+      --text2:    #57534e;
+      --muted:    #a8a29e;
+      --serif:    'Cormorant Garamond', Georgia, serif;
+      --sans:     'DM Sans', sans-serif;
+      --mono:     'DM Mono', monospace;
+    }
+
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; }
+
+    .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .login-card { width: 400px; background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 48px 44px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+    .login-logo { font-family: var(--serif); font-size: 30px; font-weight: 500; margin-bottom: 4px; }
+    .login-sub  { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 36px; }
+
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text2); margin-bottom: 6px; }
+    .field input, .field select, .field textarea {
+      width: 100%; background: var(--white); border: 1px solid var(--border); border-radius: 6px;
+      padding: 10px 13px; font-size: 14px; font-family: var(--sans); color: var(--text);
+      transition: border-color 0.15s, box-shadow 0.15s; outline: none;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+    .field textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+    .field select {
+      appearance: none;
+      cursor: pointer;
+      padding-right: 28px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a8a29e' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+    }
+    .field-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .field-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; font-family: var(--sans); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.38; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: #1d4ed8; }
+    .btn-ghost  { background: var(--white); color: var(--text2); border: 1px solid var(--border); }
+    .btn-ghost:hover:not(:disabled) { border-color: var(--border2); color: var(--text); }
+    .btn-sm { padding: 5px 12px; font-size: 12px; }
+    .btn-full { width: 100%; margin-top: 8px; padding: 12px; font-size: 14px; }
+    .msg-err { background: var(--red-l); border: 1px solid #fecaca; color: var(--red); border-radius: 6px; padding: 10px 13px; font-size: 13px; margin-bottom: 12px; display: none; }
+
+    .navbar { display:flex; align-items:center; justify-content:space-between; padding:0 24px; height:44px; background:#111; border-bottom:1px solid #2a2a2a; position:sticky; top:0; z-index:100; }
+    .navbar-links { display:flex; align-items:center; gap:4px; }
+    .navbar-link { font-family:var(--mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#888; text-decoration:none; padding:5px 13px; border-radius:5px; transition:background 0.15s,color 0.15s; }
+    .navbar-link:hover { background:#222; color:#ccc; }
+    .navbar-link.active { background:#222; color:#fff; }
+    .navbar-brand { font-family:var(--serif); font-size:18px; color:#fff; font-weight:500; }
+
+    .header { display:flex; align-items:center; justify-content:space-between; padding:0 24px; height:56px; background:var(--white); border-bottom:1px solid var(--border); position:sticky; top:44px; z-index:50; }
+    .header-left { display:flex; align-items:baseline; gap:10px; }
+    .header-brand { font-family:var(--serif); font-size:22px; font-weight:500; }
+    .header-badge { font-family:var(--mono); font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--white); background:var(--accent); padding:2px 8px; border-radius:4px; }
+    .header-right { display:flex; align-items:center; gap:12px; }
+    .header-user { font-size:12px; font-family:var(--mono); color:var(--muted); }
+
+    .apt-bar { display:flex; align-items:center; gap:12px; padding:12px 24px; background:var(--white); border-bottom:1px solid var(--border); flex-wrap:wrap; }
+    .apt-bar label { font-family:var(--mono); font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); white-space:nowrap; }
+    .apt-bar select {
+      background:var(--surf);
+      border:1px solid var(--border);
+      border-radius:6px;
+      padding:8px 32px 8px 12px;
+      font-size:13px;
+      font-family:var(--sans);
+      color:var(--text);
+      outline:none;
+      min-width:240px;
+      appearance:none;
+      cursor:pointer;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a8a29e' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat:no-repeat;
+      background-position:right 10px center;
+    }
+    .apt-status { font-size:12px; font-family:var(--mono); color:var(--muted); }
+
+    .tabs { display:flex; gap:0; padding:0 24px; background:var(--white); border-bottom:1px solid var(--border); }
+    .tab { font-family:var(--mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); padding:12px 18px; cursor:pointer; border-bottom:2px solid transparent; transition:color 0.15s,border-color 0.15s; background:none; border-top:none; border-left:none; border-right:none; }
+    .tab:hover { color:var(--text2); }
+    .tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+    .content { padding:24px; max-width:780px; }
+    .section-title { font-family:var(--serif); font-size:20px; font-weight:500; margin-bottom:4px; }
+    .section-sub { font-size:12px; color:var(--muted); margin-bottom:24px; font-family:var(--mono); }
+    .card-section { background:var(--white); border:1px solid var(--border); border-radius:10px; padding:20px 24px; margin-bottom:16px; }
+    .card-section-title { font-family:var(--mono); font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); margin-bottom:16px; padding-bottom:10px; border-bottom:1px solid var(--border); }
+    .save-row { display:flex; align-items:center; gap:12px; margin-top:20px; padding-top:16px; border-top:1px solid var(--border); flex-wrap: wrap; }
+
+    .numeri-list { display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+    .numeri-row { display:grid; grid-template-columns:1fr 1fr auto; gap:8px; align-items:center; }
+    .numeri-row input { background:var(--surf); border:1px solid var(--border); border-radius:6px; padding:8px 10px; font-size:13px; font-family:var(--sans); color:var(--text); outline:none; }
+    .numeri-del { background:none; border:1px solid var(--border); border-radius:6px; padding:6px 10px; cursor:pointer; color:var(--muted); font-size:14px; transition:all 0.15s; }
+    .numeri-del:hover { border-color:var(--red); color:var(--red); }
+
+    .preview-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
+    .preview-item { background:var(--surf); border:1px solid var(--border); border-radius:8px; padding:14px 16px; }
+    .preview-label { font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+    .preview-value { font-size:13px; color:var(--text2); }
+    .preview-value.ok { color:var(--green); }
+    .preview-value.miss { color:var(--red); font-style:italic; }
+
+    .toast { position:fixed; bottom:20px; right:20px; background:var(--white); border:1px solid var(--border); border-radius:8px; padding:12px 18px; font-size:13px; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.1); max-width:300px; }
+    .toast-ok { border-left:3px solid var(--green); color:var(--green); }
+    .toast-err { border-left:3px solid var(--red); color:var(--red); }
+    .toast-info { border-left:3px solid var(--purple); color:var(--purple); }
+
+    @media (max-width: 768px) {
+      .field-2, .preview-grid { grid-template-columns:1fr; }
+      .navbar-brand, .header-user { display:none; }
+      .content { padding:16px; }
+      .apt-bar { padding:12px 16px; }
+      .tabs { padding:0 16px; }
+      .header { padding:0 16px; }
+      .navbar { padding:0 16px; }
+      .numeri-row { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+<div id="app"></div>
+<div id="_toast"></div>
+
+<script>
+const sb = window.sb || supabase.createClient(
+  'https://tysxeikqbgebpfyblgeb.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5c3hlaWtxYmdlYnBmeWJsZ2ViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyODczODAsImV4cCI6MjA5MDg2MzM4MH0.yXmS2MFh47eRkCX2voemdBkK5m_tyJiKAFhfyp1YEbw'
+);
+
+const LINGUE = ['IT','EN','DE','FR','ES','RU'];
+
+const S = {
+  session: null,
+  apartments: [],
+  selectedApt: null,
+  tab: 'accesso',
+  creds: null,
+  info: null,
+  aptData: null,
+  lingua: 'IT',
+  saving: false,
+  toastTimer: null,
+  fCreds: { codice_accesso:'', luogo_chiavi:'', istruzioni_accesso:'', video_url:'' },
+  fInfo:  { come_arrivare:'', dove_parcheggiare:'', come_entrare:'', cosa_fare_se_luce_spenta:'', cosa_fare_se_chiuso_fuori:'', numeri_utili:[] },
+  fMappa: { indirizzo_completo:'', latitudine:'', longitudine:'', maps_url_override:'' },
+};
+
+function esc(s) { if(s==null)return''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtTs(ts) { if(!ts)return'—'; return new Date(ts).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+
+function toast(msg, type='ok') {
+  clearTimeout(S.toastTimer);
+  const el = document.getElementById('_toast');
+  el.innerHTML = `<div class="toast toast-${type}">${esc(msg)}</div>`;
+  S.toastTimer = setTimeout(() => { el.innerHTML = ''; }, 3500);
+}
+
+function numeriToArray(obj) {
+  if (!obj || typeof obj !== 'object') return [];
+  return Object.entries(obj).map(([label, numero]) => ({ label, numero: String(numero) }));
+}
+
+function arrayToNumeri(arr) {
+  const out = {};
+  arr.forEach(({ label, numero }) => { if (label.trim()) out[label.trim()] = numero.trim(); });
+  return out;
+}
+
+function validateUrl(url) {
+  if (!url) return true;
+  try {
+    const u = new URL(url);
+    return u.protocol === 'http:' || u.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+async function loadApartments() {
+  const { data } = await sb.from('apartments').select('id,nome_appartamento').order('nome_appartamento');
+  S.apartments = data || [];
+}
+
+async function loadApartmentCredentials(aptId) {
+  const { data } = await sb.from('apartment_credentials').select('*').eq('apartment_id', aptId).maybeSingle();
+  S.creds = data;
+  S.fCreds = {
+    codice_accesso:     data?.codice_accesso     || '',
+    luogo_chiavi:       data?.luogo_chiavi       || '',
+    istruzioni_accesso: data?.istruzioni_accesso || '',
+    video_url:          data?.video_url          || '',
+  };
+}
+
+async function loadApartmentInfo(aptId, lingua) {
+  const { data } = await sb.from('apartment_info').select('*').eq('apartment_id', aptId).eq('lingua', lingua).maybeSingle();
+  S.info = data;
+  S.fInfo = {
+    come_arrivare:             data?.come_arrivare             || '',
+    dove_parcheggiare:         data?.dove_parcheggiare         || '',
+    come_entrare:              data?.come_entrare              || '',
+    cosa_fare_se_luce_spenta:  data?.cosa_fare_se_luce_spenta  || '',
+    cosa_fare_se_chiuso_fuori: data?.cosa_fare_se_chiuso_fuori || '',
+    numeri_utili: numeriToArray(data?.numeri_utili),
+  };
+}
+
+async function loadApartmentMapData(aptId) {
+  const { data } = await sb.from('apartments').select('indirizzo_completo,latitudine,longitudine,maps_url_override').eq('id', aptId).maybeSingle();
+  S.aptData = data;
+  S.fMappa = {
+    indirizzo_completo: data?.indirizzo_completo || '',
+    latitudine:         data?.latitudine         || '',
+    longitudine:        data?.longitudine        || '',
+    maps_url_override:  data?.maps_url_override  || '',
+  };
+}
+
+async function loadAll(aptId) {
+  await Promise.all([
+    loadApartmentCredentials(aptId),
+    loadApartmentInfo(aptId, S.lingua),
+    loadApartmentMapData(aptId),
+  ]);
+}
+
+// Per gli upsert servono vincoli unici su queste colonne (il nome della constraint non conta):
+// apartment_credentials  -> UNIQUE (apartment_id)
+// apartment_info         -> UNIQUE (apartment_id, lingua)
+
+async function saveApartmentCredentials(aptId) {
+  if (S.fCreds.video_url && !validateUrl(S.fCreds.video_url)) {
+    toast('URL video non valido','err');
+    return false;
+  }
+  const payload = { ...S.fCreds, apartment_id: aptId, updated_at: new Date().toISOString() };
+  const { error } = await sb.from('apartment_credentials').upsert(payload, { onConflict: 'apartment_id' });
+  if (error) {
+    toast('Errore: ' + error.message, 'err');
+    return false;
+  }
+  await loadApartmentCredentials(aptId);
+  toast('✓ Accesso salvato','ok');
+  return true;
+}
+
+async function saveApartmentInfo(aptId, lingua) {
+  const payload = {
+    ...S.fInfo,
+    numeri_utili: arrayToNumeri(S.fInfo.numeri_utili),
+    apartment_id: aptId,
+    lingua,
+    updated_at: new Date().toISOString(),
+  };
+  const { error } = await sb.from('apartment_info').upsert(payload, { onConflict: 'apartment_id,lingua' });
+  if (error) {
+    toast('Errore: ' + error.message, 'err');
+    return false;
+  }
+  await loadApartmentInfo(aptId, lingua);
+  toast('✓ Istruzioni salvate','ok');
+  return true;
+}
+
+async function saveApartmentMapSettings(aptId) {
+  if (S.fMappa.maps_url_override && !validateUrl(S.fMappa.maps_url_override)) {
+    toast('URL Maps non valido','err');
+    return false;
+  }
+  const payload = {
+    indirizzo_completo: S.fMappa.indirizzo_completo || null,
+    latitudine: S.fMappa.latitudine ? parseFloat(S.fMappa.latitudine) : null,
+    longitudine: S.fMappa.longitudine ? parseFloat(S.fMappa.longitudine) : null,
+    maps_url_override: S.fMappa.maps_url_override || null,
+  };
+  const { error } = await sb.from('apartments').update(payload).eq('id', aptId);
+  if (error) {
+    toast('Errore: ' + error.message, 'err');
+    return false;
+  }
+  await loadApartmentMapData(aptId);
+  toast('✓ Mappa salvata','ok');
+  return true;
+}
+
+async function copyItalianToCurrentLanguage(aptId, lingua) {
+  if (lingua === 'IT') {
+    toast('Sei già in IT','info');
+    return;
+  }
+  const { data: itData } = await sb.from('apartment_info').select('*').eq('apartment_id', aptId).eq('lingua','IT').maybeSingle();
+  if (!itData) {
+    toast('Nessun contenuto IT da copiare','err');
+    return;
+  }
+  S.fInfo = {
+    come_arrivare:             itData.come_arrivare             || '',
+    dove_parcheggiare:         itData.dove_parcheggiare         || '',
+    come_entrare:              itData.come_entrare              || '',
+    cosa_fare_se_luce_spenta:  itData.cosa_fare_se_luce_spenta  || '',
+    cosa_fare_se_chiuso_fuori: itData.cosa_fare_se_chiuso_fuori || '',
+    numeri_utili: numeriToArray(itData.numeri_utili),
+  };
+  toast('IT copiato in ' + lingua + ' — non dimenticare di salvare','info');
+  renderTab();
+}
+
+async function uploadCheckinVideo(file, aptId) {
+  const path = `checkin-videos/${aptId}/${Date.now()}_${file.name}`;
+  const { error: upErr } = await sb.storage.from('portal-media').upload(path, file, { upsert: true });
+  if (upErr) {
+    toast('Upload fallito: ' + upErr.message + ' — usa URL manuale','err');
+    return;
+  }
+  const { data: urlData } = sb.storage.from('portal-media').getPublicUrl(path);
+  S.fCreds.video_url = urlData.publicUrl;
+  const el = document.getElementById('video_url');
+  if (el) el.value = S.fCreds.video_url;
+  toast('✓ Video caricato','ok');
+}
+
+function renderLogin() {
+  document.getElementById('app').innerHTML = `
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo">Impatto</div>
+      <div class="login-sub">Portale Admin</div>
+      <div id="lerr" class="msg-err"></div>
+      <div class="field"><label>Email</label><input id="lem" type="email" value="fatturazione@illupoaffitta.com" autocomplete="username"/></div>
+      <div class="field"><label>Password</label><input id="lpw" type="password" autocomplete="current-password"/></div>
+      <button id="lbtn" class="btn btn-primary btn-full">Entra →</button>
+    </div>
+  </div>`;
+
+  const doLogin = async () => {
+    const btn = document.getElementById('lbtn');
+    const err = document.getElementById('lerr');
+    btn.disabled = true;
+    btn.textContent = 'Accesso…';
+    const { error } = await sb.auth.signInWithPassword({
+      email: document.getElementById('lem').value,
+      password: document.getElementById('lpw').value,
+    });
+    if (error) {
+      err.textContent = error.message;
+      err.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Entra →';
+    }
+  };
+
+  document.getElementById('lbtn').addEventListener('click', doLogin);
+  document.getElementById('lpw').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+}
+
+function renderDashboard() {
+  const email = S.session?.user?.email || '';
+  document.getElementById('app').innerHTML = `
+  <nav class="navbar">
+    <span class="navbar-brand">Impatto</span>
+    <div class="navbar-links">
+      <a href="/backoffice.html" class="navbar-link">Fatturazione</a>
+      <a href="/backoffice-documenti.html" class="navbar-link">Documenti</a>
+      <a href="/backoffice-portale.html" class="navbar-link active">Portale Admin</a>
+    </div>
+  </nav>
+  <header class="header">
+    <div class="header-left">
+      <span class="header-brand">Impatto</span>
+      <span class="header-badge">PORTALE ADMIN</span>
+    </div>
+    <div class="header-right">
+      <span class="header-user">${esc(email)}</span>
+      <button id="btnLogout" class="btn btn-ghost" style="padding:6px 13px;font-size:12px">Esci</button>
+    </div>
+  </header>
+
+  <div class="apt-bar">
+    <label>Appartamento</label>
+    <select id="aptSelect">
+      <option value="">— Seleziona —</option>
+      ${S.apartments.map(a => `<option value="${a.id}">${esc(a.nome_appartamento)}</option>`).join('')}
+    </select>
+    <span id="aptStatus" class="apt-status"></span>
+  </div>
+
+  <div id="tabsBar" style="display:none">
+    <div class="tabs">
+      <button class="tab ${S.tab==='accesso'?'active':''}" data-tab="accesso">Accesso</button>
+      <button class="tab ${S.tab==='istruzioni'?'active':''}" data-tab="istruzioni">Istruzioni</button>
+      <button class="tab ${S.tab==='mappa'?'active':''}" data-tab="mappa">Mappa</button>
+      <button class="tab ${S.tab==='preview'?'active':''}" data-tab="preview">Preview</button>
+    </div>
+  </div>
+
+  <div id="tabContent"></div>`;
+
+  document.getElementById('btnLogout').addEventListener('click', () => sb.auth.signOut());
+  document.getElementById('aptSelect').addEventListener('change', async e => {
+    const id = e.target.value;
+    if (!id) {
+      S.selectedApt = null;
+      document.getElementById('tabsBar').style.display = 'none';
+      document.getElementById('tabContent').innerHTML = '';
+      return;
+    }
+    S.selectedApt = id;
+    document.getElementById('aptStatus').textContent = 'Caricamento…';
+    await loadAll(id);
+    document.getElementById('aptStatus').textContent = '';
+    document.getElementById('tabsBar').style.display = 'block';
+    renderTab();
+  });
+
+  document.getElementById('tabsBar').addEventListener('click', e => {
+    const t = e.target.closest('[data-tab]');
+    if (!t) return;
+    S.tab = t.dataset.tab;
+    document.querySelectorAll('.tab').forEach(el => el.classList.toggle('active', el.dataset.tab === S.tab));
+    renderTab();
+  });
+}
+
+function renderTab() {
+  const el = document.getElementById('tabContent');
+  if (!S.selectedApt) {
+    el.innerHTML = '';
+    return;
+  }
+  if (S.tab === 'accesso') renderTabAccesso(el);
+  if (S.tab === 'istruzioni') renderTabIstruzioni(el);
+  if (S.tab === 'mappa') renderTabMappa(el);
+  if (S.tab === 'preview') renderTabPreview(el);
+}
+
+function renderTabAccesso(el) {
+  const f = S.fCreds;
+  el.innerHTML = `
+  <div class="content">
+    <div class="section-title">Accesso appartamento</div>
+    <div class="section-sub">Tabella: apartment_credentials · Ultimo salvataggio: ${fmtTs(S.creds?.updated_at)}</div>
+
+    <div class="card-section">
+      <div class="card-section-title">Codici e istruzioni</div>
+      <div class="field"><label>Codice accesso</label><input id="codice_accesso" value="${esc(f.codice_accesso)}"/></div>
+      <div class="field"><label>Luogo chiavi</label><input id="luogo_chiavi" value="${esc(f.luogo_chiavi)}"/></div>
+      <div class="field"><label>Istruzioni accesso</label><textarea id="istruzioni_accesso">${esc(f.istruzioni_accesso)}</textarea></div>
+      <div class="save-row">
+        <button id="btnSaveCreds" class="btn btn-primary">Salva accesso</button>
+      </div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-title">Video check-in</div>
+      <div class="field">
+        <label>URL video</label>
+        <input id="video_url" value="${esc(f.video_url)}" placeholder="https://youtube.com/watch?v=…"/>
+        <div class="field-hint">Accetta solo URL http/https</div>
+      </div>
+      <div class="field">
+        <label>Oppure carica file video</label>
+        <input id="videoFile" type="file" accept="video/*"/>
+        <div class="field-hint">Richiede bucket Supabase Storage "portal-media"</div>
+      </div>
+      <div class="save-row">
+        <button id="btnSaveVideo" class="btn btn-primary">Salva URL video</button>
+        <button id="btnUploadVideo" class="btn btn-ghost">⬆ Carica file</button>
+      </div>
+    </div>
+  </div>`;
+
+  ['codice_accesso','luogo_chiavi','istruzioni_accesso','video_url'].forEach(k => {
+    document.getElementById(k).addEventListener('input', e => { S.fCreds[k] = e.target.value; });
+  });
+
+  document.getElementById('btnSaveCreds').addEventListener('click', async () => {
+    const btn = document.getElementById('btnSaveCreds');
+    btn.disabled = true;
+    btn.textContent = 'Salvo…';
+    await saveApartmentCredentials(S.selectedApt);
+    btn.disabled = false;
+    btn.textContent = 'Salva accesso';
+  });
+
+  document.getElementById('btnSaveVideo').addEventListener('click', async () => {
+    S.fCreds.video_url = document.getElementById('video_url').value;
+    const btn = document.getElementById('btnSaveVideo');
+    btn.disabled = true;
+    btn.textContent = 'Salvo…';
+    await saveApartmentCredentials(S.selectedApt);
+    btn.disabled = false;
+    btn.textContent = 'Salva URL video';
+  });
+
+  document.getElementById('btnUploadVideo').addEventListener('click', async () => {
+    const file = document.getElementById('videoFile').files[0];
+    if (!file) {
+      toast('Seleziona un file prima','err');
+      return;
+    }
+    const btn = document.getElementById('btnUploadVideo');
+    btn.disabled = true;
+    btn.textContent = '⏳ Carico…';
+    await uploadCheckinVideo(file, S.selectedApt);
+    btn.disabled = false;
+    btn.textContent = '⬆ Carica file';
+  });
+}
+
+function numeriRowHTML(n, i) {
+  return `<div class="numeri-row" data-idx="${i}">
+    <input class="n-label" placeholder="Etichetta" value="${esc(n.label)}"/>
+    <input class="n-numero" placeholder="Numero" value="${esc(n.numero)}"/>
+    <button class="numeri-del" data-del="${i}">✕</button>
+  </div>`;
+}
+
+function bindNumeriEvents() {
+  document.querySelectorAll('.n-label').forEach((inp, i) => {
+    inp.addEventListener('input', e => { if (S.fInfo.numeri_utili[i]) S.fInfo.numeri_utili[i].label = e.target.value; });
+  });
+  document.querySelectorAll('.n-numero').forEach((inp, i) => {
+    inp.addEventListener('input', e => { if (S.fInfo.numeri_utili[i]) S.fInfo.numeri_utili[i].numero = e.target.value; });
+  });
+  document.querySelectorAll('[data-del]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      S.fInfo.numeri_utili.splice(parseInt(btn.dataset.del, 10), 1);
+      renderNumeriList();
+    });
+  });
+}
+
+function renderNumeriList() {
+  const list = document.getElementById('numeriList');
+  if (!list) return;
+  list.innerHTML = S.fInfo.numeri_utili.map((n, i) => numeriRowHTML(n, i)).join('');
+  bindNumeriEvents();
+}
+
+function renderTabIstruzioni(el) {
+  const f = S.fInfo;
+  el.innerHTML = `
+  <div class="content">
+    <div class="section-title">Istruzioni portale</div>
+    <div class="section-sub">Tabella: apartment_info · Ultimo salvataggio: ${fmtTs(S.info?.updated_at)}</div>
+
+    <div class="card-section">
+      <div class="card-section-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        Lingua
+        <select id="linguaSelect" style="background:var(--surf);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:12px;font-family:var(--mono)">
+          ${LINGUE.map(l => `<option${S.lingua===l?' selected':''}>${l}</option>`).join('')}
+        </select>
+        <button id="btnCopyIT" class="btn btn-ghost btn-sm">↓ Copia da IT</button>
+      </div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-title">Arrivo</div>
+      <div class="field"><label>Come arrivare</label><textarea id="come_arrivare">${esc(f.come_arrivare)}</textarea></div>
+      <div class="field"><label>Dove parcheggiare</label><textarea id="dove_parcheggiare">${esc(f.dove_parcheggiare)}</textarea></div>
+      <div class="field"><label>Come entrare</label><textarea id="come_entrare">${esc(f.come_entrare)}</textarea></div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-title">Emergenze</div>
+      <div class="field"><label>Cosa fare se la luce è spenta</label><textarea id="cosa_fare_se_luce_spenta">${esc(f.cosa_fare_se_luce_spenta)}</textarea></div>
+      <div class="field"><label>Cosa fare se sei chiuso fuori</label><textarea id="cosa_fare_se_chiuso_fuori">${esc(f.cosa_fare_se_chiuso_fuori)}</textarea></div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-title">Numeri utili</div>
+      <div id="numeriList" class="numeri-list">
+        ${f.numeri_utili.map((n, i) => numeriRowHTML(n, i)).join('')}
+      </div>
+      <button id="btnAddNumero" class="btn btn-ghost btn-sm" style="margin-top:4px">+ Aggiungi numero</button>
+    </div>
+
+    <div style="padding:0 0 24px">
+      <button id="btnSaveInfo" class="btn btn-primary">Salva istruzioni (${S.lingua})</button>
+    </div>
+  </div>`;
+
+  document.getElementById('linguaSelect').addEventListener('change', async e => {
+    S.lingua = e.target.value;
+    await loadApartmentInfo(S.selectedApt, S.lingua);
+    renderTab();
+  });
+
+  document.getElementById('btnCopyIT').addEventListener('click', async () => {
+    await copyItalianToCurrentLanguage(S.selectedApt, S.lingua);
+  });
+
+  ['come_arrivare','dove_parcheggiare','come_entrare','cosa_fare_se_luce_spenta','cosa_fare_se_chiuso_fuori'].forEach(k => {
+    document.getElementById(k).addEventListener('input', e => { S.fInfo[k] = e.target.value; });
+  });
+
+  document.getElementById('btnAddNumero').addEventListener('click', () => {
+    S.fInfo.numeri_utili.push({ label:'', numero:'' });
+    renderNumeriList();
+  });
+
+  document.getElementById('btnSaveInfo').addEventListener('click', async () => {
+    const btn = document.getElementById('btnSaveInfo');
+    btn.disabled = true;
+    btn.textContent = 'Salvo…';
+    await saveApartmentInfo(S.selectedApt, S.lingua);
+    btn.disabled = false;
+    btn.textContent = `Salva istruzioni (${S.lingua})`;
+    renderTab();
+  });
+
+  bindNumeriEvents();
+}
+
+function renderTabMappa(el) {
+  const f = S.fMappa;
+  el.innerHTML = `
+  <div class="content">
+    <div class="section-title">Mappa e posizione</div>
+    <div class="section-sub">Tabella: apartments</div>
+
+    <div class="card-section">
+      <div class="card-section-title">Indirizzo e coordinate</div>
+      <div class="field"><label>Indirizzo completo</label><input id="indirizzo_completo" value="${esc(f.indirizzo_completo)}"/></div>
+      <div class="field-2">
+        <div class="field"><label>Latitudine</label><input id="latitudine" value="${esc(f.latitudine)}"/></div>
+        <div class="field"><label>Longitudine</label><input id="longitudine" value="${esc(f.longitudine)}"/></div>
+      </div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-title">Override link Google Maps</div>
+      <div class="field">
+        <label>URL Google Maps manuale</label>
+        <input id="maps_url_override" value="${esc(f.maps_url_override)}" placeholder="https://maps.app.goo.gl/..."/>
+        <div class="field-hint">Se presente, ha priorità assoluta nel portale ospite</div>
+      </div>
+    </div>
+
+    <div>
+      <button id="btnSaveMappa" class="btn btn-primary">Salva mappa</button>
+    </div>
+  </div>`;
+
+  ['indirizzo_completo','latitudine','longitudine','maps_url_override'].forEach(k => {
+    document.getElementById(k).addEventListener('input', e => { S.fMappa[k] = e.target.value; });
+  });
+
+  document.getElementById('btnSaveMappa').addEventListener('click', async () => {
+    const btn = document.getElementById('btnSaveMappa');
+    btn.disabled = true;
+    btn.textContent = 'Salvo…';
+    await saveApartmentMapSettings(S.selectedApt);
+    btn.disabled = false;
+    btn.textContent = 'Salva mappa';
+  });
+}
+
+function renderTabPreview(el) {
+  const c = S.creds;
+  const i = S.info;
+  const m = S.aptData;
+  const apt = S.apartments.find(a => String(a.id) === String(S.selectedApt));
+
+  const chk = (val, label) => `
+    <div class="preview-item">
+      <div class="preview-label">${esc(label)}</div>
+      <div class="preview-value ${val ? 'ok' : 'miss'}">${val ? '✓ Presente' : '✗ Mancante'}</div>
+    </div>`;
+
+  const hasMap = m?.maps_url_override || (m?.latitudine && m?.longitudine) || m?.indirizzo_completo;
+  const hasInfo = i?.come_arrivare || i?.come_entrare;
+  const hasCreds = c?.codice_accesso || c?.istruzioni_accesso;
+  const numeriCount = Object.keys(i?.numeri_utili || {}).length;
+
+  el.innerHTML = `
+  <div class="content">
+    <div class="section-title">Preview configurazione</div>
+    <div class="section-sub">${esc(apt?.nome_appartamento || '—')}</div>
+
+    <div class="card-section">
+      <div class="card-section-title">Stato configurazione</div>
+      <div class="preview-grid">
+        ${chk(hasCreds, 'Accesso / Credenziali')}
+        ${chk(c?.video_url, 'Video check-in')}
+        ${chk(hasInfo, 'Istruzioni (' + S.lingua + ')')}
+        ${chk(numeriCount > 0, 'Numeri utili')}
+        ${chk(hasMap, 'Mappa / Posizione')}
+        ${chk(m?.maps_url_override, 'Override Google Maps')}
+      </div>
+    </div>
+  </div>`;
+}
+
+async function init() {
+  await loadApartments();
+  if (S.session) renderDashboard();
+  else renderLogin();
+}
+
+sb.auth.onAuthStateChange((event, session) => {
+  S.session = session;
+  if (event === 'SIGNED_IN') init();
+  else if (event === 'SIGNED_OUT') renderLogin();
+});
+
+sb.auth.getSession().then(({ data: { session } }) => {
+  S.session = session;
+  init();
+});
+</script>
+</body>
+</html>

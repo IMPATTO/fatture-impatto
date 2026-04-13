@@ -71,12 +71,13 @@
 
     .msg-err { background: var(--red-l); border: 1px solid #fecaca; color: var(--red); border-radius: 6px; padding: 10px 13px; font-size: 13px; margin-bottom: 12px; display: none; }
 
-    .header { display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 56px; background: var(--white); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
-    .header-left { display: flex; align-items: baseline; gap: 10px; }
-    .header-brand { font-family: var(--serif); font-size: 22px; font-weight: 500; }
-    .header-tag { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
-    .header-right { display: flex; align-items: center; gap: 12px; }
-    .header-user { font-size: 12px; font-family: var(--mono); color: var(--muted); }
+    .section-header { display: flex; align-items: center; justify-content: space-between; padding: 0 24px; min-height: 72px; background: var(--white); border-bottom: 1px solid var(--border); }
+    .section-header-left { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+    .section-header-brand { font-family: var(--serif); font-size: 22px; font-weight: 500; color: var(--text); }
+    .section-header-tag { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; padding: 4px 10px; border-radius: 6px; }
+    .tag-backoffice { color: var(--accent); background: rgba(37,99,235,0.10); }
+    .section-header-right { display: flex; align-items: center; justify-content: flex-end; gap: 12px; min-width: 0; }
+    .section-header-user { font-size: 12px; font-family: var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px; }
 
     .tbar { height: 3px; background: var(--border); }
     .tbar-fill { height: 100%; transition: width 1s linear, background 0.5s; }
@@ -145,21 +146,105 @@
     .mono-sm { font-family: var(--mono); font-size: 11px; color: var(--muted); }
 
     /* ── Navbar unificata ── */
-    .navbar { display:flex; align-items:center; gap:24px; padding:0 24px; height:44px; background:#1a1917; font-family:var(--sans); font-size:13px; }
-    .navbar-brand { font-family:var(--serif); font-size:18px; font-weight:500; color:#fff; margin-right:auto; text-decoration:none; }
+    .navbar {
+      display:flex;
+      align-items:center;
+      gap:24px;
+      padding:0 24px;
+      height:44px;
+      background:#1a1917;
+      font-family:var(--sans);
+      font-size:13px;
+      position:relative;
+      z-index:1000;
+    }
+    .navbar-brand { font-family:var(--serif); font-size:18px; font-weight:500; color:#fff; text-decoration:none; margin-right:auto; }
+    .navbar-menu { display:flex; align-items:center; gap:24px; }
     .navbar a.navbar-link { color:#a8a29e; text-decoration:none; padding:4px 10px; border-radius:4px; transition:color .15s,background .15s; }
     .navbar a.navbar-link:hover { color:#fff; background:rgba(255,255,255,.08); }
-    .navbar a.navbar-link.active { color:#fff; background:var(--accent); }
-    .navbar-user { font-family:var(--mono); font-size:10px; color:#78716c; letter-spacing:.06em; }
+    .navbar a.navbar-link.active { color:#fff; }
+    .navbar .active-fatture { background: var(--accent); }
+    .navbar-user { font-family:var(--mono); font-size:10px; color:#78716c; letter-spacing:.06em; white-space:nowrap; }
+    .navbar-toggle {
+      display:none;
+      background:transparent;
+      border:1px solid rgba(255,255,255,.12);
+      color:#fff;
+      border-radius:6px;
+      padding:6px 10px;
+      font-size:16px;
+      cursor:pointer;
+    }
+    .navbar-toggle:hover { background:rgba(255,255,255,.08); }
+    @media (max-width: 900px) {
+      .navbar { padding:0 16px; }
+      .navbar-toggle {
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+      }
+      .navbar-menu {
+        display:none;
+        position:absolute;
+        top:44px;
+        right:16px;
+        min-width:220px;
+        background:#1a1917;
+        border:1px solid rgba(255,255,255,.08);
+        border-radius:10px;
+        box-shadow:0 10px 30px rgba(0,0,0,.25);
+        padding:10px;
+        flex-direction:column;
+        align-items:stretch;
+        gap:8px;
+      }
+      .navbar-menu.open { display:flex; }
+      .navbar-menu .navbar-link {
+        display:block;
+        width:100%;
+      }
+      .navbar-user {
+        display:block;
+        margin-top:6px;
+        padding:8px 10px 0;
+        border-top:1px solid rgba(255,255,255,.08);
+        white-space:normal;
+        word-break:break-word;
+      }
+    }
+    @media (max-width: 768px) {
+      .section-header {
+        padding: 10px 16px;
+        min-height: auto;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+      }
+      .section-header-left,
+      .section-header-right {
+        width: 100%;
+        justify-content: space-between;
+        display: flex;
+        align-items: center;
+      }
+      .section-header-brand { font-size: 18px; }
+      .section-header-user {
+        max-width: 60vw;
+        font-size: 11px;
+      }
+    }
   </style>
 </head>
 <body>
 <nav class="navbar" id="mainNavbar">
   <a href="/backoffice.html" class="navbar-brand">Impatto</a>
-  <a href="/backoffice.html" class="navbar-link">Fatturazione</a>
-  <a href="/backoffice-documenti.html" class="navbar-link">Documenti</a>
-  <a href="/portale.html" class="navbar-link">Portale</a>
-  <span class="navbar-user" id="navUser"></span>
+  <button class="navbar-toggle" id="navbarToggle" aria-label="Apri menu" aria-expanded="false" aria-controls="navbarMenu">☰</button>
+  <div class="navbar-menu" id="navbarMenu">
+    <a href="/backoffice.html" class="navbar-link active active-fatture">Fatturazione</a>
+    <a href="/backoffice-documenti.html" class="navbar-link">Documenti</a>
+    <a href="/portale.html" class="navbar-link">Portale</a>
+    <span class="navbar-user" id="navUser"></span>
+  </div>
 </nav>
 <div id="app"></div>
 
@@ -345,13 +430,13 @@ function renderDashboard() {
   const st=stats(), pct=(S.timeLeft/TIMEOUT_MS)*100, email=S.session?.user?.email||'';
   const barClr = pct<20?'#dc2626':pct<50?'#d97706':'#2563eb';
   document.getElementById('app').innerHTML = `
-  <header class="header">
-    <div class="header-left">
-      <span class="header-brand">Impatto</span>
-      <span class="header-tag">Backoffice</span>
+  <header class="section-header">
+    <div class="section-header-left">
+      <span class="section-header-brand">Impatto</span>
+      <span class="section-header-tag tag-backoffice">BACKOFFICE</span>
     </div>
-    <div class="header-right">
-      <span class="header-user">${esc(email)}</span>
+    <div class="section-header-right">
+      <span class="section-header-user">${esc(email)}</span>
       <button id="btnLogout" class="btn btn-ghost" style="padding:6px 13px;font-size:12px">Esci</button>
     </div>
   </header>
@@ -379,12 +464,34 @@ function renderDashboard() {
   </div>`;
 
   document.getElementById('btnLogout').addEventListener('click', ()=>sb.auth.signOut());
-  document.getElementById('navUser').textContent = email;
+  initNavbar(email);
   document.getElementById('btnRefresh').addEventListener('click', loadData);
   document.getElementById('fSearch').addEventListener('input', e=>{ S.fSearch=e.target.value; partialTable(); });
   document.getElementById('fStato').addEventListener('change', e=>{ S.fStato=e.target.value; partialTable(); });
   document.getElementById('fApt').addEventListener('change', e=>{ S.fApt=e.target.value; partialTable(); });
   partialTable(); partialDrawer();
+}
+
+function initNavbar(email = '') {
+  const toggle = document.getElementById('navbarToggle');
+  const menu = document.getElementById('navbarMenu');
+  const navUser = document.getElementById('navUser');
+
+  if (navUser) navUser.textContent = email || '';
+  if (!toggle || !menu) return;
+
+  toggle.onclick = () => {
+    const isOpen = menu.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  };
+
+  document.onclick = (e) => {
+    if (!menu.classList.contains('open')) return;
+    if (!menu.contains(e.target) && !toggle.contains(e.target)) {
+      menu.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+    }
+  };
 }
 
 function partialTable() {
@@ -591,16 +698,6 @@ sb.auth.onAuthStateChange(async (_,session)=>{
     try { await loadData(); } catch(e) { console.error('auth load error:', e); }
   }
 });
-</script>
-<script>
-(function(){
-  var path=location.pathname;
-  document.querySelectorAll('.navbar-link').forEach(function(a){
-    if(path.endsWith(a.getAttribute('href').replace('/',''))||
-       (a.getAttribute('href')==='/backoffice.html'&&(path==='/'||path==='/backoffice.html')))
-      a.classList.add('active');
-  });
-})();
 </script>
 </body>
 </html>
