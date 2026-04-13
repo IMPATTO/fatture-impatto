@@ -99,20 +99,28 @@ exports.handler = async (event) => {
       return { statusCode: 401, body: JSON.stringify({ error: 'Autenticazione AlloggiatiWeb fallita', detail: tokenResult.error }) };
     }
 
-    // 5. Costruisci le stringhe schedina (tracciato record 168 caratteri)
-    const schedine = ospiti.map(o => buildSchedina(o, link.id_appartamento_portale));
-
-    // 6. Validazione: controlla che nessuna schedina abbia errori di formato
+    // 5. Validazione dati prima della costruzione della schedina
     const validationErrors = [];
-    ospiti.forEach((o, i) => {
-      if (!o.sesso) validationErrors.push(`${o.nome} ${o.cognome}: sesso mancante`);
+    ospiti.forEach((o) => {
+      if (!o.sesso || !['M', 'F'].includes(o.sesso)) {
+        validationErrors.push(`${o.nome} ${o.cognome}: sesso non valido`);
+      }
       if (!o.data_nascita) validationErrors.push(`${o.nome} ${o.cognome}: data di nascita mancante`);
       if (!o.cittadinanza_codice) validationErrors.push(`${o.nome} ${o.cognome}: codice cittadinanza mancante`);
+      if (!o.stato_nascita_codice) validationErrors.push(`${o.nome} ${o.cognome}: stato nascita mancante`);
+      if (o.stato_nascita_codice === '100000100' && !o.luogo_nascita_codice) {
+        validationErrors.push(`${o.nome} ${o.cognome}: comune nascita mancante`);
+      }
       if (!o.data_checkin) validationErrors.push(`${o.nome} ${o.cognome}: data check-in mancante`);
-      const tipo = o.tipo_alloggiato || 16;
+      const tipo = Number(o.tipo_alloggiato || 16);
       if ([16, 17, 18].includes(tipo)) {
-        if (!o.tipo_documento_codice) validationErrors.push(`${o.nome} ${o.cognome}: tipo documento mancante`);
+        if (!o.tipo_documento_codice || !['IDENT', 'PASOR', 'PATEN'].includes(o.tipo_documento_codice)) {
+          validationErrors.push(`${o.nome} ${o.cognome}: tipo documento non valido`);
+        }
         if (!o.numero_documento) validationErrors.push(`${o.nome} ${o.cognome}: numero documento mancante`);
+        if (!o.luogo_rilascio_codice) {
+          validationErrors.push(`${o.nome} ${o.cognome}: luogo rilascio documento mancante`);
+        }
       }
     });
 
@@ -120,28 +128,55 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Dati incompleti', validationErrors }) };
     }
 
+    // 6. Costruisci le stringhe schedina (tracciato record 168 caratteri)
+    let schedine;
+    try {
+      schedine = ospiti.map(o => buildSchedina(o));
+    } catch (err) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Dati schedina non validi', detail: err.message })
+      };
+    }
+
     // 7. Invio (Test o Send)
     const soapAction = mode === 'send' ? 'Send' : 'Test';
     const result = await soapSendOrTest(soapAction, account.username, tokenResult.token, schedine);
 
     // 8. Salva esito
-    const esito = result.error ? 'ERRORE' : (result.schedineValide === ospiti.length ? 'OK' : 'PARZIALE');
+    const esitoBase = result.error
+      ? 'ERRORE'
+      : (result.schedineValide === ospiti.length ? 'OK' : 'PARZIALE');
+
+    const esito = mode === 'send'
+      ? `SEND_${esitoBase}`
+      : `TEST_${esitoBase}`;
 
     // Aggiorna stato ospiti
-    if (mode === 'send' && !result.error) {
-      await supabase
-        .from('ospiti_check_in')
-        .update({
-          alloggiati_stato: 'INVIATA',
-          alloggiati_inviata_at: new Date().toISOString(),
-          alloggiati_errore: null
-        })
-        .in('id', ospiti_ids);
+    if (!result.error) {
+      if (mode === 'send') {
+        await supabase
+          .from('ospiti_check_in')
+          .update({
+            alloggiati_stato: 'INVIATA',
+            alloggiati_inviata_at: new Date().toISOString(),
+            alloggiati_errore: null
+          })
+          .in('id', ospiti_ids);
 
-      await supabase.from('alloggiati_accounts').update({
-        ultimo_invio_ok: new Date().toISOString(),
-        ultimo_errore: null
-      }).eq('id', account.id);
+        await supabase.from('alloggiati_accounts').update({
+          ultimo_invio_ok: new Date().toISOString(),
+          ultimo_errore: null
+        }).eq('id', account.id);
+      } else if (mode === 'test') {
+        await supabase
+          .from('ospiti_check_in')
+          .update({
+            alloggiati_stato: 'DA_INVIARE',
+            alloggiati_errore: null
+          })
+          .in('id', ospiti_ids);
+      }
     } else if (result.error) {
       await supabase
         .from('ospiti_check_in')
@@ -153,7 +188,7 @@ exports.handler = async (event) => {
     }
 
     // Log invio
-    await supabase.from('alloggiati_invii').insert({
+    const insertResult = await supabase.from('alloggiati_invii').insert({
       apartment_id: apartmentId,
       alloggiati_account_id: account.id,
       tipo: 'SOAP',
@@ -167,6 +202,9 @@ exports.handler = async (event) => {
       risposta_ricevuta: maskSensitiveData(result.rawResponse?.substring(0, 2000) || ''),
       inviato_da: user.email,
     });
+    if (insertResult.error) {
+      console.error('[send-alloggiati] insert alloggiati_invii error', insertResult.error);
+    }
 
     // Audit
     await supabase.from('audit_log').insert({
@@ -409,22 +447,6 @@ function buildSchedina(ospite) {
   }
 
   // Log debug
-  console.log('--- DEBUG ALLOGGIATI ---');
-  console.log('ospite.id:', ospite.id);
-  console.log('ospite:', ospite.nome, ospite.cognome);
-  console.log('data_checkin raw:', ospite.data_checkin);
-  console.log('dataArr formatted:', dataArr);
-  console.log('perm:', perm);
-  console.log('stato_nascita_codice:', ospite.stato_nascita_codice, '→ natoInItalia:', natoInItalia);
-  console.log('cittadinanza_codice:', ospite.cittadinanza_codice);
-  console.log('schedina length:', riga.length);
-  console.log('schedina first 14:', JSON.stringify(riga.slice(0, 14)));
-  console.log('schedina first 20:', JSON.stringify(riga.slice(0, 20)));
-  console.log('schedina last 40:', JSON.stringify(riga.slice(-40)));
-  console.log('tipoDoc:', ospite.tipo_documento_codice);
-  console.log('numDoc:', ospite.numero_documento);
-  console.log('luogoRilascioCodice:', ospite.luogo_rilascio_codice);
-
   if (riga.length !== 168) {
     throw new Error(`Lunghezza riga errata: ${riga.length} invece di 168. Schedina: ${JSON.stringify(riga)}`);
   }

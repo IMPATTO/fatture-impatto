@@ -256,6 +256,7 @@ function getLinkedApts(accountId) {
 // ── Filter ──
 function filtered() {
   return S.rows.filter(r => {
+    if (r.alloggiati_stato === 'NON_NECESSARIA') return false;
     if (S.fStatoPS && r.alloggiati_stato !== S.fStatoPS) return false;
     if (S.fApt && String(r.apartment_id) !== S.fApt) return false;
     if (S.fAccount) {
@@ -372,6 +373,7 @@ function renderSchedine() {
       ${S.accounts.map(a=>`<option value="${a.id}" ${S.fAccount===a.id?'selected':''}>${esc(a.nome_account)} (${esc(a.questura)})</option>`).join('')}
     </select>
     <button id="btnRefresh" class="btn btn-ghost btn-sm">↻ Aggiorna</button>
+    <button id="btnPdfReport" class="btn btn-ghost btn-sm">Scarica report PDF</button>
     <span style="border-left:1px solid var(--border);height:28px;margin:0 4px"></span>
     <button id="btnBulkTest" class="btn btn-yellow btn-sm">Testa tutti da inviare</button>
     <button id="btnBulkSend" class="btn btn-teal btn-sm">Invia tutti alla Questura</button>
@@ -386,6 +388,7 @@ function renderSchedine() {
   document.getElementById('fApt').addEventListener('change', e=>{ S.fApt=e.target.value; renderTable(); });
   document.getElementById('fAccount').addEventListener('change', e=>{ S.fAccount=e.target.value; renderTable(); });
   document.getElementById('btnRefresh').addEventListener('click', async ()=>{ await loadAll(); renderSchedine(); });
+  document.getElementById('btnPdfReport').addEventListener('click', openReportModal);
   document.getElementById('btnBulkTest').addEventListener('click', ()=>bulkSend('test'));
   document.getElementById('btnBulkSend').addEventListener('click', ()=>bulkSend('send'));
   renderTable();
@@ -557,6 +560,7 @@ function renderDrawer() {
   </div>
   <div class="drawer-footer">
     <button id="dSave" class="btn btn-ghost" style="margin-right:auto">Salva dati</button>
+    <button id="dDiscard" class="btn btn-red btn-sm">Scarta</button>
     ${r.alloggiati_stato === 'DA_INVIARE' || r.alloggiati_stato === 'ERRORE' ? `
       <button id="dTest" class="btn btn-yellow btn-sm" ${!acc?'disabled title="Collega prima un account"':''}>Testa</button>
       <button id="dSend" class="btn btn-teal btn-sm" ${!acc?'disabled title="Collega prima un account"':''}>Invia alla Questura</button>
@@ -566,6 +570,7 @@ function renderDrawer() {
 
   document.getElementById('dClose').addEventListener('click', ()=>{ S.selected=null; S.form={}; renderDrawer(); renderTable(); });
   document.getElementById('dSave').addEventListener('click', saveSchedina);
+  document.getElementById('dDiscard')?.addEventListener('click', discardSchedina);
   document.getElementById('dTest')?.addEventListener('click', ()=>sendToQuestura('test'));
   document.getElementById('dSend')?.addEventListener('click', ()=>sendToQuestura('send'));
 
@@ -804,6 +809,47 @@ async function saveSchedina() {
   return true;
 }
 
+async function discardSchedina() {
+  if (!S.selected) return false;
+
+  const nome = `${S.selected.nome || ''} ${S.selected.cognome || ''}`.trim();
+  if (!confirm(`Confermi di escludere ${nome || 'questo record'} dal flusso Questura?\n\nI dati resteranno salvati ma la schedina non comparirà più nella lista principale.`)) {
+    return false;
+  }
+
+  const btn = document.getElementById('dDiscard');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Scarto…';
+  }
+
+  const { error } = await sb
+    .from('ospiti_check_in')
+    .update({
+      stato: 'CHECK_IN_COMPLETATO',
+      alloggiati_stato: 'NON_NECESSARIA'
+    })
+    .eq('id', S.selected.id);
+
+  if (error) {
+    toast('Errore: ' + error.message, 'err');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Scarta';
+    }
+    return false;
+  }
+
+  toast('Schedina segnata come non necessaria', 'ok');
+
+  await loadAll();
+  S.selected = null;
+  S.form = {};
+  renderSchedine();
+
+  return true;
+}
+
 
 // ── TAB 2: Accounts ──
 function renderAccounts() {
@@ -995,6 +1041,163 @@ async function bulkSend(mode) {
     toast(`Test completato: ${totOk} valide, ${totErr} con errori`, totErr > 0 ? 'err' : 'ok');
   } else {
     toast(`Invio completato: ${totOk} inviate, ${totErr} con errori`, totErr > 0 ? 'err' : 'ok');
+  }
+}
+
+function defaultReportDateFrom() {
+  const d = new Date();
+  d.setDate(d.getDate() - 29);
+  return formatLocalDateInput(d);
+}
+
+function defaultReportDateTo() {
+  return formatLocalDateInput(new Date());
+}
+
+function formatLocalDateInput(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function openReportModal() {
+  const root = document.getElementById('modal-root');
+  root.innerHTML = `
+  <div class="modal-bg" id="reportModalBg">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-title">Scarica report PDF</div>
+        <button id="reportClose" class="drawer-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-2">
+          <div class="field">
+            <label>Data da</label>
+            <input id="rDateFrom" type="date" value="${defaultReportDateFrom()}"/>
+          </div>
+          <div class="field">
+            <label>Data a</label>
+            <input id="rDateTo" type="date" value="${defaultReportDateTo()}"/>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Appartamento</label>
+          <select id="rApartment">
+            <option value="">Tutti</option>
+            ${S.apartments.map(a => `<option value="${a.id}">${esc(a.nome_appartamento)}</option>`).join('')}
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Account</label>
+          <select id="rAccount">
+            <option value="">Tutti</option>
+            ${S.accounts.map(a => `<option value="${a.id}">${esc(a.nome_account)} (${esc(a.questura)})</option>`).join('')}
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Esito</label>
+          <select id="rEsito">
+            <option value="">Tutti</option>
+            <option value="TEST_OK">TEST_OK</option>
+            <option value="TEST_PARZIALE">TEST_PARZIALE</option>
+            <option value="TEST_ERRORE">TEST_ERRORE</option>
+            <option value="SEND_OK">SEND_OK</option>
+            <option value="SEND_PARZIALE">SEND_PARZIALE</option>
+            <option value="SEND_ERRORE">SEND_ERRORE</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button id="reportCancel" class="btn btn-ghost">Annulla</button>
+        <button id="reportDownload" class="btn btn-teal">Scarica PDF</button>
+      </div>
+    </div>
+  </div>`;
+
+  const close = () => { root.innerHTML = ''; };
+
+  document.getElementById('reportClose').addEventListener('click', close);
+  document.getElementById('reportCancel').addEventListener('click', close);
+  document.getElementById('reportModalBg').addEventListener('click', e => {
+    if (e.target.id === 'reportModalBg') close();
+  });
+
+  document.getElementById('reportDownload').addEventListener('click', downloadReportPdf);
+}
+
+async function downloadReportPdf() {
+  const btn = document.getElementById('reportDownload');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Genero…';
+  }
+
+  const payload = {
+    date_from: document.getElementById('rDateFrom').value,
+    date_to: document.getElementById('rDateTo').value,
+    apartment_id: document.getElementById('rApartment').value || null,
+    account_id: document.getElementById('rAccount').value || null,
+    esito: document.getElementById('rEsito').value || null,
+  };
+
+  if (!payload.date_from || !payload.date_to) {
+    toast('Seleziona date_from e date_to', 'err');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Scarica PDF';
+    }
+    return;
+  }
+
+  try {
+    const session = await sb.auth.getSession();
+
+    const res = await fetch('/.netlify/functions/export-alloggiati-report', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.data.session.access_token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      toast(`Errore: ${data.error || data.detail || 'Impossibile generare il PDF'}`, 'err');
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Scarica PDF';
+      }
+      return;
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+
+    const contentDisposition = res.headers.get('content-disposition') || '';
+    const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/i);
+    const filename = filenameMatch?.[1] || 'alloggiati-report.pdf';
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    URL.revokeObjectURL(url);
+    document.getElementById('modal-root').innerHTML = '';
+    toast('Report PDF scaricato', 'ok');
+  } catch (err) {
+    toast('Errore di rete: ' + err.message, 'err');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Scarica PDF';
+    }
   }
 }
 
