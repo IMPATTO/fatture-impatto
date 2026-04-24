@@ -247,6 +247,7 @@
     .cal-month { font-size: 17px; font-weight: 600; color: var(--text1); }
     .cal-nav-btn { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 20px; padding: 2px 8px; }
     .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); padding: 8px 12px; }
+    .cal-days { display: contents; }
     .cal-dow { text-align: center; font-size: 10px; font-weight: 600; color: var(--text3); padding: 4px 0; font-family: var(--mono); letter-spacing: 0.04em; }
     .cal-day {
       aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
@@ -446,7 +447,7 @@
     <div class="cal-grid">
       <div class="cal-dow">LU</div><div class="cal-dow">MA</div><div class="cal-dow">ME</div>
       <div class="cal-dow">GI</div><div class="cal-dow">VE</div><div class="cal-dow">SA</div><div class="cal-dow">DO</div>
-      <div id="calDays"></div>
+      <div id="calDays" class="cal-days"></div>
     </div>
     <div class="booking-section">
       <div class="booking-section-label">Prenotazioni nel mese</div>
