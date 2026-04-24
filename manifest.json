@@ -1,0 +1,17 @@
+{
+  "name": "Il Lupo Affitta",
+  "short_name": "Lupo Affitta",
+  "description": "Gestionale appartamenti turistici",
+  "start_url": "/app.html",
+  "display": "standalone",
+  "background_color": "#F5F4F0",
+  "theme_color": "#1D9E75",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%231D9E75'/><text y='130' x='50%' dominant-baseline='middle' text-anchor='middle' font-size='110' fill='white'>🐺</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}
