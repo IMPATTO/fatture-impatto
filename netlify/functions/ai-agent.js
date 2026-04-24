@@ -1,5 +1,6 @@
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 const BEDS24_URL = 'https://api.beds24.com/v2';
+let beds24TokenCache = null;
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -23,6 +24,7 @@ const TOOLS = [
         date_from: { type: 'string', description: 'Data inizio YYYY-MM-DD (default: oggi)' },
         date_to: { type: 'string', description: 'Data fine YYYY-MM-DD (default: +30 giorni)' },
         room_id: { type: 'string', description: 'ID appartamento Beds24 (opzionale)' },
+        apartment: { type: 'string', description: 'Nome appartamento da cercare in Supabase se room_id non e disponibile' },
       },
       required: [],
     },
@@ -34,6 +36,7 @@ const TOOLS = [
       type: 'object',
       properties: {
         room_id: { type: 'string', description: 'ID appartamento Beds24' },
+        apartment: { type: 'string', description: 'Nome appartamento da cercare in Supabase se room_id non e disponibile' },
         date_from: { type: 'string', description: 'Data inizio YYYY-MM-DD' },
         date_to: { type: 'string', description: 'Data fine YYYY-MM-DD' },
       },
@@ -47,6 +50,7 @@ const TOOLS = [
       type: 'object',
       properties: {
         room_id: { type: 'string', description: 'ID appartamento Beds24' },
+        apartment: { type: 'string', description: 'Nome appartamento da cercare in Supabase se room_id non e disponibile' },
         date_from: { type: 'string', description: 'Data inizio YYYY-MM-DD' },
         date_to: { type: 'string', description: 'Data fine YYYY-MM-DD' },
         price: { type: 'number', description: 'Nuovo prezzo per notte in EUR' },
@@ -62,6 +66,7 @@ const TOOLS = [
       type: 'object',
       properties: {
         room_id: { type: 'string', description: 'ID appartamento Beds24' },
+        apartment: { type: 'string', description: 'Nome appartamento da cercare in Supabase se room_id non e disponibile' },
         date_from: { type: 'string', description: 'Data inizio YYYY-MM-DD' },
         date_to: { type: 'string', description: 'Data fine YYYY-MM-DD' },
         reason: { type: 'string', description: 'Motivo del blocco (opzionale)' },
@@ -168,12 +173,11 @@ async function executeTool(name, input, env) {
       const from = input.date_from || today;
       const to = input.date_to || in30;
       const params = new URLSearchParams({ dateFrom: from, dateTo: to });
-      if (input.room_id) params.append('roomId', input.room_id);
+      const roomId = await resolveBeds24RoomId(input, sbUrl, sbHeaders);
+      if (roomId) params.append('roomId', roomId);
 
-      const res = await fetch(`${BEDS24_URL}/bookings?${params}`, {
-        headers: { token: b24Key, 'Content-Type': 'application/json' },
-      });
-      if (!res.ok) return { error: `Beds24 error ${res.status}` };
+      const res = await beds24Fetch(`/bookings?${params}`, { method: 'GET' }, env);
+      if (!res.ok) return await formatBeds24Error(res);
       const data = await res.json();
       const bookings = data?.data || data || [];
       return { bookings, count: bookings.length };
@@ -182,58 +186,75 @@ async function executeTool(name, input, env) {
     case 'get_availability': {
       if (!b24Key) return { error: 'BEDS24_API_KEY non configurata' };
       const params = new URLSearchParams({ dateFrom: input.date_from, dateTo: input.date_to });
-      if (input.room_id) params.append('roomId', input.room_id);
+      const roomId = await resolveBeds24RoomId(input, sbUrl, sbHeaders);
+      if (!roomId) return { error: 'room_id o nome appartamento richiesto per controllare la disponibilita' };
+      params.append('roomId', roomId);
 
-      const res = await fetch(`${BEDS24_URL}/inventory/prices?${params}`, {
-        headers: { token: b24Key },
-      });
-      if (!res.ok) return { error: `Beds24 error ${res.status}` };
-      return res.json();
+      const res = await beds24Fetch(`/inventory/rooms/calendar?${params}`, { method: 'GET' }, env);
+      if (!res.ok) return await formatBeds24Error(res);
+      const data = await res.json();
+      return { room_id: roomId, availability: data?.data || data || [] };
     }
 
     case 'set_price': {
       if (!b24Key) return { error: 'BEDS24_API_KEY non configurata' };
-      if (!input.room_id) return { error: 'room_id obbligatorio per modificare prezzi' };
+      const roomId = await resolveBeds24RoomId(input, sbUrl, sbHeaders);
+      if (!roomId) return { error: 'room_id o nome appartamento obbligatorio per modificare prezzi' };
 
       let newPrice = input.price;
       if (input.percentage && !input.price) {
-        const res = await fetch(`${BEDS24_URL}/inventory/prices?roomId=${input.room_id}&dateFrom=${input.date_from}&dateTo=${input.date_to}`, {
-          headers: { token: b24Key },
+        const params = new URLSearchParams({
+          roomId,
+          dateFrom: input.date_from,
+          dateTo: input.date_to,
         });
+        const res = await beds24Fetch(`/inventory/rooms/calendar?${params}`, { method: 'GET' }, env);
+        if (!res.ok) return await formatBeds24Error(res);
         const current = await res.json();
-        const currentPrice = current?.data?.[0]?.price || current?.[0]?.price;
+        const firstCalendarRow = current?.data?.[0]?.calendar?.[0] || current?.[0]?.calendar?.[0] || current?.data?.[0] || current?.[0];
+        const currentPrice = firstCalendarRow?.price1 ?? firstCalendarRow?.price;
         if (currentPrice) newPrice = Math.round(currentPrice * (1 + input.percentage / 100));
         else return { error: 'Impossibile leggere prezzo attuale per calcolare variazione percentuale' };
       }
 
-      const body = {
-        roomId: input.room_id,
-        prices: [{ dateFrom: input.date_from, dateTo: input.date_to, price: newPrice }],
-      };
-      const res = await fetch(`${BEDS24_URL}/inventory/prices`, {
+      const body = [
+        {
+          roomId,
+          calendar: [
+            {
+              from: input.date_from,
+              to: input.date_to,
+              price1: newPrice,
+            },
+          ],
+        },
+      ];
+      const res = await beds24Fetch('/inventory/rooms/calendar', {
         method: 'POST',
-        headers: { token: b24Key, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
-      });
-      if (!res.ok) return { error: `Beds24 error ${res.status}: ${await res.text()}` };
+      }, env);
+      if (!res.ok) return await formatBeds24Error(res);
       return { success: true, new_price: newPrice, from: input.date_from, to: input.date_to };
     }
 
     case 'block_dates': {
       if (!b24Key) return { error: 'BEDS24_API_KEY non configurata' };
+      const roomId = await resolveBeds24RoomId(input, sbUrl, sbHeaders);
+      if (!roomId) return { error: 'room_id o nome appartamento obbligatorio per bloccare date' };
       const body = {
-        roomId: input.room_id,
+        roomId,
         dateFrom: input.date_from,
         dateTo: input.date_to,
         status: 'blocked',
         description: input.reason || 'Blocco manuale',
       };
-      const res = await fetch(`${BEDS24_URL}/bookings`, {
+      const res = await beds24Fetch('/bookings', {
         method: 'POST',
-        headers: { token: b24Key, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
-      });
-      if (!res.ok) return { error: `Beds24 error ${res.status}` };
+      }, env);
+      if (!res.ok) return await formatBeds24Error(res);
       return { success: true, blocked_from: input.date_from, blocked_to: input.date_to };
     }
 
@@ -327,6 +348,99 @@ async function executeTool(name, input, env) {
     default:
       return { error: `Tool "${name}" non riconosciuto` };
   }
+}
+
+async function resolveBeds24RoomId(input, sbUrl, sbHeaders) {
+  if (input.room_id) return String(input.room_id);
+  if (!input.apartment) return null;
+
+  const apartment = String(input.apartment).trim();
+  if (!apartment) return null;
+
+  const url = `${sbUrl}/rest/v1/apartments?select=nome_appartamento,beds24_room_id&beds24_room_id=not.is.null&nome_appartamento=ilike.*${encodeURIComponent(apartment)}*&limit=1`;
+  const res = await fetch(url, { headers: sbHeaders });
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data?.[0]?.beds24_room_id ? String(data[0].beds24_room_id) : null;
+}
+
+async function beds24Fetch(path, options = {}, env) {
+  const directToken = env.BEDS24_API_KEY;
+  const request = async (token) => fetch(`${BEDS24_URL}${path}`, {
+    ...options,
+    headers: {
+      accept: 'application/json',
+      ...(options.headers || {}),
+      token,
+    },
+  });
+
+  let response = await request(await getBeds24Token(directToken, false));
+  if (response.status !== 401) return response;
+
+  const refreshedToken = await getBeds24Token(directToken, true);
+  if (refreshedToken && refreshedToken !== directToken) {
+    response = await request(refreshedToken);
+  }
+
+  return response;
+}
+
+async function getBeds24Token(rawKey, forceRefresh) {
+  if (!rawKey) return null;
+
+  if (!forceRefresh) {
+    if (beds24TokenCache && beds24TokenCache.sourceKey === rawKey && beds24TokenCache.expiresAt > Date.now()) {
+      return beds24TokenCache.token;
+    }
+    return rawKey;
+  }
+
+  const res = await fetch(`${BEDS24_URL}/authentication/token`, {
+    method: 'GET',
+    headers: {
+      accept: 'application/json',
+      refreshToken: rawKey,
+    },
+  });
+
+  if (!res.ok) {
+    return rawKey;
+  }
+
+  const data = await res.json();
+  const token = data?.token;
+  const expiresIn = Number(data?.expiresIn || 3600);
+  if (!token) return rawKey;
+
+  beds24TokenCache = {
+    sourceKey: rawKey,
+    token,
+    expiresAt: Date.now() + Math.max(expiresIn - 60, 60) * 1000,
+  };
+
+  return token;
+}
+
+async function formatBeds24Error(res) {
+  const text = await res.text();
+  let detail = text;
+  try {
+    const parsed = JSON.parse(text);
+    detail = parsed?.error || parsed?.message || text;
+  } catch (_error) {
+    // Keep raw text when the response is not JSON.
+  }
+
+  if (res.status === 401) {
+    return {
+      error: `Beds24 autenticazione fallita (${detail}). Serve un token API V2 valido: long life token oppure refresh token attivo.`,
+    };
+  }
+
+  return {
+    error: `Beds24 error ${res.status}: ${detail}`,
+  };
 }
 
 const SYSTEM_PROMPT = `Sei l'assistente AI di "Il Lupo Affitta", una societa di property management che gestisce appartamenti turistici a Rimini, Pesaro, Verona e Valtournenche.
