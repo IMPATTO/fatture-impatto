@@ -163,6 +163,10 @@
       background: var(--surface); border-bottom: 1px solid var(--border);
       padding: 10px 18px 12px; display: flex; align-items: center; gap: 11px;
     }
+    .header-icon-btn {
+      background: none; border: none; cursor: pointer; padding: 6px;
+      color: var(--text2); display: inline-flex; align-items: center; justify-content: center;
+    }
     .ai-avatar {
       width: 36px; height: 36px; border-radius: 50%;
       background: var(--accent-bg);
@@ -239,42 +243,121 @@
     .send-btn svg { width: 17px; height: 17px; stroke: #fff; fill: none; stroke-width: 2; }
     .send-btn:active { transform: scale(0.93); }
 
+    .voice-btn.recording {
+      background: var(--danger-bg);
+      border-color: var(--danger);
+    }
+    .voice-btn.recording svg { stroke: var(--danger); }
+
     .cal-header {
       background: var(--surface); border-bottom: 1px solid var(--border);
       padding: 10px 18px 14px;
     }
-    .cal-nav-row { display: flex; align-items: center; justify-content: space-between; }
+    .cal-top-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
     .cal-month { font-size: 17px; font-weight: 600; color: var(--text1); }
     .cal-nav-btn { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 20px; padding: 2px 8px; }
-    .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); padding: 8px 12px; }
+    .cal-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .view-toggle { display: flex; background: var(--bg); border-radius: 8px; padding: 2px; border: 1px solid var(--border); }
+    .vt-btn {
+      padding: 5px 14px; border: none; border-radius: 6px; font-size: 12px;
+      font-weight: 500; cursor: pointer; background: transparent; color: var(--text2);
+      transition: all 0.15s;
+    }
+    .vt-btn.active { background: var(--surface); color: var(--text1); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .apt-selector {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      padding: 6px 10px; font-size: 12px; color: var(--text1); outline: none; max-width: 220px;
+    }
+    #calMultiView { flex: 1; height: calc(100dvh - 160px); overflow: auto; }
+    .timeline-header {
+      display: flex; position: sticky; top: 0; z-index: 20;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+    }
+    .tl-room-header {
+      width: 110px; flex-shrink: 0; padding: 8px 10px; font-size: 10px; font-weight: 600;
+      color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em;
+      border-right: 1px solid var(--border); position: sticky; left: 0; background: var(--surface); z-index: 21;
+    }
+    .tl-days-header { display: flex; }
+    .tl-day-hdr {
+      width: 32px; flex-shrink: 0; text-align: center; font-size: 10px; color: var(--text3);
+      padding: 6px 0; border-right: 1px solid var(--border); font-family: var(--mono);
+    }
+    .tl-day-hdr.today { color: var(--accent); font-weight: 700; }
+    .tl-day-hdr.weekend { background: var(--bg); }
+    .timeline-body { min-height: 100%; }
+    .tl-row { display: flex; border-bottom: 1px solid var(--border); height: 40px; position: relative; }
+    .tl-room-label {
+      width: 110px; flex-shrink: 0; padding: 0 10px; font-size: 11px; color: var(--text1); font-weight: 500;
+      display: flex; align-items: center; border-right: 1px solid var(--border);
+      position: sticky; left: 0; background: var(--surface); z-index: 5;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .tl-cells { display: flex; flex: 1; position: relative; }
+    .tl-cell { width: 32px; flex-shrink: 0; border-right: 1px solid var(--border); height: 100%; }
+    .tl-cell.weekend { background: var(--bg); }
+    .tl-cell.today { background: var(--accent-bg); }
+    .tl-booking {
+      position: absolute; top: 5px; height: 30px; border-radius: 4px; cursor: pointer;
+      display: flex; align-items: center; padding: 0 6px; font-size: 10px; font-weight: 500;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: filter 0.1s; z-index: 2;
+    }
+    .tl-booking:active { filter: brightness(0.9); }
+    .tl-booking.channel-booking { background: #003580; color: #fff; }
+    .tl-booking.channel-airbnb { background: #FF5A5F; color: #fff; }
+    .tl-booking.channel-direct { background: var(--accent); color: #fff; }
+    .tl-booking.channel-other { background: var(--text2); color: #fff; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); padding: 8px 12px; }
     .cal-days { display: contents; }
     .cal-dow { text-align: center; font-size: 10px; font-weight: 600; color: var(--text3); padding: 4px 0; font-family: var(--mono); letter-spacing: 0.04em; }
     .cal-day {
       aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-      font-size: 13px; color: var(--text1); border-radius: 50%;
-      cursor: pointer; position: relative; transition: background 0.1s;
+      font-size: 13px; color: var(--text1); border-radius: 50%; cursor: pointer; position: relative; transition: background 0.1s;
     }
     .cal-day:active { background: var(--accent-bg); }
     .cal-day.other { color: var(--text3); }
     .cal-day.today { background: var(--accent); color: #fff; font-weight: 700; }
     .cal-day.has-booking::after {
-      content: ''; position: absolute; bottom: 3px;
-      width: 4px; height: 4px; border-radius: 50%; background: var(--warn);
+      content: ''; position: absolute; bottom: 3px; width: 4px; height: 4px; border-radius: 50%; background: var(--warn);
     }
     .cal-day.today.has-booking::after { background: rgba(255,255,255,0.7); }
-
     .booking-section { padding: 4px 16px 16px; }
     .booking-section-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; font-family: var(--mono); margin-bottom: 10px; padding-top: 8px; }
     .booking-card {
-      background: var(--surface); border-radius: 11px;
-      border-left: 3px solid var(--accent);
+      background: var(--surface); border-radius: 11px; border-left: 3px solid var(--accent);
       border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
       padding: 10px 13px; margin-bottom: 8px;
     }
     .booking-card.checkout { border-left-color: var(--warn); }
-    .booking-card.blocked  { border-left-color: var(--text3); }
+    .booking-card.blocked { border-left-color: var(--text3); }
     .booking-guest { font-size: 14px; font-weight: 500; color: var(--text1); }
     .booking-detail { font-size: 12px; color: var(--text2); margin-top: 2px; }
+    .booking-sheet {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+      z-index: 100; align-items: flex-end;
+    }
+    .booking-sheet.open { display: flex; }
+    .sheet-content {
+      background: var(--surface); border-radius: 20px 20px 0 0;
+      padding: 20px; width: 100%; max-height: 60vh; overflow-y: auto;
+    }
+    .sheet-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
+    .sheet-title { font-size: 17px; font-weight: 600; color: var(--text1); margin-bottom: 4px; }
+    .sheet-sub { font-size: 13px; color: var(--text2); margin-bottom: 16px; }
+    .sheet-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+    }
+    .sheet-row:last-child { border-bottom: none; }
+    .sheet-label { color: var(--text2); }
+    .sheet-value { color: var(--text1); font-weight: 500; }
+    .channel-badge {
+      display: inline-block; font-size: 11px; padding: 3px 9px; border-radius: 20px; font-weight: 600;
+    }
+    .channel-badge.booking { background: #003580; color: #fff; }
+    .channel-badge.airbnb { background: #FF5A5F; color: #fff; }
+    .channel-badge.direct { background: var(--accent-bg); color: var(--accent-dk); }
+    .channel-badge.other { background: var(--text2); color: #fff; }
 
     .todo-header {
       background: var(--surface); border-bottom: 1px solid var(--border);
@@ -312,8 +395,9 @@
     .add-todo-bar {
       padding: 10px 16px 12px; background: var(--surface);
       border-top: 1px solid var(--border); margin-top: auto;
-      display: flex; gap: 8px; align-items: center;
+      display: flex; gap: 8px; flex-direction: column; align-items: stretch;
     }
+    .add-todo-row1 { display: flex; gap: 8px; align-items: center; }
     .add-todo-input {
       flex: 1; background: var(--bg); border: 1px solid var(--border);
       border-radius: 20px; padding: 9px 14px; font-size: 13px;
@@ -326,6 +410,23 @@
       display: flex; align-items: center; justify-content: center;
     }
     .add-btn svg { width: 16px; height: 16px; stroke: #fff; fill: none; stroke-width: 2.5; }
+    .tag-selector {
+      display: flex; gap: 6px; overflow-x: auto; padding: 6px 0 2px;
+      scrollbar-width: none;
+    }
+    .tag-selector::-webkit-scrollbar { display: none; }
+    .person-tag {
+      flex-shrink: 0; font-size: 12px; padding: 5px 11px; border-radius: 20px;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text2); cursor: pointer; white-space: nowrap; transition: all 0.12s;
+      font-weight: 500;
+    }
+    .person-tag.selected { background: var(--accent-bg); color: var(--accent-dk); border-color: var(--accent); }
+    .todo-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+    .todo-tag-pill {
+      font-size: 10px; padding: 2px 7px; border-radius: 10px;
+      background: var(--accent-bg); color: var(--accent-dk); font-weight: 500;
+    }
 
     .skeleton { background: var(--border); border-radius: 6px; animation: shimmer 1.5s infinite; }
     @keyframes shimmer { 0%,100%{opacity:0.4} 50%{opacity:0.9} }
@@ -410,6 +511,9 @@
         <div class="chat-agent-name">Assistente AI</div>
         <div class="chat-status" id="chatStatus">pronto</div>
       </div>
+      <button class="header-icon-btn" onclick="clearChat()" title="Nuova conversazione" style="margin-left:auto">
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="1.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+      </button>
     </div>
     <div class="chat-messages" id="chatMessages">
       <div class="msg ai">
@@ -438,22 +542,46 @@
 
   <div class="screen" id="sCal">
     <div class="cal-header">
-      <div class="cal-nav-row">
-        <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
+      <div class="cal-top-row">
+        <button class="cal-nav-btn" id="calPrev" onclick="calNav(-1)">‹</button>
         <span class="cal-month" id="calMonthLabel">Aprile 2026</span>
-        <button class="cal-nav-btn" onclick="calNav(+1)">›</button>
+        <button class="cal-nav-btn" id="calNext" onclick="calNav(+1)">›</button>
+      </div>
+      <div class="cal-controls">
+        <div class="view-toggle">
+          <button class="vt-btn active" id="vtMulti" onclick="setCalView('multi')">Tutti</button>
+          <button class="vt-btn" id="vtSingle" onclick="setCalView('single')">Singolo</button>
+        </div>
+        <select class="apt-selector" id="aptSelector" style="display:none" onchange="onAptChange()">
+          <option value="">Seleziona appartamento...</option>
+        </select>
       </div>
     </div>
-    <div class="cal-grid">
-      <div class="cal-dow">LU</div><div class="cal-dow">MA</div><div class="cal-dow">ME</div>
-      <div class="cal-dow">GI</div><div class="cal-dow">VE</div><div class="cal-dow">SA</div><div class="cal-dow">DO</div>
-      <div id="calDays" class="cal-days"></div>
+
+    <div id="calLoading" style="display:none;padding:20px;text-align:center;color:var(--text3);font-size:13px">
+      <div class="loading-spinner" style="margin:0 auto 8px"></div>
+      Carico prenotazioni...
     </div>
-    <div class="booking-section">
-      <div class="booking-section-label">Prenotazioni nel mese</div>
-      <div id="bookingList">
-        <div class="booking-card"><div class="booking-guest skeleton" style="width:140px;height:14px"></div><div class="booking-detail skeleton" style="width:180px;height:11px;margin-top:5px"></div></div>
+
+    <div id="calMultiView">
+      <div class="timeline-header" id="timelineHeader"></div>
+      <div class="timeline-body" id="timelineBody"></div>
+    </div>
+
+    <div id="calSingleView" style="display:none;flex:1;overflow-y:auto;flex-direction:column">
+      <div class="cal-grid">
+        <div class="cal-dow">LU</div><div class="cal-dow">MA</div><div class="cal-dow">ME</div>
+        <div class="cal-dow">GI</div><div class="cal-dow">VE</div><div class="cal-dow">SA</div><div class="cal-dow">DO</div>
+        <div id="calDays" class="cal-days"></div>
       </div>
+      <div class="booking-section">
+        <div class="booking-section-label" id="singleAptLabel">Seleziona un appartamento</div>
+        <div id="bookingList"></div>
+      </div>
+    </div>
+
+    <div class="booking-sheet" id="bookingSheet" onclick="closeBookingSheet()">
+      <div class="sheet-content" onclick="event.stopPropagation()" id="sheetContent"></div>
     </div>
   </div>
 
@@ -466,10 +594,13 @@
       <div class="todo-section"><div class="todo-section-label">Carico...</div></div>
     </div>
     <div class="add-todo-bar">
-      <input class="add-todo-input" id="addTodoInput" placeholder="Aggiungi task..." onkeydown="if(event.key==='Enter')addTodo()"/>
-      <button class="add-btn" onclick="addTodo()">
-        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      </button>
+      <div class="add-todo-row1">
+        <input class="add-todo-input" id="addTodoInput" placeholder="Aggiungi task..." onkeydown="if(event.key==='Enter')addTodo()"/>
+        <button class="add-btn" onclick="addTodo()">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+      <div class="tag-selector" id="tagSelector"></div>
     </div>
   </div>
 
@@ -500,27 +631,45 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, lock: async (_n, _t, fn) => await fn() }
 });
 
+const PERSON_TAGS = ['Jessica', 'Serena', 'Veronica', 'Victor&Vanessa', 'Susanna', 'Marco'];
+
 const APP = {
   session: null,
   chatHistory: [],
   calYear: new Date().getFullYear(),
   calMonth: new Date().getMonth(),
+  calView: 'multi',
+  calBookings: [],
+  calApartments: [],
+  calSelectedApt: null,
+  calLoading: false,
   todos: [],
+  selectedTags: [],
+  showDone: false,
   recognition: null,
-  isListening: false
+  isListening: false,
+  micPermissionGranted: false,
+  homePullInit: false,
 };
 
 function fmtTime() {
   return new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
 }
-function toast(msg, type='ok') {
-  document.querySelectorAll('.toast').forEach((t) => t.remove());
-  const t = document.createElement('div');
-  t.className = `toast toast-${type}`;
-  t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), 2800);
+
+function updateCalMonthLabel() {
+  const months = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
+  document.getElementById('calMonthLabel').textContent = `${months[APP.calMonth]} ${APP.calYear}`;
 }
+
+function toast(msg, type = 'ok') {
+  document.querySelectorAll('.toast').forEach((toastEl) => toastEl.remove());
+  const toastEl = document.createElement('div');
+  toastEl.className = `toast toast-${type}`;
+  toastEl.textContent = msg;
+  document.body.appendChild(toastEl);
+  setTimeout(() => toastEl.remove(), 2800);
+}
+
 function autoResizeTextarea(el) {
   el.style.height = 'auto';
   el.style.height = `${Math.min(el.scrollHeight, 100)}px`;
@@ -537,27 +686,33 @@ async function doLogin() {
   const { error } = await sb.auth.signInWithPassword({ email, password: pwd });
   btn.textContent = 'Accedi';
   btn.disabled = false;
-  if (error) {
-    err.textContent = 'Credenziali non valide';
-  }
+  if (error) err.textContent = 'Credenziali non valide';
 }
 
 function goTo(id, btn) {
-  document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach((b) => b.classList.remove('active'));
+  document.querySelectorAll('.screen').forEach((screen) => screen.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach((navBtn) => navBtn.classList.remove('active'));
   document.getElementById(`s${id}`).classList.add('active');
   btn.classList.add('active');
-  if (id === 'Cal') renderCalendar();
+  if (id === 'Cal') {
+    if (!APP.calBookings.length) loadCalendarData();
+    else renderCalendarView();
+  }
   if (id === 'Todo') renderTodos();
 }
 
 async function loadHome() {
   const today = new Date().toISOString().slice(0, 10);
-  const days = ['Domenica','Lunedi','Martedi','Mercoledi','Giovedi','Venerdi','Sabato'];
-  const months = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+  const days = ['Domenica', 'Lunedi', 'Martedi', 'Mercoledi', 'Giovedi', 'Venerdi', 'Sabato'];
+  const months = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
   const now = new Date();
   document.getElementById('homeDate').textContent = `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]}`;
   document.getElementById('welcomeTime').textContent = fmtTime();
+  document.getElementById('statCheckin').textContent = '—';
+  document.getElementById('statCheckout').textContent = '—';
+  document.getElementById('statOcc').textContent = '—';
+  document.getElementById('statRev').textContent = '—';
+  document.getElementById('aiBriefing').textContent = 'Carico...';
 
   const [checkins, revenue] = await Promise.all([
     sb.from('ospiti_check_in')
@@ -568,17 +723,16 @@ async function loadHome() {
       .select('importo_lordo')
       .eq('stato', 'APPROVATA')
       .gte('data_checkin', `${today.slice(0, 7)}-01`)
-      .lte('data_checkin', today)
+      .lte('data_checkin', today),
   ]);
 
-  const arrivals = (checkins.data || []).filter((r) => r.data_checkin === today);
-  const departures = (checkins.data || []).filter((r) => r.data_checkout === today);
-  const rev = (revenue.data || []).reduce((sum, r) => sum + parseFloat(r.importo_lordo || 0), 0);
+  const arrivals = (checkins.data || []).filter((row) => row.data_checkin === today);
+  const departures = (checkins.data || []).filter((row) => row.data_checkout === today);
+  const rev = (revenue.data || []).reduce((sum, row) => sum + parseFloat(row.importo_lordo || 0), 0);
 
-  document.getElementById('statCheckin').textContent = arrivals.length;
-  document.getElementById('statCheckout').textContent = departures.length;
-  document.getElementById('statRev').textContent = `€${rev >= 1000 ? `${(rev / 1000).toFixed(1)}k` : Math.round(rev)}`;
-  document.getElementById('statOcc').textContent = '—';
+  document.getElementById('statCheckin').textContent = arrivals.length || '—';
+  document.getElementById('statCheckout').textContent = departures.length || '—';
+  document.getElementById('statRev').textContent = rev ? `€${rev >= 1000 ? `${(rev / 1000).toFixed(1)}k` : Math.round(rev)}` : '—';
 
   const { data: missing } = await sb.from('ospiti_check_in')
     .select('id,nome,cognome,data_checkin,apartments(nome_appartamento)')
@@ -592,63 +746,71 @@ async function loadHome() {
     .in('stato', ['CHECK_IN_COMPLETATO', 'DA_VERIFICARE'])
     .limit(5);
 
-  const alerts = document.getElementById('alertList');
-  const allAlerts = [];
-  (missing || []).forEach((r) => allAlerts.push({ type: 'red', title: `Schedina mancante - ${r.apartments?.nome_appartamento || ''}`, sub: `${r.nome} ${r.cognome} · ${r.data_checkin}` }));
-  (pending || []).forEach((r) => allAlerts.push({ type: 'amber', title: 'Check-in da processare', sub: `${r.nome} ${r.cognome} · ${r.apartments?.nome_appartamento || ''}` }));
-  if (arrivals.length > 0) allAlerts.push({ type: 'green', title: `${arrivals.length} arriv${arrivals.length === 1 ? 'o' : 'i'} oggi`, sub: arrivals.map((r) => `${r.nome} ${r.cognome}`).join(', ') });
+  const alerts = [];
+  (missing || []).forEach((row) => alerts.push({ type: 'red', title: `Schedina mancante - ${row.apartments?.nome_appartamento || ''}`, sub: `${row.nome} ${row.cognome} · ${row.data_checkin}` }));
+  (pending || []).forEach((row) => alerts.push({ type: 'amber', title: 'Check-in da processare', sub: `${row.nome} ${row.cognome} · ${row.apartments?.nome_appartamento || ''}` }));
+  if (arrivals.length > 0) alerts.push({ type: 'green', title: `${arrivals.length} arriv${arrivals.length === 1 ? 'o' : 'i'} oggi`, sub: arrivals.map((row) => `${row.nome} ${row.cognome}`).join(', ') });
 
-  alerts.innerHTML = allAlerts.length ? allAlerts.map((a) => `
+  document.getElementById('alertList').innerHTML = alerts.length ? alerts.map((alert) => `
     <div class="alert-item">
-      <div class="alert-indicator ind-${a.type}"></div>
-      <div><div class="alert-title">${a.title}</div><div class="alert-sub">${a.sub}</div></div>
+      <div class="alert-indicator ind-${alert.type}"></div>
+      <div><div class="alert-title">${alert.title}</div><div class="alert-sub">${alert.sub}</div></div>
     </div>`).join('') : '<div style="padding:12px 0;color:var(--text3);font-size:13px">Nessuna segnalazione</div>';
 
-  const all = [...arrivals.map((r) => ({ ...r, type: 'in' })), ...departures.map((r) => ({ ...r, type: 'out' }))];
-  const movs = document.getElementById('movementList');
-  movs.innerHTML = all.length ? all.map((r) => `
+  const allMovements = [...arrivals.map((row) => ({ ...row, type: 'in' })), ...departures.map((row) => ({ ...row, type: 'out' }))];
+  document.getElementById('movementList').innerHTML = allMovements.length ? allMovements.map((row) => `
     <div class="movement-item">
       <div>
-        <div class="movement-name">${r.nome} ${r.cognome}</div>
-        <div class="movement-apt">${r.apartments?.nome_appartamento || ''}</div>
+        <div class="movement-name">${row.nome} ${row.cognome}</div>
+        <div class="movement-apt">${row.apartments?.nome_appartamento || ''}</div>
       </div>
-      <span class="tag ${r.type === 'in' ? 'tag-in' : 'tag-out'}">${r.type === 'in' ? 'Arrivo' : 'Partenza'}</span>
+      <span class="tag ${row.type === 'in' ? 'tag-in' : 'tag-out'}">${row.type === 'in' ? 'Arrivo' : 'Partenza'}</span>
     </div>`).join('') : '<div style="padding:10px 0;color:var(--text3);font-size:13px">Nessun movimento oggi</div>';
 
   const totalIssues = (missing || []).length + (pending || []).length;
-  let briefing = '';
-  if (totalIssues === 0 && arrivals.length === 0 && departures.length === 0) {
-    briefing = 'Giornata tranquilla - nessuna segnalazione urgente.';
-  } else {
-    const parts = [];
-    if (arrivals.length) parts.push(`${arrivals.length} arriv${arrivals.length === 1 ? 'o' : 'i'}`);
-    if (departures.length) parts.push(`${departures.length} partenz${departures.length === 1 ? 'a' : 'e'}`);
-    if ((missing || []).length) parts.push(`${(missing || []).length} schedina${(missing || []).length === 1 ? '' : 'e'} mancante${(missing || []).length === 1 ? '' : 'i'}`);
-    if ((pending || []).length) parts.push(`${(pending || []).length} check-in da processare`);
-    briefing = parts.join(' · ');
+  if (totalIssues === 0 && !arrivals.length && !departures.length) {
+    document.getElementById('aiBriefing').textContent = 'Giornata tranquilla - nessuna segnalazione urgente.';
+    return;
   }
-  document.getElementById('aiBriefing').textContent = briefing;
+
+  const parts = [];
+  if (arrivals.length) parts.push(`${arrivals.length} arriv${arrivals.length === 1 ? 'o' : 'i'}`);
+  if (departures.length) parts.push(`${departures.length} partenz${departures.length === 1 ? 'a' : 'e'}`);
+  if ((missing || []).length) parts.push(`${missing.length} schedina${missing.length === 1 ? '' : 'e'} mancante${missing.length === 1 ? '' : 'i'}`);
+  if ((pending || []).length) parts.push(`${pending.length} check-in da processare`);
+  document.getElementById('aiBriefing').textContent = parts.join(' · ');
 }
 
 function addMessage(role, text) {
-  const msgs = document.getElementById('chatMessages');
+  const messages = document.getElementById('chatMessages');
   const div = document.createElement('div');
   div.className = `msg ${role}`;
-  div.innerHTML = `<div class="msg-bubble">${text.replace(/\n/g, '<br>')}</div><div class="msg-time">${fmtTime()}</div>`;
-  msgs.appendChild(div);
-  msgs.scrollTop = msgs.scrollHeight;
+  div.innerHTML = `<div class="msg-bubble">${String(text).replace(/\n/g, '<br>')}</div><div class="msg-time">${fmtTime()}</div>`;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
   return div;
 }
 
+function clearChat() {
+  APP.chatHistory = [];
+  document.getElementById('chatMessages').innerHTML = `
+    <div class="msg ai">
+      <div class="msg-bubble">Nuova conversazione. Come posso aiutarti?</div>
+      <div class="msg-time">${fmtTime()}</div>
+    </div>`;
+  document.getElementById('suggChips').style.display = 'flex';
+}
+
 function showTyping() {
-  const msgs = document.getElementById('chatMessages');
+  const messages = document.getElementById('chatMessages');
   const div = document.createElement('div');
   div.className = 'msg ai typing-indicator';
   div.id = 'typingIndicator';
   div.innerHTML = '<div class="msg-bubble"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>';
-  msgs.appendChild(div);
-  msgs.scrollTop = msgs.scrollHeight;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
 }
+
 function hideTyping() {
   document.getElementById('typingIndicator')?.remove();
 }
@@ -670,7 +832,6 @@ function sendSuggestion(chip) {
 async function sendToAgent(text) {
   addMessage('user', text);
   APP.chatHistory.push({ role: 'user', content: text });
-
   const status = document.getElementById('chatStatus');
   status.textContent = 'sta elaborando...';
   showTyping();
@@ -681,9 +842,9 @@ async function sendToAgent(text) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify({ messages: APP.chatHistory })
+      body: JSON.stringify({ messages: APP.chatHistory }),
     });
 
     hideTyping();
@@ -693,6 +854,7 @@ async function sendToAgent(text) {
       status.textContent = 'errore';
       return;
     }
+
     const data = await res.json();
     APP.chatHistory.push({ role: 'assistant', content: data.reply });
     addMessage('ai', data.reply);
@@ -710,154 +872,364 @@ function startVoice() {
     toast('Voce non supportata su questo browser', 'err');
     return;
   }
-
   if (APP.isListening) {
     APP.recognition?.stop();
     return;
   }
+  if (!APP.micPermissionGranted) {
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(() => {
+        APP.micPermissionGranted = true;
+        _startRecognition();
+      })
+      .catch(() => {
+        toast('Permesso microfono negato', 'err');
+      });
+  } else {
+    _startRecognition();
+  }
+}
+
+function _startRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   const rec = new SpeechRecognition();
   rec.lang = 'it-IT';
-  rec.interimResults = false;
+  rec.continuous = true;
+  rec.interimResults = true;
   rec.maxAlternatives = 1;
+
   APP.recognition = rec;
   APP.isListening = true;
-  document.getElementById('voiceBtn').style.background = 'var(--danger-bg)';
+  document.getElementById('voiceBtn').classList.add('recording');
   document.getElementById('chatStatus').textContent = 'ascolto...';
 
-  rec.onresult = (e) => {
-    const text = e.results[0][0].transcript;
-    document.getElementById('chatInput').value = text;
-    sendChatMessage();
+  let finalTranscript = '';
+  let silenceTimer = null;
+
+  rec.onresult = (event) => {
+    let interim = '';
+    finalTranscript = '';
+    for (let i = 0; i < event.results.length; i += 1) {
+      if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript;
+      else interim += event.results[i][0].transcript;
+    }
+    document.getElementById('chatInput').value = finalTranscript || interim;
+    clearTimeout(silenceTimer);
+    if (finalTranscript) {
+      silenceTimer = setTimeout(() => {
+        rec.stop();
+        if (finalTranscript.trim()) sendChatMessage();
+      }, 2000);
+    }
   };
-  rec.onerror = () => { toast('Errore microfono', 'err'); };
-  rec.onend = () => {
-    APP.isListening = false;
-    document.getElementById('voiceBtn').style.background = '';
-    document.getElementById('chatStatus').textContent = 'pronto';
+
+  rec.onerror = (event) => {
+    if (event.error !== 'aborted') toast(`Errore microfono: ${event.error}`, 'err');
+    _stopRecognition();
   };
+  rec.onend = () => _stopRecognition();
   rec.start();
 }
 
-async function renderCalendar() {
-  const months = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
-  document.getElementById('calMonthLabel').textContent = `${months[APP.calMonth]} ${APP.calYear}`;
+function _stopRecognition() {
+  APP.isListening = false;
+  document.getElementById('voiceBtn').classList.remove('recording');
+  document.getElementById('chatStatus').textContent = 'pronto';
+}
 
-  const firstDay = new Date(APP.calYear, APP.calMonth, 1).getDay();
-  const daysInMonth = new Date(APP.calYear, APP.calMonth + 1, 0).getDate();
-  const offset = firstDay === 0 ? 6 : firstDay - 1;
-  const today = new Date().toISOString().slice(0, 10);
+async function loadCalendarData() {
+  if (APP.calLoading) return;
+  APP.calLoading = true;
+  document.getElementById('calLoading').style.display = 'block';
 
-  const mFrom = `${APP.calYear}-${String(APP.calMonth + 1).padStart(2, '0')}-01`;
-  const mTo = new Date(APP.calYear, APP.calMonth + 1, 0).toISOString().slice(0, 10);
-  const { data: bookings } = await sb.from('ospiti_check_in')
-    .select('nome,cognome,data_checkin,data_checkout,apartments(nome_appartamento)')
-    .or(`data_checkin.gte.${mFrom},data_checkout.gte.${mFrom}`)
-    .lte('data_checkin', mTo)
-    .neq('stato', 'SCARTATA')
-    .limit(50);
+  const from = `${APP.calYear}-${String(APP.calMonth + 1).padStart(2, '0')}-01`;
+  const to = new Date(APP.calYear, APP.calMonth + 1, 0).toISOString().slice(0, 10);
 
-  const bookedDays = new Set();
-  (bookings || []).forEach((b) => {
-    const s = new Date(b.data_checkin);
-    const e = new Date(b.data_checkout);
-    for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
-      const str = d.toISOString().slice(0, 10);
-      if (str.startsWith(mFrom.slice(0, 7))) bookedDays.add(d.getDate());
-    }
-  });
-
-  let html = '';
-  for (let i = 0; i < offset; i += 1) html += '<div class="cal-day other"></div>';
-  for (let d = 1; d <= daysInMonth; d += 1) {
-    const dateStr = `${APP.calYear}-${String(APP.calMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    const isToday = dateStr === today;
-    const hasBook = bookedDays.has(d);
-    html += `<div class="cal-day${isToday ? ' today' : ''}${hasBook ? ' has-booking' : ''}">${d}</div>`;
+  try {
+    const token = APP.session?.access_token;
+    const res = await fetch(`/.netlify/functions/get-calendar?dateFrom=${from}&dateTo=${to}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    APP.calBookings = data.bookings || [];
+    APP.calApartments = data.apartments || [];
+    const selector = document.getElementById('aptSelector');
+    selector.innerHTML = '<option value="">Tutti gli appartamenti...</option>' +
+      APP.calApartments.map((apartment) => `<option value="${apartment.beds24_room_id}">${apartment.name}</option>`).join('');
+    selector.value = APP.calSelectedApt || '';
+  } catch (error) {
+    toast(`Errore caricamento calendario: ${error.message}`, 'err');
+    APP.calBookings = [];
+    APP.calApartments = [];
+  } finally {
+    APP.calLoading = false;
+    document.getElementById('calLoading').style.display = 'none';
+    renderCalendarView();
   }
-  document.getElementById('calDays').innerHTML = html;
+}
 
-  const bookingList = document.getElementById('bookingList');
-  bookingList.innerHTML = (bookings || []).length ? (bookings || []).map((b) => {
-    const isOut = b.data_checkout >= mFrom && b.data_checkout <= mTo && b.data_checkin < mFrom;
-    return `<div class="booking-card${isOut ? ' checkout' : ''}">
-      <div class="booking-guest">${b.nome} ${b.cognome}</div>
-      <div class="booking-detail">${b.apartments?.nome_appartamento || '—'} · ${b.data_checkin} → ${b.data_checkout}</div>
-    </div>`;
-  }).join('') : '<div style="padding:10px 0;color:var(--text3);font-size:13px">Nessuna prenotazione</div>';
+function setCalView(view) {
+  APP.calView = view;
+  document.getElementById('vtMulti').classList.toggle('active', view === 'multi');
+  document.getElementById('vtSingle').classList.toggle('active', view === 'single');
+  document.getElementById('calMultiView').style.display = view === 'multi' ? 'block' : 'none';
+  document.getElementById('calSingleView').style.display = view === 'single' ? 'flex' : 'none';
+  document.getElementById('aptSelector').style.display = view === 'single' ? 'block' : 'none';
+  renderCalendarView();
+}
+
+function renderCalendarView() {
+  if (APP.calView === 'multi') renderMultiTimeline();
+  else renderSingleMonth();
+}
+
+function onAptChange() {
+  APP.calSelectedApt = document.getElementById('aptSelector').value || null;
+  renderSingleMonth();
 }
 
 function calNav(dir) {
   APP.calMonth += dir;
   if (APP.calMonth > 11) { APP.calMonth = 0; APP.calYear += 1; }
   if (APP.calMonth < 0) { APP.calMonth = 11; APP.calYear -= 1; }
-  renderCalendar();
+  updateCalMonthLabel();
+  loadCalendarData();
+}
+
+function detectChannel(channel) {
+  if (!channel) return 'direct';
+  const value = channel.toLowerCase();
+  if (value.includes('booking')) return 'booking';
+  if (value.includes('airbnb')) return 'airbnb';
+  if (value.includes('direct') || value.includes('diretta') || value.includes('manuale')) return 'direct';
+  return 'other';
+}
+
+function encodeBookingPayload(booking) {
+  return btoa(unescape(encodeURIComponent(JSON.stringify(booking))));
+}
+
+function renderMultiTimeline() {
+  const daysInMonth = new Date(APP.calYear, APP.calMonth + 1, 0).getDate();
+  const today = new Date().toISOString().slice(0, 10);
+  const todayDay = today.startsWith(`${APP.calYear}-${String(APP.calMonth + 1).padStart(2, '0')}`) ? parseInt(today.slice(8, 10), 10) : -1;
+
+  let headerHtml = '<div class="tl-room-header">Appartamento</div><div class="tl-days-header">';
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const date = new Date(APP.calYear, APP.calMonth, day);
+    const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+    headerHtml += `<div class="tl-day-hdr${isWeekend ? ' weekend' : ''}${day === todayDay ? ' today' : ''}">${day}</div>`;
+  }
+  headerHtml += '</div>';
+  document.getElementById('timelineHeader').innerHTML = headerHtml;
+
+  const bookingsByRoom = {};
+  APP.calBookings.forEach((booking) => {
+    if (!bookingsByRoom[booking.roomId]) bookingsByRoom[booking.roomId] = [];
+    bookingsByRoom[booking.roomId].push(booking);
+  });
+
+  const bodyHtml = APP.calApartments.map((apartment) => {
+    const roomId = String(apartment.beds24_room_id);
+    const roomBookings = bookingsByRoom[roomId] || [];
+    let rowHtml = `<div class="tl-row"><div class="tl-room-label" title="${apartment.name}">${apartment.name}</div><div class="tl-cells" style="width:${32 * daysInMonth}px">`;
+
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      const date = new Date(APP.calYear, APP.calMonth, day);
+      const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+      rowHtml += `<div class="tl-cell${isWeekend ? ' weekend' : ''}${day === todayDay ? ' today' : ''}" style="left:${(day - 1) * 32}px;position:absolute"></div>`;
+    }
+
+    roomBookings.forEach((booking) => {
+      const checkIn = new Date(booking.checkIn);
+      const checkOut = new Date(booking.checkOut);
+      const monthStart = new Date(APP.calYear, APP.calMonth, 1);
+      const monthEnd = new Date(APP.calYear, APP.calMonth + 1, 0);
+      const startDay = Math.max(1, checkIn <= monthStart ? 1 : checkIn.getDate());
+      const endDay = Math.min(daysInMonth, checkOut >= monthEnd ? daysInMonth : checkOut.getDate() - 1);
+      if (startDay > daysInMonth || endDay < 1) return;
+      const left = (startDay - 1) * 32;
+      const width = (endDay - startDay + 1) * 32 - 2;
+      const encoded = encodeBookingPayload(booking);
+      rowHtml += `<div class="tl-booking channel-${detectChannel(booking.channel)}" style="left:${left}px;width:${Math.max(width, 30)}px" onclick="openBookingSheet('${encoded}')" title="${booking.guestName} · ${booking.checkIn} - ${booking.checkOut}">${booking.guestName || 'Ospite'}</div>`;
+    });
+
+    rowHtml += '</div></div>';
+    return rowHtml;
+  }).join('');
+
+  document.getElementById('timelineBody').innerHTML = bodyHtml || '<div style="padding:24px;color:var(--text3);font-size:13px;text-align:center">Nessun appartamento collegato a Beds24</div>';
+}
+
+function renderSingleMonth() {
+  const daysInMonth = new Date(APP.calYear, APP.calMonth + 1, 0).getDate();
+  const today = new Date().toISOString().slice(0, 10);
+  const firstDay = new Date(APP.calYear, APP.calMonth, 1).getDay();
+  const offset = firstDay === 0 ? 6 : firstDay - 1;
+  const bookings = APP.calSelectedApt ? APP.calBookings.filter((booking) => String(booking.roomId) === String(APP.calSelectedApt)) : APP.calBookings;
+
+  const bookedDays = new Set();
+  bookings.forEach((booking) => {
+    const start = new Date(booking.checkIn);
+    const end = new Date(booking.checkOut);
+    for (let date = new Date(start); date < end; date.setDate(date.getDate() + 1)) {
+      if (date.getFullYear() === APP.calYear && date.getMonth() === APP.calMonth) bookedDays.add(date.getDate());
+    }
+  });
+
+  let daysHtml = '';
+  for (let index = 0; index < offset; index += 1) daysHtml += '<div class="cal-day other"></div>';
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const dateStr = `${APP.calYear}-${String(APP.calMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    daysHtml += `<div class="cal-day${dateStr === today ? ' today' : ''}${bookedDays.has(day) ? ' has-booking' : ''}">${day}</div>`;
+  }
+  document.getElementById('calDays').innerHTML = daysHtml;
+
+  const apartment = APP.calApartments.find((row) => String(row.beds24_room_id) === String(APP.calSelectedApt));
+  document.getElementById('singleAptLabel').textContent = apartment ? apartment.name : (APP.calSelectedApt ? `Room ${APP.calSelectedApt}` : 'Tutti');
+
+  const sorted = [...bookings].sort((a, b) => a.checkIn.localeCompare(b.checkIn));
+  document.getElementById('bookingList').innerHTML = sorted.length ? sorted.map((booking) => {
+    const channel = detectChannel(booking.channel);
+    const encoded = encodeBookingPayload(booking);
+    return `<div class="booking-card" onclick="openBookingSheet('${encoded}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div class="booking-guest">${booking.guestName}</div>
+        <span class="channel-badge ${channel}">${booking.channel || 'Diretto'}</span>
+      </div>
+      <div class="booking-detail">${booking.checkIn} → ${booking.checkOut} · ${booking.nights || '?'} notti</div>
+    </div>`;
+  }).join('') : '<div style="padding:10px 0;color:var(--text3);font-size:13px">Nessuna prenotazione</div>';
+}
+
+function openBookingSheet(booking) {
+  const parsed = typeof booking === 'string'
+    ? JSON.parse(decodeURIComponent(escape(atob(booking))))
+    : booking;
+  const channel = detectChannel(parsed.channel);
+  document.getElementById('sheetContent').innerHTML = `
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">${parsed.guestName}</div>
+    <div class="sheet-sub">${parsed.roomName || 'Appartamento'}</div>
+    <div class="sheet-row"><span class="sheet-label">Check-in</span><span class="sheet-value">${parsed.checkIn}</span></div>
+    <div class="sheet-row"><span class="sheet-label">Check-out</span><span class="sheet-value">${parsed.checkOut}</span></div>
+    <div class="sheet-row"><span class="sheet-label">Notti</span><span class="sheet-value">${parsed.nights || '?'}</span></div>
+    <div class="sheet-row"><span class="sheet-label">Canale</span><span class="sheet-value"><span class="channel-badge ${channel}">${parsed.channel || 'Diretto'}</span></span></div>
+    ${parsed.price ? `<div class="sheet-row"><span class="sheet-label">Totale</span><span class="sheet-value">€${parsed.price}</span></div>` : ''}
+    <div class="sheet-row"><span class="sheet-label">ID prenotazione</span><span class="sheet-value" style="font-family:var(--mono);font-size:11px">${parsed.id}</span></div>
+  `;
+  document.getElementById('bookingSheet').classList.add('open');
+}
+
+function closeBookingSheet() {
+  document.getElementById('bookingSheet').classList.remove('open');
+}
+
+function renderTagSelector() {
+  document.getElementById('tagSelector').innerHTML = PERSON_TAGS.map((tag) =>
+    `<span class="person-tag${APP.selectedTags.includes(tag) ? ' selected' : ''}" onclick="togglePersonTag('${tag.replace(/'/g, "\\'")}')">${tag}</span>`
+  ).join('');
+}
+
+function togglePersonTag(tag) {
+  const index = APP.selectedTags.indexOf(tag);
+  if (index >= 0) APP.selectedTags.splice(index, 1);
+  else APP.selectedTags.push(tag);
+  renderTagSelector();
 }
 
 async function renderTodos() {
   const { data } = await sb.from('agent_todos')
-    .select('*').order('created_at', { ascending: false }).limit(50);
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(50);
   APP.todos = data || [];
 
-  const urgent = APP.todos.filter((t) => !t.done && t.priority === 'alta');
-  const todayT = APP.todos.filter((t) => !t.done && t.priority === 'media');
-  const week = APP.todos.filter((t) => !t.done && t.priority === 'bassa');
-  const done = APP.todos.filter((t) => t.done);
+  const urgent = APP.todos.filter((todo) => !todo.done && todo.priority === 'alta');
+  const todayItems = APP.todos.filter((todo) => !todo.done && todo.priority === 'media');
+  const week = APP.todos.filter((todo) => !todo.done && todo.priority === 'bassa');
+  const done = APP.todos.filter((todo) => todo.done);
 
-  const total = APP.todos.filter((t) => !t.done).length;
-  const urgCount = urgent.length;
-  document.getElementById('todoSubtitle').textContent = `${total} aperti · ${urgCount} urgenti`;
+  document.getElementById('todoSubtitle').textContent = `${APP.todos.filter((todo) => !todo.done).length} aperti · ${urgent.length} urgenti`;
 
-  function renderSection(label, items) {
-    if (!items.length) return '';
-    return `<div class="todo-section">
-      <div class="todo-section-label">${label}</div>
-      ${items.map((t) => `
-        <div class="todo-item${t.done ? ' done-item' : ''}" data-id="${t.id}">
-          <div class="p-dot p-${t.priority || 'medium'}"></div>
-          <div class="todo-check${t.done ? ' checked' : ''}" onclick="toggleTodo('${t.id}')"></div>
-          <div class="todo-text">
-            <div class="todo-task${t.done ? ' done' : ''}">${t.task}</div>
-            <div class="todo-meta">${t.apartment ? `${t.apartment} · ` : ''}${t.due_date || ''}</div>
-          </div>
-        </div>`).join('')}
-    </div>`;
+  function renderItems(items) {
+    return items.map((todo) => `
+      <div class="todo-item${todo.done ? ' done-item' : ''}" data-id="${todo.id}">
+        <div class="p-dot p-${todo.priority === 'alta' ? 'high' : todo.priority === 'bassa' ? 'low' : 'medium'}"></div>
+        <div class="todo-check${todo.done ? ' checked' : ''}" onclick="toggleTodo('${todo.id}')"></div>
+        <div class="todo-text">
+          <div class="todo-task${todo.done ? ' done' : ''}">${todo.task}</div>
+          <div class="todo-meta">${todo.apartment ? `${todo.apartment} · ` : ''}${todo.due_date || ''}</div>
+          ${(todo.tags && todo.tags.length) ? `<div class="todo-tags">${todo.tags.map((tag) => `<span class="todo-tag-pill">${tag}</span>`).join('')}</div>` : ''}
+        </div>
+      </div>`).join('');
   }
 
-  document.getElementById('todoContent').innerHTML =
-    renderSection('Urgente', urgent) +
-    renderSection('Oggi', todayT) +
-    renderSection('Questa settimana', week) +
-    renderSection('Completati', done) +
-    (APP.todos.length === 0 ? '<div style="padding:24px;color:var(--text3);font-size:13px;text-align:center">Nessun task</div>' : '');
+  const sections = [];
+  if (urgent.length) sections.push(`<div class="todo-section"><div class="todo-section-label">Urgente</div>${renderItems(urgent)}</div>`);
+  if (todayItems.length) sections.push(`<div class="todo-section"><div class="todo-section-label">Oggi</div>${renderItems(todayItems)}</div>`);
+  if (week.length) sections.push(`<div class="todo-section"><div class="todo-section-label">Questa settimana</div>${renderItems(week)}</div>`);
+  sections.push(`<div class="todo-section"><div class="todo-section-label" style="cursor:pointer" onclick="APP.showDone=!APP.showDone;renderTodos()">Completati (${done.length}) ${APP.showDone ? '▲' : '▼'}</div>${APP.showDone ? renderItems(done) : ''}</div>`);
+  if (!APP.todos.length) sections.push('<div style="padding:24px;color:var(--text3);font-size:13px;text-align:center">Nessun task</div>');
+  document.getElementById('todoContent').innerHTML = sections.join('');
 }
 
 async function toggleTodo(id) {
-  const todo = APP.todos.find((t) => String(t.id) === String(id));
+  const todo = APP.todos.find((row) => String(row.id) === String(id));
   if (!todo) return;
   const { error } = await sb.from('agent_todos').update({ done: !todo.done }).eq('id', id);
   if (!error) renderTodos();
 }
 
 async function addTodo() {
-  const inp = document.getElementById('addTodoInput');
-  const text = inp.value.trim();
+  const input = document.getElementById('addTodoInput');
+  const text = input.value.trim();
   if (!text) return;
-  inp.value = '';
-  const { error } = await sb.from('agent_todos').insert({ task: text, priority: 'media', done: false });
+  const { error } = await sb.from('agent_todos').insert({
+    task: text,
+    priority: 'media',
+    done: false,
+    tags: APP.selectedTags,
+  });
   if (error) {
     toast('Errore aggiunta task', 'err');
     return;
   }
+  input.value = '';
+  APP.selectedTags = [];
+  renderTagSelector();
   toast('Task aggiunto');
   renderTodos();
+}
+
+function setupHomePullToRefresh() {
+  if (APP.homePullInit) return;
+  APP.homePullInit = true;
+  let touchStartY = 0;
+  const home = document.getElementById('sHome');
+  home.addEventListener('touchstart', (event) => { touchStartY = event.touches[0].clientY; });
+  home.addEventListener('touchend', (event) => {
+    const delta = event.changedTouches[0].clientY - touchStartY;
+    if (delta > 80 && home.scrollTop === 0) {
+      toast('Aggiorno...', 'ok');
+      loadHome();
+    }
+  });
 }
 
 function showApp() {
   document.getElementById('loadingScreen').style.display = 'none';
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('app').classList.add('visible');
+  updateCalMonthLabel();
+  setCalView('multi');
+  renderTagSelector();
+  setupHomePullToRefresh();
+  clearChat();
   loadHome();
 }
+
 function showLogin() {
   document.getElementById('loadingScreen').style.display = 'none';
   document.getElementById('loginScreen').style.display = 'flex';

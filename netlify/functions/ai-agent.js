@@ -443,7 +443,27 @@ async function formatBeds24Error(res) {
   };
 }
 
-const SYSTEM_PROMPT = `Sei l'assistente AI di "Il Lupo Affitta", una societa di property management che gestisce appartamenti turistici a Rimini, Pesaro, Verona e Valtournenche.
+async function loadApartmentsList(env) {
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/apartments?select=id,nome_appartamento,beds24_room_id&order=nome_appartamento`,
+    {
+      headers: {
+        apikey: env.SUPABASE_SERVICE_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+      },
+    }
+  );
+  if (!res.ok) {
+    throw new Error(`Errore caricamento appartamenti: ${res.status}`);
+  }
+  const data = await res.json();
+  return (data || []).map((apartment) =>
+    `- ${apartment.nome_appartamento} (id: ${apartment.id}${apartment.beds24_room_id ? `, beds24: ${apartment.beds24_room_id}` : ', NO beds24'})`
+  ).join('\n');
+}
+
+function buildSystemPrompt(apartmentsList) {
+  return `Sei l'assistente AI di "Il Lupo Affitta", una societa di property management che gestisce appartamenti turistici a Rimini, Pesaro, Verona e Valtournenche.
 
 Il tuo ruolo e aiutare il gestore (che si chiama Impatto) a gestire operativamente gli appartamenti tramite conversazione in linguaggio naturale. Puoi eseguire azioni reali tramite i tool a tua disposizione.
 
@@ -472,7 +492,15 @@ SISTEMA:
 - Database: Supabase (tabelle: ospiti_check_in, apartments, alloggiati_invii, agent_todos)
 - Channel manager: Beds24 API v2
 - Compliance: AlloggiatiWeb SOAP (gia integrato)
-- Fatturazione: Fatture in Cloud API (gia integrata)`;
+- Fatturazione: Fatture in Cloud API (gia integrata)
+
+APPARTAMENTI REALI NEL SISTEMA (usa SOLO questi, non inventarne altri):
+${apartmentsList}
+
+Quando un utente dice "Via Amalfi" o nome parziale, cerca il match piu vicino nella lista sopra.
+Se non trovi un match certo, chiedi conferma prima di procedere.
+MAI inventare nomi, MAI usare appartamenti non in questa lista.`;
+}
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -514,6 +542,8 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'messages obbligatorio' }) };
   }
 
+  const apartmentsList = await loadApartmentsList(env);
+  const systemPrompt = buildSystemPrompt(apartmentsList);
   let currentMessages = [...messages];
   let maxIterations = 8;
 
@@ -528,7 +558,7 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         model: 'claude-opus-4-5-20251101',
         max_tokens: 1024,
-        system: SYSTEM_PROMPT,
+        system: systemPrompt,
         tools: TOOLS,
         messages: currentMessages,
       }),
