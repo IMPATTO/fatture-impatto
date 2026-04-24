@@ -6,6 +6,9 @@
   directory = "netlify/functions"
   included_files = ["stati.csv"]
 
+[functions."sync-beds24-links"]
+  schedule = "0 * * * *"
+
 [[headers]]
   for = "/*"
   [headers.values]
