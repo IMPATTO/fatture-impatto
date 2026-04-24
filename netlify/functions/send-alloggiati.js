@@ -10,6 +10,7 @@ const { createClient } = require('@supabase/supabase-js');
 const crypto = require('crypto');
 
 const ENDPOINT = 'https://alloggiatiweb.poliziadistato.it/service/service.asmx';
+const ITALIA_CODE = '100000100';
 
 // ── Security: Rate limiting (in-memory, per-function instance) ──
 const rateLimits = {};
@@ -20,6 +21,21 @@ function checkRateLimit(userId, maxPerHour = 60) {
   if (rateLimits[userId].length >= maxPerHour) return false;
   rateLimits[userId].push(now);
   return true;
+}
+
+async function markGuestsAlloggiatiError(supabase, ospitiIds, message) {
+  if (!Array.isArray(ospitiIds) || ospitiIds.length === 0 || !message) return;
+  const { error } = await supabase
+    .from('ospiti_check_in')
+    .update({
+      alloggiati_stato: 'ERRORE',
+      alloggiati_errore: message
+    })
+    .in('id', ospitiIds);
+
+  if (error) {
+    console.error('[send-alloggiati] update alloggiati error state failed', error);
+  }
 }
 
 exports.handler = async (event) => {
@@ -59,7 +75,7 @@ exports.handler = async (event) => {
 
   try {
     // 1. Recupera dati ospiti
-    const { data: ospiti, error: ospErr } = await supabase
+    let { data: ospiti, error: ospErr } = await supabase
       .from('ospiti_check_in')
       .select('*, apartments(nome_appartamento)')
       .in('id', ospiti_ids);
@@ -67,10 +83,16 @@ exports.handler = async (event) => {
     if (ospErr || !ospiti?.length) {
       return { statusCode: 404, body: JSON.stringify({ error: 'Ospiti non trovati', detail: ospErr?.message }) };
     }
+    ospiti = sortGuestsForAlloggiati(ospiti, ospiti_ids);
 
     // 2. Verifica che tutti gli ospiti appartengano allo stesso appartamento
     const aptIds = [...new Set(ospiti.map(o => o.apartment_id))];
     if (aptIds.length > 1) {
+      await markGuestsAlloggiatiError(
+        supabase,
+        ospiti.map(o => o.id),
+        'Invio non eseguibile: gli ospiti selezionati appartengono a appartamenti diversi'
+      );
       return { statusCode: 400, body: JSON.stringify({ error: 'Tutti gli ospiti devono appartenere allo stesso appartamento per un singolo invio' }) };
     }
     const apartmentId = aptIds[0];
@@ -83,11 +105,21 @@ exports.handler = async (event) => {
       .maybeSingle();
 
     if (!link || !link.alloggiati_accounts) {
+      await markGuestsAlloggiatiError(
+        supabase,
+        ospiti.map(o => o.id),
+        'Appartamento non collegato a nessun account AlloggiatiWeb'
+      );
       return { statusCode: 400, body: JSON.stringify({ error: 'Appartamento non collegato a nessun account AlloggiatiWeb' }) };
     }
 
     const account = link.alloggiati_accounts;
     if (!account.attivo) {
+      await markGuestsAlloggiatiError(
+        supabase,
+        ospiti.map(o => o.id),
+        'Account AlloggiatiWeb disattivato'
+      );
       return { statusCode: 400, body: JSON.stringify({ error: 'Account AlloggiatiWeb disattivato' }) };
     }
 
@@ -96,6 +128,11 @@ exports.handler = async (event) => {
     if (tokenResult.error) {
       // Aggiorna ultimo errore sull'account
       await supabase.from('alloggiati_accounts').update({ ultimo_errore: tokenResult.error }).eq('id', account.id);
+      await markGuestsAlloggiatiError(
+        supabase,
+        ospiti.map(o => o.id),
+        `Autenticazione AlloggiatiWeb fallita: ${tokenResult.error}`
+      );
       return { statusCode: 401, body: JSON.stringify({ error: 'Autenticazione AlloggiatiWeb fallita', detail: tokenResult.error }) };
     }
 
@@ -144,16 +181,22 @@ exports.handler = async (event) => {
     const result = await soapSendOrTest(soapAction, account.username, tokenResult.token, schedine);
 
     // 8. Salva esito
+    const fullSuccess = !result.error && result.schedineValide === ospiti.length;
+    const partialSuccess = !result.error && result.schedineValide > 0 && result.schedineValide < ospiti.length;
+    const partialMessage = partialSuccess
+      ? `Invio parziale rilevato (${result.schedineValide}/${ospiti.length}). Verificare il portale Alloggiati prima di ripetere l'operazione.`
+      : null;
+
     const esitoBase = result.error
       ? 'ERRORE'
-      : (result.schedineValide === ospiti.length ? 'OK' : 'PARZIALE');
+      : (fullSuccess ? 'OK' : 'PARZIALE');
 
     const esito = mode === 'send'
       ? `SEND_${esitoBase}`
       : `TEST_${esitoBase}`;
 
     // Aggiorna stato ospiti
-    if (!result.error) {
+    if (fullSuccess) {
       if (mode === 'send') {
         await supabase
           .from('ospiti_check_in')
@@ -177,12 +220,12 @@ exports.handler = async (event) => {
           })
           .in('id', ospiti_ids);
       }
-    } else if (result.error) {
+    } else {
       await supabase
         .from('ospiti_check_in')
         .update({
           alloggiati_stato: 'ERRORE',
-          alloggiati_errore: result.error
+          alloggiati_errore: result.error || partialMessage
         })
         .in('id', ospiti_ids);
     }
@@ -196,7 +239,7 @@ exports.handler = async (event) => {
       ospiti_ids: ospiti_ids,
       num_schedine: ospiti.length,
       esito,
-      errore_dettaglio: result.error || (result.dettaglio?.length ? JSON.stringify(result.dettaglio) : null),
+      errore_dettaglio: result.error || partialMessage || (result.dettaglio?.length ? JSON.stringify(result.dettaglio) : null),
       ricevuta_id: result.ricevutaId || null,
       payload_inviato: JSON.stringify({ action: soapAction, num_schedine: schedine.length, apartment: apartmentId }),
       risposta_ricevuta: maskSensitiveData(result.rawResponse?.substring(0, 2000) || ''),
@@ -256,6 +299,27 @@ function decrypt(encryptedStr) {
     console.error('decrypt() fallita:', e.message);
     return encryptedStr; // fallback: usa com'è
   }
+}
+
+function sortGuestsForAlloggiati(ospiti, requestedIds) {
+  const requestedOrder = new Map((requestedIds || []).map((id, index) => [id, index]));
+  return [...ospiti].sort((a, b) => {
+    const aTipo = Number(a.tipo_alloggiato || 16);
+    const bTipo = Number(b.tipo_alloggiato || 16);
+    const aMain = [16, 17, 18].includes(aTipo) ? 0 : 1;
+    const bMain = [16, 17, 18].includes(bTipo) ? 0 : 1;
+    if (aMain !== bMain) return aMain - bMain;
+
+    const aForeign = a.stato_nascita_codice && a.stato_nascita_codice !== ITALIA_CODE ? 1 : 0;
+    const bForeign = b.stato_nascita_codice && b.stato_nascita_codice !== ITALIA_CODE ? 1 : 0;
+    if (aForeign !== bForeign) return aForeign - bForeign;
+
+    const aRequested = requestedOrder.has(a.id) ? requestedOrder.get(a.id) : Number.MAX_SAFE_INTEGER;
+    const bRequested = requestedOrder.has(b.id) ? requestedOrder.get(b.id) : Number.MAX_SAFE_INTEGER;
+    if (aRequested !== bRequested) return aRequested - bRequested;
+
+    return String(a.id).localeCompare(String(b.id));
+  });
 }
 
 // ──────────────────────────────────────────────────────

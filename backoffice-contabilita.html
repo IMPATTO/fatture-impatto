@@ -1,0 +1,2403 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Backoffice Contabilita · Impatto</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/supabase-client.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #f5f4f1;
+      --white:    #ffffff;
+      --surf:     #fafaf8;
+      --border:   #e2e0db;
+      --border2:  #d0cdc6;
+      --accent:   #15803d;
+      --accent-l: #ecfdf3;
+      --green:    #16a34a;
+      --green-l:  #f0fdf4;
+      --red:      #dc2626;
+      --red-l:    #fef2f2;
+      --yellow:   #d97706;
+      --yellow-l: #fffbeb;
+      --purple:   #9333ea;
+      --purple-l: #fdf4ff;
+      --blue-l:   #eff6ff;
+      --text:     #1a1917;
+      --text2:    #57534e;
+      --muted:    #a8a29e;
+      --serif:    'Cormorant Garamond', Georgia, serif;
+      --sans:     'DM Sans', sans-serif;
+      --mono:     'DM Mono', monospace;
+    }
+
+    html, body { min-height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+
+    .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg); }
+    .login-card { width: 400px; background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 48px 44px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+    .login-logo { font-family: var(--serif); font-size: 30px; font-weight: 500; margin-bottom: 4px; }
+    .login-sub  { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 36px; }
+
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text2); margin-bottom: 6px; }
+    .field input, .field select, .field textarea { width: 100%; background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 10px 13px; font-size: 14px; font-family: var(--sans); color: var(--text); transition: border-color 0.15s, box-shadow 0.15s; outline: none; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+    .field textarea { resize: vertical; min-height: 78px; }
+    .field select { appearance: none; cursor: pointer; }
+    .field-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; font-family: var(--sans); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.38; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: #1d4ed8; }
+    .btn-green  { background: var(--green);  color: #fff; font-weight: 600; }
+    .btn-green:hover:not(:disabled)  { background: #15803d; }
+    .btn-red    { background: var(--red);    color: #fff; }
+    .btn-red:hover:not(:disabled)    { background: #b91c1c; }
+    .btn-yellow { background: var(--yellow); color: #fff; }
+    .btn-yellow:hover:not(:disabled) { background: #b45309; }
+    .btn-ghost  { background: var(--white); color: var(--text2); border: 1px solid var(--border); }
+    .btn-ghost:hover:not(:disabled)  { border-color: var(--border2); color: var(--text); }
+    .btn-full { width: 100%; margin-top: 8px; padding: 12px; font-size: 14px; }
+
+    .msg-err { background: var(--red-l); border: 1px solid #fecaca; color: var(--red); border-radius: 6px; padding: 10px 13px; font-size: 13px; margin-bottom: 12px; display: none; }
+
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 64px;
+      padding: 0 24px;
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+    }
+    .navbar-brand {
+      text-decoration: none;
+      color: var(--text);
+      font-family: var(--serif);
+      font-size: 24px;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+    .navbar-menu {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+    }
+    .navbar a.navbar-link {
+      display: inline-flex;
+      align-items: center;
+      min-height: 36px;
+      padding: 0 14px;
+      border-radius: 999px;
+      text-decoration: none;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text2);
+      transition: all 0.15s;
+    }
+    .navbar a.navbar-link:hover {
+      background: var(--green-l);
+      color: var(--accent);
+    }
+    .navbar a.navbar-link.active {
+      background: #dcfce7;
+      color: var(--accent);
+    }
+    .navbar-user {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      margin-left: 8px;
+    }
+    .navbar-toggle {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--white);
+      color: var(--text);
+      font-size: 18px;
+      cursor: pointer;
+    }
+    .navbar-toggle:hover {
+      border-color: var(--border2);
+      background: var(--surf);
+    }
+
+    .section-header { display: flex; align-items: center; justify-content: space-between; padding: 0 24px; min-height: 72px; background: var(--white); border-bottom: 1px solid var(--border); }
+    .section-header-left { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+    .section-header-brand { font-family: var(--serif); font-size: 22px; font-weight: 500; color: var(--text); }
+    .section-header-tag { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; padding: 4px 10px; border-radius: 6px; }
+    .tag-backoffice { color: var(--accent); background: rgba(21,128,61,0.12); }
+    .section-header-right { display: flex; align-items: center; justify-content: flex-end; gap: 12px; min-width: 0; }
+    .section-header-user { font-size: 12px; font-family: var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px; }
+
+    .tbar { height: 3px; background: var(--border); }
+    .tbar-fill { height: 100%; transition: width 1s linear, background 0.5s; }
+
+    .stats-row { display: grid; grid-template-columns: repeat(6,1fr); gap: 12px; padding: 16px 24px; background: var(--white); border-bottom: 1px solid var(--border); }
+    .stat-card { background: var(--surf); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; }
+    .stat-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+    .stat-val { font-size: 30px; font-family: var(--serif); font-weight: 600; }
+
+    .tabs { display: flex; gap: 0; background: var(--white); border-bottom: 1px solid var(--border); padding: 0 24px; }
+    .tab { padding: 12px 20px; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; user-select: none; }
+    .tab:hover { color: var(--text2); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .subtabs { display:flex; gap:8px; padding:12px 24px 0; background:var(--white); border-bottom:1px solid var(--border); flex-wrap:wrap; }
+    .subtab { display:inline-flex; align-items:center; min-height:36px; padding:0 14px; border-radius:999px; border:1px solid var(--border); background:var(--surf); color:var(--text2); font-family:var(--mono); font-size:11px; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; transition:all .15s; }
+    .subtab:hover { border-color:var(--border2); color:var(--text); }
+    .subtab.active { background:#dcfce7; border-color:#bbf7d0; color:var(--accent); }
+    .upload-card { margin:0 24px 16px; border:1px solid var(--border); border-radius:16px; background:linear-gradient(180deg,#ffffff 0%,#f6fbf7 100%); padding:16px; display:grid; gap:12px; }
+    .upload-head { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; flex-wrap:wrap; }
+    .upload-title { font-size:16px; font-weight:700; color:#123524; }
+    .upload-copy { font-size:13px; color:#5e695f; max-width:720px; line-height:1.5; }
+    .upload-actions { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .upload-file-label { display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:12px; border:1px dashed #9cc2a7; background:#f0f9f1; color:#0f5132; cursor:pointer; font-weight:600; }
+    .upload-file-label input { display:none; }
+    .upload-inline { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; }
+    .upload-note { width:100%; border:1px solid var(--border); border-radius:12px; padding:11px 13px; min-height:48px; background:#fff; resize:vertical; font:inherit; color:var(--text); }
+    .upload-files-list { display:flex; flex-wrap:wrap; gap:8px; }
+    .upload-chip { padding:6px 10px; border-radius:999px; background:#eef2ef; border:1px solid #d7e2d9; font-size:12px; color:#445047; }
+    .filters { display: flex; gap: 10px; padding: 12px 24px; background: var(--white); border-bottom: 1px solid var(--border); flex-wrap: wrap; align-items: center; }
+    .filters input, .filters select { background: var(--surf); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; font-size: 13px; font-family: var(--sans); color: var(--text); outline: none; transition: border-color 0.15s; }
+    .filters input:focus, .filters select:focus { border-color: var(--accent); }
+    .filters input { min-width: 220px; }
+    .filters select { appearance: none; cursor: pointer; padding-right: 28px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a8a29e' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
+    .view-toggle { display: inline-flex; align-items: center; gap: 6px; }
+    .view-chip { background: var(--surf); border: 1px solid var(--border); border-radius: 999px; padding: 8px 14px; font-size: 12px; font-family: var(--mono); color: var(--text2); cursor: pointer; transition: all 0.15s; }
+    .view-chip:hover { border-color: var(--border2); color: var(--text); }
+    .view-chip.active { background: var(--accent-l); border-color: rgba(37,99,235,0.22); color: var(--accent); }
+    .body-wrap { display: flex; min-height: calc(100vh - 56px - 3px - 80px - 52px - 48px - 44px); overflow: hidden; align-items: stretch; }
+
+    .table-panel { flex: 1 1 auto; min-width: 0; overflow-y: auto; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th { text-align: left; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--surf); position: sticky; top: 0; z-index: 10; white-space: nowrap; }
+    tbody tr { border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; }
+    tbody tr:hover { background: var(--blue-l); }
+    tbody tr.selected { background: var(--accent-l); border-left: 3px solid var(--accent); }
+    tbody td { padding: 11px 16px; vertical-align: middle; }
+    .td-name { font-weight: 500; }
+    .td-apt  { font-size: 12px; color: var(--text2); }
+    .td-date { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+    .badge { display: inline-block; font-family: var(--mono); font-size: 10px; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 500; }
+    .b-check   { background: #f0f9ff; color: #0369a1; }
+    .b-daverif { background: var(--yellow-l); color: var(--yellow); }
+    .b-approv  { background: var(--green-l);  color: var(--green); }
+    .b-bozza   { background: var(--blue-l); color: var(--accent); }
+    .b-cred    { background: #ecfdf5; color: #059669; }
+    .b-scart   { background: var(--red-l);    color: var(--red); }
+    .b-segn    { background: var(--purple-l); color: var(--purple); }
+    .b-acc-da-approvare { background: var(--yellow-l); color: var(--yellow); }
+    .b-acc-da-correggere { background: var(--purple-l); color: var(--purple); }
+    .b-acc-approvato { background: var(--green-l); color: var(--green); }
+    .b-acc-scartato { background: var(--red-l); color: var(--red); }
+    .b-fisc-da-fatturare { background: #fff7ed; color: #c2410c; }
+    .b-fisc-fatturato { background: #ecfdf3; color: #15803d; }
+    .b-fisc-non-soggetto { background: #eff6ff; color: #1d4ed8; }
+    .b-fisc-annullato { background: #fef2f2; color: #b91c1c; }
+    .cash-badge { display:inline-flex; align-items:center; padding:3px 8px; border-radius:999px; font-size:11px; font-family:var(--mono); }
+    .cash-badge.green { background:#dcfce7; color:#15803d; }
+    .cash-badge.amber { background:#ffedd5; color:#c2410c; }
+    .bill-meta { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+    .bill-summary { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-bottom:14px; }
+    .bill-summary-card { border:1px solid var(--border); border-radius:8px; background:var(--surf); padding:10px 12px; }
+    .bill-summary-label { font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
+    .bill-summary-value { font-size:13px; color:var(--text); line-height:1.45; }
+    .bill-note-box { border:1px solid rgba(21,128,61,0.14); background:#f6fbf7; border-radius:8px; padding:12px 14px; line-height:1.55; }
+    .bill-tag-direct { background:#eef2ff; color:#4338ca; }
+    .bill-tag-general { background:#fff7ed; color:#c2410c; }
+    .bill-tag-in { background:#dcfce7; color:#166534; }
+    .bill-tag-out { background:#fef3c7; color:#92400e; }
+
+    .flag-segn { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: var(--purple-l); font-size: 12px; }
+
+    .drawer { width: 0; min-width: 0; max-width: 0; flex: 0 0 auto; height: 100%; overflow: hidden; background: var(--white); border-left: 1px solid var(--border); display: flex; flex-direction: column; transition: width 0.25s ease, min-width 0.25s ease, max-width 0.25s ease; }
+    .drawer.open { width: 460px; min-width: 460px; max-width: 460px; overflow: hidden; }
+    .drawer-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 20px 24px 16px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--white); z-index: 10; }
+    .drawer-title { font-family: var(--serif); font-size: 22px; font-weight: 500; }
+    .drawer-sub { font-size: 11px; font-family: var(--mono); color: var(--muted); margin-top: 2px; }
+    .drawer-close { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 18px; padding: 3px 7px; border-radius: 4px; transition: background 0.15s; }
+    .drawer-close:hover { background: var(--border); color: var(--text); }
+    .drawer-body { padding: 20px 24px; flex: 1; min-height: 0; overflow-y: auto; }
+    .drawer-footer { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-wrap: wrap; position: sticky; bottom: 0; background: var(--white); z-index: 11; flex-shrink: 0; box-shadow: 0 -8px 18px rgba(15, 23, 42, 0.06); pointer-events: auto; }
+    .drawer-sec { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin: 18px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .drawer-sec:first-child { margin-top: 0; }
+    .group-summary { padding: 10px 14px; background: var(--surf); border-radius: 6px; font-size: 13px; margin-bottom: 14px; }
+    .group-meta { margin-top: 6px; font-size: 11px; color: var(--muted); font-family: var(--mono); }
+    .group-link-list { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+    .group-link { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; color: var(--text); cursor: pointer; text-align: left; font-size: 12px; }
+    .group-link:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-l); }
+    .group-link.active { border-color: var(--accent); color: var(--accent); background: var(--accent-l); }
+
+    .chk-row { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
+    .chk-row input[type=checkbox] { width: 15px; height: 15px; cursor: pointer; accent-color: var(--accent); }
+    .chk-row label { font-size: 13px; color: var(--text2); cursor: pointer; user-select: none; }
+
+    .empty { text-align: center; padding: 80px 0; color: var(--muted); }
+    .empty-ico { font-size: 36px; margin-bottom: 12px; }
+    .loading { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; padding: 48px 24px; }
+    .spin { display: inline-block; width: 15px; height: 15px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: rot 0.7s linear infinite; flex-shrink: 0; }
+    @keyframes rot { to { transform: rotate(360deg); } }
+
+    .toast { position: fixed; bottom: 20px; right: 20px; background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 12px 18px; font-size: 13px; z-index: 9999; box-shadow: 0 8px 24px rgba(0,0,0,0.1); animation: tup 0.2s ease; max-width: 300px; }
+    .toast-ok   { border-left: 3px solid var(--green);  color: var(--green); }
+    .toast-err  { border-left: 3px solid var(--red);    color: var(--red); }
+    .toast-info { border-left: 3px solid var(--purple); color: var(--purple); }
+    @keyframes tup { from { transform: translateY(8px); opacity: 0; } }
+    .mono-sm { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+    .doc-chip { display:inline-flex; align-items:center; padding:3px 8px; border-radius:999px; background:var(--surf); border:1px solid var(--border); font-size:11px; font-family:var(--mono); color:var(--text2); }
+    .doc-list { display:flex; flex-direction:column; gap:8px; }
+    .doc-item { padding:10px 12px; border:1px solid var(--border); border-radius:8px; background:var(--surf); }
+    .doc-item a { color:var(--accent); text-decoration:none; }
+    .doc-item a:hover { text-decoration:underline; }
+    .text-preview { white-space:pre-wrap; font-size:12px; line-height:1.55; color:var(--text2); background:var(--surf); border:1px solid var(--border); border-radius:8px; padding:12px 14px; max-height:220px; overflow:auto; }
+
+    @media (max-width: 768px) {
+      .navbar {
+        padding: 0 16px;
+        min-height: 60px;
+      }
+      .navbar-toggle {
+        display: inline-flex;
+      }
+      .navbar-menu {
+        position: absolute;
+        top: 64px;
+        right: 16px;
+        left: 16px;
+        z-index: 30;
+        display: none;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--white);
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+      }
+      .navbar-menu.open {
+        display: flex;
+      }
+      .navbar-menu .navbar-link,
+      .navbar-user {
+        width: 100%;
+      }
+      .navbar-user {
+        margin-left: 0;
+        padding: 6px 4px 0;
+      }
+      .body-wrap {
+        display: block;
+        min-height: auto;
+        overflow: visible;
+      }
+      .table-panel {
+        overflow: visible;
+      }
+      thead th {
+        position: static;
+      }
+      .section-header {
+        padding: 10px 16px;
+        min-height: auto;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+      }
+      .section-header-left,
+      .section-header-right {
+        width: 100%;
+        justify-content: space-between;
+        display: flex;
+        align-items: center;
+      }
+      .section-header-brand { font-size: 18px; }
+      .section-header-user {
+        max-width: 60vw;
+        font-size: 11px;
+      }
+
+      .tabs,
+      .subtabs,
+      .stats-row,
+      .filters {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+      .upload-card { margin-left:16px; margin-right:16px; }
+      .upload-inline { grid-template-columns:1fr; }
+      .stats-row,
+      .field-2,
+      .field-3 {
+        grid-template-columns: 1fr;
+      }
+      .filters {
+        gap: 8px;
+      }
+      .filters input,
+      .filters select,
+      .view-toggle,
+      .view-chip,
+      .filters .btn {
+        width: 100%;
+      }
+      .view-toggle {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+      .drawer.open {
+        width: 100%;
+        min-width: 100%;
+        max-width: 100%;
+      }
+
+      .drawer-body,
+      .drawer-footer {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+      .table-panel {
+        min-width: 0;
+      }
+      .drawer-header,
+      .drawer-footer {
+        position: static;
+      }
+      .drawer-footer .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+<nav class="navbar" id="mainNavbar">
+  <a href="/backoffice.html" class="navbar-brand">Impatto</a>
+  <button class="navbar-toggle" id="navbarToggle" aria-label="Apri menu" aria-expanded="false" aria-controls="navbarMenu">☰</button>
+  <div class="navbar-menu" id="navbarMenu">
+    <a href="/backoffice.html" class="navbar-link">Fatturazione</a>
+    <a href="/backoffice-documenti.html" class="navbar-link">Documenti</a>
+    <a href="/backoffice-portale.html" class="navbar-link">Portale Admin</a>
+    <a href="/backoffice-contabilita.html" class="navbar-link active">Contabilita</a>
+  </div>
+</nav>
+<div id="app"></div>
+
+<script>
+const sb = window.sb;
+
+// ⚠️ Sostituisci con la tua SUPABASE_SERVICE_ROLE_KEY reale
+
+const TIMEOUT_MS = 30 * 60 * 1000;
+const PAESI = ['Italia','Germania','Francia','Spagna','Regno Unito','Russia','Polonia',
+  'Ucraina','Romania','Paesi Bassi','Belgio','Svizzera','Austria','Repubblica Ceca',
+  'Ungheria','Portogallo','Svezia','Norvegia','Danimarca','Finlandia',
+  'Stati Uniti','Canada','Australia','Giappone','Cina','Brasile','Argentina','Altro'];
+const IVA_OPT  = [0,4,5,10,22];
+const TIPO_OPT = ['privato','azienda','professionista'];
+const STATI    = ['CHECK_IN_COMPLETATO','DA_VERIFICARE','APPROVATA','BOZZA_CREATA','CREDENZIALI_INVIATE','SCARTATA'];
+const ACTIVE_STATI = ['CHECK_IN_COMPLETATO','DA_VERIFICARE','APPROVATA'];
+const ARCHIVE_STATI = ['SCARTATA','BOZZA_CREATA','CREDENZIALI_INVIATE'];
+const CONTABILITA_STATI = ['DA_APPROVARE', 'DA_CORREGGERE', 'APPROVATO', 'SCARTATO'];
+const CONTABILITA_DOC_TYPES = ['bolletta', 'fattura_fornitore', 'ricevuta', 'contratto', 'altro'];
+const ACCOUNTING_ALLOWED_EMAILS = ['contabilita@illupoaffitta.com'];
+const ACCOUNTING_APPROVAL_STATI = ['da_revisionare', 'approvato', 'corretto', 'scartato'];
+const ACCOUNTING_PAYMENT_METHODS = ['contanti', 'bonifico', 'carta', 'pos', 'addebito', 'altro'];
+const ACCOUNTING_FISCAL_STATI = ['da_fatturare', 'fatturato', 'non_soggetto', 'annullato'];
+const BILL_UTILITY_TYPES = ['luce', 'acqua', 'gas', 'tari', 'internet', 'altro'];
+const BILL_PAYMENT_STATUSES = ['non_pagata', 'pagata'];
+const BILL_ACCOUNTING_STATUSES = ['da_registrare', 'registrata'];
+const BILL_REVIEW_OPTIONS = ['da_revisionare', 'approvato', 'scartato'];
+
+const S = {
+  session: null, rows: [], apartments: [],
+  selected: null, form: {},
+  loading: true, saving: false,
+  fSearch: '', fStato: '', fApt: '', fGroupRole: '', viewMode: 'active',
+  panelMode: 'contabilita',
+  accountingRows: [],
+  accountingSelected: null,
+  accountingForm: {},
+  accountingView: 'documenti',
+  accountingEnabled: true,
+  accountingLoading: true,
+  accountingSaving: false,
+  billsEnabled: true,
+  billRows: [],
+  billSelected: null,
+  billForm: {},
+  billLoading: true,
+  billSaving: false,
+  billUploadFiles: [],
+  billUploadNote: '',
+  billUploading: false,
+  billViewMode: 'inbox',
+  billSelection: {},
+  fAccSearch: '',
+  fAccStato: '',
+  fAccApt: '',
+  fAccFiscal: '',
+  fAccPayment: '',
+  fAccCategory: '',
+  fBillApt: '',
+  fBillStato: '',
+  fBillPayment: '',
+  fBillUtility: '',
+  fBillGeneral: '',
+  columnSupport: { ragione_sociale: true, indirizzo_fatturazione: true },
+  timeLeft: TIMEOUT_MS,
+  inTimer: null, cdTimer: null, toastTimer: null,
+};
+
+function fmt(d) { if(!d)return'—'; return new Date(d).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+function fmtTs(d) { if(!d)return'—'; return new Date(d).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+function esc(s) { if(s==null)return''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function badgeCls(s){ return{CHECK_IN_COMPLETATO:'b-check',DA_VERIFICARE:'b-daverif',APPROVATA:'b-approv',BOZZA_CREATA:'b-bozza',CREDENZIALI_INVIATE:'b-cred',SCARTATA:'b-scart'}[s]||'b-daverif'; }
+function badgeLbl(s){ return{CHECK_IN_COMPLETATO:'Check-in',DA_VERIFICARE:'Da verificare',APPROVATA:'Approvata',BOZZA_CREATA:'Bozza creata',CREDENZIALI_INVIATE:'Cred. inviate',SCARTATA:'Scartata'}[s]||s; }
+function accountingBadgeCls(s){ return{DA_APPROVARE:'b-acc-da-approvare',DA_CORREGGERE:'b-acc-da-correggere',APPROVATO:'b-acc-approvato',SCARTATO:'b-acc-scartato'}[s]||'b-acc-da-approvare'; }
+function accountingBadgeLbl(s){ return{DA_APPROVARE:'Da approvare',DA_CORREGGERE:'Da correggere',APPROVATO:'Approvato',SCARTATO:'Scartato'}[s]||s; }
+function accountingDocTypeLbl(v){ return{bolletta:'Bolletta',fattura_fornitore:'Fattura fornitore',ricevuta:'Ricevuta',contratto:'Contratto',altro:'Altro'}[v]||v||'—'; }
+function approvalBadgeCls(v){ return { da_revisionare:'b-acc-da-approvare', corretto:'b-acc-da-correggere', approvato:'b-acc-approvato', scartato:'b-acc-scartato' }[v] || 'b-acc-da-approvare'; }
+function approvalBadgeLbl(v){ return { da_revisionare:'Da revisionare', corretto:'Corretto', approvato:'Approvato', scartato:'Scartato' }[v] || '—'; }
+function fiscalBadgeCls(v){ return { da_fatturare:'b-fisc-da-fatturare', fatturato:'b-fisc-fatturato', non_soggetto:'b-fisc-non-soggetto', annullato:'b-fisc-annullato' }[v] || 'b-bozza'; }
+function fiscalBadgeLbl(v){ return { da_fatturare:'Da fatturare', fatturato:'Fatturato', non_soggetto:'Non soggetto', annullato:'Annullato' }[v] || '—'; }
+function paymentMethodLbl(v){ return { contanti:'Contanti', bonifico:'Bonifico', carta:'Carta', pos:'POS', addebito:'Addebito', altro:'Altro' }[v] || '—'; }
+function accountingCashBadge(row){
+  if (row.payment_method !== 'contanti') return '';
+  if (row.fiscal_status === 'fatturato') return '<span class="cash-badge green">Cash fatturato</span>';
+  if (row.fiscal_status === 'da_fatturare') return '<span class="cash-badge amber">Cash da fatturare</span>';
+  return '';
+}
+function utilityTypeLbl(v){ return { luce:'Luce', acqua:'Acqua', gas:'Gas', tari:'TARI', internet:'Internet', altro:'Altro' }[v] || '—'; }
+function billPaymentStatusLbl(v){ return { non_pagata:'Non pagata', pagata:'Pagata' }[v] || '—'; }
+function billPaymentBadgeCls(v){ return { non_pagata:'b-bozza', pagata:'b-acc-approvato' }[v] || 'b-bozza'; }
+function billAccountingStatusLbl(v){ return { da_registrare:'Da registrare', registrata:'Registrata' }[v] || '—'; }
+function billReviewLbl(v){ return { da_revisionare:'Da verificare', approvato:'Approvata', scartato:'Scartata' }[v] || '—'; }
+function sourceChannelLbl(v){ return { email:'Email', telegram:'Telegram', portal:'Portale' }[v] || (v || '—'); }
+function normalizeBillPaymentUi(v){
+  if (['pagata', 'pagata_proprietario', 'rimborsata', 'pagata_direttamente', 'bonifico_effettuato'].includes(v)) return 'pagata';
+  return 'non_pagata';
+}
+function extractionStatusLbl(v){ return { pending:'In attesa', partial:'Parziale', extracted:'Estratta', failed:'Da rivedere' }[v] || 'In attesa'; }
+function extractionStatusCls(v){ return { pending:'b-bozza', partial:'b-fisc-da-fatturare', extracted:'b-acc-approvato', failed:'b-acc-scartato' }[v] || 'b-bozza'; }
+function duplicateStatusLbl(v){ return { normal:'Normale', duplicate_exact:'Doppione tecnico', possible_duplicate:'Possibile doppione' }[v] || 'Normale'; }
+function duplicateStatusCls(v){ return { normal:'b-bozza', duplicate_exact:'b-acc-scartato', possible_duplicate:'b-fisc-da-fatturare' }[v] || 'b-bozza'; }
+function numberVal(v){ const n = Number(String(v ?? '').replace(',', '.')); return Number.isFinite(n) ? n : null; }
+function getChildRows(parentId){ return S.rows.filter(r=>String(r.capogruppo_id||'')===String(parentId||'')); }
+function getParentRow(row){ return row?.capogruppo_id ? (S.rows.find(r=>String(r.id)===String(row.capogruppo_id))||null) : null; }
+function getStoredAdditionalGuests(row){
+  return Array.isArray(row?.additional_guests) ? row.additional_guests.filter(Boolean) : [];
+}
+function getSnapshotChildren(row){
+  const root = getParentRow(row) || row;
+  if (!root || root.capogruppo_id || getChildRows(root.id).length) return [];
+  return getStoredAdditionalGuests(root).map((guest, index) => ({
+    id: `snapshot-${root.id}-${index}`,
+    nome: guest?.nome || '',
+    cognome: guest?.cognome || '',
+    tipo_alloggiato: guest?.tipo_alloggiato || (Number(root.tipo_alloggiato || 18) === 17 ? 19 : 20),
+    capogruppo_id: root.id,
+    _snapshot: true,
+  }));
+}
+function getEffectiveGroupChildren(row){
+  const root = getParentRow(row) || row;
+  if (!root) return [];
+  const liveChildren = getChildRows(root.id);
+  return liveChildren.length ? liveChildren : getSnapshotChildren(root);
+}
+function isLeaderRow(row){ return !!row && !row.capogruppo_id && getEffectiveGroupChildren(row).length>0; }
+function isMemberRow(row){ return !!row?.capogruppo_id; }
+function isPrimaryPracticeRow(row){ return !!row && !row.capogruppo_id; }
+function getVisibleBillingRows(){ return S.rows.filter(isPrimaryPracticeRow); }
+function getPrimaryRoleLabel(row){
+  const tipo = Number(row?.tipo_alloggiato || 16);
+  if (tipo === 17) return 'Capofamiglia';
+  if (tipo === 18) return 'Capogruppo';
+  return 'Singolo';
+}
+function getMemberRoleLabel(row){
+  const root = getParentRow(row);
+  if (Number(root?.tipo_alloggiato || 0) === 17) return 'Familiare';
+  return 'Membro gruppo';
+}
+function getBillingClientKind(row){
+  const kind = String(row?.tipo_cliente || '').toLowerCase();
+  if (kind === 'azienda') return 'azienda';
+  if (kind === 'professionista') return 'professionista';
+  return 'privato';
+}
+function getBillingHeaderName(row, form){
+  const source = form || row || {};
+  const fullName = [source.nome, source.cognome].filter(Boolean).join(' ');
+  const kind = getBillingClientKind(source);
+  if (kind === 'azienda') return source.ragione_sociale || fullName || source.piva_cliente || 'Intestazione fattura';
+  if (kind === 'professionista') return fullName || source.ragione_sociale || 'Professionista';
+  return fullName || 'Ospite';
+}
+function getBillingHeaderMeta(row, form){
+  const source = form || row || {};
+  const kind = getBillingClientKind(source);
+  if (kind === 'azienda') {
+    return [
+      source.piva_cliente ? `P.IVA ${source.piva_cliente}` : '',
+      source.indirizzo_fatturazione || source.indirizzo_residenza || '',
+      source.email || ''
+    ].filter(Boolean).join(' · ');
+  }
+  if (kind === 'professionista') {
+    const fullName = [source.nome, source.cognome].filter(Boolean).join(' ');
+    return [
+      source.piva_cliente ? `P.IVA ${source.piva_cliente}` : '',
+      source.ragione_sociale && source.ragione_sociale !== fullName ? source.ragione_sociale : '',
+      source.email || ''
+    ].filter(Boolean).join(' · ');
+  }
+  return source.email || '';
+}
+function getBillingSearchText(row){
+  return [
+    getBillingHeaderName(row),
+    getBillingHeaderMeta(row),
+    row?.nome || '',
+    row?.cognome || '',
+    row?.email || '',
+    row?.ragione_sociale || '',
+    row?.piva_cliente || ''
+  ].filter(Boolean).join(' ').toLowerCase();
+}
+async function detectBillingOptionalColumns() {
+  const [ragione_sociale, indirizzo_fatturazione] = await Promise.all([
+    hasBillingColumn('ragione_sociale'),
+    hasBillingColumn('indirizzo_fatturazione')
+  ]);
+  S.columnSupport = { ragione_sociale, indirizzo_fatturazione };
+}
+async function hasBillingColumn(column) {
+  const { error } = await sb.from('ospiti_check_in').select(column).limit(1);
+  return !error;
+}
+function getPersistableBillingForm(form) {
+  const payload = { ...form };
+  if (!S.columnSupport.ragione_sociale) delete payload.ragione_sociale;
+  if (!S.columnSupport.indirizzo_fatturazione) delete payload.indirizzo_fatturazione;
+  return payload;
+}
+function groupRoleBadge(row){
+  if (isLeaderRow(row)) return `<span class="badge" style="background:var(--blue-l);color:var(--accent)">${getPrimaryRoleLabel(row)} · ${1+getEffectiveGroupChildren(row).length}</span>`;
+  if (isMemberRow(row)) return `<span class="badge" style="background:var(--yellow-l);color:var(--yellow)">${getMemberRoleLabel(row)}</span>`;
+  return `<span class="badge b-bozza">Singolo</span>`;
+}
+
+function groupMetaLine(row){
+  if (isLeaderRow(row)) return getChildRows(row.id).length ? `Gruppo #${esc(String(row.id).slice(0,8))}` : `Gruppo storico #${esc(String(row.id).slice(0,8))}`;
+  if (isMemberRow(row)) return `Collegato a #${esc(String(row.capogruppo_id).slice(0,8))}`;
+  return 'Record singolo';
+}
+
+function selectRow(row){
+  if (!row) return;
+  S.selected = row;
+  S.form = {
+    nome:row.nome||'', cognome:row.cognome||'', email:row.email||'', telefono:row.telefono||'',
+    paese_residenza:row.paese_residenza||'Italia', indirizzo_residenza:row.indirizzo_residenza||'',
+    codice_fiscale:row.codice_fiscale||'', codice_fiscale_verificato:row.codice_fiscale_verificato||false,
+    iva_percentuale:row.iva_percentuale??10, tipo_cliente:row.tipo_cliente||'privato',
+    ragione_sociale:row.ragione_sociale||'', piva_cliente:row.piva_cliente||'', indirizzo_fatturazione:row.indirizzo_fatturazione||'', importo_lordo:row.importo_lordo||'',
+    data_checkin:row.data_checkin||'', data_checkout:row.data_checkout||'',
+    segnalazione_jessica:row.segnalazione_jessica||'',
+    payment_status: row.payment_status || 'paid',
+    payment_account_type: 'bonifico',
+    sezionale: 'D'
+  };
+}
+
+function selectAccountingRow(row) {
+  if (!row) return;
+  const normalized = normalizeAccountingRow(row);
+  S.accountingSelected = normalized;
+  S.accountingForm = {
+    counterparty: normalized.counterparty || '',
+    source: normalized.source || 'email',
+    source_ref: normalized.source_ref || '',
+    source_email: normalized.source_email || '',
+    source_subject: normalized.source_subject || '',
+    file_name: normalized.file_name || '',
+    file_url: normalized.file_url || '',
+    mime_type: normalized.mime_type || '',
+    document_kind: normalized.document_kind || 'bolletta',
+    approval_status: normalized.approval_status || 'da_revisionare',
+    fiscal_status: normalized.fiscal_status || '',
+    payment_method: normalized.payment_method || '',
+    apartment_id: normalized.apartment_id || '',
+    property_id: normalized.property_id || '',
+    residence_id: normalized.residence_id || '',
+    total_amount: normalized.total_amount ?? '',
+    currency: normalized.currency || 'EUR',
+    document_date: normalized.document_date || '',
+    due_date: normalized.due_date || '',
+    competence_date: normalized.competence_date || '',
+    category: normalized.category || '',
+    subcategory: normalized.subcategory || '',
+    description: normalized.description || '',
+    notes: normalized.notes || '',
+    discarded_reason: normalized.discarded_reason || '',
+  };
+}
+
+function normalizeAccountingRow(row) {
+  return {
+    ...row,
+    counterparty: row.counterparty || row.supplier_name || '',
+    source: row.source || row.source_channel || 'email',
+    source_ref: row.source_ref || row.source_message_id || '',
+    file_name: row.file_name || '',
+    file_url: row.file_url || '',
+    mime_type: row.mime_type || '',
+    document_kind: row.document_kind || row.document_type || 'bolletta',
+    approval_status: row.approval_status || 'da_revisionare',
+    fiscal_status: row.fiscal_status || '',
+    payment_method: row.payment_method || '',
+    total_amount: row.total_amount ?? row.amount_total ?? null,
+    document_date: row.document_date || row.issue_date || '',
+    competence_date: row.competence_date || row.competence_month || '',
+    category: row.category || '',
+    subcategory: row.subcategory || '',
+    notes: row.notes || row.approval_notes || '',
+    description: row.description || row.source_subject || '',
+    original_source_message_id: row.original_source_message_id || row.extracted_json?.source_message_id_original || '',
+    attachment_hash: row.attachment_hash || '',
+    duplicate_status: row.duplicate_status || 'normal',
+    duplicate_of_document_id: row.duplicate_of_document_id || null,
+    duplicate_reason: row.duplicate_reason || '',
+    processed_at: row.processed_at || row.updated_at || row.created_at || '',
+    extracted_json: row.extracted_json && typeof row.extracted_json === 'object' ? row.extracted_json : {},
+    reviewed_json: row.reviewed_json && typeof row.reviewed_json === 'object' ? row.reviewed_json : {},
+    contabilita_bolletta: row.contabilita_bollette || null,
+  };
+}
+
+function normalizeBillRow(row) {
+  const doc = normalizeAccountingRow(row.contabilita_documenti || {});
+  const apartmentId = row.apartment_id || doc.apartment_id || '';
+  const allocations = Array.isArray(row.contabilita_bollette_allocazioni) ? row.contabilita_bollette_allocazioni : [];
+  const allocationApartmentIds = allocations.map(item => String(item.apartment_id || '')).filter(Boolean);
+  const allocationApartmentNames = allocations.map(item => item.apartments?.nome_appartamento || '').filter(Boolean);
+  return {
+    ...row,
+    contabilita_documento_id: row.contabilita_documento_id,
+    apartment_id: apartmentId,
+    is_general: !!row.is_general,
+    utility_type: row.utility_type || doc.extracted_json?.utility_type || '',
+    supply_address: row.supply_address || doc.extracted_json?.extraction?.supply_address || '',
+    account_holder: row.account_holder || doc.extracted_json?.extraction?.account_holder || '',
+    bill_number: row.bill_number || doc.extracted_json?.bill_number || '',
+    issue_date: row.issue_date || doc.document_date || '',
+    due_date: row.due_date || doc.due_date || '',
+    period_start: row.period_start || '',
+    period_end: row.period_end || '',
+    amount_total: row.amount_total ?? doc.total_amount ?? null,
+    payment_status: normalizeBillPaymentUi(row.payment_status || 'non_pagata'),
+    accounting_status: row.accounting_status || 'da_registrare',
+    extraction_status: row.extraction_status || 'pending',
+    reimbursement_method: row.reimbursement_method || '',
+    reimbursed_at: row.reimbursed_at || '',
+    linked_movement_id: row.linked_movement_id || null,
+    notes: row.notes || doc.notes || '',
+    nome_appartamento: row.apartments?.nome_appartamento || doc.nome_appartamento || '',
+    struttura_nome: row.apartments?.struttura_nome || doc.struttura_nome || '',
+    allocation_apartment_ids: allocationApartmentIds,
+    allocation_apartment_names: allocationApartmentNames,
+    allocation_count: allocationApartmentIds.length,
+    duplicate_status: doc.duplicate_status || 'normal',
+    duplicate_of_document_id: doc.duplicate_of_document_id || null,
+    duplicate_reason: doc.duplicate_reason || '',
+    doc,
+  };
+}
+
+function selectBillRow(row) {
+  if (!row) return;
+  const normalized = normalizeBillRow(row);
+  S.billSelected = normalized;
+  S.billForm = {
+    is_general: normalized.is_general || false,
+    utility_type: normalized.utility_type || '',
+    supply_address: normalized.supply_address || '',
+    account_holder: normalized.account_holder || '',
+    bill_number: normalized.bill_number || '',
+    issue_date: normalized.issue_date || '',
+    due_date: normalized.due_date || '',
+    period_start: normalized.period_start || '',
+    period_end: normalized.period_end || '',
+    amount_total: normalized.amount_total ?? '',
+    apartment_id: normalized.apartment_id || '',
+    allocation_apartment_ids: normalized.allocation_apartment_ids || [],
+    notes: normalized.notes || '',
+    payment_status: normalized.payment_status || 'non_pagata',
+    accounting_status: normalized.accounting_status || 'da_registrare',
+    extraction_status: normalized.extraction_status || 'pending',
+    approval_status: normalized.doc.approval_status || 'da_revisionare',
+    counterparty: normalized.doc.counterparty || '',
+    description: normalized.doc.description || '',
+    document_date: normalized.doc.document_date || normalized.issue_date || '',
+    due_date_doc: normalized.doc.due_date || normalized.due_date || '',
+    source: normalized.doc.source || normalized.doc.source_channel || '',
+    duplicate_status: normalized.doc.duplicate_status || 'normal',
+    duplicate_of_document_id: normalized.doc.duplicate_of_document_id || '',
+    duplicate_reason: normalized.doc.duplicate_reason || '',
+  };
+}
+
+function getPaymentStatusLabel(value){
+  return value === 'not_paid' ? 'Da pagare' : 'Gia pagata';
+}
+
+function getSezionaleLabel(value){
+  if (value === 'R') return 'R · Residence';
+  if (value === 'P') return 'P · Portali';
+  return 'D · Diretti';
+}
+
+function isBillArchived(row) {
+  return row?.doc?.approval_status === 'scartato';
+}
+
+function getBillApartmentScope(row) {
+  const ids = new Set((row.allocation_apartment_ids || []).map(String).filter(Boolean));
+  if (row.apartment_id) ids.add(String(row.apartment_id));
+  return [...ids];
+}
+
+function isBillAccountingActive(row) {
+  if (!row) return false;
+  if (row.doc.approval_status !== 'approvato') return false;
+  if (row.payment_status !== 'pagata') return false;
+  if (row.is_general && row.allocation_count > 1) return false;
+  return true;
+}
+
+function billTypeLabel(row) {
+  if (row.is_general) return row.allocation_count ? 'Generale allocata' : 'Generale';
+  return 'Diretta';
+}
+
+function computeBillExtractionStatus(form) {
+  const required = [
+    form.utility_type,
+    form.supply_address,
+    form.account_holder,
+    numberVal(form.amount_total),
+    form.period_start,
+    form.period_end,
+  ].filter((value) => value !== null && value !== '');
+  if (required.length >= 5) return 'extracted';
+  if (required.length >= 2 || form.bill_number || form.document_date || form.due_date) return 'partial';
+  return 'failed';
+}
+
+function formatCurrency(value){
+  const num = Number(value || 0);
+  if (!Number.isFinite(num)) return '€ 0,00';
+  return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(num);
+}
+
+function formatAccountingCurrency(value, currency = 'EUR') {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return '—';
+  return new Intl.NumberFormat('it-IT', { style: 'currency', currency: currency || 'EUR' }).format(num);
+}
+
+function isAllowedAccountingEmail(email) {
+  return ACCOUNTING_ALLOWED_EMAILS.includes(String(email || '').trim().toLowerCase());
+}
+
+function getInvoicePreview(form){
+  const gross = Number(form.importo_lordo || 0);
+  const iva = Number(form.iva_percentuale || 0);
+  if (!Number.isFinite(gross) || gross <= 0) {
+    return { imponibile: 0, bollo: 0, totale: 0, bolloApplicato: false };
+  }
+  const imponibile = Number((gross / (1 + iva / 100)).toFixed(2));
+  const bolloApplicato = iva === 0 && gross > 77.47;
+  const bollo = bolloApplicato ? 2 : 0;
+  const totale = Number((gross + bollo).toFixed(2));
+  return { imponibile, bollo, totale, bolloApplicato };
+}
+
+async function audit(action, table, id) {
+  await sb.from('audit_log').insert({ user_email: S.session?.user?.email||'', action, table_name: table, record_id: String(id), timestamp: new Date().toISOString() });
+}
+
+function toast(msg, type='ok') {
+  clearTimeout(S.toastTimer);
+  let el = document.getElementById('_toast');
+  if (!el) { el = document.createElement('div'); el.id='_toast'; document.body.appendChild(el); }
+  el.innerHTML = `<div class="toast toast-${type}">${esc(msg)}</div>`;
+  S.toastTimer = setTimeout(()=>{ el.innerHTML=''; }, 3500);
+}
+
+function getViewStates(mode = S.viewMode) {
+  return mode === 'archive' ? ARCHIVE_STATI : ACTIVE_STATI;
+}
+
+function countByView(mode) {
+  const states = getViewStates(mode);
+  return getVisibleBillingRows().filter(r => states.includes(r.stato)).length;
+}
+
+function filtered() {
+  if (S.panelMode === 'contabilita') return filteredAccounting();
+  const allowedStates = getViewStates();
+  return getVisibleBillingRows().filter(r=>{
+    if (!allowedStates.includes(r.stato)) return false;
+    if (S.fStato && r.stato !== S.fStato) return false;
+    if (S.fApt   && String(r.apartment_id) !== S.fApt) return false;
+    if (S.fGroupRole === 'leaders' && !isLeaderRow(r)) return false;
+    if (S.fGroupRole === 'members') return false;
+    if (S.fGroupRole === 'singles' && (isLeaderRow(r) || isMemberRow(r))) return false;
+    if (S.fSearch) {
+      const q = S.fSearch.toLowerCase();
+      if (!getBillingSearchText(r).includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function filteredAccounting() {
+  if (S.accountingView === 'bollette') return filteredBills();
+  return S.accountingRows.filter((row) => {
+    if (row.document_kind === 'bolletta') {
+      const bill = row.contabilita_bolletta;
+      if (!bill || !isBillAccountingActive(normalizeBillRow({ ...bill, contabilita_documenti: row }))) return false;
+    }
+    if (S.fAccStato && row.approval_status !== S.fAccStato) return false;
+    if (S.fAccApt && String(row.apartment_id || '') !== S.fAccApt) return false;
+    if (S.fAccFiscal && row.fiscal_status !== S.fAccFiscal) return false;
+    if (S.fAccPayment && row.payment_method !== S.fAccPayment) return false;
+    if (S.fAccCategory && row.category !== S.fAccCategory) return false;
+    if (S.fAccSearch) {
+      const q = S.fAccSearch.toLowerCase();
+      const haystack = [
+        row.counterparty,
+        row.source_email,
+        row.source_subject,
+        row.nome_appartamento,
+        row.document_kind,
+        row.description,
+        row.category,
+        row.subcategory,
+        row.extracted_text,
+      ].filter(Boolean).join(' ').toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function filteredBills() {
+  return S.billRows.filter((row) => {
+    if (S.billViewMode === 'inbox' && isBillArchived(row)) return false;
+    if (S.billViewMode === 'archive' && !isBillArchived(row)) return false;
+    if (S.billViewMode === 'apartment' && S.fBillApt) {
+      if (!getBillApartmentScope(row).includes(String(S.fBillApt))) return false;
+    } else if (S.fBillApt) {
+      if (!getBillApartmentScope(row).includes(String(S.fBillApt))) return false;
+    }
+    if (S.fBillStato && row.doc.approval_status !== S.fBillStato) return false;
+    if (S.fBillPayment && row.payment_status !== S.fBillPayment) return false;
+    if (S.fBillUtility && row.utility_type !== S.fBillUtility) return false;
+    if (S.fBillGeneral === 'generale' && !row.is_general) return false;
+    if (S.fBillGeneral === 'appartamento' && row.is_general) return false;
+    if (S.fAccSearch) {
+      const q = S.fAccSearch.toLowerCase();
+      const haystack = [
+        row.utility_type,
+        row.bill_number,
+        row.doc.counterparty,
+        row.doc.description,
+        row.nome_appartamento,
+        row.doc.file_name,
+        row.doc.source_subject,
+      ].filter(Boolean).join(' ').toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function stats() {
+  if (S.panelMode === 'contabilita') {
+    if (S.accountingView === 'bollette') {
+      return {
+        tot: S.billRows.filter(r => !isBillArchived(r)).length,
+        review: S.billRows.filter(r => r.doc.approval_status === 'da_revisionare').length,
+        approved: S.billRows.filter(r => r.doc.approval_status === 'approvato').length,
+        ownerPaid: S.billRows.filter(r => r.payment_status === 'pagata').length,
+        toRefund: S.billRows.filter(r => r.payment_status === 'non_pagata' && r.doc.approval_status === 'approvato').length,
+        reimbursed: S.billRows.filter(r => r.doc.approval_status === 'scartato').length,
+      };
+    }
+    return {
+      tot: S.accountingRows.length,
+      review: S.accountingRows.filter(r => r.approval_status === 'da_revisionare').length,
+      approved: S.accountingRows.filter(r => r.approval_status === 'approvato').length,
+      discarded: S.accountingRows.filter(r => r.approval_status === 'scartato').length,
+      cashDone: S.accountingRows.filter(r => r.payment_method === 'contanti' && r.fiscal_status === 'fatturato').length,
+      cashTodo: S.accountingRows.filter(r => r.payment_method === 'contanti' && r.fiscal_status === 'da_fatturare').length,
+    };
+  }
+  const today = new Date().toISOString().slice(0,10);
+  const rows = getVisibleBillingRows();
+  return {
+    tot:   rows.length,
+    segn:  rows.filter(r=>r.segnalazione_jessica).length,
+    oggi:  rows.filter(r=>r.stato==='APPROVATA'&&(r.updated_at||r.created_at||'').slice(0,10)===today).length,
+  };
+}
+
+async function restoreSelected() {
+  if (!S.selected) return;
+  const nextStato = {
+    SCARTATA: 'DA_VERIFICARE',
+    CREDENZIALI_INVIATE: 'APPROVATA',
+    BOZZA_CREATA: 'APPROVATA',
+  }[S.selected.stato];
+  if (!nextStato) return;
+  S.saving = true; updateFooter();
+  const { error } = await sb.from('ospiti_check_in').update({ stato: nextStato }).eq('id', S.selected.id);
+  S.saving = false;
+  if (error) { toast('Errore: ' + error.message, 'err'); updateFooter(); return; }
+  await audit('RIPRISTINA','ospiti_check_in', S.selected.id);
+  const i = S.rows.findIndex(r => String(r.id) === String(S.selected.id));
+  if (i >= 0) S.rows[i] = { ...S.rows[i], stato: nextStato };
+  toast('✓ Record ripristinato', 'ok');
+  if (S.viewMode === 'archive') { S.selected = null; S.form = {}; }
+  else if (i >= 0) { S.selected = S.rows[i]; }
+  partialTable(); partialStats(); partialDrawer();
+}
+
+async function deleteArchivedSelected() {
+  if (!S.selected) return false;
+  const root = S.selected?.capogruppo_id ? (getParentRow(S.selected) || S.selected) : S.selected;
+  const rowsToDelete = [root, ...getChildRows(root.id)].filter(Boolean);
+  const idsToDelete = [...new Set(rowsToDelete.map(row => row.id).filter(Boolean))];
+  const label = rowsToDelete.length > 1
+    ? `${root.nome || ''} ${root.cognome || ''}`.trim() || 'questo gruppo'
+    : `${S.selected.nome || ''} ${S.selected.cognome || ''}`.trim() || 'questo record';
+  const message = rowsToDelete.length > 1
+    ? `Confermi l'eliminazione definitiva di ${label} e di ${rowsToDelete.length - 1} record collegati?\n\nQuesta azione non è reversibile.`
+    : `Confermi l'eliminazione definitiva di ${label}?\n\nQuesta azione non è reversibile.`;
+  if (!confirm(message)) return false;
+
+  S.saving = true;
+  updateFooter();
+  const { error } = await sb.from('ospiti_check_in').delete().in('id', idsToDelete);
+  S.saving = false;
+  if (error) {
+    toast('Errore: ' + error.message, 'err');
+    updateFooter();
+    return false;
+  }
+
+  for (const id of idsToDelete) {
+    await audit('DELETE', 'ospiti_check_in', id);
+  }
+
+  S.rows = S.rows.filter(row => !idsToDelete.includes(row.id));
+  S.selected = null;
+  S.form = {};
+  toast(rowsToDelete.length > 1 ? '✓ Gruppo eliminato' : '✓ Record eliminato', 'ok');
+  partialTable();
+  partialStats();
+  partialDrawer();
+  return true;
+}
+
+async function loadData() {
+  if (S._loadingLock) return;
+  S._loadingLock = true;
+  S.accountingLoading = true;
+  S.billLoading = true;
+  partialTable();
+  try {
+    const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('Timeout')), 120000));
+    const query = Promise.all([
+      sb.from('apartments').select('id,nome_appartamento').order('nome_appartamento'),
+      sb.from('contabilita_documenti').select('*, apartments(nome_appartamento,struttura_nome), contabilita_bollette(*)').order('created_at',{ascending:false}),
+      sb.from('contabilita_bollette').select('*, contabilita_documenti(*), apartments(nome_appartamento,struttura_nome), contabilita_bollette_allocazioni(apartment_id, apartments(nome_appartamento,struttura_nome))').order('created_at',{ascending:false}),
+    ]);
+    const [a,c,b] = await Promise.race([query, timeout]);
+    S.apartments = a.data||[];
+    const apartmentNameById = new Map(S.apartments.map(item => [String(item.id), item.nome_appartamento || '']));
+    if (c?.error) {
+      if (/contabilita_documenti/i.test(String(c.error.message || ''))) {
+        S.accountingEnabled = false;
+        S.accountingRows = [];
+      } else {
+        throw c.error;
+      }
+    } else {
+      S.accountingEnabled = true;
+      S.accountingRows = (c?.data || []).map(row => normalizeAccountingRow({
+        ...row,
+        contabilita_bollette: Array.isArray(row.contabilita_bollette) ? row.contabilita_bollette[0] || null : row.contabilita_bollette || null,
+        nome_appartamento: row.apartments?.nome_appartamento || apartmentNameById.get(String(row.apartment_id)) || '',
+        struttura_nome: row.apartments?.struttura_nome || '',
+      }));
+    }
+    if (b?.error) {
+      if (/contabilita_bollette/i.test(String(b.error.message || ''))) {
+        S.billsEnabled = false;
+        S.billRows = [];
+      } else {
+        throw b.error;
+      }
+    } else {
+      S.billsEnabled = true;
+      S.billRows = (b?.data || []).map(row => normalizeBillRow({
+        ...row,
+        apartments: row.apartments,
+        contabilita_documenti: {
+          ...(row.contabilita_documenti || {}),
+          nome_appartamento: row.apartments?.nome_appartamento || apartmentNameById.get(String(row.apartment_id || row.contabilita_documenti?.apartment_id)) || '',
+          struttura_nome: row.apartments?.struttura_nome || '',
+        },
+      }));
+    }
+  } catch(e) {
+    console.error('loadData error:', e);
+    toast('Errore caricamento dati, riprova','err');
+  }
+  S.accountingLoading = false;
+  S.billLoading = false;
+  S._loadingLock = false;
+  partialTable(); partialStats();
+}
+
+async function saveForm() {
+  if (!S.selected) return;
+  S.saving = true; updateFooter();
+  const { payment_status, payment_account_type, sezionale, ...dbForm } = S.form;
+  const {error} = await sb.from('ospiti_check_in').update(getPersistableBillingForm(dbForm)).eq('id', S.selected.id);
+  S.saving = false;
+  if (error) { toast('Errore: '+error.message,'err'); updateFooter(); return; }
+  await audit('UPDATE','ospiti_check_in', S.selected.id);
+  const i = S.rows.findIndex(r=>String(r.id)===String(S.selected.id));
+  if (i>=0) S.rows[i]={...S.rows[i],...S.form};
+  S.selected = S.rows[i]||S.selected;
+  toast('✓ Salvato','ok'); updateFooter(); partialTable(); partialStats();
+}
+
+async function setStato(stato) {
+  if (!S.selected) return;
+  if (stato==='DA_VERIFICARE' && !S.form.segnalazione_jessica?.trim()) {
+    toast('Aggiungi una segnalazione prima di segnalare','err'); return;
+  }
+  S.saving = true; updateFooter();
+  const { payment_status, payment_account_type, sezionale, ...dbForm } = S.form;
+  const payload = {...getPersistableBillingForm(dbForm), stato};
+  const {error} = await sb.from('ospiti_check_in').update(payload).eq('id', S.selected.id);
+  S.saving = false;
+  if (error) { toast('Errore: '+error.message,'err'); updateFooter(); return; }
+  const act = stato==='APPROVATA'?'APPROVA':stato==='SCARTATA'?'SCARTA':'SEGNALA';
+  await audit(act,'ospiti_check_in', S.selected.id);
+  const lbl = {APPROVATA:'✓ Approvato',SCARTATA:'✗ Scartato',DA_VERIFICARE:'⚑ Segnalato'};
+  const typ = {APPROVATA:'ok',SCARTATA:'err',DA_VERIFICARE:'info'};
+  toast(lbl[stato]||stato, typ[stato]||'ok');
+  const i = S.rows.findIndex(r=>String(r.id)===String(S.selected.id));
+  if (i>=0) S.rows[i]={...S.rows[i],...payload};
+  if (stato !== 'DA_VERIFICARE') { S.selected=null; S.form={}; }
+  else { S.selected=S.rows[i]; }
+  partialTable(); partialStats(); partialDrawer();
+}
+
+async function saveAccountingForm() {
+  if (!S.accountingSelected) return;
+  S.accountingSaving = true;
+  updateFooter();
+  const reviewedJson = {
+    total_amount: numberVal(S.accountingForm.total_amount),
+    document_kind: S.accountingForm.document_kind || null,
+    document_date: S.accountingForm.document_date || null,
+    competence_date: S.accountingForm.competence_date || null,
+    counterparty: S.accountingForm.counterparty || null,
+    payment_method: S.accountingForm.payment_method || null,
+    fiscal_status: S.accountingForm.fiscal_status || null,
+    approval_status: S.accountingForm.approval_status || 'da_revisionare',
+    category: S.accountingForm.category || null,
+    subcategory: S.accountingForm.subcategory || null,
+    apartment_id: S.accountingForm.apartment_id || null,
+    notes: S.accountingForm.notes || null,
+  };
+  const payload = {
+    ...S.accountingForm,
+    apartment_id: S.accountingForm.apartment_id || null,
+    total_amount: numberVal(S.accountingForm.total_amount),
+    document_kind: S.accountingForm.document_kind || null,
+    document_date: S.accountingForm.document_date || null,
+    competence_date: S.accountingForm.competence_date || null,
+    counterparty: S.accountingForm.counterparty || null,
+    notes: S.accountingForm.notes || null,
+    reviewed_json: reviewedJson,
+    updated_at: new Date().toISOString(),
+  };
+  const { error } = await sb.from('contabilita_documenti').update(payload).eq('id', S.accountingSelected.id);
+  S.accountingSaving = false;
+  if (error) { toast('Errore: ' + error.message, 'err'); updateFooter(); return; }
+  await audit('UPDATE', 'contabilita_documenti', S.accountingSelected.id);
+  const i = S.accountingRows.findIndex(r => String(r.id) === String(S.accountingSelected.id));
+  if (i >= 0) S.accountingRows[i] = {
+    ...S.accountingRows[i],
+    ...payload,
+    nome_appartamento: S.apartments.find(a => String(a.id) === String(payload.apartment_id))?.nome_appartamento || '',
+  };
+  S.accountingSelected = S.accountingRows[i] || S.accountingSelected;
+  toast('✓ Documento contabile salvato', 'ok');
+  partialTable(); partialStats(); partialDrawer();
+}
+
+async function setAccountingStatus(stato) {
+  if (!S.accountingSelected) return;
+  if (stato === 'corretto' && !String(S.accountingForm.notes || '').trim()) {
+    toast('Aggiungi una nota prima di segnare Da correggere', 'err');
+    return;
+  }
+  if (stato === 'scartato' && !String(S.accountingForm.discarded_reason || '').trim()) {
+    toast('Inserisci il motivo di scarto', 'err');
+    return;
+  }
+  S.accountingSaving = true;
+  updateFooter();
+  const reviewedJson = {
+    total_amount: numberVal(S.accountingForm.total_amount),
+    document_kind: S.accountingForm.document_kind || null,
+    document_date: S.accountingForm.document_date || null,
+    competence_date: S.accountingForm.competence_date || null,
+    counterparty: S.accountingForm.counterparty || null,
+    payment_method: S.accountingForm.payment_method || null,
+    fiscal_status: S.accountingForm.fiscal_status || null,
+    approval_status: stato,
+    category: S.accountingForm.category || null,
+    subcategory: S.accountingForm.subcategory || null,
+    apartment_id: S.accountingForm.apartment_id || null,
+    notes: S.accountingForm.notes || null,
+  };
+  const payload = {
+    ...S.accountingForm,
+    approval_status: stato,
+    stato: ({
+      da_revisionare: 'DA_APPROVARE',
+      corretto: 'DA_CORREGGERE',
+      approvato: 'APPROVATO',
+      scartato: 'SCARTATO',
+    })[stato] || 'DA_APPROVARE',
+    apartment_id: S.accountingForm.apartment_id || null,
+    total_amount: numberVal(S.accountingForm.total_amount),
+    document_kind: S.accountingForm.document_kind || null,
+    document_date: S.accountingForm.document_date || null,
+    competence_date: S.accountingForm.competence_date || null,
+    counterparty: S.accountingForm.counterparty || null,
+    notes: S.accountingForm.notes || null,
+    reviewed_json: reviewedJson,
+    reviewed_by: S.session?.user?.email || null,
+    approved_by: stato === 'approvato' ? (S.session?.user?.email || '') : null,
+    approved_at: stato === 'approvato' ? new Date().toISOString() : null,
+    updated_at: new Date().toISOString(),
+  };
+  const { error } = await sb.from('contabilita_documenti').update(payload).eq('id', S.accountingSelected.id);
+  S.accountingSaving = false;
+  if (error) { toast('Errore: ' + error.message, 'err'); updateFooter(); return; }
+  await audit(stato, 'contabilita_documenti', S.accountingSelected.id);
+  const i = S.accountingRows.findIndex(r => String(r.id) === String(S.accountingSelected.id));
+  if (i >= 0) S.accountingRows[i] = { ...S.accountingRows[i], ...payload, nome_appartamento: S.apartments.find(a => String(a.id) === String(payload.apartment_id))?.nome_appartamento || '' };
+  S.accountingSelected = S.accountingRows[i] || S.accountingSelected;
+  toast(stato === 'approvato' ? '✓ Documento approvato' : stato === 'scartato' ? '✗ Documento scartato' : '⚑ Documento corretto', stato === 'scartato' ? 'err' : stato === 'approvato' ? 'ok' : 'info');
+  partialTable(); partialStats(); partialDrawer();
+}
+
+function deriveBillLinkState(documentId, approvalStatus, apartmentId, explicitAccountingStatus) {
+  const isRegistered = approvalStatus === 'approvato' && explicitAccountingStatus === 'registrata';
+  return {
+    // Oggi riusiamo l'id del documento contabile base come riferimento operativo unico:
+    // non punta ancora a un movimento bancario o a una tabella movimenti separata.
+    linked_movement_id: isRegistered ? documentId : null,
+    accounting_status: isRegistered ? 'registrata' : (explicitAccountingStatus || 'da_registrare'),
+  };
+}
+
+async function replaceBillAllocations(billId, apartmentIds) {
+  const uniqueIds = [...new Set((apartmentIds || []).map(String).filter(Boolean))];
+  const { error: deleteError } = await sb.from('contabilita_bollette_allocazioni').delete().eq('contabilita_bolletta_id', billId);
+  if (deleteError) return deleteError;
+  if (!uniqueIds.length) return null;
+  const rows = uniqueIds.map(apartmentId => ({
+    contabilita_bolletta_id: billId,
+    apartment_id: apartmentId,
+    updated_at: new Date().toISOString(),
+  }));
+  const { error: insertError } = await sb.from('contabilita_bollette_allocazioni').insert(rows);
+  return insertError || null;
+}
+
+function syncLocalBillRow(documentId, docPayload, billPayload) {
+  const apartmentName = S.apartments.find(a => String(a.id) === String(docPayload.apartment_id || billPayload.apartment_id))?.nome_appartamento || '';
+  const docIndex = S.accountingRows.findIndex(r => String(r.id) === String(documentId));
+  if (docIndex >= 0) {
+    S.accountingRows[docIndex] = normalizeAccountingRow({
+      ...S.accountingRows[docIndex],
+      ...docPayload,
+      nome_appartamento: apartmentName,
+    });
+  }
+  const billIndex = S.billRows.findIndex(r => String(r.contabilita_documento_id) === String(documentId));
+  if (billIndex >= 0) {
+    S.billRows[billIndex] = normalizeBillRow({
+      ...S.billRows[billIndex],
+      ...billPayload,
+      apartment_id: billPayload.apartment_id ?? docPayload.apartment_id ?? S.billRows[billIndex].apartment_id,
+      apartments: {
+        nome_appartamento: apartmentName,
+        struttura_nome: S.billRows[billIndex].struttura_nome || '',
+      },
+      contabilita_documenti: {
+        ...S.billRows[billIndex].doc,
+        ...docPayload,
+        nome_appartamento: apartmentName,
+      },
+    });
+    S.billSelected = S.billRows[billIndex];
+  }
+}
+
+async function saveBillForm() {
+  if (!S.billSelected) return;
+  S.billSaving = true;
+  updateFooter();
+  const selectedAllocations = Array.isArray(S.billForm.allocation_apartment_ids) ? S.billForm.allocation_apartment_ids : [];
+  const isGeneral = !!S.billForm.is_general;
+  const apartmentId = isGeneral ? (selectedAllocations.length === 1 ? selectedAllocations[0] : null) : (S.billForm.apartment_id || null);
+  const approvalStatus = S.billForm.approval_status || 'da_revisionare';
+  const targetAccountingStatus = approvalStatus === 'approvato' && S.billForm.payment_status === 'pagata' ? 'registrata' : 'da_registrare';
+  const extractionStatus = computeBillExtractionStatus(S.billForm);
+  const linkState = deriveBillLinkState(S.billSelected.contabilita_documento_id, approvalStatus, apartmentId, targetAccountingStatus);
+  const docPayload = {
+    apartment_id: apartmentId,
+    approval_status: approvalStatus,
+    stato: ({ da_revisionare:'DA_APPROVARE', corretto:'DA_CORREGGERE', approvato:'APPROVATO', scartato:'SCARTATO' })[approvalStatus] || 'DA_APPROVARE',
+    counterparty: S.billForm.counterparty || null,
+    description: S.billForm.description || null,
+    total_amount: numberVal(S.billForm.amount_total),
+    document_date: S.billForm.document_date || S.billForm.issue_date || null,
+    due_date: S.billForm.due_date_doc || S.billForm.due_date || null,
+    notes: S.billForm.notes || null,
+    updated_at: new Date().toISOString(),
+    reviewed_json: {
+      ...(S.billSelected.doc.reviewed_json || {}),
+      apartment_id: apartmentId,
+      approval_status: approvalStatus,
+      total_amount: numberVal(S.billForm.amount_total),
+      document_date: S.billForm.document_date || S.billForm.issue_date || null,
+      supply_address: S.billForm.supply_address || null,
+      account_holder: S.billForm.account_holder || null,
+      extraction_status: extractionStatus,
+    },
+  };
+  const billPayload = {
+    apartment_id: apartmentId,
+    is_general: isGeneral,
+    utility_type: S.billForm.utility_type || null,
+    supply_address: S.billForm.supply_address || null,
+    account_holder: S.billForm.account_holder || null,
+    bill_number: S.billForm.bill_number || null,
+    issue_date: S.billForm.issue_date || S.billForm.document_date || null,
+    due_date: S.billForm.due_date || S.billForm.due_date_doc || null,
+    period_start: S.billForm.period_start || null,
+    period_end: S.billForm.period_end || null,
+    amount_total: numberVal(S.billForm.amount_total),
+    payment_status: S.billForm.payment_status || 'non_pagata',
+    accounting_status: linkState.accounting_status,
+    extraction_status: extractionStatus,
+    reimbursement_method: null,
+    reimbursed_at: null,
+    linked_movement_id: linkState.linked_movement_id,
+    notes: S.billForm.notes || null,
+    updated_at: new Date().toISOString(),
+  };
+  const { error: docError } = await sb.from('contabilita_documenti').update(docPayload).eq('id', S.billSelected.contabilita_documento_id);
+  if (docError) {
+    S.billSaving = false;
+    toast('Errore: ' + docError.message, 'err');
+    updateFooter();
+    return;
+  }
+  const { error: billError } = await sb.from('contabilita_bollette').update(billPayload).eq('id', S.billSelected.id);
+  if (billError) {
+    S.billSaving = false;
+    toast('Errore: ' + billError.message, 'err');
+    updateFooter();
+    return;
+  }
+  const allocationIds = isGeneral ? selectedAllocations : (apartmentId ? [apartmentId] : []);
+  const allocationError = await replaceBillAllocations(S.billSelected.id, allocationIds);
+  S.billSaving = false;
+  if (allocationError) {
+    toast('Errore: ' + allocationError.message, 'err');
+    updateFooter();
+    return;
+  }
+  await audit('UPDATE', 'contabilita_bollette', S.billSelected.id);
+  syncLocalBillRow(S.billSelected.contabilita_documento_id, docPayload, billPayload);
+  const billIndex = S.billRows.findIndex(r => String(r.id) === String(S.billSelected.id));
+  if (billIndex >= 0) {
+    const apartmentNames = allocationIds.map(id => S.apartments.find(a => String(a.id) === String(id))?.nome_appartamento).filter(Boolean);
+    S.billRows[billIndex] = normalizeBillRow({
+      ...S.billRows[billIndex],
+      ...billPayload,
+      apartment_id: apartmentId,
+      contabilita_bollette_allocazioni: allocationIds.map(id => ({
+        apartment_id: id,
+        apartments: { nome_appartamento: S.apartments.find(a => String(a.id) === String(id))?.nome_appartamento || '', struttura_nome: '' },
+      })),
+      contabilita_documenti: {
+        ...S.billRows[billIndex].doc,
+        ...docPayload,
+      },
+      apartments: apartmentId ? { nome_appartamento: apartmentNames[0] || '', struttura_nome: '' } : null,
+    });
+    S.billSelected = S.billRows[billIndex];
+  }
+  toast('✓ Bolletta salvata', 'ok');
+  partialTable(); partialStats(); partialDrawer();
+}
+
+async function setBillDocumentStatus(stato) {
+  if (!S.billSelected) return;
+  if (stato === 'scartato' && !String(S.billForm.notes || '').trim()) {
+    toast('Aggiungi una nota di scarto alla bolletta', 'err');
+    return;
+  }
+  S.billForm.approval_status = stato;
+  await saveBillForm();
+}
+
+async function deleteSelectedDiscardedBills() {
+  const ids = Object.entries(S.billSelection).filter(([, checked]) => checked).map(([id]) => id);
+  if (!ids.length) return;
+  const rows = S.billRows.filter(row => ids.includes(String(row.id)) && isBillArchived(row));
+  if (!rows.length) return;
+  if (!confirm(`Confermi l'eliminazione definitiva di ${rows.length} bollette scartate?`)) return;
+  const docIds = rows.map(row => row.contabilita_documento_id);
+  S.billSaving = true;
+  updateFooter();
+  const { error } = await sb.from('contabilita_documenti').delete().in('id', docIds);
+  S.billSaving = false;
+  if (error) {
+    toast('Errore: ' + error.message, 'err');
+    updateFooter();
+    return;
+  }
+  S.billRows = S.billRows.filter(row => !docIds.includes(row.contabilita_documento_id));
+  S.accountingRows = S.accountingRows.filter(row => !docIds.includes(row.id));
+  S.billSelection = {};
+  S.billSelected = null;
+  S.billForm = {};
+  toast('✓ Bollette scartate eliminate', 'ok');
+  partialTable(); partialStats(); partialDrawer();
+}
+
+async function creaFattura() {
+  if (!S.selected) return;
+  const btn = document.getElementById('dFatt');
+  if (btn) { btn.disabled=true; btn.textContent='⏳ Creo…'; }
+
+  try {
+    const session = await sb.auth.getSession();
+
+    const res = await fetch('/.netlify/functions/create-fattura-fic', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.data.session.access_token}`
+      },
+      body: JSON.stringify({
+        ospiti_check_in_id: S.selected.id,
+        payment_status: S.form.payment_status,
+        payment_account_type: S.form.payment_account_type,
+        sezionale: S.form.sezionale
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      const detailMessage =
+        data.detail?.message ||
+        data.detail?.reason ||
+        data.supabase_error?.message ||
+        (typeof data.detail === 'string' ? data.detail : '') ||
+        data.error;
+      throw new Error(detailMessage || 'Errore sconosciuto');
+    }
+    if (data.sezionale_warning) {
+      toast(`ℹ️ ${data.sezionale_warning}`, 'info');
+    }
+    if (data.local_sync_warning) {
+      const firstWarning = Array.isArray(data.local_sync_details) && data.local_sync_details.length
+        ? (data.local_sync_details[0].message || data.local_sync_details[0].step || '')
+        : '';
+      const docRef = data.numero_fattura || data.fic_document_id || '-';
+      const warningMsg = firstWarning
+        ? `✓ Documento FiC creato (${docRef}, sezionale ${data.sezionale || '-'}) ma sync locale incompleto: ${firstWarning}`
+        : `✓ Documento FiC creato (${docRef}, sezionale ${data.sezionale || '-'}) ma sync locale incompleto`;
+      toast(warningMsg, 'info');
+    } else {
+      toast(`✓ Bozza creata! N° ${data.numero_fattura ?? '-'} · sezionale ${data.sezionale ?? '-'}`, 'ok');
+    }
+    if (data.fic_url) window.open(data.fic_url, '_blank');
+    await loadData();
+    S.selected = null; S.form = {};
+    partialDrawer(); highlightSelected();
+  } catch(err) {
+    toast('❌ ' + err.message, 'err');
+    if (btn) { btn.disabled=false; btn.textContent=`🧾 Fattura · ${S.form.sezionale || '-'}`; }
+  }
+}
+
+function renderLogin() {
+  document.getElementById('app').innerHTML = `
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo">Impatto</div>
+      <div class="login-sub">Backoffice · Contabilita</div>
+      <div id="lerr" class="msg-err"></div>
+      <div class="field"><label>Email</label>
+        <input id="lem" type="email" value="contabilita@illupoaffitta.com" autocomplete="username"/></div>
+	    <div class="field"><label>Password</label>
+	        <input id="lpw" type="password" autocomplete="current-password"/></div>
+	      <button id="lbtn" class="btn btn-primary btn-full">Entra →</button>
+	    </div>
+	  </div>`;
+  const doLogin = async () => {
+    const btn=document.getElementById('lbtn'), err=document.getElementById('lerr');
+    err.style.display='none';
+    err.style.background='var(--red-l)';
+    err.style.borderColor='#fecaca';
+    err.style.color='var(--red)';
+    btn.disabled=true; btn.textContent='Accesso…';
+    const {data, error} = await sb.auth.signInWithPassword({email:document.getElementById('lem').value, password:document.getElementById('lpw').value});
+    if (error) {
+      err.textContent=error.message; err.style.display='block'; btn.disabled=false; btn.textContent='Entra →';
+      return;
+    }
+    if (!isAllowedAccountingEmail(data?.user?.email)) {
+      await sb.auth.signOut();
+      err.textContent='Questo pannello accetta solo le credenziali dedicate della contabilità.';
+      err.style.display='block';
+      btn.disabled=false;
+      btn.textContent='Entra →';
+    }
+	  };
+	  document.getElementById('lbtn').addEventListener('click', doLogin);
+	  document.getElementById('lpw').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+	  setTimeout(()=>document.getElementById('lpw')?.focus(), 80);
+}
+
+function renderDashboard() {
+  const st=stats(), pct=(S.timeLeft/TIMEOUT_MS)*100;
+  const displayEmail = 'contabilita@illupoaffitta.com';
+  const barClr = pct<20?'#dc2626':pct<50?'#d97706':'#2563eb';
+  const cards = S.accountingView === 'bollette'
+    ? [
+        ['Bollette', st.tot],
+        ['Da verificare', st.review],
+        ['Approvate', st.approved],
+        ['Pagate', st.ownerPaid],
+        ['Approvate non pagate', st.toRefund],
+        ['Scartate', st.reimbursed],
+        ['Generali', S.billRows.filter(r => r.is_general).length],
+      ]
+    : [
+        ['Documenti ricevuti', st.tot],
+        ['Da revisionare', st.review],
+        ['Approvati', st.approved],
+        ['Scartati', st.discarded],
+        ['Contanti fatturati', st.cashDone],
+        ['Contanti da fatturare', st.cashTodo],
+      ];
+  document.getElementById('app').innerHTML = `
+  <header class="section-header">
+    <div class="section-header-left">
+      <span class="section-header-brand">Impatto</span>
+      <span class="section-header-tag tag-backoffice">CONTABILITA</span>
+    </div>
+    <div class="section-header-right">
+      <span class="section-header-user">${esc(displayEmail)}</span>
+      <button id="btnLogout" class="btn btn-ghost" style="padding:6px 13px;font-size:12px">Esci</button>
+    </div>
+  </header>
+  <div class="tbar"><div id="tbar" class="tbar-fill" style="width:${pct}%;background:${barClr}"></div></div>
+  <div class="tabs">
+    <div id="viewDocs" class="tab ${S.accountingView==='documenti'?'active':''}">Documenti</div>
+    <div id="viewBills" class="tab ${S.accountingView==='bollette'?'active':''}">Bollette</div>
+  </div>
+  ${S.accountingView === 'bollette' ? `
+    <div class="subtabs">
+      <button id="billViewInbox" class="subtab ${S.billViewMode==='inbox'?'active':''}">Inbox</button>
+      <button id="billViewApt" class="subtab ${S.billViewMode==='apartment'?'active':''}">Per appartamento</button>
+      <button id="billViewArchive" class="subtab ${S.billViewMode==='archive'?'active':''}">Archivio scartate</button>
+    </div>
+  ` : ''}
+  <div class="stats-row">
+    ${cards.map((card, index) => `<div class="stat-card"><div class="stat-label">${esc(card[0])}</div><div class="stat-val" id="st${index}">${esc(String(card[1] ?? 0))}</div></div>`).join('')}
+  </div>
+  <div class="filters">
+    <input id="fAccSearch" type="text" placeholder="Cerca fornitore, oggetto email, appartamento…" value="${esc(S.fAccSearch)}"/>
+    ${S.accountingView === 'bollette' ? `
+      <select id="fBillStato">
+        <option value="">Tutti gli stati revisione</option>
+        ${BILL_REVIEW_OPTIONS.map(s=>`<option value="${s}" ${S.fBillStato===s?'selected':''}>${billReviewLbl(s)}</option>`).join('')}
+      </select>
+      <select id="fBillPayment">
+        <option value="">Tutti gli stati pagamento</option>
+        ${BILL_PAYMENT_STATUSES.map(s=>`<option value="${s}" ${S.fBillPayment===s?'selected':''}>${billPaymentStatusLbl(s)}</option>`).join('')}
+      </select>
+      <select id="fBillUtility">
+        <option value="">Tutte le utenze</option>
+        ${BILL_UTILITY_TYPES.map(s=>`<option value="${s}" ${S.fBillUtility===s?'selected':''}>${utilityTypeLbl(s)}</option>`).join('')}
+      </select>
+      <select id="fBillApt">
+        <option value="">Tutti gli appartamenti</option>
+        ${S.apartments.map(a=>`<option value="${a.id}" ${S.fBillApt===String(a.id)?'selected':''}>${esc(a.nome_appartamento)}</option>`).join('')}
+      </select>
+      <select id="fBillGeneral">
+        <option value="">Tutte</option>
+        <option value="generale" ${S.fBillGeneral==='generale'?'selected':''}>Generali</option>
+        <option value="appartamento" ${S.fBillGeneral==='appartamento'?'selected':''}>Assegnate</option>
+      </select>
+    ` : `
+      <select id="fAccStato">
+        <option value="">Tutti gli stati</option>
+        ${ACCOUNTING_APPROVAL_STATI.map(s=>`<option value="${s}" ${S.fAccStato===s?'selected':''}>${approvalBadgeLbl(s)}</option>`).join('')}
+      </select>
+      <select id="fAccFiscal">
+        <option value="">Tutti gli stati fiscali</option>
+        ${ACCOUNTING_FISCAL_STATI.map(s=>`<option value="${s}" ${S.fAccFiscal===s?'selected':''}>${fiscalBadgeLbl(s)}</option>`).join('')}
+      </select>
+      <select id="fAccPayment">
+        <option value="">Tutti i pagamenti</option>
+        ${ACCOUNTING_PAYMENT_METHODS.map(s=>`<option value="${s}" ${S.fAccPayment===s?'selected':''}>${paymentMethodLbl(s)}</option>`).join('')}
+      </select>
+      <select id="fAccApt">
+        <option value="">Tutti gli appartamenti</option>
+        ${S.apartments.map(a=>`<option value="${a.id}" ${S.fAccApt===String(a.id)?'selected':''}>${esc(a.nome_appartamento)}</option>`).join('')}
+      </select>
+      <select id="fAccCategory">
+        <option value="">Tutte le categorie</option>
+        ${[...new Set(S.accountingRows.map(r => r.category).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'it')).map(v=>`<option value="${esc(v)}" ${S.fAccCategory===v?'selected':''}>${esc(v)}</option>`).join('')}
+      </select>
+    `}
+    <button id="btnRefresh" class="btn btn-ghost" style="padding:8px 14px;font-size:12px">↻ Aggiorna</button>
+  </div>
+  ${S.accountingView === 'bollette' ? `
+    <div class="upload-card">
+      <div class="upload-head">
+        <div>
+          <div class="upload-title">Carica bolletta dal portale</div>
+          <div class="upload-copy">Puoi caricare qui PDF o foto di bollette senza passare dall’email. Il sistema prova a leggerli da solo, precompila i campi principali e li mette in Bollette come <strong>Da verificare</strong>, così poi li controlli e li correggi.</div>
+        </div>
+        <div class="upload-actions">
+          <label class="upload-file-label">📎 Scegli file
+            <input id="billUploadFiles" type="file" accept=".pdf,image/*" multiple />
+          </label>
+          <button id="btnUploadBills" class="btn btn-green" style="padding:10px 14px;font-size:12px" ${S.billUploading?'disabled':''}>${S.billUploading?'<span class="spin"></span>':'↑'} Carica e leggi</button>
+        </div>
+      </div>
+      <div class="upload-inline">
+        <textarea id="billUploadNote" class="upload-note" placeholder="Nota facoltativa: es. bollette inviate dal proprietario, utenze aprile, bolletta generale...">${esc(S.billUploadNote)}</textarea>
+        <button id="btnUploadReset" class="btn btn-ghost" style="padding:10px 14px;font-size:12px">Pulisci</button>
+      </div>
+      <div class="upload-files-list" id="billUploadFilesList">${S.billUploadFiles.length ? S.billUploadFiles.map(file => `<span class="upload-chip">${esc(file.name)} · ${esc(((file.size || 0)/1024/1024).toFixed(2))} MB</span>`).join('') : '<span class="mono-sm">Nessun file selezionato</span>'}</div>
+    </div>
+  ` : ''}
+  <div class="body-wrap">
+    <div class="table-panel" id="tablePanel"></div>
+    <div class="drawer ${S.selected?'open':''}" id="drawer"></div>
+  </div>`;
+
+  document.getElementById('btnLogout').addEventListener('click', ()=>sb.auth.signOut());
+  initNavbar('');
+  document.getElementById('viewDocs').addEventListener('click', ()=>{ S.accountingView='documenti'; S.billSelected=null; S.billForm={}; renderDashboard(); });
+  document.getElementById('viewBills').addEventListener('click', ()=>{ S.accountingView='bollette'; S.accountingSelected=null; S.accountingForm={}; renderDashboard(); });
+  document.getElementById('billViewInbox')?.addEventListener('click', ()=>{ S.billViewMode='inbox'; S.billSelection={}; renderDashboard(); });
+  document.getElementById('billViewApt')?.addEventListener('click', ()=>{ S.billViewMode='apartment'; S.billSelection={}; renderDashboard(); });
+  document.getElementById('billViewArchive')?.addEventListener('click', ()=>{ S.billViewMode='archive'; S.billSelection={}; renderDashboard(); });
+  document.getElementById('btnRefresh').addEventListener('click', loadData);
+  document.getElementById('fAccSearch').addEventListener('input', e=>{ S.fAccSearch=e.target.value; partialTable(); });
+  document.getElementById('fAccStato')?.addEventListener('change', e=>{ S.fAccStato=e.target.value; partialTable(); });
+  document.getElementById('fAccFiscal')?.addEventListener('change', e=>{ S.fAccFiscal=e.target.value; partialTable(); });
+  document.getElementById('fAccPayment')?.addEventListener('change', e=>{ S.fAccPayment=e.target.value; partialTable(); });
+  document.getElementById('fAccApt')?.addEventListener('change', e=>{ S.fAccApt=e.target.value; partialTable(); });
+  document.getElementById('fAccCategory')?.addEventListener('change', e=>{ S.fAccCategory=e.target.value; partialTable(); });
+  document.getElementById('fBillStato')?.addEventListener('change', e=>{ S.fBillStato=e.target.value; partialTable(); });
+  document.getElementById('fBillPayment')?.addEventListener('change', e=>{ S.fBillPayment=e.target.value; partialTable(); });
+  document.getElementById('fBillUtility')?.addEventListener('change', e=>{ S.fBillUtility=e.target.value; partialTable(); });
+  document.getElementById('fBillApt')?.addEventListener('change', e=>{ S.fBillApt=e.target.value; partialTable(); });
+  document.getElementById('fBillGeneral')?.addEventListener('change', e=>{ S.fBillGeneral=e.target.value; partialTable(); });
+  document.getElementById('billUploadFiles')?.addEventListener('change', e=>handleBillFilesPicked(e.target.files));
+  document.getElementById('billUploadNote')?.addEventListener('input', e=>{ S.billUploadNote = e.target.value; });
+  document.getElementById('btnUploadBills')?.addEventListener('click', uploadBillsFromPortal);
+  document.getElementById('btnUploadReset')?.addEventListener('click', resetBillUpload);
+  partialTable(); partialDrawer();
+}
+
+function initNavbar(email = '') {
+  const toggle = document.getElementById('navbarToggle');
+  const menu = document.getElementById('navbarMenu');
+  const navUser = document.getElementById('navUser');
+
+  if (navUser) navUser.textContent = email || '';
+  if (!toggle || !menu) return;
+
+  toggle.onclick = () => {
+    const isOpen = menu.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  };
+
+  document.onclick = (e) => {
+    if (!menu.classList.contains('open')) return;
+    if (!menu.contains(e.target) && !toggle.contains(e.target)) {
+      menu.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+    }
+  };
+}
+
+function partialTable() {
+  const panel = document.getElementById('tablePanel'); if(!panel) return;
+  if (S.panelMode === 'contabilita') {
+    if (S.accountingView === 'bollette') {
+      const rows = filteredBills();
+      if (!S.billsEnabled) {
+        panel.innerHTML = `<div class="empty"><div class="empty-ico">🧾</div><div>Sezione Bollette non disponibile. Applica prima la migration <span class="mono-sm">202604220005_create_contabilita_bollette.sql</span>.</div></div>`;
+        return;
+      }
+      if (S.billLoading) {
+        panel.innerHTML=`<div class="loading"><span class="spin"></span> Caricamento bollette…</div>`;
+        return;
+      }
+      if (!rows.length) {
+        panel.innerHTML=`<div class="empty"><div class="empty-ico">🧾</div><div>Nessuna bolletta trovata</div></div>`;
+        return;
+      }
+      const showArchiveSelection = S.billViewMode === 'archive';
+      panel.innerHTML = `
+        ${showArchiveSelection ? `<div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--white)">
+          <div class="mono-sm">Archivio scartate · selezionate ${Object.values(S.billSelection).filter(Boolean).length}</div>
+          <button id="btnBulkDeleteBills" class="btn btn-red" style="padding:8px 14px;font-size:12px" ${Object.values(S.billSelection).filter(Boolean).length ? '' : 'disabled'}>Elimina selezionate</button>
+        </div>` : ''}
+        <table>
+        <thead><tr>
+          ${showArchiveSelection ? '<th></th>' : ''}<th>Data</th><th>Bolletta</th><th>Sorgente</th><th>Fornitore</th><th>Intestatario</th><th>Fornitura</th><th>Periodo</th><th>Totale</th><th>Estrazione</th><th>Doppione</th><th>Revisione</th><th>Unita</th>
+        </tr></thead>
+        <tbody>
+          ${rows.map(r=>`
+          <tr class="row-item${S.billSelected?.id===r.id?' selected':''}" data-id="${r.id}">
+            ${showArchiveSelection ? `<td><input class="bill-select" type="checkbox" data-id="${r.id}" ${S.billSelection[r.id] ? 'checked' : ''}/></td>` : ''}
+            <td class="td-date">${fmt(r.issue_date || r.doc.document_date || r.created_at)}</td>
+            <td>
+              <div class="td-name">${esc(utilityTypeLbl(r.utility_type))}</div>
+              <div class="mono-sm">${esc(r.bill_number || 'Senza numero')}</div>
+              <div class="bill-meta">
+                <span class="badge ${r.is_general ? 'bill-tag-general' : 'bill-tag-direct'}">${esc(billTypeLabel(r))}</span>
+                <span class="badge ${isBillAccountingActive(r) ? 'bill-tag-in' : 'bill-tag-out'}">${isBillAccountingActive(r) ? 'Dentro contabilita' : 'Fuori contabilita'}</span>
+              </div>
+            </td>
+            <td><div class="td-name">${esc(sourceChannelLbl(r.doc.source || r.doc.source_channel || 'email'))}</div><div class="mono-sm">${esc(r.doc.file_name || 'Documento')}</div></td>
+            <td><div class="td-name">${esc(r.doc.counterparty || r.doc.source_email || '—')}</div><div class="mono-sm">${esc(r.doc.description || '—')}</div></td>
+            <td><div class="td-name">${esc(r.account_holder || '—')}</div></td>
+            <td><div class="td-name">${esc(r.supply_address || '—')}</div></td>
+            <td><div class="td-name">${esc(r.period_start ? `${fmt(r.period_start)} → ${fmt(r.period_end)}` : '—')}</div></td>
+            <td>${esc(formatAccountingCurrency(r.amount_total, r.doc.currency || 'EUR'))}<div class="mono-sm">${esc(billPaymentStatusLbl(r.payment_status))}</div></td>
+            <td><span class="badge ${extractionStatusCls(r.extraction_status)}">${esc(extractionStatusLbl(r.extraction_status))}</span></td>
+            <td><span class="badge ${duplicateStatusCls(r.duplicate_status)}">${esc(duplicateStatusLbl(r.duplicate_status))}</span></td>
+            <td><span class="badge ${approvalBadgeCls(r.doc.approval_status)}">${billReviewLbl(r.doc.approval_status)}</span></td>
+            <td class="td-apt">${esc(r.allocation_apartment_names.length ? r.allocation_apartment_names.join(', ') : (r.nome_appartamento || r.struttura_nome || (r.is_general ? 'Generale' : 'Da assegnare')))}</td>
+          </tr>`).join('')}
+        </tbody></table>`;
+      if (showArchiveSelection) {
+        panel.querySelectorAll('.bill-select').forEach(chk => {
+          chk.addEventListener('click', (e) => e.stopPropagation());
+          chk.addEventListener('change', e => {
+            S.billSelection[e.target.dataset.id] = e.target.checked;
+            partialTable();
+          });
+        });
+        document.getElementById('btnBulkDeleteBills')?.addEventListener('click', deleteSelectedDiscardedBills);
+      }
+      panel.querySelectorAll('.row-item').forEach(tr=>{
+        tr.addEventListener('click', ()=>{
+          const row = S.billRows.find(r=>String(r.id)===String(tr.dataset.id)); if(!row) return;
+          selectBillRow(row);
+          partialDrawer();
+          highlightSelected();
+        });
+      });
+      return;
+    }
+    const rows = filteredAccounting();
+    if (!S.accountingEnabled) {
+      panel.innerHTML = `<div class="empty"><div class="empty-ico">📥</div><div>Tabella contabilità non disponibile. Applica prima la migration <span class="mono-sm">202604220001_create_contabilita_documenti.sql</span>.</div></div>`;
+      return;
+    }
+    if (S.accountingLoading) {
+      panel.innerHTML=`<div class="loading"><span class="spin"></span> Caricamento documenti contabili…</div>`;
+      return;
+    }
+    if (!rows.length) {
+      panel.innerHTML=`<div class="empty"><div class="empty-ico">📎</div><div>Nessun documento contabile trovato</div></div>`;
+      return;
+    }
+    panel.innerHTML = `<table>
+      <thead><tr>
+        <th>Data</th><th>Documento</th><th>Controparte</th><th>Descrizione</th><th>Importo</th><th>Pagamento</th><th>Fiscale</th><th>Revisione</th><th>Unita</th>
+      </tr></thead>
+      <tbody>
+        ${rows.map(r=>`
+        <tr class="row-item${S.accountingSelected?.id===r.id?' selected':''}" data-id="${r.id}">
+          <td class="td-date">${fmt(r.document_date || r.created_at)}</td>
+          <td><div class="td-name">${esc(r.file_name || accountingDocTypeLbl(r.document_kind))}</div><div class="mono-sm">${esc(accountingDocTypeLbl(r.document_kind))}</div></td>
+          <td><div class="td-name">${esc(r.counterparty || r.source_email || '—')}</div><div class="mono-sm">${esc(r.source_subject || '—')}</div></td>
+          <td>${esc(r.description || '—')}</td>
+          <td>${esc(formatAccountingCurrency(r.total_amount ?? r.amount_total, r.currency))}</td>
+          <td><div>${esc(paymentMethodLbl(r.payment_method))}</div>${accountingCashBadge(r)}</td>
+          <td><span class="badge ${fiscalBadgeCls(r.fiscal_status)}">${fiscalBadgeLbl(r.fiscal_status)}</span></td>
+          <td><span class="badge ${approvalBadgeCls(r.approval_status)}">${approvalBadgeLbl(r.approval_status)}</span></td>
+          <td class="td-apt">${esc(r.nome_appartamento || r.struttura_nome || 'Da assegnare')}</td>
+        </tr>`).join('')}
+      </tbody></table>`;
+    panel.querySelectorAll('.row-item').forEach(tr=>{
+      tr.addEventListener('click', ()=>{
+        const row = S.accountingRows.find(r=>String(r.id)===String(tr.dataset.id)); if(!row) return;
+        selectAccountingRow(row);
+        partialDrawer();
+        highlightSelected();
+      });
+    });
+    return;
+  }
+  const rows = filtered();
+  if (S.loading) { panel.innerHTML=`<div class="loading"><span class="spin"></span> Caricamento…</div>`; return; }
+  if (!rows.length) { panel.innerHTML=`<div class="empty"><div class="empty-ico">📋</div><div>Nessun ospite trovato</div></div>`; return; }
+  panel.innerHTML = `<table>
+    <thead><tr>
+      <th>Ospite</th><th>Appartamento</th><th>Check-in</th><th>Check-out</th><th>Paese</th><th>Stato</th><th></th>
+    </tr></thead>
+    <tbody>
+      ${rows.map(r=>`
+      <tr class="row-item${S.selected?.id===r.id?' selected':''}" data-id="${r.id}">
+        <td><div class="td-name">${esc(getBillingHeaderName(r))}</div><div class="mono-sm">${esc(getBillingHeaderMeta(r) || '—')}</div><div style="margin-top:6px">${groupRoleBadge(r)}</div><div class="group-meta">${groupMetaLine(r)}</div></td>
+        <td class="td-apt">${esc(r.nome_appartamento||'—')}</td>
+        <td class="td-date">${fmt(r.data_checkin)}</td>
+        <td class="td-date">${fmt(r.data_checkout)}</td>
+        <td>${esc(r.paese_residenza||'—')}</td>
+        <td><span class="badge ${badgeCls(r.stato)}">${badgeLbl(r.stato)}</span></td>
+        <td>${r.segnalazione_jessica?`<span class="flag-segn" title="${esc(r.segnalazione_jessica)}">⚑</span>`:''}</td>
+      </tr>`).join('')}
+    </tbody></table>`;
+  panel.querySelectorAll('.row-item').forEach(tr=>{
+    tr.addEventListener('click', ()=>{
+      const row = S.rows.find(r=>String(r.id)===String(tr.dataset.id)); if(!row) return;
+      selectRow(row);
+      partialDrawer(); highlightSelected();
+    });
+  });
+}
+
+function highlightSelected() {
+  document.querySelectorAll('.row-item').forEach(tr=>{
+    const currentId = S.panelMode === 'contabilita'
+      ? (S.accountingView === 'bollette' ? S.billSelected?.id : S.accountingSelected?.id)
+      : S.selected?.id;
+    tr.classList.toggle('selected', String(tr.dataset.id)===String(currentId));
+  });
+}
+
+function partialStats() {
+  const st=stats();
+  const ids = ['st0','st1','st2','st3','st4','st5'];
+  const values = S.accountingView === 'bollette'
+    ? [st.tot, st.review, st.approved, st.ownerPaid, st.toRefund, S.billRows.filter(r => r.is_general).length]
+    : [st.tot, st.review, st.approved, st.discarded, st.cashDone, st.cashTodo];
+  ids.forEach((id, index) => { const el = document.getElementById(id); if (el) el.textContent = values[index] ?? '0'; });
+}
+
+function handleBillFilesPicked(fileList) {
+  S.billUploadFiles = Array.from(fileList || []).filter(Boolean);
+  renderDashboard();
+}
+
+function resetBillUpload() {
+  S.billUploadFiles = [];
+  S.billUploadNote = '';
+  renderDashboard();
+}
+
+async function uploadBillsFromPortal() {
+  if (!S.billUploadFiles.length) {
+    toast('Seleziona almeno un PDF o una foto', 'err');
+    return;
+  }
+  if (!S.session?.access_token) {
+    toast('Sessione non valida, rientra nel pannello', 'err');
+    return;
+  }
+  S.billUploading = true;
+  renderDashboard();
+  try {
+    const formData = new FormData();
+    if (S.billUploadNote.trim()) formData.append('note', S.billUploadNote.trim());
+    formData.append('subject', S.billUploadNote.trim() || 'Upload manuale bolletta');
+    S.billUploadFiles.forEach((file) => formData.append('files', file));
+
+    const response = await fetch('/.netlify/functions/upload-bollette-manual', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${S.session.access_token}`,
+      },
+      body: formData,
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.detail || data.error || `HTTP ${response.status}`);
+
+    const createdIds = Array.isArray(data.items) ? data.items.map((item) => String(item.bolletta_id || '')).filter(Boolean) : [];
+    S.billUploadFiles = [];
+    S.billUploadNote = '';
+    await loadData();
+    if (createdIds.length) {
+      const created = S.billRows.find((row) => createdIds.includes(String(row.id)));
+      if (created) {
+        selectBillRow(created);
+        partialDrawer();
+      }
+    }
+    toast(createdIds.length > 1 ? `✓ ${createdIds.length} bollette caricate e lette` : '✓ Bolletta caricata e letta', 'ok');
+  } catch (error) {
+    toast('Errore upload: ' + error.message, 'err');
+  }
+  S.billUploading = false;
+  renderDashboard();
+}
+
+function partialDrawer() {
+  const d = document.getElementById('drawer'); if(!d) return;
+  if (S.panelMode === 'contabilita') {
+    if (S.accountingView === 'bollette') {
+      if (!S.billSelected) { d.classList.remove('open'); d.innerHTML=''; return; }
+      const r = S.billSelected;
+      const f = S.billForm;
+      const doc = r.doc;
+      d.classList.add('open');
+      d.innerHTML = `
+      <div class="drawer-header">
+        <div>
+          <div class="drawer-title">${esc(doc.counterparty || doc.source_email || 'Bolletta')}</div>
+          <div class="drawer-sub">${esc(r.id)} · ${fmtTs(doc.received_at || doc.created_at)} · ${esc(billPaymentStatusLbl(r.payment_status))}</div>
+          <div class="bill-meta">
+            <span class="badge ${r.is_general ? 'bill-tag-general' : 'bill-tag-direct'}">${esc(billTypeLabel(r))}</span>
+            <span class="badge ${approvalBadgeCls(f.approval_status)}">${esc(billReviewLbl(f.approval_status))}</span>
+            <span class="badge ${billPaymentBadgeCls(f.payment_status)}">${esc(billPaymentStatusLbl(f.payment_status))}</span>
+            <span class="badge ${isBillAccountingActive({ ...r, payment_status:f.payment_status, doc:{ ...doc, approval_status:f.approval_status }, allocation_count:(f.allocation_apartment_ids || []).length }) ? 'bill-tag-in' : 'bill-tag-out'}">${isBillAccountingActive({ ...r, payment_status:f.payment_status, doc:{ ...doc, approval_status:f.approval_status }, allocation_count:(f.allocation_apartment_ids || []).length }) ? 'Dentro contabilita' : 'Fuori contabilita'}</span>
+            <span class="badge ${extractionStatusCls(f.extraction_status)}">${esc(extractionStatusLbl(f.extraction_status))}</span>
+            <span class="badge ${duplicateStatusCls(f.duplicate_status)}">${esc(duplicateStatusLbl(f.duplicate_status))}</span>
+          </div>
+        </div>
+        <button id="dClose" class="drawer-close">✕</button>
+      </div>
+      <div class="drawer-body">
+        <div class="bill-summary">
+          <div class="bill-summary-card">
+            <div class="bill-summary-label">Assegnazione</div>
+            <div class="bill-summary-value">${esc((f.is_general ? ((f.allocation_apartment_ids || []).length ? `${(f.allocation_apartment_ids || []).length} appartamenti allocati` : 'Generale non ancora allocata') : (f.apartment_id ? 'Diretta su appartamento' : 'Da assegnare')))}</div>
+          </div>
+          <div class="bill-summary-card">
+            <div class="bill-summary-label">Contabilità</div>
+            <div class="bill-summary-value">${isBillAccountingActive({ ...r, payment_status:f.payment_status, doc:{ ...doc, approval_status:f.approval_status }, allocation_count:(f.allocation_apartment_ids || []).length }) ? 'Registrata in contabilità' : 'Non ancora in contabilità'}</div>
+          </div>
+        </div>
+        <div class="drawer-sec">Documento base</div>
+        <div class="field-2">
+          <div class="field"><label>File</label><input value="${esc(doc.file_name || 'Documento allegato')}" disabled/></div>
+          <div class="field"><label>Source ref</label><input value="${esc(doc.source_ref || '')}" disabled/></div>
+        </div>
+        <div class="field-2">
+          <div class="field"><label>Sorgente</label><input value="${esc(sourceChannelLbl(f.source || 'email'))}" disabled/></div>
+          <div class="field"><label>Stato estrazione</label><input value="${esc(extractionStatusLbl(f.extraction_status))}" disabled/></div>
+        </div>
+        <div class="field-2">
+          <div class="field"><label>Stato doppione</label><input value="${esc(duplicateStatusLbl(f.duplicate_status))}" disabled/></div>
+          <div class="field"><label>Doc. collegato doppione</label><input value="${esc(f.duplicate_of_document_id || '')}" disabled/></div>
+        </div>
+        ${f.duplicate_reason ? `<div class="field"><label>Motivo flag doppione</label><textarea disabled>${esc(f.duplicate_reason)}</textarea></div>` : ''}
+        <div class="field-2">
+          <div class="field"><label>Controparte</label><input class="df-bill" data-k="counterparty" value="${esc(f.counterparty)}"/></div>
+          <div class="field"><label>Descrizione</label><input class="df-bill" data-k="description" value="${esc(f.description)}"/></div>
+        </div>
+        <div class="field-2">
+          <div class="field"><label>Intestatario</label><input class="df-bill" data-k="account_holder" value="${esc(f.account_holder)}"/></div>
+          <div class="field"><label>Indirizzo fornitura</label><input class="df-bill" data-k="supply_address" value="${esc(f.supply_address)}"/></div>
+        </div>
+        <div class="field-2">
+          <div class="field"><label>Stato revisione</label>
+            <select class="df-bill" data-k="approval_status">${BILL_REVIEW_OPTIONS.map(v=>`<option value="${v}" ${f.approval_status===v?'selected':''}>${esc(billReviewLbl(v))}</option>`).join('')}</select>
+          </div>
+          <div class="field"><label>Appartamento</label>
+            <select class="df-bill" data-k="apartment_id">
+              <option value="">Da assegnare</option>
+              ${S.apartments.map(a=>`<option value="${a.id}" ${String(f.apartment_id)===String(a.id)?'selected':''}>${esc(a.nome_appartamento)}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="chk-row" style="margin-bottom:12px">
+          <input id="billGeneral" type="checkbox" ${f.is_general ? 'checked' : ''}/>
+          <label for="billGeneral">Generale</label>
+        </div>
+        ${f.is_general ? `<div class="field"><label>Allocazioni appartamenti</label><div class="doc-list">${S.apartments.map(a => `
+          <label class="doc-item" style="display:flex;gap:10px;align-items:center;cursor:pointer">
+            <input class="bill-alloc" type="checkbox" value="${a.id}" ${f.allocation_apartment_ids.includes(String(a.id)) ? 'checked' : ''}/>
+            <span>${esc(a.nome_appartamento)}</span>
+          </label>`).join('')}</div></div>` : ''}
+        <div class="drawer-sec">Dati bolletta</div>
+        <div class="field-2">
+          <div class="field"><label>Tipo utenza</label>
+            <select class="df-bill" data-k="utility_type">
+              <option value="">Non impostato</option>
+              ${BILL_UTILITY_TYPES.map(v=>`<option value="${v}" ${f.utility_type===v?'selected':''}>${esc(utilityTypeLbl(v))}</option>`).join('')}
+            </select>
+          </div>
+          <div class="field"><label>Numero bolletta</label><input class="df-bill" data-k="bill_number" value="${esc(f.bill_number)}"/></div>
+        </div>
+        <div class="field-3">
+          <div class="field"><label>Emissione</label><input class="df-bill" data-k="issue_date" type="date" value="${esc(f.issue_date)}"/></div>
+          <div class="field"><label>Scadenza</label><input class="df-bill" data-k="due_date" type="date" value="${esc(f.due_date)}"/></div>
+          <div class="field"><label>Importo</label><input class="df-bill" data-k="amount_total" type="number" step="0.01" value="${esc(f.amount_total)}"/></div>
+        </div>
+        <div class="field-2">
+          <div class="field"><label>Periodo da</label><input class="df-bill" data-k="period_start" type="date" value="${esc(f.period_start)}"/></div>
+          <div class="field"><label>Periodo a</label><input class="df-bill" data-k="period_end" type="date" value="${esc(f.period_end)}"/></div>
+        </div>
+        <div class="field-2">
+          <div class="field"><label>Stato pagamento</label>
+            <select class="df-bill" data-k="payment_status">${BILL_PAYMENT_STATUSES.map(v=>`<option value="${v}" ${f.payment_status===v?'selected':''}>${esc(billPaymentStatusLbl(v))}</option>`).join('')}</select>
+          </div>
+          <div class="field"><label>Stato contabile</label><input value="${esc(billAccountingStatusLbl(f.accounting_status))}" disabled/></div>
+        </div>
+        <div class="field"><label>Note</label><textarea class="df-bill" data-k="notes" placeholder="Note operative sulla bolletta o sul rimborso">${esc(f.notes)}</textarea></div>
+        <div class="bill-note-box">${esc(f.notes || 'Nessuna nota inserita')}</div>
+        ${doc.file_url ? `<div class="drawer-sec">Allegato</div><div class="doc-item"><a href="${esc(doc.file_url)}" target="_blank" rel="noopener">Apri documento allegato</a></div>` : ''}
+        ${f.payment_status === 'pagata' ? `<div style="margin-top:12px"><span class="cash-badge green">Pagata · registrata in contabilità</span></div>` : `<div style="margin-top:12px"><span class="cash-badge amber">Non pagata · fuori dalla contabilità</span></div>`}
+      </div>
+      <div class="drawer-footer">
+        <button id="dSaveBill" class="btn btn-ghost" style="margin-right:auto">${S.billSaving?'<span class="spin"></span>':'💾'} Salva</button>
+        <button id="dRejectBill" class="btn btn-red" ${S.billSaving?'disabled':''}>✗ Scarta</button>
+        <button id="dApproveBill" class="btn btn-green" ${S.billSaving?'disabled':''}>✓ Approva</button>
+      </div>`;
+      document.getElementById('dClose').addEventListener('click', ()=>{ S.billSelected=null; S.billForm={}; partialDrawer(); highlightSelected(); });
+      document.getElementById('dSaveBill').addEventListener('click', saveBillForm);
+      document.getElementById('dRejectBill').addEventListener('click', ()=>setBillDocumentStatus('scartato'));
+      document.getElementById('dApproveBill').addEventListener('click', ()=>setBillDocumentStatus('approvato'));
+      document.getElementById('billGeneral')?.addEventListener('change', e => {
+        S.billForm.is_general = e.target.checked;
+        if (!e.target.checked) S.billForm.allocation_apartment_ids = S.billForm.apartment_id ? [String(S.billForm.apartment_id)] : [];
+        partialDrawer();
+      });
+      d.querySelectorAll('.bill-alloc').forEach(el => {
+        el.addEventListener('change', e => {
+          const next = new Set((S.billForm.allocation_apartment_ids || []).map(String));
+          if (e.target.checked) next.add(String(e.target.value)); else next.delete(String(e.target.value));
+          S.billForm.allocation_apartment_ids = [...next];
+        });
+      });
+      d.querySelectorAll('.df-bill').forEach(el=>{
+        el.addEventListener('input', e=>{ S.billForm[e.target.dataset.k]=e.target.value; });
+        el.addEventListener('change', e=>{
+          S.billForm[e.target.dataset.k]=e.target.value;
+          if (e.target.dataset.k === 'apartment_id' && !S.billForm.is_general) {
+            S.billForm.allocation_apartment_ids = e.target.value ? [String(e.target.value)] : [];
+          }
+          if (['payment_status','approval_status'].includes(e.target.dataset.k)) partialDrawer();
+        });
+      });
+      return;
+    }
+    if (!S.accountingSelected) { d.classList.remove('open'); d.innerHTML=''; return; }
+    const r = S.accountingSelected;
+    const f = S.accountingForm;
+    const attachments = Array.isArray(r.attachments) ? r.attachments : [];
+    const residenceLabel = r.struttura_nome || (r.nome_appartamento ? '' : '—');
+    d.classList.add('open');
+    d.innerHTML = `
+    <div class="drawer-header">
+      <div>
+        <div class="drawer-title">${esc(f.counterparty || f.source_email || 'Documento contabile')}</div>
+        <div class="drawer-sub">${esc(r.id)} · ${fmtTs(r.received_at || r.created_at)} · ${esc(approvalBadgeLbl(r.approval_status))}</div>
+      </div>
+      <button id="dClose" class="drawer-close">✕</button>
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-sec">Origine</div>
+      <div class="field-2">
+        <div class="field"><label>Sorgente</label><input class="df-acc" data-k="source" value="${esc(f.source)}"/></div>
+        <div class="field"><label>Source ref</label><input class="df-acc" data-k="source_ref" value="${esc(f.source_ref)}"/></div>
+      </div>
+      <div class="field"><label>Email mittente</label><input class="df-acc" data-k="source_email" value="${esc(f.source_email)}"/></div>
+      <div class="field"><label>Oggetto email</label><input class="df-acc" data-k="source_subject" value="${esc(f.source_subject)}"/></div>
+      <div class="drawer-sec">Documento</div>
+      <div class="field-2">
+        <div class="field"><label>Controparte</label><input class="df-acc" data-k="counterparty" value="${esc(f.counterparty)}"/></div>
+        <div class="field"><label>Tipo documento</label>
+          <select class="df-acc" data-k="document_kind">${CONTABILITA_DOC_TYPES.map(v=>`<option value="${v}" ${f.document_kind===v?'selected':''}>${esc(accountingDocTypeLbl(v))}</option>`).join('')}</select>
+        </div>
+      </div>
+      <div class="field-2">
+        <div class="field"><label>Appartamento</label>
+          <select class="df-acc" data-k="apartment_id">
+            <option value="">Da assegnare</option>
+            ${S.apartments.map(a=>`<option value="${a.id}" ${String(f.apartment_id)===String(a.id)?'selected':''}>${esc(a.nome_appartamento)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field"><label>Residence</label><input value="${esc(residenceLabel)}" disabled/></div>
+      </div>
+      <div class="field-2">
+        <div class="field"><label>Stato revisione</label>
+          <select class="df-acc" data-k="approval_status">${ACCOUNTING_APPROVAL_STATI.map(v=>`<option value="${v}" ${f.approval_status===v?'selected':''}>${esc(approvalBadgeLbl(v))}</option>`).join('')}</select>
+        </div>
+        <div class="field"><label>Stato fiscale</label>
+          <select class="df-acc" data-k="fiscal_status">
+            <option value="">Non impostato</option>
+            ${ACCOUNTING_FISCAL_STATI.map(v=>`<option value="${v}" ${f.fiscal_status===v?'selected':''}>${esc(fiscalBadgeLbl(v))}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="field-3">
+        <div class="field"><label>Importo totale</label><input class="df-acc" data-k="total_amount" type="number" step="0.01" value="${esc(f.total_amount)}"/></div>
+        <div class="field"><label>Valuta</label><input class="df-acc" data-k="currency" value="${esc(f.currency)}"/></div>
+        <div class="field"><label>Metodo pagamento</label>
+          <select class="df-acc" data-k="payment_method">
+            <option value="">Non impostato</option>
+            ${ACCOUNTING_PAYMENT_METHODS.map(v=>`<option value="${v}" ${f.payment_method===v?'selected':''}>${esc(paymentMethodLbl(v))}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="field-2">
+        <div class="field"><label>Data documento</label><input class="df-acc" data-k="document_date" type="date" value="${esc(f.document_date)}"/></div>
+        <div class="field"><label>Scadenza</label><input class="df-acc" data-k="due_date" type="date" value="${esc(f.due_date)}"/></div>
+      </div>
+      <div class="field-2">
+        <div class="field"><label>Competenza</label><input class="df-acc" data-k="competence_date" type="date" value="${esc(f.competence_date)}"/></div>
+        <div class="field"><label>Categoria</label><input class="df-acc" data-k="category" value="${esc(f.category)}" placeholder="utenze, manutenzione, pulizie..."/></div>
+      </div>
+      <div class="field-2">
+        <div class="field"><label>Sottocategoria</label><input class="df-acc" data-k="subcategory" value="${esc(f.subcategory)}"/></div>
+        <div class="field"><label>Descrizione</label><input class="df-acc" data-k="description" value="${esc(f.description)}"/></div>
+      </div>
+      ${(r.payment_method === 'contanti' && r.fiscal_status === 'fatturato') || (f.payment_method === 'contanti' && f.fiscal_status === 'fatturato') ? `<div style="margin-bottom:12px"><span class="cash-badge green">Contanti fatturati</span></div>` : ''}
+      ${(r.payment_method === 'contanti' && r.fiscal_status === 'da_fatturare') || (f.payment_method === 'contanti' && f.fiscal_status === 'da_fatturare') ? `<div style="margin-bottom:12px"><span class="cash-badge amber">Contanti da fatturare</span></div>` : ''}
+      <div class="drawer-sec">Allegati</div>
+      ${attachments.length ? `<div class="doc-list">${attachments.map((file, idx)=>`
+        <div class="doc-item">
+          <div><strong>${esc(file.filename || `Allegato ${idx + 1}`)}</strong></div>
+          <div class="mono-sm">${esc(file.content_type || 'file')} ${file.size_bytes ? `· ${esc(String(file.size_bytes))} bytes` : ''}</div>
+          ${file.url ? `<div style="margin-top:6px"><a href="${esc(file.url)}" target="_blank" rel="noopener">Apri allegato</a></div>` : ''}
+          ${file.preview_url ? `<div><a href="${esc(file.preview_url)}" target="_blank" rel="noopener">Anteprima</a></div>` : ''}
+        </div>`).join('')}</div>` : `<div class="mono-sm">Nessun allegato registrato.</div>`}
+      <div class="drawer-sec">Note revisione</div>
+      <div class="field"><textarea class="df-acc" data-k="notes" placeholder="Correzioni, note interne, tag appartamento…">${esc(f.notes)}</textarea></div>
+      <div class="field"><label>Motivo scarto</label><textarea class="df-acc" data-k="discarded_reason" placeholder="Compila solo se il documento viene scartato">${esc(f.discarded_reason)}</textarea></div>
+      <div class="drawer-sec">Testo OCR</div>
+      <div class="text-preview">${esc(r.extracted_text || 'Nessun testo OCR disponibile')}</div>
+    </div>
+    <div class="drawer-footer">
+      <button id="dSaveAcc" class="btn btn-ghost" style="margin-right:auto">${S.accountingSaving?'<span class="spin"></span>':'💾'} Salva</button>
+      <button id="dFixAcc" class="btn btn-yellow" ${S.accountingSaving?'disabled':''}>⚑ Corretto</button>
+      <button id="dRejectAcc" class="btn btn-red" ${S.accountingSaving?'disabled':''}>✗ Scarta</button>
+      <button id="dApproveAcc" class="btn btn-green" ${S.accountingSaving?'disabled':''}>✓ Approva</button>
+    </div>`;
+    document.getElementById('dClose').addEventListener('click', ()=>{ S.accountingSelected=null; S.accountingForm={}; partialDrawer(); highlightSelected(); });
+    document.getElementById('dSaveAcc').addEventListener('click', saveAccountingForm);
+    document.getElementById('dFixAcc').addEventListener('click', ()=>setAccountingStatus('corretto'));
+    document.getElementById('dRejectAcc').addEventListener('click', ()=>setAccountingStatus('scartato'));
+    document.getElementById('dApproveAcc').addEventListener('click', ()=>setAccountingStatus('approvato'));
+    d.querySelectorAll('.df-acc').forEach(el=>{
+      el.addEventListener('input', e=>{ S.accountingForm[e.target.dataset.k]=e.target.value; });
+      el.addEventListener('change', e=>{
+        S.accountingForm[e.target.dataset.k]=e.target.value;
+        if (['payment_method','fiscal_status','approval_status'].includes(e.target.dataset.k)) {
+          partialDrawer();
+        }
+      });
+    });
+    return;
+  }
+  if (!S.selected) { d.classList.remove('open'); d.innerHTML=''; return; }
+  const normalizedRow = getParentRow(S.selected) || S.selected;
+  if (normalizedRow !== S.selected) {
+    selectRow(normalizedRow);
+  }
+  const r=normalizedRow, f=S.form;
+  const isBiz = f.tipo_cliente==='azienda'||f.tipo_cliente==='professionista';
+  const isArchiveRow = ARCHIVE_STATI.includes(r.stato);
+  const parentRow = getParentRow(r);
+  const groupRoot = parentRow || r;
+  const childRows = getChildRows(groupRoot.id);
+  const fallbackChildren = childRows.length ? [] : getSnapshotChildren(groupRoot);
+  const invoicePreview = getInvoicePreview(f);
+  d.classList.add('open');
+  d.innerHTML = `
+  <div class="drawer-header">
+    <div>
+      <div class="drawer-title">${esc(getBillingHeaderName(r, f))}</div>
+      <div class="drawer-sub">#${r.id} · ${fmt(r.created_at)}${getBillingHeaderMeta(r, f) ? ` · ${esc(getBillingHeaderMeta(r, f))}` : ''}</div>
+    </div>
+    <button id="dClose" class="drawer-close">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="drawer-sec">Gruppo</div>
+    <div class="group-summary">
+      <div style="margin-bottom:${parentRow||childRows.length||fallbackChildren.length?'8px':'0'}">${groupRoleBadge(r)}</div>
+      ${parentRow ? `<div>Record principale: <span class="group-link" style="cursor:default">${esc(getBillingHeaderName(parentRow))}</span></div>` : ''}
+      ${childRows.length ? `<div>Componenti gruppo: <strong>${1+childRows.length}</strong></div><div class="group-link-list">${childRows.map(child=>`<div class="group-link" style="cursor:default">${esc(child.nome||'')} ${esc(child.cognome||'')} · ${esc(getMemberRoleLabel(child))}</div>`).join('')}</div>` : ''}
+      ${fallbackChildren.length ? `<div>Componenti gruppo: <strong>${1+fallbackChildren.length}</strong></div><div class="group-link-list">${fallbackChildren.map(child=>`<div class="group-link" style="cursor:default">${esc(child.nome||'')} ${esc(child.cognome||'')} · ${esc(getMemberRoleLabel(child))}</div>`).join('')}</div><div class="group-meta">Gruppo storico: membri presenti nello snapshot del parent, ma non come child DB autonomi.</div>` : ''}
+      ${!parentRow && !childRows.length && !fallbackChildren.length ? `<div>Record singolo, nessun gruppo collegato.</div>` : ''}
+      ${(parentRow || childRows.length || fallbackChildren.length) ? `<div class="group-meta">${groupMetaLine(groupRoot)} · Fatturazione gestita sul record principale del gruppo</div>` : ''}
+    </div>
+    <div class="drawer-sec">Dati anagrafici</div>
+    <div class="field-2">
+      <div class="field"><label>Nome</label><input class="df" data-k="nome" value="${esc(f.nome)}"/></div>
+      <div class="field"><label>Cognome</label><input class="df" data-k="cognome" value="${esc(f.cognome)}"/></div>
+    </div>
+    <div class="field-2">
+      <div class="field"><label>Email</label><input class="df" type="email" data-k="email" value="${esc(f.email)}"/></div>
+      <div class="field"><label>Telefono</label><input class="df" data-k="telefono" value="${esc(f.telefono)}"/></div>
+    </div>
+    <div class="field-2">
+      <div class="field"><label>Paese</label>
+        <select class="df" data-k="paese_residenza">${PAESI.map(p=>`<option${f.paese_residenza===p?' selected':''}>${esc(p)}</option>`).join('')}</select>
+      </div>
+      <div class="field"><label>Indirizzo</label><input class="df" data-k="indirizzo_residenza" value="${esc(f.indirizzo_residenza)}"/></div>
+    </div>
+    <div class="drawer-sec">Dati fiscali</div>
+    <div class="field-3">
+      <div class="field"><label>Codice Fiscale</label>
+        <input class="df" data-k="codice_fiscale" value="${esc(f.codice_fiscale)}" id="cfInput" style="${f.codice_fiscale_verificato?'border-color:var(--green);box-shadow:0 0 0 3px rgba(22,163,74,.08)':''}"/>
+      </div>
+      <div class="field"><label>IVA %</label>
+        <select class="df" data-k="iva_percentuale">${IVA_OPT.map(v=>`<option value="${v}"${String(f.iva_percentuale)===String(v)?' selected':''}>${v}%</option>`).join('')}</select>
+      </div>
+      <div class="field"><label>Tipo cliente</label>
+        <select class="df" data-k="tipo_cliente">${TIPO_OPT.map(v=>`<option${f.tipo_cliente===v?' selected':''}>${v}</option>`).join('')}</select>
+      </div>
+    </div>
+    <div class="chk-row">
+      <input id="cfv" type="checkbox"${f.codice_fiscale_verificato?' checked':''}/>
+      <label for="cfv">CF verificato</label>
+    </div>
+    ${isBiz?`
+      <div class="field-2" style="margin-top:12px">
+        <div class="field"><label>Ragione sociale</label><input class="df" data-k="ragione_sociale" value="${esc(f.ragione_sociale)}"/></div>
+        <div class="field"><label>Partita IVA</label><input class="df" data-k="piva_cliente" value="${esc(f.piva_cliente)}"/></div>
+      </div>
+      <div class="field" style="margin-top:12px">
+        <label>Indirizzo fatturazione</label>
+        <input class="df" data-k="indirizzo_fatturazione" value="${esc(f.indirizzo_fatturazione||'')}"/>
+      </div>
+    `:''}
+    <div class="drawer-sec">Soggiorno</div>
+    <div class="field-2">
+      <div class="field">
+        <label>Stato pagamento fattura</label>
+        <select class="df" data-k="payment_status">
+          <option value="paid" ${f.payment_status==='paid'?'selected':''}>Già pagata</option>
+          <option value="not_paid" ${f.payment_status==='not_paid'?'selected':''}>Da pagare</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Metodo incasso</label>
+        <select class="df" data-k="payment_account_type">
+          <option value="bonifico" ${f.payment_account_type==='bonifico'?'selected':''}>Bonifico</option>
+          <option value="contanti" ${f.payment_account_type==='contanti'?'selected':''}>Contanti</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-2">
+      <div class="field">
+        <label>Sezionale</label>
+        <select class="df" data-k="sezionale">
+          <option value="R" ${f.sezionale==='R'?'selected':''}>R · Residence</option>
+          <option value="D" ${f.sezionale==='D'?'selected':''}>D · Diretti</option>
+          <option value="P" ${f.sezionale==='P'?'selected':''}>P · Portali</option>
+        </select>
+      </div>
+    </div>
+    ${r.stato==='APPROVATA' ? `
+      <div style="margin-top:12px;padding:11px 13px;border:1px solid var(--border);border-radius:6px;background:var(--surf);font-size:13px;line-height:1.55">
+        <div><strong>Creazione FiC:</strong> verra usato il sezionale <strong>${esc(getSezionaleLabel(f.sezionale))}</strong></div>
+        <div>Stato pagamento inviato: <strong>${esc(getPaymentStatusLabel(f.payment_status))}</strong></div>
+      </div>
+    ` : ''}
+    <div class="field-2">
+      <div class="field"><label>Importo lordo (€)</label><input class="df" type="number" step="0.01" data-k="importo_lordo" value="${esc(f.importo_lordo)}"/></div>
+      <div class="field"><label>Data check-in</label><input class="df" type="date" data-k="data_checkin" value="${esc(f.data_checkin)}"/></div>
+    </div>
+    <div class="field-2">
+      <div class="field"><label>Data check-out</label><input class="df" type="date" data-k="data_checkout" value="${esc(f.data_checkout)}"/></div>
+      <div class="field">
+        <label>Anteprima totale fattura</label>
+        <div style="padding:11px 13px;border:1px solid var(--border);border-radius:6px;background:var(--surf);font-size:13px;line-height:1.55">
+          <div>Imponibile: <strong>${formatCurrency(invoicePreview.imponibile)}</strong></div>
+          <div>Bollo: <strong>${formatCurrency(invoicePreview.bollo)}</strong>${invoicePreview.bolloApplicato ? ' <span class="mono-sm" style="color:var(--yellow)">aggiunto in anteprima</span>' : ''}</div>
+          <div>Totale documento: <strong>${formatCurrency(invoicePreview.totale)}</strong></div>
+        </div>
+      </div>
+    </div>
+    <div class="drawer-sec">Segnalazione</div>
+    <div class="field"><textarea class="df" data-k="segnalazione_jessica" placeholder="Note o segnalazione…">${esc(f.segnalazione_jessica)}</textarea></div>
+    <div class="drawer-sec">Stato corrente</div>
+    <span class="badge ${badgeCls(r.stato)}" style="font-size:12px;padding:4px 12px">${badgeLbl(r.stato)}</span>
+  </div>
+  <div class="drawer-footer">
+    <button id="dSave" class="btn btn-ghost" style="margin-right:auto">${S.saving?'<span class="spin"></span>':'💾'} Salva</button>
+    ${isArchiveRow ? `
+      <button id="dRestore" class="btn btn-yellow" ${S.saving?'disabled':''}>↺ Ripristina</button>
+      <button id="dDelete" class="btn btn-red" ${S.saving?'disabled':''}>Elimina</button>
+    ` : `
+      <button id="dSegn" class="btn btn-yellow" ${S.saving?'disabled':''}>⚑ Segnala</button>
+      <button id="dScar" class="btn btn-red" ${S.saving?'disabled':''}>✗ Scarta</button>
+      <button id="dAppr" class="btn btn-green" ${S.saving?'disabled':''}>✓ Approva</button>
+      ${r.stato==='APPROVATA'?`<button id="dFatt" class="btn btn-primary" ${S.saving?'disabled':''} style="background:#7c3aed">🧾 Fattura · ${esc(f.sezionale)}</button>`:''}
+    `}
+  </div>`;
+
+  document.getElementById('dClose').addEventListener('click', ()=>{ S.selected=null; S.form={}; partialDrawer(); highlightSelected(); });
+  document.getElementById('dSave').addEventListener('click', saveForm);
+  document.getElementById('dAppr')?.addEventListener('click', ()=>setStato('APPROVATA'));
+  document.getElementById('dScar')?.addEventListener('click', ()=>setStato('SCARTATA'));
+  document.getElementById('dSegn')?.addEventListener('click', ()=>setStato('DA_VERIFICARE'));
+  document.getElementById('dFatt')?.addEventListener('click', creaFattura);
+  document.getElementById('dRestore')?.addEventListener('click', restoreSelected);
+  document.getElementById('dDelete')?.addEventListener('click', deleteArchivedSelected);
+  d.querySelectorAll('.df').forEach(el=>{
+    el.addEventListener('input',  e=>{ S.form[e.target.dataset.k]=e.target.value; });
+    el.addEventListener('change', e=>{
+      S.form[e.target.dataset.k]=e.target.value;
+      if (e.target.dataset.k==='tipo_cliente') {
+        partialDrawer();
+      } else if (['iva_percentuale','importo_lordo','payment_status','payment_account_type','sezionale'].includes(e.target.dataset.k)) {
+        partialDrawer();
+      }
+    });
+  });
+  document.getElementById('cfv')?.addEventListener('change', e=>{
+    S.form.codice_fiscale_verificato = e.target.checked;
+    const inp = document.getElementById('cfInput');
+    if (inp) { inp.style.borderColor=e.target.checked?'var(--green)':''; inp.style.boxShadow=e.target.checked?'0 0 0 3px rgba(22,163,74,.08)':''; }
+  });
+}
+
+function updateFooter() {
+  if (S.panelMode === 'contabilita') {
+    if (S.accountingView === 'bollette') {
+      const s=document.getElementById('dSaveBill'); if(!s) return;
+      s.innerHTML = S.billSaving ? '<span class="spin"></span> Salvo…' : '💾 Salva';
+      s.disabled = S.billSaving;
+      ['dRejectBill','dApproveBill'].forEach(id=>{ const b=document.getElementById(id); if(b) b.disabled=S.billSaving; });
+      return;
+    }
+    const s=document.getElementById('dSaveAcc'); if(!s) return;
+    s.innerHTML = S.accountingSaving ? '<span class="spin"></span> Salvo…' : '💾 Salva';
+    s.disabled = S.accountingSaving;
+    ['dFixAcc','dRejectAcc','dApproveAcc'].forEach(id=>{ const b=document.getElementById(id); if(b) b.disabled=S.accountingSaving; });
+    return;
+  }
+  const s=document.getElementById('dSave'); if(!s) return;
+  s.innerHTML = S.saving ? '<span class="spin"></span> Salvo…' : '💾 Salva';
+  s.disabled  = S.saving;
+  ['dAppr','dScar','dSegn','dFatt','dRestore','dDelete'].forEach(id=>{ const b=document.getElementById(id); if(b) b.disabled=S.saving; });
+}
+
+function startInactivity() {
+  const reset = () => {
+    S.timeLeft = TIMEOUT_MS;
+    clearTimeout(S.inTimer);
+    S.inTimer = setTimeout(()=>sb.auth.signOut(), TIMEOUT_MS);
+  };
+  ['mousemove','mousedown','keydown','touchstart','scroll'].forEach(e=>window.addEventListener(e,reset,{passive:true}));
+  reset();
+  clearInterval(S.cdTimer);
+  S.cdTimer = setInterval(()=>{
+    S.timeLeft = Math.max(0, S.timeLeft-1000);
+    const pct=(S.timeLeft/TIMEOUT_MS)*100;
+    const el=document.getElementById('tbar'); if(!el) return;
+    el.style.width=pct+'%';
+    el.style.background=pct<20?'#dc2626':pct<50?'#d97706':'#2563eb';
+  }, 1000);
+}
+
+(async()=>{
+  const {data:{session}} = await sb.auth.getSession();
+  if (session && isAllowedAccountingEmail(session.user?.email)) {
+    S.session=session;
+    renderDashboard();
+    startInactivity();
+    await loadData();
+  } else {
+    if (session) await sb.auth.signOut();
+    renderLogin();
+  }
+})();
+
+sb.auth.onAuthStateChange(async (_,session)=>{
+  if (!session && S.session) {
+    S.session=null;
+    clearInterval(S.cdTimer); clearTimeout(S.inTimer);
+    S.rows=[]; S.selected=null; S.form={};
+    renderLogin();
+  }
+  if (session && !isAllowedAccountingEmail(session.user?.email)) {
+    await sb.auth.signOut();
+    S.session = null;
+    renderLogin();
+    const err = document.getElementById('lerr');
+    if (err) {
+      err.textContent = 'Questo pannello accetta solo le credenziali dedicate della contabilità.';
+      err.style.display = 'block';
+    }
+    return;
+  }
+  if (session && !S.session) {
+    S.session=session;
+    renderDashboard(); startInactivity();
+    try { await loadData(); } catch(e) { console.error('auth load error:', e); }
+  }
+});
+</script>
+</body>
+</html>

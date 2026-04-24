@@ -40,7 +40,7 @@
       --mono:     'DM Mono', monospace;
     }
 
-    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; }
+    html, body { min-height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
 
     .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg); }
     .login-card { width: 400px; background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 48px 44px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
@@ -51,6 +51,7 @@
     .field label { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text2); margin-bottom: 6px; }
     .field input, .field select, .field textarea { width: 100%; background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 10px 13px; font-size: 14px; font-family: var(--sans); color: var(--text); transition: border-color 0.15s, box-shadow 0.15s; outline: none; }
     .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+    .field-error { border-color: #f59e0b !important; box-shadow: 0 0 0 3px rgba(245,158,11,0.12) !important; }
     .field textarea { resize: vertical; min-height: 78px; }
     .field select { appearance: none; cursor: pointer; padding-right: 28px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a8a29e' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
     .field-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -102,13 +103,17 @@
     .filters input:focus, .filters select:focus { border-color: var(--accent); }
     .filters input { min-width: 220px; }
     .filters select { appearance: none; cursor: pointer; padding-right: 28px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a8a29e' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
+    .view-toggle { display: inline-flex; align-items: center; gap: 6px; }
+    .view-chip { background: var(--surf); border: 1px solid var(--border); border-radius: 999px; padding: 8px 14px; font-size: 12px; font-family: var(--mono); color: var(--text2); cursor: pointer; transition: all 0.15s; }
+    .view-chip:hover { border-color: var(--border2); color: var(--text); }
+    .view-chip.active { background: var(--teal-l); border-color: rgba(13,148,136,0.22); color: var(--teal); }
 
     .content { padding: 0; min-height: calc(100vh - 44px - 56px - 46px); }
     .panel { display: none; }
     .panel.active { display: block; }
-
-    .body-wrap { display: flex; height: calc(100vh - 44px - 56px - 46px - 80px - 52px); overflow: hidden; }
-    .table-panel { flex: 1; overflow-y: auto; }
+    #panSchedine.active { display: block; }
+    .body-wrap { display: flex; min-height: calc(100vh - 44px - 56px - 46px - 80px - 52px); overflow: hidden; align-items: stretch; }
+    .table-panel { flex: 1 1 auto; min-width: 0; overflow-y: auto; overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     thead th { text-align: left; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--surf); position: sticky; top: 0; z-index: 10; white-space: nowrap; }
     tbody tr { border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; }
@@ -125,17 +130,25 @@
     .b-errore    { background: var(--red-l);    color: var(--red); }
     .b-non       { background: var(--surf);     color: var(--muted); }
 
-    .drawer { width: 0; min-width: 0; overflow: hidden; background: var(--white); border-left: 1px solid var(--border); display: flex; flex-direction: column; transition: width 0.25s ease, min-width 0.25s ease; }
-    .drawer.open { width: 480px; min-width: 480px; overflow-y: auto; }
+    .drawer { width: 0; min-width: 0; max-width: 0; flex: 0 0 auto; overflow: hidden; background: var(--white); border-left: 1px solid var(--border); display: flex; flex-direction: column; transition: width 0.25s ease, min-width 0.25s ease, max-width 0.25s ease; }
+    .drawer.open { width: 460px; min-width: 460px; max-width: 460px; overflow-y: auto; }
     .drawer-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 20px 24px 16px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--white); z-index: 10; }
     .drawer-title { font-family: var(--serif); font-size: 22px; font-weight: 500; }
     .drawer-sub { font-size: 11px; font-family: var(--mono); color: var(--muted); margin-top: 2px; }
     .drawer-close { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 18px; padding: 3px 7px; border-radius: 4px; transition: background 0.15s; }
     .drawer-close:hover { background: var(--border); color: var(--text); }
-    .drawer-body { padding: 20px 24px; flex: 1; }
-    .drawer-footer { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-wrap: wrap; position: sticky; bottom: 0; background: var(--white); }
+    .drawer-body { padding: 20px 24px 12px; flex: 0 1 auto; }
+    .drawer-footer { margin-top: 0; padding: 10px 24px 14px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-wrap: wrap; position: static; background: var(--white); z-index: 11; flex-shrink: 0; box-shadow: none; pointer-events: auto; }
+    .drawer-footer .btn { width: auto; flex: 0 0 auto; justify-content: center; }
+    .drawer-footer .badge { align-self: center; }
     .drawer-sec { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin: 18px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
     .drawer-sec:first-child { margin-top: 0; }
+    .group-summary { padding: 10px 14px; background: var(--surf); border-radius: 6px; font-size: 13px; margin-bottom: 14px; }
+    .group-meta { margin-top: 6px; font-size: 11px; color: var(--muted); font-family: var(--mono); }
+    .group-link-list { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+    .group-link { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; color: var(--text); cursor: pointer; text-align: left; font-size: 12px; }
+    .group-link:hover { border-color: var(--teal); color: var(--teal); background: var(--teal-l); }
+    .group-link.active { border-color: var(--teal); color: var(--teal); background: var(--teal-l); }
 
     .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; padding: 24px; }
     .account-card { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 20px 22px; transition: box-shadow 0.15s; cursor: pointer; }
@@ -172,6 +185,23 @@
     .modal-title { font-family: var(--serif); font-size: 20px; font-weight: 500; }
     .modal-body { padding: 20px 24px; }
     .modal-foot { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+    .hint-box { padding: 10px 12px; border-radius: 8px; font-size: 12px; line-height: 1.45; }
+    .hint-box.warn { background: var(--yellow-l); color: var(--yellow); border: 1px solid #fde68a; }
+    .istat-layout { padding: 18px 24px 28px; }
+    .istat-toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; margin-bottom: 16px; }
+    .istat-toolbar .field { margin-bottom: 0; min-width: 200px; }
+    .istat-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .istat-result { background: var(--white); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .istat-section { padding: 16px 18px; border-top: 1px solid var(--border); }
+    .istat-section:first-child { border-top: none; }
+    .istat-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .istat-mini-card { background: var(--surf); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+    .istat-mini-card .k { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+    .istat-mini-card .v { font-family: var(--serif); font-size: 28px; font-weight: 600; }
+    .warn-list { display: flex; flex-direction: column; gap: 8px; }
+    .warn-item { padding: 10px 12px; border-radius: 8px; border: 1px solid #fde68a; background: var(--yellow-l); color: var(--yellow); font-size: 12px; }
+    .json-box { background: #18181b; color: #f4f4f5; border-radius: 8px; padding: 14px; overflow: auto; font-family: var(--mono); font-size: 11px; line-height: 1.5; max-height: 340px; white-space: pre-wrap; }
+    .legacy-note { margin-top: 10px; font-size: 11px; color: var(--muted); }
 
     .pw-field { position: relative; }
     .pw-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--muted); font-size: 13px; padding: 4px; }
@@ -215,6 +245,10 @@
     }
 
     .navbar a.navbar-link {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
       color: #a8a29e;
       text-decoration: none;
       padding: 4px 10px;
@@ -234,7 +268,6 @@
     .navbar .active-documenti {
       background: var(--teal);
     }
-
     .navbar-user {
       font-family: var(--mono);
       font-size: 10px;
@@ -257,7 +290,6 @@
     .navbar-toggle:hover {
       background: rgba(255,255,255,.08);
     }
-
     @media (max-width: 900px) {
       .navbar {
         padding: 0 16px;
@@ -328,6 +360,81 @@
         max-width: 60vw;
         font-size: 11px;
       }
+
+      .drawer.open {
+        width: 100%;
+        min-width: 100%;
+        max-width: 100%;
+      }
+
+      .drawer-body,
+      .drawer-footer {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+
+      .body-wrap {
+        display: block;
+        overflow: visible;
+      }
+
+      .table-panel {
+        min-width: 0;
+        overflow: visible;
+      }
+
+      thead th {
+        position: static;
+      }
+
+      .stats-row,
+      .istat-summary {
+        grid-template-columns: 1fr;
+      }
+
+      .filters,
+      .istat-layout,
+      .card-grid {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+
+      .filters {
+        align-items: stretch;
+      }
+
+      .filters input,
+      .filters select,
+      .istat-toolbar .field {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .istat-toolbar,
+      .istat-actions,
+      .field-2,
+      .field-3 {
+        grid-template-columns: 1fr;
+        flex-direction: column;
+      }
+
+      .section-header {
+        position: static;
+      }
+
+      .drawer-header,
+      .drawer-footer {
+        position: static;
+      }
+
+      .drawer-footer .btn {
+        width: 100%;
+      }
+
+      .drawer-footer .badge {
+        width: 100%;
+        text-align: center;
+      }
     }
   </style>
 </head>
@@ -338,8 +445,8 @@
   <div class="navbar-menu" id="navbarMenu">
     <a href="/backoffice.html" class="navbar-link">Fatturazione</a>
     <a href="/backoffice-documenti.html" class="navbar-link active active-documenti">Documenti</a>
-    <a href="/portale.html" class="navbar-link">Portale</a>
-    <span class="navbar-user" id="navUser"></span>
+    <a href="/backoffice-portale.html" class="navbar-link">Portale Admin</a>
+    <a href="/backoffice-contabilita.html" class="navbar-link">Contabilita</a>
   </div>
 </nav>
 <div id="app"></div>
@@ -351,15 +458,19 @@ const sb = window.sb;
 
 const QUESTURE = ['Rimini','Pesaro','Verona','Aosta'];
 const ALLOGGIATI_STATI = ['DA_INVIARE','INVIATA','ERRORE','NON_NECESSARIA'];
+const ALLOGGIATI_ACTIVE_STATI = ['DA_INVIARE','ERRORE'];
+const ALLOGGIATI_ARCHIVE_STATI = ['INVIATA','NON_NECESSARIA'];
 
 const S = {
   session: null,
   tab: 'schedine',
   // Schedine
   rows: [], apartments: [], accounts: [], links: [],
+  istatConfigs: [], istatInvii: [],
   selected: null, form: {},
   loading: true, saving: false,
-  fSearch: '', fStatoPS: '', fApt: '', fAccount: '',
+  fSearch: '', fStatoPS: '', fApt: '', fAccount: '', fGroupRole: '', viewMode: 'active',
+  istatApartmentId: '', istatMonth: new Date().toISOString().slice(0, 7), istatResult: null, istatLoading: false, istatMarcheXmlResult: null,
   // Accounts
   editAccount: null,
 };
@@ -377,24 +488,71 @@ function toast(msg, type='ok') {
   S.toastTimer = setTimeout(()=>{ el.innerHTML=''; }, 3500);
 }
 
+async function audit(action, table, id) {
+  await sb.from('audit_log').insert({ user_email: S.session?.user?.email||'', action, table_name: table, record_id: String(id), timestamp: new Date().toISOString() });
+}
+
+function getSchedineStates(mode = S.viewMode) {
+  return mode === 'archive' ? ALLOGGIATI_ARCHIVE_STATI : ALLOGGIATI_ACTIVE_STATI;
+}
+
+function countSchedineByView(mode) {
+  const states = getSchedineStates(mode);
+  return getVisibleSchedineRows().filter(r => states.includes(r.alloggiati_stato)).length;
+}
+
 // ── Data loading ──
 async function loadAll() {
   S.loading = true;
-  const [ospiti, apts, accs, lnks] = await Promise.all([
+  const [ospiti, apts, accs, lnks, istatCfg, istatInvii] = await Promise.all([
     sb.from('ospiti_check_in')
-      .select('id,nome,cognome,email,sesso,data_nascita,luogo_nascita,luogo_nascita_codice,stato_nascita_codice,cittadinanza,cittadinanza_codice,tipo_documento,tipo_documento_codice,numero_documento,luogo_rilascio_documento,luogo_rilascio_codice,tipo_alloggiato,capogruppo_id,data_checkin,data_checkout,apartment_id,stato,alloggiati_stato,alloggiati_errore,alloggiati_inviata_at,tag_prenotazione,paese_residenza,telefono')
+      .select('id,nome,cognome,email,sesso,data_nascita,luogo_nascita,luogo_nascita_codice,stato_nascita_codice,cittadinanza,cittadinanza_codice,tipo_documento,tipo_documento_codice,numero_documento,luogo_rilascio_documento,luogo_rilascio_codice,tipo_alloggiato,capogruppo_id,numero_persone,additional_guests,data_checkin,data_checkout,apartment_id,stato,alloggiati_stato,alloggiati_errore,alloggiati_inviata_at,tag_prenotazione,paese_residenza,telefono')
       .in('stato', ['APPROVATA','CREDENZIALI_INVIATE','BOZZA_CREATA','CHECK_IN_COMPLETATO'])
       .order('data_checkin', {ascending: false})
       .limit(500),
-    sb.from('apartments').select('id,nome_appartamento').order('nome_appartamento'),
+    sb.from('apartments').select('id,nome_appartamento,struttura_nome').order('nome_appartamento'),
     sb.from('alloggiati_accounts').select('*').order('nome_account'),
     sb.from('apartment_alloggiati').select('*'),
+    sb.from('apartment_istat_config_public').select('id,apartment_id,attivo,regione,sistema,portal_url,codice_struttura,auth_type,username,export_format,requires_open_close,supports_file_import,supports_webservice,deadline_rule,note,created_at,updated_at').order('created_at', { ascending: false }),
+    sb.from('istat_invii').select('id,apartment_id,mese_riferimento,esito,created_at').order('created_at', { ascending: false }).limit(200),
   ]);
   S.rows = ospiti.data || [];
   S.apartments = apts.data || [];
   S.accounts = accs.data || [];
   S.links = lnks.data || [];
+  S.istatConfigs = istatCfg.data || [];
+  S.istatInvii = istatInvii.data || [];
+  if (!S.istatApartmentId && S.apartments.length) S.istatApartmentId = S.apartments[0].id;
   S.loading = false;
+}
+
+function getIstatConfigForApt(aptId) {
+  return S.istatConfigs.find(c => c.apartment_id === aptId) || null;
+}
+
+function getLastIstatRun(aptId, monthValue) {
+  if (!aptId || !monthValue) return null;
+  const monthDate = `${monthValue}-01`;
+  return S.istatInvii.find(r => r.apartment_id === aptId && r.mese_riferimento === monthDate) || null;
+}
+
+function getIstatConfigDraft(apartment, cfg = {}) {
+  const structureName = String(apartment?.struttura_nome || apartment?.nome_appartamento || '').trim();
+  const isMontefeltro = structureName.toLowerCase().includes('montefeltro');
+  const defaultRegion = cfg.regione || (isMontefeltro ? 'marche' : '');
+  return {
+    regione: defaultRegion,
+    sistema: cfg.sistema || getSystemByRegion(defaultRegion),
+    portal_url: cfg.portal_url || (isMontefeltro ? 'https://istrice-ross1000.turismo.marche.it/' : ''),
+    codice_struttura: cfg.codice_struttura || '',
+    auth_type: cfg.auth_type || '',
+    username: cfg.username || '',
+    note: cfg.note || '',
+    supports_file_import: typeof cfg.supports_file_import === 'boolean' ? cfg.supports_file_import : isMontefeltro,
+    supports_webservice: typeof cfg.supports_webservice === 'boolean' ? cfg.supports_webservice : false,
+    requires_open_close: typeof cfg.requires_open_close === 'boolean' ? cfg.requires_open_close : (defaultRegion === 'marche' || defaultRegion === 'valle-daosta'),
+    deadline_rule: cfg.deadline_rule || getDeadlineRuleByRegion(defaultRegion),
+  };
 }
 
 function getAccountForApt(aptId) {
@@ -408,12 +566,405 @@ function getLinkedApts(accountId) {
   return S.apartments.filter(a => aptIds.includes(a.id));
 }
 
+function getChildRows(parentId) {
+  return S.rows.filter(r => String(r.capogruppo_id || '') === String(parentId || ''));
+}
+
+function getStoredAdditionalGuests(row) {
+  return Array.isArray(row?.additional_guests) ? row.additional_guests.filter(Boolean) : [];
+}
+
+function getSnapshotChildren(row) {
+  const root = getParentRow(row) || row;
+  if (!root || root.capogruppo_id || getChildRows(root.id).length) return [];
+  return getStoredAdditionalGuests(root).map((guest, index) => ({
+    id: `snapshot-${root.id}-${index}`,
+    nome: guest?.nome || '',
+    cognome: guest?.cognome || '',
+    tipo_alloggiato: guest?.tipo_alloggiato || (Number(root.tipo_alloggiato || 18) === 17 ? 19 : 20),
+    capogruppo_id: root.id,
+    _snapshot: true,
+  }));
+}
+
+function getEffectiveGroupChildren(row) {
+  const root = getParentRow(row) || row;
+  if (!root) return [];
+  const liveChildren = getChildRows(root.id);
+  return liveChildren.length ? liveChildren : getSnapshotChildren(root);
+}
+
+function getParentRow(row) {
+  if (!row?.capogruppo_id) return null;
+  return S.rows.find(r => String(r.id) === String(row.capogruppo_id)) || null;
+}
+
+function isLeaderRow(row) {
+  return !!row && !row.capogruppo_id && getEffectiveGroupChildren(row).length > 0;
+}
+
+function isMemberRow(row) {
+  return !!row?.capogruppo_id;
+}
+
+function isPrimarySchedinaRow(row) {
+  return !!row && !row.capogruppo_id;
+}
+
+function getVisibleSchedineRows() {
+  return S.rows.filter(isPrimarySchedinaRow);
+}
+
+function getGroupRootRow(row) {
+  return isMemberRow(row) ? getParentRow(row) : row;
+}
+
+function getGroupSize(row) {
+  const root = getGroupRootRow(row);
+  if (!root) return 1;
+  return 1 + getEffectiveGroupChildren(root).length;
+}
+
+function isGroupRecordIncomplete(row) {
+  if (!row) return true;
+  const tipo = Number(row.tipo_alloggiato || 16);
+  const natoInItalia = !row.stato_nascita_codice || row.stato_nascita_codice === '100000100';
+  const baseOk = [
+    row.nome,
+    row.cognome,
+    row.data_checkin,
+    row.data_checkout,
+    row.sesso,
+    row.data_nascita,
+    row.cittadinanza,
+    row.cittadinanza_codice,
+  ].every(Boolean);
+  if (!baseOk) return true;
+  if (natoInItalia && !row.luogo_nascita_codice) return true;
+  if (!natoInItalia && !row.stato_nascita_codice) return true;
+  if ([16, 17, 18].includes(tipo)) {
+    if (![row.tipo_documento, row.numero_documento, row.luogo_rilascio_codice].every(Boolean)) return true;
+  }
+  return false;
+}
+
+function getGroupStatusSummary(row) {
+  const root = getGroupRootRow(row);
+  if (!root) return [];
+  const records = [root, ...getChildRows(root.id)];
+  const extraMembers = Math.max(0, records.length - 1);
+  const errorCount = records.filter(item => item.alloggiati_stato === 'ERRORE').length;
+  const incompleteCount = records.filter(isGroupRecordIncomplete).length;
+  const blockedCount = records.filter(item => ['NON_NECESSARIA'].includes(item.alloggiati_stato)).length;
+  const parts = [];
+  if (extraMembers > 0) parts.push(`+${extraMembers} componenti`);
+  if (errorCount > 0) parts.push(`${errorCount} errore${errorCount > 1 ? 'i' : ''} nel gruppo`);
+  if (incompleteCount > 0) parts.push(`${incompleteCount} record incompleti`);
+  if (!errorCount && !incompleteCount && blockedCount === 0 && records.every(item => item.alloggiati_stato === 'INVIATA')) {
+    parts.push('Gruppo inviato');
+  } else if (!errorCount && !incompleteCount && blockedCount === 0 && records.some(item => ['DA_INVIARE', 'ERRORE'].includes(item.alloggiati_stato))) {
+    parts.push('Gruppo pronto / da verificare');
+  }
+  return parts;
+}
+
+function groupRoleLabel(row) {
+  const root = getGroupRootRow(row);
+  const rootType = Number(root?.tipo_alloggiato || row?.tipo_alloggiato || 16);
+  if (!isMemberRow(row)) {
+    if (rootType === 17) return 'Capofamiglia';
+    if (rootType === 18) return 'Capogruppo';
+    return 'Singolo';
+  }
+  if (rootType === 17) return 'Familiare';
+  if (rootType === 18) return 'Membro gruppo';
+  return 'Singolo';
+}
+
+function getOrderedGroupRows(row) {
+  const root = getGroupRootRow(row);
+  if (!root) return row ? [row] : [];
+  const children = getChildRows(root.id).slice().sort((a, b) => {
+    const aTipo = Number(a.tipo_alloggiato || 20);
+    const bTipo = Number(b.tipo_alloggiato || 20);
+    if (aTipo !== bTipo) return aTipo - bTipo;
+    return `${a.cognome || ''} ${a.nome || ''}`.localeCompare(`${b.cognome || ''} ${b.nome || ''}`);
+  });
+  return [root, ...children];
+}
+
+function getRowsForQuesturaAction(row) {
+  return getGroupSize(row) > 1 ? getOrderedGroupRows(row) : (row ? [row] : []);
+}
+
+function validateQuesturaSelection(rows) {
+  if (!rows.length) return 'Nessun record selezionato';
+  const states = new Set(rows.map(r => r.alloggiati_stato));
+  const invalid = rows.filter(r => !['DA_INVIARE', 'ERRORE'].includes(r.alloggiati_stato));
+  if (invalid.length) {
+    return `Il gruppo contiene record non inviabili: ${invalid.map(r => `${r.nome} ${r.cognome} (${psBadgeLbl(r.alloggiati_stato)})`).join(', ')}`;
+  }
+  const aptIds = new Set(rows.map(r => r.apartment_id));
+  if (aptIds.size > 1) return 'Il gruppo contiene appartamenti diversi';
+  if (states.has('INVIATA') || states.has('NON_NECESSARIA')) {
+    return 'Il gruppo non è omogeneo per l’invio reale';
+  }
+  return '';
+}
+
+function groupRoleBadge(row) {
+  if (isLeaderRow(row)) {
+    return `<span class="badge" style="background:var(--teal-l);color:var(--teal)">${groupRoleLabel(row)} · ${getGroupSize(row)} persone</span>`;
+  }
+  if (isMemberRow(row)) {
+    return `<span class="badge" style="background:var(--yellow-l);color:var(--yellow)">${groupRoleLabel(row)} · gruppo ${esc(String(row.capogruppo_id).slice(0,8))}</span>`;
+  }
+  return `<span class="badge b-non">Singolo</span>`;
+}
+
+function groupMetaLine(row) {
+  if (isLeaderRow(row)) return getChildRows(row.id).length ? `Gruppo #${esc(String(row.id).slice(0,8))}` : `Gruppo storico #${esc(String(row.id).slice(0,8))}`;
+  if (isMemberRow(row)) return `Collegato a #${esc(String(row.capogruppo_id).slice(0,8))}`;
+  return 'Record singolo';
+}
+
+const DOC_TYPE_MAP = {"Carta d'identita":'IDENT','Passaporto':'PASOR','Patente':'PATEN'};
+const CITIZENSHIP_CODE_FALLBACK = {
+  'italia': '100000100', 'germany': '100000083', 'germania': '100000083',
+  'france': '100000039', 'francia': '100000039', 'spain': '100000070',
+  'spagna': '100000070', 'uk': '100000999', 'united kingdom': '100000999',
+  'regno unito': '100000999', 'usa': '100002001', 'stati uniti': '100002001',
+  'svizzera': '100000756', 'switzerland': '100000756',
+  'austria': '100000040', 'belgio': '100000056', 'belgium': '100000056',
+  'olanda': '100000528', 'netherlands': '100000528', 'paesi bassi': '100000528',
+};
+
+function getDocumentCode(value) {
+  const normalized = String(value || '').trim();
+  if (['IDENT', 'PASOR', 'PATEN'].includes(normalized)) return normalized;
+  return DOC_TYPE_MAP[normalized] || '';
+}
+
+function getCitizenshipCode(value, currentCode = '') {
+  if (currentCode) return String(currentCode).trim();
+  return CITIZENSHIP_CODE_FALLBACK[normalizeLookupValue(value)] || '';
+}
+
+function buildQuesturaDraft(row, formOverride = {}) {
+  const draft = {
+    ...row,
+    ...formOverride,
+    id: row?.id,
+    nome: formOverride?.nome || row?.nome || '',
+    cognome: formOverride?.cognome || row?.cognome || '',
+    data_checkin: formOverride?.data_checkin || row?.data_checkin || '',
+    data_checkout: formOverride?.data_checkout || row?.data_checkout || '',
+    cittadinanza: normalizeCitizenshipLabel(formOverride?.cittadinanza ?? row?.cittadinanza ?? ''),
+    cittadinanza_codice: getCitizenshipCode(formOverride?.cittadinanza ?? row?.cittadinanza ?? '', formOverride?.cittadinanza_codice ?? row?.cittadinanza_codice ?? ''),
+    tipo_documento: formOverride?.tipo_documento ?? row?.tipo_documento ?? '',
+    tipo_documento_codice: getDocumentCode(formOverride?.tipo_documento_codice ?? formOverride?.tipo_documento ?? row?.tipo_documento_codice ?? row?.tipo_documento ?? ''),
+    numero_documento: String(formOverride?.numero_documento ?? row?.numero_documento ?? '').trim(),
+    luogo_rilascio_codice: String(formOverride?.luogo_rilascio_codice ?? row?.luogo_rilascio_codice ?? '').trim(),
+    luogo_nascita_codice: String(formOverride?.luogo_nascita_codice ?? row?.luogo_nascita_codice ?? '').trim(),
+    stato_nascita_codice: String(formOverride?.stato_nascita_codice ?? row?.stato_nascita_codice ?? '').trim(),
+    sesso: String(formOverride?.sesso ?? row?.sesso ?? '').trim().toUpperCase(),
+    tipo_alloggiato: Number(formOverride?.tipo_alloggiato ?? row?.tipo_alloggiato ?? 16) || 16,
+    capogruppo_id: formOverride?.capogruppo_id ?? row?.capogruppo_id ?? null,
+    nato_in_italia: formOverride?.nato_in_italia ?? (!row?.stato_nascita_codice || row?.stato_nascita_codice === '100000100'),
+  };
+
+  if (draft.nato_in_italia !== false) {
+    draft.stato_nascita_codice = '100000100';
+  } else {
+    draft.luogo_nascita_codice = '';
+  }
+
+  return draft;
+}
+
+function validateAlloggiatiRows(rows, overrides = new Map()) {
+  if (!rows?.length) return ['Nessun ospite selezionato'];
+
+  const drafts = rows.map(row => buildQuesturaDraft(row, overrides.get(String(row.id)) || {}));
+  if (drafts.length === 1) {
+    drafts[0].capogruppo_id = null;
+  }
+
+  const errors = [];
+  if (drafts.length === 1) {
+    const tipo = Number(drafts[0].tipo_alloggiato || 16);
+    if (![16,17,18].includes(tipo)) {
+      console.warn('validateAlloggiatiRows: invalid single guest tipo_alloggiato', {
+        id: drafts[0].id,
+        tipo_alloggiato: drafts[0].tipo_alloggiato,
+      });
+      errors.push('Con un solo ospite il tipo alloggiato deve essere Singolo, Capofamiglia o Capogruppo');
+    }
+  }
+
+  if (drafts.length > 1) {
+    const leaders = drafts.filter(o => [17,18].includes(Number(o.tipo_alloggiato || 16)));
+    const invalidSingles = drafts.filter(o => Number(o.tipo_alloggiato || 16) === 16);
+    const invalidMembers = drafts.filter(o => ![17,18,19,20].includes(Number(o.tipo_alloggiato || 16)));
+
+    if (leaders.length === 0) {
+      console.warn('validateAlloggiatiRows: missing group leader', {
+        ids: drafts.map(o => o.id),
+        tipi: drafts.map(o => ({ id: o.id, tipo_alloggiato: Number(o.tipo_alloggiato || 16) })),
+      });
+      errors.push('Nei gruppi multi-ospite deve esserci un Capofamiglia o un Capogruppo');
+    }
+
+    if (leaders.length > 1) {
+      console.warn('validateAlloggiatiRows: multiple group leaders', {
+        leader_ids: leaders.map(o => o.id),
+        leader_tipi: leaders.map(o => ({ id: o.id, tipo_alloggiato: Number(o.tipo_alloggiato || 16) })),
+      });
+      errors.push('Deve esserci un solo capogruppo');
+    }
+
+    if (invalidSingles.length) {
+      console.warn('validateAlloggiatiRows: tipo 16 found in multi-guest group', {
+        invalid_ids: invalidSingles.map(o => o.id),
+      });
+      errors.push('Nei gruppi multi-ospite il tipo Singolo non e valido');
+    }
+
+    if (invalidMembers.length) {
+      console.warn('validateAlloggiatiRows: invalid tipo_alloggiato in group', {
+        invalid_rows: invalidMembers.map(o => ({ id: o.id, tipo_alloggiato: Number(o.tipo_alloggiato || 16) })),
+      });
+      invalidMembers.forEach((o) => {
+        errors.push(`${`${o.nome || ''} ${o.cognome || ''}`.trim() || 'Ospite'}: tipo alloggiato non valido`);
+      });
+    }
+
+    if (leaders.length === 1) {
+      const leader = leaders[0];
+      const leaderId = String(leader.id);
+      drafts.forEach((o) => {
+        const tipo = Number(o.tipo_alloggiato || 16);
+        if (String(o.id) === leaderId) return;
+        if (![19,20].includes(tipo)) {
+          console.warn('validateAlloggiatiRows: non-member tipo in non-leader row', {
+            id: o.id,
+            tipo_alloggiato: tipo,
+            expected_leader_id: leaderId,
+          });
+          errors.push(`${`${o.nome || ''} ${o.cognome || ''}`.trim() || 'Ospite'}: nei gruppi gli altri ospiti devono essere Familiare o Membro gruppo`);
+          return;
+        }
+        if (!o.capogruppo_id || String(o.capogruppo_id) !== leaderId) {
+          console.warn('validateAlloggiatiRows: incoherent capogruppo_id', {
+            id: o.id,
+            capogruppo_id: o.capogruppo_id,
+            expected_leader_id: leaderId,
+          });
+          errors.push(`${`${o.nome || ''} ${o.cognome || ''}`.trim() || 'Ospite'}: capogruppo mancante o incoerente`);
+        }
+      });
+    }
+  }
+
+  drafts.forEach(o => {
+    const nome = `${o.nome || ''} ${o.cognome || ''}`.trim() || 'Ospite';
+    if (!o.data_checkin) errors.push(`${nome}: data di arrivo mancante`);
+    if (!o.data_checkout) errors.push(`${nome}: data di partenza mancante`);
+    if (!o.sesso || !['M','F'].includes(o.sesso)) errors.push(`${nome}: sesso non valido`);
+    if (!o.data_nascita) errors.push(`${nome}: data nascita mancante`);
+    if (!o.cittadinanza_codice) errors.push(`${nome}: cittadinanza mancante`);
+    if (!o.stato_nascita_codice) {
+      errors.push(`${nome}: stato nascita mancante`);
+    } else if (o.stato_nascita_codice === '100000100' && !o.luogo_nascita_codice) {
+      errors.push(`${nome}: comune nascita mancante`);
+    }
+
+    const tipo = Number(o.tipo_alloggiato || 16);
+    if ([16,17,18].includes(tipo)) {
+      if (!['IDENT','PASOR','PATEN'].includes(o.tipo_documento_codice)) {
+        errors.push(`${nome}: tipo documento non valido`);
+      }
+      if (!o.numero_documento) errors.push(`${nome}: numero documento mancante`);
+      if (!o.luogo_rilascio_codice) errors.push(`${nome}: luogo rilascio documento mancante`);
+    }
+  });
+
+  return [...new Set(errors)];
+}
+
+function getQuesturaFieldIssues(row, formOverride = {}) {
+  const draft = buildQuesturaDraft(row, formOverride);
+  const issues = new Set();
+  if (!draft.data_checkin) issues.add('data_checkin');
+  if (!draft.data_checkout) issues.add('data_checkout');
+  if (!draft.sesso || !['M','F'].includes(draft.sesso)) issues.add('sesso');
+  if (!draft.data_nascita) issues.add('data_nascita');
+  if (!draft.cittadinanza_codice) {
+    issues.add('cittadinanza');
+    issues.add('cittadinanza_codice');
+  }
+  if (!draft.stato_nascita_codice) {
+    issues.add('_stato_nascita_desc');
+    issues.add('stato_nascita_codice');
+  } else if (draft.stato_nascita_codice === '100000100' && !draft.luogo_nascita_codice) {
+    issues.add('luogo_nascita');
+    issues.add('luogo_nascita_codice');
+  }
+  const tipo = Number(draft.tipo_alloggiato || 16);
+  if ([16,17,18].includes(tipo)) {
+    if (!['IDENT','PASOR','PATEN'].includes(draft.tipo_documento_codice)) {
+      issues.add('tipo_documento');
+    }
+    if (!draft.numero_documento) issues.add('numero_documento');
+    if (!draft.luogo_rilascio_codice) {
+      issues.add('luogo_rilascio_documento');
+      issues.add('luogo_rilascio_codice');
+    }
+  }
+  return issues;
+}
+
+function selectSchedinaRow(row) {
+  if (!row) return;
+  S.selected = row;
+  const acc = getAccountForApt(row.apartment_id);
+  const statoNascitaCodice = row.stato_nascita_codice || '';
+  const natoInItalia = !statoNascitaCodice || statoNascitaCodice === '100000100';
+  S.form = {
+    data_checkin: row.data_checkin || '',
+    data_checkout: row.data_checkout || '',
+    sesso: row.sesso||'',
+    data_nascita: row.data_nascita||'',
+    luogo_nascita: row.luogo_nascita||'',
+    luogo_nascita_codice: row.luogo_nascita_codice||'',
+    stato_nascita_codice: statoNascitaCodice,
+    _stato_nascita_desc: '',
+    nato_in_italia: natoInItalia,
+    cittadinanza: row.cittadinanza||'Italia',
+    cittadinanza_codice: row.cittadinanza_codice||'',
+    tipo_documento: row.tipo_documento||'',
+    numero_documento: row.numero_documento||'',
+    luogo_rilascio_documento: row.luogo_rilascio_documento||'',
+    luogo_rilascio_codice: row.luogo_rilascio_codice||'',
+    tipo_alloggiato: row.tipo_alloggiato||16,
+    tag_prenotazione: row.tag_prenotazione||'',
+    alloggiati_stato: row.alloggiati_stato||'DA_INVIARE',
+    _account: acc,
+  };
+}
+
 // ── Filter ──
 function filtered() {
+  const allowedStates = getSchedineStates();
   return S.rows.filter(r => {
-    if (r.alloggiati_stato === 'NON_NECESSARIA') return false;
+    if (!allowedStates.includes(r.alloggiati_stato)) return false;
+    if (S.fGroupRole !== 'members' && !isPrimarySchedinaRow(r)) return false;
     if (S.fStatoPS && r.alloggiati_stato !== S.fStatoPS) return false;
     if (S.fApt && String(r.apartment_id) !== S.fApt) return false;
+    if (S.fGroupRole === 'leaders' && !isLeaderRow(r)) return false;
+    if (S.fGroupRole === 'members' && !isMemberRow(r)) return false;
+    if (S.fGroupRole === 'singles' && !isPrimarySchedinaRow(r)) return false;
+    if (S.fGroupRole === 'singles' && isLeaderRow(r)) return false;
     if (S.fAccount) {
       const link = S.links.find(l => l.apartment_id === r.apartment_id);
       if (!link || String(link.alloggiati_account_id) !== S.fAccount) return false;
@@ -428,11 +979,12 @@ function filtered() {
 
 function stats() {
   const today = new Date().toISOString().slice(0,10);
+  const rows = getVisibleSchedineRows();
   return {
-    daInviare: S.rows.filter(r => r.alloggiati_stato === 'DA_INVIARE').length,
-    daiOggi:   S.rows.filter(r => r.alloggiati_stato === 'DA_INVIARE' && r.data_checkin === today).length,
-    inviate:   S.rows.filter(r => r.alloggiati_stato === 'INVIATA').length,
-    errori:    S.rows.filter(r => r.alloggiati_stato === 'ERRORE').length,
+    daInviare: rows.filter(r => r.alloggiati_stato === 'DA_INVIARE').length,
+    daiOggi:   rows.filter(r => r.alloggiati_stato === 'DA_INVIARE' && r.data_checkin === today).length,
+    inviate:   rows.filter(r => r.alloggiati_stato === 'INVIATA').length,
+    errori:    rows.filter(r => r.alloggiati_stato === 'ERRORE').length,
   };
 }
 
@@ -464,7 +1016,7 @@ function renderLogin() {
 // ── Main Dashboard ──
 function renderDashboard() {
   const st = stats();
-  const email = S.session?.user?.email || '';
+  const displayEmail = 'fatturazione@illupoaffitta.com';
   document.getElementById('app').innerHTML = `
   <header class="section-header">
     <div class="section-header-left">
@@ -472,7 +1024,7 @@ function renderDashboard() {
       <span class="section-header-tag tag-documenti">DOCUMENTI</span>
     </div>
     <div class="section-header-right">
-      <span class="section-header-user">${esc(email)}</span>
+      <span class="section-header-user">${esc(displayEmail)}</span>
       <button id="btnLogout" class="btn btn-ghost btn-sm">Esci</button>
     </div>
   </header>
@@ -480,14 +1032,16 @@ function renderDashboard() {
     <div class="tab ${S.tab==='schedine'?'active':''}" data-tab="schedine">Schedine PS</div>
     <div class="tab ${S.tab==='accounts'?'active':''}" data-tab="accounts">Account Alloggiati</div>
     <div class="tab ${S.tab==='config'?'active':''}" data-tab="config">Collega Appartamenti</div>
+    <div class="tab ${S.tab==='istat'?'active':''}" data-tab="istat">ISTAT</div>
   </div>
   <div class="content">
     <div class="panel ${S.tab==='schedine'?'active':''}" id="panSchedine"></div>
     <div class="panel ${S.tab==='accounts'?'active':''}" id="panAccounts"></div>
     <div class="panel ${S.tab==='config'?'active':''}" id="panConfig"></div>
+    <div class="panel ${S.tab==='istat'?'active':''}" id="panIstat"></div>
   </div>`;
 
-  initNavbar(email);
+  initNavbar(displayEmail);
   document.getElementById('btnLogout').addEventListener('click', ()=>sb.auth.signOut());
   document.querySelectorAll('.tab').forEach(t => {
     t.addEventListener('click', () => {
@@ -500,6 +1054,7 @@ function renderDashboard() {
   if (S.tab === 'schedine') renderSchedine();
   else if (S.tab === 'accounts') renderAccounts();
   else if (S.tab === 'config') renderConfig();
+  else if (S.tab === 'istat') renderIstat();
 }
 
 function initNavbar(email = '') {
@@ -527,6 +1082,8 @@ function initNavbar(email = '') {
 // ── TAB 1: Schedine ──
 function renderSchedine() {
   const st = stats();
+  const activeCount = countSchedineByView('active');
+  const archiveCount = countSchedineByView('archive');
   const pan = document.getElementById('panSchedine');
   pan.innerHTML = `
   <div class="stats-row">
@@ -549,11 +1106,22 @@ function renderSchedine() {
       <option value="">Tutti gli account</option>
       ${S.accounts.map(a=>`<option value="${a.id}" ${S.fAccount===a.id?'selected':''}>${esc(a.nome_account)} (${esc(a.questura)})</option>`).join('')}
     </select>
+    <select id="fGroupRole">
+      <option value="">Solo record principali</option>
+      <option value="leaders" ${S.fGroupRole==='leaders'?'selected':''}>Solo capigruppo/capofamiglia</option>
+      <option value="members" ${S.fGroupRole==='members'?'selected':''}>Solo membri collegati</option>
+      <option value="singles" ${S.fGroupRole==='singles'?'selected':''}>Solo singoli</option>
+    </select>
+    <div class="view-toggle">
+      <button id="viewActive" class="view-chip ${S.viewMode==='active'?'active':''}">Attivi (${activeCount})</button>
+      <button id="viewArchive" class="view-chip ${S.viewMode==='archive'?'active':''}">Archivio (${archiveCount})</button>
+    </div>
     <button id="btnRefresh" class="btn btn-ghost btn-sm">↻ Aggiorna</button>
     <button id="btnPdfReport" class="btn btn-ghost btn-sm">Scarica report PDF</button>
     <span style="border-left:1px solid var(--border);height:28px;margin:0 4px"></span>
-    <button id="btnBulkTest" class="btn btn-yellow btn-sm">Testa tutti da inviare</button>
+    <button id="btnBulkTest" class="btn btn-yellow btn-sm">Controlla pronti / futuri</button>
     <button id="btnBulkSend" class="btn btn-teal btn-sm">Invia tutti alla Questura</button>
+    <span class="mono-sm">Test reale per schedine inviabili oggi, pre-check locale per check-in futuri.</span>
   </div>
   <div class="body-wrap">
     <div class="table-panel" id="tablePanel"></div>
@@ -564,6 +1132,9 @@ function renderSchedine() {
   document.getElementById('fStatoPS').addEventListener('change', e=>{ S.fStatoPS=e.target.value; renderTable(); });
   document.getElementById('fApt').addEventListener('change', e=>{ S.fApt=e.target.value; renderTable(); });
   document.getElementById('fAccount').addEventListener('change', e=>{ S.fAccount=e.target.value; renderTable(); });
+  document.getElementById('fGroupRole').addEventListener('change', e=>{ S.fGroupRole=e.target.value; renderTable(); });
+  document.getElementById('viewActive').addEventListener('click', ()=>{ S.viewMode='active'; if (S.selected && !getSchedineStates().includes(S.selected.alloggiati_stato)) { S.selected=null; S.form={}; } renderSchedine(); });
+  document.getElementById('viewArchive').addEventListener('click', ()=>{ S.viewMode='archive'; if (S.selected && !getSchedineStates().includes(S.selected.alloggiati_stato)) { S.selected=null; S.form={}; } renderSchedine(); });
   document.getElementById('btnRefresh').addEventListener('click', async ()=>{ await loadAll(); renderSchedine(); });
   document.getElementById('btnPdfReport').addEventListener('click', openReportModal);
   document.getElementById('btnBulkTest').addEventListener('click', ()=>bulkSend('test'));
@@ -586,7 +1157,7 @@ function renderTable() {
         const acc = getAccountForApt(r.apartment_id);
         return `
         <tr class="row-item${S.selected?.id===r.id?' selected':''}" data-id="${r.id}">
-          <td><div class="td-name">${esc(r.nome||'')} ${esc(r.cognome||'')}</div><div class="mono-sm">${esc(r.email||'')}</div></td>
+          <td><div class="td-name">${esc(r.nome||'')} ${esc(r.cognome||'')}</div><div class="mono-sm">${esc(r.email||'')}</div><div style="margin-top:6px">${groupRoleBadge(r)}</div><div class="group-meta">${groupMetaLine(r)}</div>${getGroupStatusSummary(r).length?`<div class="group-meta" style="margin-top:6px;color:var(--text2)">${esc(getGroupStatusSummary(r).join(' · '))}</div>`:''}</td>
           <td class="td-apt">${esc(S.apartments.find(a=>a.id===r.apartment_id)?.nome_appartamento||'—')}</td>
           <td class="td-apt">${acc ? esc(acc.nome_account) : '<span style="color:var(--red)">Non collegato</span>'}</td>
           <td class="td-date">${fmt(r.data_checkin)}</td>
@@ -599,30 +1170,7 @@ function renderTable() {
   panel.querySelectorAll('.row-item').forEach(tr => {
     tr.addEventListener('click', () => {
       const row = S.rows.find(r=>String(r.id)===String(tr.dataset.id)); if(!row) return;
-      S.selected = row;
-      const acc = getAccountForApt(row.apartment_id);
-      // Determina nato_in_italia: se stato_nascita_codice è '100000100' o assente → Italia
-      const statoNascitaCodice = row.stato_nascita_codice || '';
-      const natoInItalia = !statoNascitaCodice || statoNascitaCodice === '100000100';
-      S.form = {
-        sesso: row.sesso||'',
-        data_nascita: row.data_nascita||'',
-        luogo_nascita: row.luogo_nascita||'',
-        luogo_nascita_codice: row.luogo_nascita_codice||'',
-        stato_nascita_codice: statoNascitaCodice,
-        _stato_nascita_desc: '',  // precaricato in AC.init se stato è già valorizzato
-        nato_in_italia: natoInItalia,
-        cittadinanza: row.cittadinanza||'Italia',
-        cittadinanza_codice: row.cittadinanza_codice||'',
-        tipo_documento: row.tipo_documento||'',
-        numero_documento: row.numero_documento||'',
-        luogo_rilascio_documento: row.luogo_rilascio_documento||'',
-        luogo_rilascio_codice: row.luogo_rilascio_codice||'',
-        tipo_alloggiato: row.tipo_alloggiato||16,
-        tag_prenotazione: row.tag_prenotazione||'',
-        alloggiati_stato: row.alloggiati_stato||'DA_INVIARE',
-        _account: acc,
-      };
+      selectSchedinaRow(row);
       renderDrawer();
       panel.querySelectorAll('.row-item').forEach(t=>t.classList.toggle('selected', t.dataset.id===tr.dataset.id));
     });
@@ -634,22 +1182,51 @@ function renderDrawer() {
   if (!S.selected) { d.classList.remove('open'); d.innerHTML=''; return; }
   const r = S.selected, f = S.form;
   const acc = f._account;
+  const isArchiveRow = ALLOGGIATI_ARCHIVE_STATI.includes(r.alloggiati_stato);
+  const checkinValue = String(f.data_checkin || r.data_checkin || '').trim().slice(0, 10);
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const isFutureCheckin = /^\d{4}-\d{2}-\d{2}$/.test(checkinValue) && checkinValue > todayKey;
+  const shouldHideOldArrivalError = isFutureCheckin && /data di arrivo errata/i.test(r.alloggiati_errore || '');
+  const parentRow = getParentRow(r);
+  const groupRoot = getGroupRootRow(r);
+  const childRows = groupRoot ? getChildRows(groupRoot.id) : [];
+  const fallbackChildren = childRows.length || !groupRoot ? [] : getSnapshotChildren(groupRoot);
+  const effectiveTipoAlloggiato = isMemberRow(r)
+    ? (Number(groupRoot?.tipo_alloggiato || 18) === 17 ? 19 : 20)
+    : Number(f.tipo_alloggiato || r.tipo_alloggiato || 16);
   d.classList.add('open');
   d.innerHTML = `
   <div class="drawer-header">
     <div>
       <div class="drawer-title">${esc(r.nome||'')} ${esc(r.cognome||'')}</div>
-      <div class="drawer-sub">Check-in ${fmt(r.data_checkin)} · ${esc(S.apartments.find(a=>a.id===r.apartment_id)?.nome_appartamento||'')}</div>
+      <div class="drawer-sub">Check-in ${fmt(r.data_checkin)} · ${esc(S.apartments.find(a=>a.id===r.apartment_id)?.nome_appartamento||'')} · ${groupRoleLabel(r)}</div>
     </div>
     <button id="dClose" class="drawer-close">✕</button>
   </div>
   <div class="drawer-body">
+    <div class="drawer-sec">Gruppo</div>
+    <div class="group-summary">
+      <div style="margin-bottom:${parentRow||childRows.length||fallbackChildren.length?'8px':'0'}">${groupRoleBadge(r)}</div>
+      ${parentRow ? `<div>Record principale: <button class="group-link group-jump" data-id="${parentRow.id}">${esc(parentRow.nome||'')} ${esc(parentRow.cognome||'')} · ${groupRoleLabel(parentRow)}</button></div>` : ''}
+      ${childRows.length ? `<div>Componenti gruppo: <strong>${getGroupSize(r)}</strong></div>
+      <div class="group-link-list">${childRows.map(child=>`<button class="group-link group-jump ${S.selected?.id===child.id?'active':''}" data-id="${child.id}">${esc(child.nome||'')} ${esc(child.cognome||'')} · ${groupRoleLabel(child)}</button>`).join('')}</div>` : ''}
+      ${fallbackChildren.length ? `<div>Componenti gruppo: <strong>${getGroupSize(r)}</strong></div>
+      <div class="group-link-list">${fallbackChildren.map(child=>`<div class="group-link" style="cursor:default">${esc(child.nome||'')} ${esc(child.cognome||'')} · ${groupRoleLabel(child)}</div>`).join('')}</div>
+      <div class="group-meta">Gruppo storico: membri presenti nello snapshot del parent, ma non come child DB autonomi.</div>` : ''}
+      ${!parentRow && !childRows.length && !fallbackChildren.length ? `<div>Record singolo, nessun gruppo collegato.</div>` : ''}
+      ${groupRoot && getGroupSize(r)>1 ? `<div class="group-meta">Gruppo #${esc(String(groupRoot.id).slice(0,8))} · ${parentRow ? 'Stai visualizzando un membro del gruppo' : 'Stai visualizzando il record principale'}</div>` : ''}
+    </div>
+
     <div class="drawer-sec">Account Questura</div>
     <div style="padding:10px 14px;background:${acc?'var(--teal-l)':'var(--red-l)'};border-radius:6px;font-size:13px;margin-bottom:14px">
       ${acc ? `<strong>${esc(acc.nome_account)}</strong> — Questura di ${esc(acc.questura)}<br><span class="mono-sm">Username: ${esc(acc.username)}</span>` : '<strong style="color:var(--red)">Appartamento non collegato a nessun account</strong><br>Vai nel tab "Collega Appartamenti" per configurarlo.'}
     </div>
 
     <div class="drawer-sec">Dati schedina alloggiati</div>
+    <div class="field-2">
+      <div class="field"><label>Data di arrivo</label><input class="df" type="date" data-k="data_checkin" value="${esc(f.data_checkin || r.data_checkin || '')}"/></div>
+      <div class="field"><label>Data di partenza</label><input class="df" type="date" data-k="data_checkout" value="${esc(f.data_checkout || r.data_checkout || '')}"/></div>
+    </div>
     <div class="field-2">
       <div class="field"><label>Sesso</label>
         <select class="df" data-k="sesso"><option value="">—</option><option value="M" ${f.sesso==='M'?'selected':''}>M</option><option value="F" ${f.sesso==='F'?'selected':''}>F</option></select>
@@ -706,8 +1283,9 @@ function renderDrawer() {
       </div>
       <div class="field"><label>Numero documento</label><input class="df" data-k="numero_documento" value="${esc(f.numero_documento)}"/></div>
     </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:-4px;margin-bottom:12px;font-family:var(--mono)">Obbligatori per Test/Send: tipo documento, numero documento, codice ISTAT luogo rilascio.</div>
     <div class="field-2">
-      <div class="field"><label>Luogo rilascio documento</label>
+      <div class="field"><label>Comune rilascio documento</label>
         <div class="ac-wrap">
           <input class="df" data-k="luogo_rilascio_documento" data-ac="comune" data-codice-k="luogo_rilascio_codice" value="${esc(f.luogo_rilascio_documento)}" placeholder="Es. Roma" autocomplete="off"/>
         </div>
@@ -717,17 +1295,18 @@ function renderDrawer() {
     <div class="field-2">
       <div class="field"><label>Tipo alloggiato</label>
         <select class="df" data-k="tipo_alloggiato">
-          <option value="16" ${f.tipo_alloggiato==16?'selected':''}>Ospite singolo</option>
-          <option value="17" ${f.tipo_alloggiato==17?'selected':''}>Capofamiglia</option>
-          <option value="18" ${f.tipo_alloggiato==18?'selected':''}>Capogruppo</option>
-          <option value="19" ${f.tipo_alloggiato==19?'selected':''}>Familiare</option>
-          <option value="20" ${f.tipo_alloggiato==20?'selected':''}>Membro gruppo</option>
+          <option value="16" ${effectiveTipoAlloggiato==16?'selected':''}>Ospite singolo</option>
+          <option value="17" ${effectiveTipoAlloggiato==17?'selected':''}>Capofamiglia</option>
+          <option value="18" ${effectiveTipoAlloggiato==18?'selected':''}>Capogruppo</option>
+          <option value="19" ${effectiveTipoAlloggiato==19?'selected':''}>Familiare</option>
+          <option value="20" ${effectiveTipoAlloggiato==20?'selected':''}>Membro gruppo</option>
         </select>
       </div>
       <div class="field"><label>Tag prenotazione</label><input class="df" data-k="tag_prenotazione" value="${esc(f.tag_prenotazione)}"/></div>
     </div>
 
-    ${r.alloggiati_errore && r.alloggiati_stato === 'ERRORE' ? `<div class="drawer-sec">Ultimo errore</div><div style="padding:10px 14px;background:var(--red-l);border-radius:6px;font-size:12px;color:var(--red);font-family:var(--mono)">${esc(r.alloggiati_errore)}</div>` : ''}
+    ${r.alloggiati_errore && r.alloggiati_stato === 'ERRORE' && !shouldHideOldArrivalError ? `<div class="drawer-sec">Ultimo errore registrato</div><div style="padding:10px 14px;background:var(--red-l);border-radius:6px;font-size:12px;color:var(--red);font-family:var(--mono)">${esc(r.alloggiati_errore)}</div>` : ''}
+    ${shouldHideOldArrivalError ? `<div style="padding:10px 14px;background:var(--surf);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text2);margin-top:4px">ℹ️ Documento caricato in anticipo: il vecchio errore di arrivo non viene considerato bloccante fino al giorno del check-in.</div>` : ''}
     ${r.alloggiati_stato === 'DA_INVIARE' ? `<div style="padding:10px 14px;background:var(--green-l);border-radius:6px;font-size:12px;color:var(--green);margin-top:4px">✅ Pronta per l'invio — nessun errore pendente</div>` : ''}
     ${r.alloggiati_stato === 'INVIATA' ? `<div style="padding:10px 14px;background:var(--green-l);border-radius:6px;font-size:12px;color:var(--green);margin-top:4px">✅ Schedina inviata alla Questura</div>` : ''}
     ${r.alloggiati_inviata_at ? `<div class="mono-sm" style="margin-top:12px">Ultimo invio: ${fmt(r.alloggiati_inviata_at)}</div>` : ''}
@@ -737,19 +1316,35 @@ function renderDrawer() {
   </div>
   <div class="drawer-footer">
     <button id="dSave" class="btn btn-ghost" style="margin-right:auto">Salva dati</button>
-    <button id="dDiscard" class="btn btn-red btn-sm">Scarta</button>
-    ${r.alloggiati_stato === 'DA_INVIARE' || r.alloggiati_stato === 'ERRORE' ? `
-      <button id="dTest" class="btn btn-yellow btn-sm" ${!acc?'disabled title="Collega prima un account"':''}>Testa</button>
-      <button id="dSend" class="btn btn-teal btn-sm" ${!acc?'disabled title="Collega prima un account"':''}>Invia alla Questura</button>
-    ` : ''}
-    <span class="badge ${psBadgeCls(r.alloggiati_stato)}" style="font-size:12px;padding:4px 12px;align-self:center">${psBadgeLbl(r.alloggiati_stato)}</span>
+    ${isArchiveRow ? `
+      <button id="dRestore" class="btn btn-yellow btn-sm">↺ Ripristina</button>
+      <button id="dDelete" class="btn btn-red btn-sm">Elimina</button>
+    ` : `
+      <button id="dDiscard" class="btn btn-red btn-sm">Scarta</button>
+      ${r.alloggiati_stato === 'DA_INVIARE' || r.alloggiati_stato === 'ERRORE' ? `
+        <button id="dTest" class="btn btn-yellow btn-sm" ${!acc?'disabled title="Collega prima un account"':''}>Testa</button>
+        <button id="dSend" class="btn btn-teal btn-sm" ${!acc?'disabled title="Collega prima un account"':''}>Invia alla Questura</button>
+      ` : ''}
+    `}
+    <span class="badge ${psBadgeCls(r.alloggiati_stato)}" style="font-size:12px;padding:4px 12px">${psBadgeLbl(r.alloggiati_stato)}</span>
   </div>`;
 
   document.getElementById('dClose').addEventListener('click', ()=>{ S.selected=null; S.form={}; renderDrawer(); renderTable(); });
+  d.querySelectorAll('.group-jump').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const row = S.rows.find(item => String(item.id) === String(btn.dataset.id));
+      if (!row) return;
+      selectSchedinaRow(row);
+      renderDrawer();
+      renderTable();
+    });
+  });
   document.getElementById('dSave').addEventListener('click', saveSchedina);
   document.getElementById('dDiscard')?.addEventListener('click', discardSchedina);
   document.getElementById('dTest')?.addEventListener('click', ()=>sendToQuestura('test'));
   document.getElementById('dSend')?.addEventListener('click', ()=>sendToQuestura('send'));
+  document.getElementById('dRestore')?.addEventListener('click', restoreSchedina);
+  document.getElementById('dDelete')?.addEventListener('click', deleteArchivedSchedina);
 
   // Live validation
   validateDrawer();
@@ -795,71 +1390,182 @@ function renderDrawer() {
 
 function validateDrawer() {
   const el = document.getElementById('dValidation'); if(!el) return;
-  const r = S.selected, f = S.form;
-  const errs = [];
-  if (!f.sesso) errs.push('Sesso mancante');
-  if (!f.data_nascita) errs.push('Data di nascita mancante');
-  if (!f.cittadinanza) errs.push('Cittadinanza mancante');
-  if (!f.cittadinanza_codice) errs.push('Codice cittadinanza mancante');
-  else if (String(f.cittadinanza_codice).length !== 9) errs.push('Codice cittadinanza deve essere 9 caratteri');
-  // Validazione luogo di nascita
-  if (f.nato_in_italia !== false) {
-    if (!f.luogo_nascita_codice) errs.push('Codice ISTAT nascita mancante');
-    else if (String(f.luogo_nascita_codice).replace(/\s/g,'').length < 6) errs.push('Cod. ISTAT nascita troppo corto');
-  } else {
-    if (!f.stato_nascita_codice) errs.push('Codice stato nascita estero mancante');
-    else if (String(f.stato_nascita_codice).length !== 9) errs.push('Codice stato nascita deve essere 9 caratteri');
-  }
-  const tipo = parseInt(f.tipo_alloggiato) || 16;
-  if ([16,17,18].includes(tipo)) {
-    if (!f.tipo_documento) errs.push('Tipo documento mancante');
-    if (!f.numero_documento) errs.push('Numero documento mancante');
-    if (!f.luogo_rilascio_codice) errs.push('Codice ISTAT rilascio documento mancante');
-    else if (String(f.luogo_rilascio_codice).replace(/\s/g,'').length < 6) errs.push('Cod. ISTAT rilascio troppo corto');
-  }
-  if (!r.data_checkin) errs.push('Data check-in mancante');
-  if (!r.cognome) errs.push('Cognome mancante');
-  if (!r.nome) errs.push('Nome mancante');
+  const r = S.selected;
+  const state = getSchedinaValidationState(r, S.form, getRowsForQuesturaAction(r));
+  const errs = state.errs;
+  const isFutureCheckin = state.isFutureCheckin;
+  const fieldIssues = getQuesturaFieldIssues(r, S.form);
 
   const testBtn = document.getElementById('dTest');
   const sendBtn = document.getElementById('dSend');
+  document.querySelectorAll('#drawer .df').forEach(input => {
+    input.classList.toggle('field-error', fieldIssues.has(input.dataset.k));
+  });
   if (errs.length === 0) {
-    el.innerHTML = '<span style="color:var(--green)">✓ Dati completi — pronta per test/invio</span>';
-    if(testBtn) testBtn.disabled = !S.form._account;
-    if(sendBtn) sendBtn.disabled = !S.form._account;
-    if(testBtn) testBtn.title = S.form._account ? '' : 'Collega prima un account AlloggiatiWeb';
-    if(sendBtn) sendBtn.title = S.form._account ? '' : 'Collega prima un account AlloggiatiWeb';
+    el.innerHTML = isFutureCheckin
+      ? '<div style="background:var(--blue-l);border:1px solid #bfdbfe;border-radius:6px;padding:8px 12px;color:var(--blue)">✓ Pre-check locale OK — schedina pronta. L invio reale alla Questura sara disponibile dal giorno del check-in.</div>'
+      : '<span style="color:var(--green)">✓ Dati completi — pronta per test/invio</span>';
+    if(testBtn) {
+      testBtn.disabled = !S.form._account;
+      testBtn.title = !S.form._account
+        ? 'Collega prima un account AlloggiatiWeb'
+        : (isFutureCheckin ? 'Esegue un pre-check locale fino al giorno del check-in' : '');
+      testBtn.textContent = isFutureCheckin ? 'Pre-check' : 'Testa';
+    }
+    if(sendBtn) {
+      sendBtn.disabled = !S.form._account || isFutureCheckin;
+      sendBtn.title = !S.form._account
+        ? 'Collega prima un account AlloggiatiWeb'
+        : (isFutureCheckin ? 'Invio reale disponibile dal giorno del check-in' : '');
+      sendBtn.textContent = isFutureCheckin ? 'Invio dal check-in' : 'Invia alla Questura';
+    }
   } else {
     el.innerHTML = `<div style="background:var(--yellow-l);border:1px solid #fde68a;border-radius:6px;padding:8px 12px;margin-bottom:4px">
       <div style="font-weight:600;color:var(--yellow);margin-bottom:4px">Campi mancanti (${errs.length}):</div>
       ${errs.map(e=>`<div style="color:var(--yellow);margin:2px 0;font-size:12px">· ${esc(e)}</div>`).join('')}
-      <div style="font-size:11px;color:var(--muted);margin-top:6px;font-family:var(--mono)">Completa i campi per abilitare test e invio</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;font-family:var(--mono)">Puoi correggere qui la data di arrivo/partenza prima di testare o inviare.</div>
     </div>`;
-    if(testBtn) { testBtn.disabled = true; testBtn.title = 'Completa i campi richiesti'; }
-    if(sendBtn) { sendBtn.disabled = true; sendBtn.title = 'Completa i campi richiesti'; }
+    if(testBtn) { testBtn.disabled = true; testBtn.title = 'Completa i campi richiesti'; testBtn.textContent = isFutureCheckin ? 'Pre-check' : 'Testa'; }
+    if(sendBtn) { sendBtn.disabled = true; sendBtn.title = 'Completa i campi richiesti'; sendBtn.textContent = isFutureCheckin ? 'Invio dal check-in' : 'Invia alla Questura'; }
   }
+}
+
+function getSchedinaValidationState(row, formOverride = {}, rowsToValidate = null) {
+  const account = formOverride?._account || getAccountForApt(row?.apartment_id);
+  const f = buildQuesturaDraft(row, formOverride);
+  const checkinValue = String(f.data_checkin || '').trim().slice(0, 10);
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const isFutureCheckin = /^\d{4}-\d{2}-\d{2}$/.test(checkinValue) && checkinValue > todayKey;
+  const overrides = new Map();
+  if (row) overrides.set(String(row.id), formOverride);
+  const errs = validateAlloggiatiRows(rowsToValidate?.length ? rowsToValidate : [row].filter(Boolean), overrides);
+  return {
+    errs,
+    isFutureCheckin,
+    account,
+  };
 }
 
 async function sendToQuestura(mode) {
   if (!S.selected) return;
+  const rowsToSend = getRowsForQuesturaAction(S.selected);
+  const selectionError = validateQuesturaSelection(rowsToSend);
+  if (selectionError) {
+    toast(selectionError, 'err');
+    return;
+  }
+
+  const overrides = new Map([[String(S.selected.id), S.form]]);
+  const preflightErrors = validateAlloggiatiRows(rowsToSend, overrides);
+  if (preflightErrors.length > 0) {
+    toast(preflightErrors.slice(0, 3).join(' | '), 'err');
+    console.warn('VALIDATION ERROR:', preflightErrors);
+    console.table(preflightErrors);
+    return;
+  }
+
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const rowsWithBadDates = rowsToSend.map((row) => {
+    const current = row.id === S.selected.id
+      ? {
+          ...row,
+          data_checkin: S.form?.data_checkin || row.data_checkin || '',
+          data_checkout: S.form?.data_checkout || row.data_checkout || '',
+        }
+      : row;
+    const checkinRaw = String(current.data_checkin || '').trim().slice(0, 10);
+    const checkoutRaw = String(current.data_checkout || '').trim().slice(0, 10);
+    const checkinDate = /^\d{4}-\d{2}-\d{2}$/.test(checkinRaw) ? new Date(`${checkinRaw}T12:00:00`) : null;
+    const checkoutDate = /^\d{4}-\d{2}-\d{2}$/.test(checkoutRaw) ? new Date(`${checkoutRaw}T12:00:00`) : null;
+    if (!checkinDate) return `${current.nome} ${current.cognome}: data di arrivo non valida`;
+    if (!checkoutDate) return `${current.nome} ${current.cognome}: data di partenza non valida`;
+    if (checkoutDate < checkinDate) return `${current.nome} ${current.cognome}: data di partenza precedente all'arrivo`;
+    return '';
+  }).filter(Boolean);
+
+  if (rowsWithBadDates.length) {
+    const message = rowsWithBadDates.join(', ');
+    const validationEl = document.getElementById('dValidation');
+    if (validationEl) {
+      validationEl.innerHTML = `<div style="background:var(--yellow-l);border:1px solid #fde68a;border-radius:6px;padding:8px 12px;margin-bottom:4px">
+        <div style="font-weight:600;color:var(--yellow);margin-bottom:4px">Date non valide per Questura:</div>
+        ${rowsWithBadDates.map(e=>`<div style="color:var(--yellow);margin:2px 0;font-size:12px">· ${esc(e)}</div>`).join('')}
+      </div>`;
+    }
+    toast(`Errore: ${message}`, 'err');
+    return;
+  }
 
   const btnId = mode === 'send' ? 'dSend' : 'dTest';
   const btn = document.getElementById(btnId);
+  const isGroupAction = rowsToSend.length > 1;
+  const targetLabel = isGroupAction
+    ? `${rowsToSend[0].nome} ${rowsToSend[0].cognome} + ${rowsToSend.length - 1} componenti`
+    : `${S.selected.nome} ${S.selected.cognome}`;
+  const hasFutureCheckin = rowsToSend.some((row) => {
+    const current = row.id === S.selected.id
+      ? {
+          ...row,
+          data_checkin: S.form?.data_checkin || row.data_checkin || '',
+        }
+      : row;
+    const checkinRaw = String(current.data_checkin || '').trim().slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(checkinRaw)) return false;
+    const checkinDate = new Date(`${checkinRaw}T12:00:00`);
+    return checkinDate > today;
+  });
 
   // Conferma per invio reale
   if (mode === 'send') {
-    if (!confirm(`Confermi l'invio della schedina di ${S.selected.nome} ${S.selected.cognome} alla Questura?\n\nQuesta azione è irreversibile.`)) return;
+    if (hasFutureCheckin) {
+      const futureMsg = 'Invio reale non disponibile: il check-in e futuro. Salva pure i documenti e usa il pre-check locale; l invio alla Questura sara disponibile dal giorno del check-in.';
+      const validationEl = document.getElementById('dValidation');
+      if (validationEl) {
+        validationEl.innerHTML = `<div style="background:var(--blue-l);border:1px solid #bfdbfe;border-radius:6px;padding:8px 12px;margin-bottom:4px;color:var(--blue)">${futureMsg}</div>`;
+      }
+      toast(futureMsg, 'err');
+      return;
+    }
+    if (!confirm(`Confermi l'invio ${isGroupAction ? 'del gruppo' : 'della schedina'} di ${targetLabel} alla Questura?\n\n${isGroupAction ? 'Verranno inviati insieme tutti i record collegati al gruppo selezionato.' : ''}\nQuesta azione è irreversibile.`)) return;
   }
 
   if (btn) {
     btn.disabled = true;
-    btn.textContent = mode === 'send' ? 'Invio…' : 'Testo…';
+    btn.textContent = mode === 'send' ? (isGroupAction ? 'Invio gruppo…' : 'Invio…') : (isGroupAction ? 'Test gruppo…' : 'Testo…');
   }
 
   // Salva prima i dati aggiornati — blocca se fallisce
   const saved = await saveSchedina();
   if (!saved) {
     if (btn) { btn.disabled = false; btn.textContent = mode === 'send' ? 'Invia alla Questura' : 'Testa'; }
+    return;
+  }
+
+  if (mode === 'test' && hasFutureCheckin) {
+    const precheckMsg = 'Pre-check locale completato: schedina valida e pronta. L invio reale alla Questura sara disponibile dal giorno del check-in.';
+    const validationEl = document.getElementById('dValidation');
+    if (validationEl) {
+      validationEl.innerHTML = `<div style="background:var(--blue-l);border:1px solid #bfdbfe;border-radius:6px;padding:8px 12px;margin-bottom:4px;color:var(--blue)">${precheckMsg}</div>`;
+    }
+    rowsToSend.forEach((row) => {
+      const rowIdx = S.rows.findIndex(r => r.id === row.id);
+      if (rowIdx >= 0) {
+        S.rows[rowIdx].alloggiati_stato = 'DA_INVIARE';
+        S.rows[rowIdx].alloggiati_errore = null;
+      }
+    });
+    if (S.selected) {
+      S.selected.alloggiati_stato = 'DA_INVIARE';
+      S.selected.alloggiati_errore = null;
+    }
+    toast(precheckMsg, 'ok');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Pre-check';
+    }
+    renderDrawer();
+    renderTable();
     return;
   }
 
@@ -873,7 +1579,7 @@ async function sendToQuestura(mode) {
         'Authorization': `Bearer ${session.data.session.access_token}`
       },
       body: JSON.stringify({
-        ospiti_ids: [S.selected.id],
+        ospiti_ids: rowsToSend.map(r => r.id),
         mode
       })
     });
@@ -897,19 +1603,24 @@ async function sendToQuestura(mode) {
 
     if (data.success) {
       if (mode === 'test') {
-        toast(`✅ Test OK — schedina valida, pronta per l'invio`, 'ok');
+        toast(`✅ Test OK — ${isGroupAction ? `gruppo valido (${data.schedineValide} schedine)` : 'schedina valida, pronta per l\'invio'}`, 'ok');
 
         // Aggiornamento cache locale (il backend aggiorna già il DB)
-        const ospiteId = S.selected.id;
-        const rowIdx = S.rows.findIndex(r => r.id === ospiteId);
-
-        if (rowIdx >= 0) {
-          S.rows[rowIdx].alloggiati_stato = 'DA_INVIARE';
-          S.rows[rowIdx].alloggiati_errore = null;
+        rowsToSend.forEach((row) => {
+          const rowIdx = S.rows.findIndex(r => r.id === row.id);
+          if (rowIdx >= 0) {
+            S.rows[rowIdx].alloggiati_stato = 'DA_INVIARE';
+            S.rows[rowIdx].alloggiati_errore = null;
+          }
+        });
+        if (S.selected) {
+          S.selected.alloggiati_stato = 'DA_INVIARE';
+          S.selected.alloggiati_errore = null;
         }
 
       } else {
-        toast(`Inviata alla Questura di ${data.questura} — ${data.schedineValide} schedina`, 'ok');
+        toast(`Inviat${isGroupAction ? 'o gruppo' : 'a schedina'} alla Questura di ${data.questura} — ${data.schedineValide} schedin${data.schedineValide===1?'a':'e'}`, 'ok');
+        await audit('SEND_ALLOGGIATI','ospiti_check_in', rowsToSend[0].id);
       }
     } else {
       toast(`Errore dal portale: ${data.errore || 'vedi dettaglio'}`, 'err');
@@ -919,8 +1630,14 @@ async function sendToQuestura(mode) {
     await loadAll();
 
     if (mode === 'send') {
-      S.selected = null;
-      S.form = {};
+      const prevId = S.selected?.id;
+      const updated = S.rows.find(r => r.id === prevId) || null;
+      if (S.viewMode === 'active' || !updated || !getSchedineStates().includes(updated.alloggiati_stato)) {
+        S.selected = null;
+        S.form = {};
+      } else {
+        S.selected = updated;
+      }
     } else {
       const _prevId = S.selected?.id; S.selected = S.rows.find(r => r.id === _prevId) || null;
     }
@@ -941,7 +1658,15 @@ async function saveSchedina() {
   if (!S.selected) return false;
   const btn = document.getElementById('dSave'); if(btn){ btn.disabled=true; btn.textContent='Salvo…'; }
   const { _account, alloggiati_stato, nato_in_italia, _stato_nascita_desc, ...payload } = S.form;
-  payload.tipo_alloggiato = Number(payload.tipo_alloggiato) || 16;
+  payload.data_checkin = payload.data_checkin || S.selected.data_checkin || '';
+  payload.data_checkout = payload.data_checkout || S.selected.data_checkout || '';
+  const groupRoot = getGroupRootRow(S.selected);
+  if (isMemberRow(S.selected)) {
+    payload.tipo_alloggiato = Number(groupRoot?.tipo_alloggiato || 18) === 17 ? 19 : 20;
+  } else {
+    payload.tipo_alloggiato = Number(payload.tipo_alloggiato) || 16;
+  }
+  payload.cittadinanza = normalizeCitizenshipLabel(payload.cittadinanza);
 
   // Gestione stato_nascita_codice in base all'origine
   if (nato_in_italia !== false) {
@@ -955,22 +1680,10 @@ async function saveSchedina() {
   }
 
   // Map tipo_documento to codice
-  const docMap = {"Carta d'identita":'IDENT','Passaporto':'PASOR','Patente':'PATEN'};
-  if (payload.tipo_documento) payload.tipo_documento_codice = docMap[payload.tipo_documento] || '';
+  if (payload.tipo_documento) payload.tipo_documento_codice = getDocumentCode(payload.tipo_documento);
 
   // Fallback automatico: se cittadinanza_codice è vuoto ma cittadinanza è 'Italia', imposta il codice
-  if (!payload.cittadinanza_codice && payload.cittadinanza) {
-    const cittMap = {
-      'italia': '100000100', 'germany': '100000083', 'germania': '100000083',
-      'france': '100000039', 'francia': '100000039', 'spain': '100000070',
-      'spagna': '100000070', 'uk': '100000999', 'united kingdom': '100000999',
-      'regno unito': '100000999', 'usa': '100002001', 'stati uniti': '100002001',
-      'svizzera': '100000756', 'switzerland': '100000756',
-      'austria': '100000040', 'belgio': '100000056', 'belgium': '100000056',
-      'olanda': '100000528', 'netherlands': '100000528', 'paesi bassi': '100000528',
-    };
-    payload.cittadinanza_codice = cittMap[payload.cittadinanza.toLowerCase()] || '';
-  }
+  payload.cittadinanza_codice = getCitizenshipCode(payload.cittadinanza, payload.cittadinanza_codice);
 
   const {error} = await sb.from('ospiti_check_in').update(payload).eq('id', S.selected.id);
   if (error) {
@@ -982,8 +1695,24 @@ async function saveSchedina() {
   const i = S.rows.findIndex(r=>r.id===S.selected.id);
   if (i>=0) Object.assign(S.rows[i], payload);
   S.selected = S.rows[i] || S.selected;
+  Object.assign(S.form, payload);
   if(btn){ btn.disabled=false; btn.textContent='Salva dati'; }
   return true;
+}
+
+function normalizeLookupValue(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[’`´']/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+function extractProvinceFromComuneLabel(value) {
+  const match = String(value || '').match(/\(([^)]+)\)\s*$/);
+  return match ? match[1].trim().toUpperCase().slice(0, 2) : '';
 }
 
 async function discardSchedina() {
@@ -1003,8 +1732,8 @@ async function discardSchedina() {
   const { error } = await sb
     .from('ospiti_check_in')
     .update({
-      stato: 'CHECK_IN_COMPLETATO',
-      alloggiati_stato: 'NON_NECESSARIA'
+      alloggiati_stato: 'NON_NECESSARIA',
+      alloggiati_errore: null
     })
     .eq('id', S.selected.id);
 
@@ -1017,6 +1746,7 @@ async function discardSchedina() {
     return false;
   }
 
+  await audit('SCARTA_ALLOGGIATI', 'ospiti_check_in', S.selected.id);
   toast('Schedina segnata come non necessaria', 'ok');
 
   await loadAll();
@@ -1027,6 +1757,74 @@ async function discardSchedina() {
   return true;
 }
 
+async function restoreSchedina() {
+  if (!S.selected) return false;
+  const { error } = await sb
+    .from('ospiti_check_in')
+    .update({
+      alloggiati_stato: 'DA_INVIARE',
+      alloggiati_errore: null
+    })
+    .eq('id', S.selected.id);
+
+  if (error) {
+    toast('Errore: ' + error.message, 'err');
+    return false;
+  }
+
+  await audit('RIPRISTINA_ALLOGGIATI', 'ospiti_check_in', S.selected.id);
+  await loadAll();
+  S.selected = null;
+  S.form = {};
+  toast('Schedina ripristinata tra gli attivi', 'ok');
+  renderSchedine();
+  return true;
+}
+
+async function deleteArchivedSchedina() {
+  if (!S.selected) return false;
+  const root = getGroupRootRow(S.selected) || S.selected;
+  const rowsToDelete = [root, ...getChildRows(root.id)].filter(Boolean);
+  const idsToDelete = [...new Set(rowsToDelete.map(row => row.id).filter(Boolean))];
+  const label = rowsToDelete.length > 1
+    ? `${root.nome || ''} ${root.cognome || ''}`.trim() || 'questo gruppo'
+    : `${S.selected.nome || ''} ${S.selected.cognome || ''}`.trim() || 'questa schedina';
+  const message = rowsToDelete.length > 1
+    ? `Confermi l'eliminazione definitiva di ${label} e di ${rowsToDelete.length - 1} componenti collegati?\n\nQuesta azione non è reversibile.`
+    : `Confermi l'eliminazione definitiva di ${label}?\n\nQuesta azione non è reversibile.`;
+  if (!confirm(message)) return false;
+
+  const btn = document.getElementById('dDelete');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Elimino…';
+  }
+
+  const { error } = await sb
+    .from('ospiti_check_in')
+    .delete()
+    .in('id', idsToDelete);
+
+  if (error) {
+    toast('Errore: ' + error.message, 'err');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Elimina';
+    }
+    return false;
+  }
+
+  for (const id of idsToDelete) {
+    await audit('DELETE', 'ospiti_check_in', id);
+  }
+
+  S.rows = S.rows.filter(row => !idsToDelete.includes(row.id));
+  S.selected = null;
+  S.form = {};
+  toast(rowsToDelete.length > 1 ? 'Gruppo eliminato' : 'Schedina eliminata', 'ok');
+  renderSchedine();
+  return true;
+}
 
 // ── TAB 2: Accounts ──
 function renderAccounts() {
@@ -1097,7 +1895,7 @@ function openAccountModal(account) {
           </div>
         </div>
         <div class="field"><label>WSKEY</label><input id="mWskey" value="${esc(a.wskey)}" style="font-family:var(--mono)"/></div>
-        <div class="drawer-sec" style="margin-top:20px">ISTAT (opzionale)</div>
+        <div class="drawer-sec" style="margin-top:20px">ISTAT legacy (deprecato)</div>
         <div class="field-3">
           <div class="field"><label>Sistema</label>
             <select id="mIstatSys"><option value="">—</option><option value="ross1000" ${a.istat_sistema==='ross1000'?'selected':''}>Ross 1000</option><option value="altro" ${a.istat_sistema==='altro'?'selected':''}>Altro</option></select>
@@ -1105,6 +1903,7 @@ function openAccountModal(account) {
           <div class="field"><label>Regione</label><input id="mIstatReg" value="${esc(a.istat_regione||'')}" placeholder="emilia-romagna"/></div>
           <div class="field"><label>Cod. struttura</label><input id="mIstatCod" value="${esc(a.istat_codice_struttura||'')}"/></div>
         </div>
+        <div class="legacy-note">Nuova configurazione ISTAT per appartamento nel tab dedicato. Questi campi restano solo per retrocompatibilita visuale.</div>
       </div>
       <div class="modal-foot">
         ${!isNew ? `<button id="mDel" class="btn btn-red btn-sm" style="margin-right:auto">Elimina</button>` : ''}
@@ -1143,7 +1942,12 @@ function openAccountModal(account) {
       ({error} = await sb.from('alloggiati_accounts').update(payload).eq('id', account.id));
     }
     if (error) { toast('Errore: '+error.message,'err'); btn.disabled=false; btn.textContent=isNew?'Crea account':'Salva modifiche'; return; }
-    toast(isNew ? 'Account creato' : 'Account aggiornato', 'ok');
+    toast(
+      isNew
+        ? 'Account creato. Ora collega almeno un appartamento nel tab "Collega Appartamenti".'
+        : 'Account aggiornato. I collegamenti appartamenti restano invariati.',
+      'ok'
+    );
     close();
     await loadAll();
     renderAccounts();
@@ -1167,10 +1971,23 @@ function openAccountModal(account) {
 async function bulkSend(mode) {
   const daInviare = S.rows.filter(r => r.alloggiati_stato === 'DA_INVIARE' || r.alloggiati_stato === 'ERRORE');
   if (daInviare.length === 0) { toast('Nessuna schedina da inviare','info'); return; }
+  const readyToday = [];
+  const futureRows = [];
+  const invalidFutureRows = [];
+
+  daInviare.forEach(r => {
+    const state = getSchedinaValidationState(r, {_account:getAccountForApt(r.apartment_id)});
+    if (state.isFutureCheckin) {
+      if (state.errs.length) invalidFutureRows.push({row:r, errs:state.errs});
+      else futureRows.push(r);
+      return;
+    }
+    readyToday.push(r);
+  });
 
   // Raggruppa per appartamento (ogni invio usa le credenziali di quell'apt)
   const perApt = {};
-  daInviare.forEach(r => {
+  readyToday.forEach(r => {
     if (!perApt[r.apartment_id]) perApt[r.apartment_id] = [];
     perApt[r.apartment_id].push(r);
   });
@@ -1178,16 +1995,21 @@ async function bulkSend(mode) {
   // Conferma
   const numApts = Object.keys(perApt).length;
   if (mode === 'send') {
-    if (!confirm(`Confermi l'invio di ${daInviare.length} schedine per ${numApts} appartamento/i alla Questura?\n\nQuesta azione è irreversibile.`)) return;
+    if (!readyToday.length) {
+      toast('Nessuna schedina inviabile oggi: i check-in futuri restano in pre-check locale.', 'info');
+      return;
+    }
+    if (!confirm(`Confermi l'invio di ${readyToday.length} schedine per ${numApts} appartamento/i alla Questura?\n\nLe schedine con check-in futuro verranno saltate.\nQuesta azione è irreversibile.`)) return;
   }
 
   const btnT = document.getElementById('btnBulkTest');
   const btnS = document.getElementById('btnBulkSend');
   if(btnT) btnT.disabled = true;
   if(btnS) btnS.disabled = true;
-  toast(`${mode==='send'?'Invio':'Test'} in corso per ${daInviare.length} schedine…`, 'info');
+  toast(`${mode==='send'?'Invio':'Controllo'} in corso per ${readyToday.length + futureRows.length} schedine…`, 'info');
 
-  let totOk = 0, totErr = 0;
+  let totOk = 0, totErr = 0, totFutureOk = 0;
+  const localStateUpdates = new Map();
   const session = await sb.auth.getSession();
 
   for (const [aptId, ospiti] of Object.entries(perApt)) {
@@ -1211,13 +2033,30 @@ async function bulkSend(mode) {
     }
   }
 
+  if (mode === 'test') {
+    futureRows.forEach((row) => {
+      localStateUpdates.set(String(row.id), { alloggiati_stato: 'DA_INVIARE', alloggiati_errore: null });
+      totFutureOk += 1;
+    });
+    invalidFutureRows.forEach(({row, errs}) => {
+      localStateUpdates.set(String(row.id), { alloggiati_stato: 'ERRORE', alloggiati_errore: errs.join(', ') });
+      totErr += 1;
+    });
+  }
+
   await loadAll();
+  if (localStateUpdates.size) {
+    S.rows = S.rows.map((row) => {
+      const patch = localStateUpdates.get(String(row.id));
+      return patch ? { ...row, ...patch } : row;
+    });
+  }
   renderSchedine();
 
   if (mode === 'test') {
-    toast(`Test completato: ${totOk} valide, ${totErr} con errori`, totErr > 0 ? 'err' : 'ok');
+    toast(`Controllo completato: ${totOk} test reali OK, ${totFutureOk} pre-check futuri OK, ${totErr} con errori`, totErr > 0 ? 'err' : 'ok');
   } else {
-    toast(`Invio completato: ${totOk} inviate, ${totErr} con errori`, totErr > 0 ? 'err' : 'ok');
+    toast(`Invio completato: ${totOk} inviate, ${totErr} con errori${futureRows.length ? `, ${futureRows.length} future saltate` : ''}`, totErr > 0 ? 'err' : 'ok');
   }
 }
 
@@ -1379,12 +2218,447 @@ async function downloadReportPdf() {
 }
 
 
+// ── TAB 4: ISTAT ──
+function renderIstat() {
+  const pan = document.getElementById('panIstat');
+  const cfg = getIstatConfigForApt(S.istatApartmentId);
+  const lastRun = getLastIstatRun(S.istatApartmentId, S.istatMonth);
+  const result = S.istatResult;
+
+  pan.innerHTML = `
+  <div class="istat-layout">
+    <div class="hint-box warn" style="margin-bottom:16px">
+      Flusso ISTAT attivo oggi: anteprima mese, export dei dati e logging interno. Nessun invio automatico a portali regionali e nessuna automazione browser/SPID.
+    </div>
+    <div class="hint-box" style="margin-bottom:16px; background:var(--surf); border:1px solid var(--border); color:var(--ink);">
+      I dati ISTAT non si caricano qui manualmente. Questo modulo usa i dati ospite gia salvati in <code>ospiti_check_in</code> tramite il flusso check-in/documenti esistente. Qui configuri il collegamento della struttura e generi i file/dati da caricare poi manualmente nel portale regionale quando richiesto.
+    </div>
+    <div class="istat-toolbar">
+      <div class="field">
+        <label>Struttura</label>
+        <select id="istatApartment">
+          <option value="">Seleziona struttura</option>
+          ${S.apartments.map(a => `<option value="${a.id}" ${S.istatApartmentId===a.id?'selected':''}>${esc(a.nome_appartamento)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field">
+        <label>Mese</label>
+        <input id="istatMonth" type="month" value="${esc(S.istatMonth)}"/>
+      </div>
+      <div class="istat-actions">
+        <button id="btnIstatConfig" class="btn btn-ghost">Configura collegamento ISTAT</button>
+        <button id="btnIstatPreview" class="btn btn-yellow" ${S.istatLoading?'disabled':''}>Anteprima mese</button>
+        <button id="btnIstatExport" class="btn btn-teal" ${S.istatLoading?'disabled':''}>Genera export dati</button>
+        ${cfg?.regione === 'marche' && cfg?.sistema === 'istrice_ross1000' ? `<button id="btnIstatMarcheXml" class="btn btn-ghost" ${S.istatLoading?'disabled':''}>Genera XML Marche</button>` : ''}
+      </div>
+    </div>
+
+    <div class="istat-result">
+      <div class="istat-section">
+        <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start">
+          <div>
+            <div class="drawer-sec" style="margin:0 0 8px 0">Configurazione corrente</div>
+            ${cfg ? `
+              <div><strong>${esc(cfg.regione)}</strong> · ${esc(cfg.sistema)}</div>
+              <div class="mono-sm">Codice struttura: ${esc(cfg.codice_struttura || '—')}</div>
+              <div class="mono-sm">Deadline: ${esc(cfg.deadline_rule || '—')}</div>
+            ` : `<div style="color:var(--red)">Nessuna configurazione ISTAT attiva per questo appartamento.</div>`}
+          </div>
+          <div>
+            <div class="drawer-sec" style="margin:0 0 8px 0">Ultimo export loggato</div>
+            ${lastRun ? `
+              <div><strong>${esc(lastRun.esito)}</strong></div>
+              <div class="mono-sm">${fmt(lastRun.created_at)} · mese ${esc(String(lastRun.mese_riferimento || '').slice(0, 7))}</div>
+            ` : `<div class="mono-sm">Nessun log per il mese selezionato</div>`}
+          </div>
+        </div>
+      </div>
+
+      <div class="istat-section">
+        ${result ? renderIstatResult(result) : `<div class="empty" style="padding:36px 0"><div class="empty-ico">📊</div><div>Nessuna anteprima ancora generata</div></div>`}
+      </div>
+      ${cfg?.regione === 'marche' && cfg?.sistema === 'istrice_ross1000' ? `
+      <div class="istat-section">
+        ${renderIstatMarcheXmlSection()}
+      </div>
+      ` : ''}
+    </div>
+  </div>`;
+
+  document.getElementById('istatApartment').addEventListener('change', (e) => {
+    S.istatApartmentId = e.target.value;
+    S.istatResult = null;
+    S.istatMarcheXmlResult = null;
+    renderIstat();
+  });
+  document.getElementById('istatMonth').addEventListener('change', (e) => {
+    S.istatMonth = e.target.value;
+    S.istatResult = null;
+    S.istatMarcheXmlResult = null;
+    renderIstat();
+  });
+  document.getElementById('btnIstatConfig').addEventListener('click', openIstatConfigModal);
+  document.getElementById('btnIstatPreview').addEventListener('click', () => runIstatBuild('preview'));
+  document.getElementById('btnIstatExport').addEventListener('click', () => runIstatBuild('export'));
+  document.getElementById('btnIstatMarcheXml')?.addEventListener('click', runMarcheXmlExport);
+  document.getElementById('btnCopyMarcheXml')?.addEventListener('click', copyMarcheXml);
+}
+
+function renderIstatResult(result) {
+  const preview = result.preview;
+  const exportPayload = result.exportResult?.payload || null;
+  return `
+    <div class="hint-box" style="margin-bottom:16px;background:var(--blue-l);border:1px solid rgba(37,99,235,0.14);color:var(--text)">
+      <strong>Come usarlo:</strong> "Anteprima mese" controlla i numeri. "Genera export dati" produce il payload adapter-specifico. Se disponibile "Genera XML Marche", quel file va poi caricato manualmente nel portale regionale.
+    </div>
+    <div class="drawer-sec" style="margin:0 0 12px 0">Summary</div>
+    <div class="istat-summary">
+      <div class="istat-mini-card"><div class="k">Arrivi</div><div class="v">${preview.summary.total_arrivi}</div></div>
+      <div class="istat-mini-card"><div class="k">Presenze</div><div class="v">${preview.summary.total_presenze}</div></div>
+      <div class="istat-mini-card"><div class="k">Ospiti coinvolti</div><div class="v">${preview.summary.total_ospiti_coinvolti}</div></div>
+    </div>
+
+    <div class="drawer-sec">Warnings</div>
+    ${preview.warnings?.length ? `<div class="warn-list">${preview.warnings.map(w => `<div class="warn-item">${esc(w)}</div>`).join('')}</div>` : `<div class="mono-sm">Nessun warning</div>`}
+
+    <div class="drawer-sec">Righe per provenienza</div>
+    ${preview.rows?.length ? `
+      <table>
+        <thead><tr><th>Provenienza</th><th>Arrivi</th><th>Presenze</th><th>Ospiti</th></tr></thead>
+        <tbody>
+          ${preview.rows.map(r => `<tr><td>${esc(r.provenienza_label)}</td><td>${r.arrivi}</td><td>${r.presenze}</td><td>${r.ospiti_coinvolti}</td></tr>`).join('')}
+        </tbody>
+      </table>
+    ` : `<div class="mono-sm">Nessuna riga disponibile</div>`}
+
+    <div class="drawer-sec">Status giornaliero</div>
+    ${preview.daily_status?.length ? `
+      <table>
+        <thead><tr><th>Data</th><th>Stato</th><th>Arrivi</th><th>Presenze</th></tr></thead>
+        <tbody>
+          ${preview.daily_status.map(d => `<tr><td class="td-date">${esc(d.date)}</td><td>${esc(d.status)}</td><td>${d.arrivals}</td><td>${d.presences}</td></tr>`).join('')}
+        </tbody>
+      </table>
+    ` : `<div class="mono-sm">Nessun dato giornaliero</div>`}
+
+    <div class="drawer-sec">JSON export</div>
+    ${exportPayload ? `
+      <details>
+        <summary style="cursor:pointer;font-weight:600">Apri payload export</summary>
+        <div class="json-box" style="margin-top:10px">${esc(JSON.stringify(exportPayload, null, 2))}</div>
+      </details>
+    ` : `<div class="mono-sm">Genera export per vedere il payload adapter-specifico.</div>`}
+  `;
+}
+
+function renderIstatMarcheXmlSection() {
+  const result = S.istatMarcheXmlResult;
+  if (!result) {
+    return `
+      <div class="drawer-sec" style="margin:0 0 8px 0">XML Marche</div>
+      <div class="mono-sm">Nessun XML generato ancora per il mese selezionato.</div>
+    `;
+  }
+
+  return `
+    <div class="drawer-sec" style="margin:0 0 8px 0">XML Marche</div>
+    <div class="mono-sm" style="margin-bottom:10px">Totale: ${result.summary.total} · validi: ${result.summary.valid} · esclusi: ${result.summary.skipped}</div>
+    ${result.warnings?.length ? `<div class="warn-list" style="margin-bottom:12px">${result.warnings.map(w => `<div class="warn-item">${esc(w)}</div>`).join('')}</div>` : ''}
+    <div class="field" style="margin-bottom:10px">
+      <label>XML generato</label>
+      <textarea id="istatMarcheXmlOutput" style="min-height:260px;font-family:var(--mono)">${esc(result.xml)}</textarea>
+    </div>
+    <button id="btnCopyMarcheXml" class="btn btn-ghost btn-sm">Copia XML</button>
+  `;
+}
+
+async function runIstatBuild(mode) {
+  if (!S.istatApartmentId) {
+    toast('Seleziona un appartamento', 'err');
+    return;
+  }
+  if (!S.istatMonth) {
+    toast('Seleziona il mese', 'err');
+    return;
+  }
+
+  const [year, month] = S.istatMonth.split('-').map(Number);
+  S.istatLoading = true;
+  renderIstat();
+
+  try {
+    const session = await sb.auth.getSession();
+    const accessToken = session?.data?.session?.access_token;
+    if (!accessToken) {
+      toast('Sessione scaduta, rifai login', 'err');
+      S.istatLoading = false;
+      renderIstat();
+      return;
+    }
+    const res = await fetch('/.netlify/functions/build-istat-monthly', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`
+      },
+      body: JSON.stringify({
+        apartment_id: S.istatApartmentId,
+        year,
+        month,
+        mode,
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      toast(data.error || 'Errore generazione ISTAT', 'err');
+      S.istatLoading = false;
+      renderIstat();
+      return;
+    }
+
+    S.istatResult = data;
+    if (mode === 'export') {
+      await loadAll();
+    }
+    toast(mode === 'export' ? 'Export ISTAT generato' : 'Anteprima mese generata', 'ok');
+  } catch (err) {
+    toast('Errore di rete: ' + err.message, 'err');
+  } finally {
+    S.istatLoading = false;
+    renderIstat();
+  }
+}
+
+async function runMarcheXmlExport() {
+  if (!S.istatApartmentId || !S.istatMonth) {
+    toast('Seleziona appartamento e mese', 'err');
+    return;
+  }
+
+  const session = await sb.auth.getSession();
+  const accessToken = session?.data?.session?.access_token;
+  if (!accessToken) {
+    toast('Sessione scaduta, rifai login', 'err');
+    return;
+  }
+
+  const [year, month] = S.istatMonth.split('-').map(Number);
+  const dateFrom = `${year}-${String(month).padStart(2, '0')}-01`;
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const dateTo = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+  S.istatLoading = true;
+  renderIstat();
+
+  try {
+    const res = await fetch('/.netlify/functions/export-istat-marche-xml', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`
+      },
+      body: JSON.stringify({
+        apartment_id: S.istatApartmentId,
+        date_from: dateFrom,
+        date_to: dateTo
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      toast(data.error || 'Errore export XML Marche', 'err');
+      S.istatLoading = false;
+      renderIstat();
+      return;
+    }
+
+    S.istatMarcheXmlResult = data;
+    await loadAll();
+    toast('XML Marche generato', 'ok');
+  } catch (err) {
+    toast('Errore di rete: ' + err.message, 'err');
+  } finally {
+    S.istatLoading = false;
+    renderIstat();
+  }
+}
+
+async function copyMarcheXml() {
+  const value = S.istatMarcheXmlResult?.xml;
+  if (!value) {
+    toast('Nessun XML da copiare', 'info');
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(value);
+    toast('XML copiato', 'ok');
+  } catch (err) {
+    toast('Copia non riuscita: ' + err.message, 'err');
+  }
+}
+
+function getDeadlineRuleByRegion(regione) {
+  return {
+    'emilia-romagna': 'entro il 5 del mese successivo',
+    'marche': 'entro il 5 del mese successivo',
+    'veneto': 'entro i primi 10 giorni lavorativi del mese successivo',
+    'valle-daosta': 'entro il 5 del mese successivo',
+  }[regione] || '';
+}
+
+function getSystemByRegion(regione) {
+  return {
+    'emilia-romagna': 'ross1000',
+    'marche': 'istrice_ross1000',
+    'veneto': 'ross1000',
+    'valle-daosta': 'vit_albergatori',
+  }[regione] || '';
+}
+
+function openIstatConfigModal() {
+  if (!S.istatApartmentId) {
+    toast('Seleziona prima un appartamento', 'err');
+    return;
+  }
+
+  const apartment = S.apartments.find(a => a.id === S.istatApartmentId);
+  const cfg = getIstatConfigForApt(S.istatApartmentId) || {};
+  const draft = getIstatConfigDraft(apartment, cfg);
+  const root = document.getElementById('modal-root');
+  root.innerHTML = `
+  <div class="modal-bg" id="istatCfgBg">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-title">Configura ISTAT struttura</div>
+        <button id="istatCfgClose" class="drawer-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="hint-box warn" style="margin-bottom:14px">
+          Configurazione separata dagli account Alloggiati. La password viene inviata solo alla function dedicata e non viene piu letta dal frontend.
+        </div>
+        <div class="hint-box" style="margin-bottom:14px; background:var(--surf); border:1px solid var(--border); color:var(--ink);">
+          Questa configurazione serve solo per collegare la struttura al portale statistico regionale. I dati degli ospiti vengono letti automaticamente da <code>ospiti_check_in</code>.
+        </div>
+        <div class="field"><label>Struttura</label><input value="${esc(apartment?.nome_appartamento || '')}" disabled/></div>
+        <div class="field-2">
+          <div class="field"><label>Regione</label>
+            <select id="istatCfgRegion">
+              <option value="emilia-romagna" ${draft.regione==='emilia-romagna'?'selected':''}>Emilia-Romagna</option>
+              <option value="marche" ${draft.regione==='marche'?'selected':''}>Marche</option>
+              <option value="veneto" ${draft.regione==='veneto'?'selected':''}>Veneto</option>
+              <option value="valle-daosta" ${draft.regione==='valle-daosta'?'selected':''}>Valle d'Aosta</option>
+            </select>
+          </div>
+          <div class="field"><label>Sistema</label><input id="istatCfgSystem" value="${esc(draft.sistema || '')}" readonly style="font-family:var(--mono)"/></div>
+        </div>
+        <div class="field-2">
+          <div class="field"><label>Portal URL</label><input id="istatCfgPortalUrl" value="${esc(draft.portal_url || '')}" placeholder="https://..."/></div>
+          <div class="field"><label>Codice struttura</label><input id="istatCfgCode" value="${esc(draft.codice_struttura || '')}"/></div>
+        </div>
+        <div class="field-2">
+          <div class="field"><label>Auth type</label><input id="istatCfgAuthType" value="${esc(draft.auth_type || '')}" placeholder="basic | portale"/></div>
+          <div class="field"><label>Username</label><input id="istatCfgUser" value="${esc(draft.username || '')}"/></div>
+        </div>
+        <div class="field-2">
+          <div class="field"><label>Note</label><textarea id="istatCfgNote" placeholder="Note operative o limitazioni manuali">${esc(draft.note || '')}</textarea></div>
+          <div class="field"><label>Password</label><input id="istatCfgPass" type="password" value="" placeholder="Lascia vuoto per mantenere la password esistente" autocomplete="off"/></div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button id="istatCfgCancel" class="btn btn-ghost">Annulla</button>
+        <button id="istatCfgSave" class="btn btn-teal">Salva configurazione</button>
+      </div>
+    </div>
+  </div>`;
+
+  const close = () => { root.innerHTML = ''; };
+  const regionEl = document.getElementById('istatCfgRegion');
+  const systemEl = document.getElementById('istatCfgSystem');
+  const portalUrlEl = document.getElementById('istatCfgPortalUrl');
+  const syncRegionFields = () => {
+    const regione = regionEl.value;
+    systemEl.value = getSystemByRegion(regione);
+    if (!portalUrlEl.value.trim() || portalUrlEl.value.trim() === 'https://istrice-ross1000.turismo.marche.it/') {
+      portalUrlEl.value = regione === 'marche' ? 'https://istrice-ross1000.turismo.marche.it/' : '';
+    }
+  };
+  syncRegionFields();
+
+  document.getElementById('istatCfgClose').addEventListener('click', close);
+  document.getElementById('istatCfgCancel').addEventListener('click', close);
+  document.getElementById('istatCfgBg').addEventListener('click', e => { if (e.target.id === 'istatCfgBg') close(); });
+  regionEl.addEventListener('change', syncRegionFields);
+
+  document.getElementById('istatCfgSave').addEventListener('click', async () => {
+    const payload = {
+      apartment_id: S.istatApartmentId,
+      attivo: true,
+      regione: regionEl.value,
+      sistema: systemEl.value,
+      portal_url: document.getElementById('istatCfgPortalUrl').value.trim() || null,
+      codice_struttura: document.getElementById('istatCfgCode').value.trim() || null,
+      auth_type: document.getElementById('istatCfgAuthType').value.trim() || null,
+      username: document.getElementById('istatCfgUser').value.trim() || null,
+      password: document.getElementById('istatCfgPass').value || '',
+      supports_file_import: draft.supports_file_import,
+      supports_webservice: draft.supports_webservice,
+      requires_open_close: draft.requires_open_close,
+      deadline_rule: getDeadlineRuleByRegion(regionEl.value) || draft.deadline_rule || null,
+      note: document.getElementById('istatCfgNote').value.trim() || null,
+      export_format: 'json',
+    };
+    const btn = document.getElementById('istatCfgSave');
+    btn.disabled = true;
+    btn.textContent = 'Salvo…';
+
+    const session = await sb.auth.getSession();
+    const accessToken = session?.data?.session?.access_token;
+    if (!accessToken) {
+      toast('Sessione scaduta, rifai login', 'err');
+      btn.disabled = false;
+      btn.textContent = 'Salva configurazione';
+      return;
+    }
+
+    let data;
+    try {
+      const res = await fetch('/.netlify/functions/save-istat-config', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify(payload)
+      });
+      data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast('Errore: ' + (data.error || 'Salvataggio configurazione fallito'), 'err');
+        btn.disabled = false;
+        btn.textContent = 'Salva configurazione';
+        return;
+      }
+    } catch (err) {
+      toast('Errore di rete: ' + err.message, 'err');
+      btn.disabled = false;
+      btn.textContent = 'Salva configurazione';
+      return;
+    }
+
+    await loadAll();
+    close();
+    renderIstat();
+    toast('Configurazione ISTAT salvata', 'ok');
+  });
+}
+
+
 // ── TAB 3: Config (Collega Appartamenti) — with auto/manual toggle ──
 function renderConfig() {
   const pan = document.getElementById('panConfig');
   pan.innerHTML = `
   <div style="padding:16px 24px;background:var(--white);border-bottom:1px solid var(--border)">
-    <div style="font-size:13px;color:var(--text2)">Collega ogni appartamento all'account AlloggiatiWeb del proprietario. Le schedine verranno inviate con le credenziali dell'account collegato.</div>
+    <div style="font-size:13px;color:var(--text2)">Collega ogni appartamento all'account AlloggiatiWeb del proprietario. Le schedine verranno inviate con le credenziali dell'account collegato. Se attivi <strong>Invio auto</strong>, il job automatico prova l'invio ogni giorno alle 22:00 (Europe/Rome).</div>
   </div>
   <div style="padding:24px;overflow-y:auto">
     <table>
@@ -1426,12 +2700,20 @@ function renderConfigRows() {
       const idpInp = body.querySelector(`.cfg-idp[data-apt="${aptId}"]`);
       const autoChk = body.querySelector(`.cfg-auto[data-apt="${aptId}"]`);
       const accId = accSel.value;
+      const existing = S.links.find(l => l.apartment_id === aptId);
 
       btn.disabled = true; btn.textContent = '…';
+      let res;
 
       if (!accId) {
-        // Rimuovi collegamento
-        await sb.from('apartment_alloggiati').delete().eq('apartment_id', aptId);
+        if (existing) {
+          res = await sb.from('apartment_alloggiati').delete().eq('id', existing.id);
+          if (res.error) {
+            toast(`Errore scollegamento: ${res.error.message}`, 'err');
+            btn.disabled = false; btn.textContent = 'Salva';
+            return;
+          }
+        }
         toast('Collegamento rimosso','info');
       } else {
         const payload = {
@@ -1440,17 +2722,26 @@ function renderConfigRows() {
           id_appartamento_portale: idpInp.value.trim() || null,
           invio_automatico: autoChk.checked,
         };
-        const existing = S.links.find(l => l.apartment_id === aptId);
         if (existing) {
-          await sb.from('apartment_alloggiati').update(payload).eq('id', existing.id);
+          res = await sb.from('apartment_alloggiati').update(payload).eq('id', existing.id);
+          if (res.error) {
+            toast(`Errore aggiornamento collegamento: ${res.error.message}`, 'err');
+            btn.disabled = false; btn.textContent = 'Salva';
+            return;
+          }
         } else {
-          await sb.from('apartment_alloggiati').insert(payload);
+          res = await sb.from('apartment_alloggiati').insert(payload);
+          if (res.error) {
+            toast(`Errore creazione collegamento: ${res.error.message}`, 'err');
+            btn.disabled = false; btn.textContent = 'Salva';
+            return;
+          }
         }
-        toast('Collegamento salvato','ok');
       }
 
       await loadAll();
-      renderConfigRows();
+      renderConfig();
+      toast('Collegamento salvato','ok');
       btn.disabled = false; btn.textContent = 'Salva';
     });
   });
@@ -1527,6 +2818,36 @@ const AC = {
     return [...exact, ...starts, ...contains].slice(0, 12);
   },
 
+  resolveSingle(type, query, provinciaHint = '') {
+    const normalized = normalizeLookupValue(query);
+    if (!normalized) return null;
+    const list = type === 'comune' ? AC.comuni : AC.stati;
+    if (!list) return null;
+    let matches = list.filter(item => normalizeLookupValue(item.nome) === normalized);
+    if (type === 'comune' && matches.length > 1 && provinciaHint) {
+      const prov = String(provinciaHint || '').trim().toUpperCase().slice(0, 2);
+      const narrowed = matches.filter(item => String(item.prov || '').trim().toUpperCase().slice(0, 2) === prov);
+      if (narrowed.length) matches = narrowed;
+    }
+    return matches.length === 1 ? matches[0] : null;
+  },
+
+  applySelection(container, input, item, type) {
+    const codiceKey = input.dataset.codiceK;
+    const label = type === 'comune' ? `${item.nome} (${item.prov})` : normalizeCitizenshipLabel(item.nome);
+    input.value = label;
+    S.form[input.dataset.k] = label;
+
+    if (codiceKey) {
+      S.form[codiceKey] = item.codice;
+      const codiceInput = container.querySelector(`[data-k="${codiceKey}"]`);
+      if (codiceInput) codiceInput.value = item.codice;
+    }
+
+    AC.closeAll();
+    validateDrawer();
+  },
+
   // Chiude tutti i dropdown aperti
   closeAll() {
     document.querySelectorAll('.ac-dropdown').forEach(d => d.remove());
@@ -1551,12 +2872,23 @@ const AC = {
 
     container.querySelectorAll('[data-ac]').forEach(input => {
       const type = input.dataset.ac;       // 'comune' | 'stato'
-      const codiceKey = input.dataset.codiceK; // chiave del campo codice abbinato
+      const getProvinciaHint = () => {
+        if (type !== 'comune') return '';
+        if (input.dataset.k === 'luogo_nascita') {
+          return extractProvinceFromComuneLabel(input.value) || extractProvinceFromComuneLabel(S.selected?.luogo_nascita || '');
+        }
+        return '';
+      };
 
       input.addEventListener('input', () => {
         AC.closeAll();
         const q = input.value;
         if (q.length < 2) return;
+        const exactMatch = AC.resolveSingle(type, q, getProvinciaHint());
+        if (exactMatch) {
+          AC.applySelection(container, input, exactMatch, type);
+          return;
+        }
         const results = AC.search(type, q);
         if (!results.length) return;
 
@@ -1572,23 +2904,7 @@ const AC = {
 
           div.addEventListener('mousedown', e => {
             e.preventDefault();
-            // Imposta il valore visibile
-            const label = type === 'comune'
-              ? `${item.nome} (${item.prov})`
-              : item.nome;
-            input.value = label;
-            S.form[input.dataset.k] = label;
-
-            // Imposta il codice nel campo abbinato (readonly)
-            if (codiceKey) {
-              S.form[codiceKey] = item.codice;
-              // Aggiorna il DOM
-              const codiceInput = container.querySelector(`[data-k="${codiceKey}"]`);
-              if (codiceInput) codiceInput.value = item.codice;
-            }
-
-            AC.closeAll();
-            validateDrawer();
+            AC.applySelection(container, input, item, type);
           });
           drop.appendChild(div);
         });
@@ -1597,6 +2913,8 @@ const AC = {
       });
 
       input.addEventListener('blur', () => {
+        const exactMatch = AC.resolveSingle(type, input.value, getProvinciaHint());
+        if (exactMatch) AC.applySelection(container, input, exactMatch, type);
         setTimeout(AC.closeAll, 150);
       });
 
@@ -1621,9 +2939,19 @@ const AC = {
           AC.closeAll();
         }
       });
+
+      const preloadMatch = AC.resolveSingle(type, input.value, getProvinciaHint());
+      if (preloadMatch) AC.applySelection(container, input, preloadMatch, type);
     });
   }
 };
+
+function normalizeCitizenshipLabel(value) {
+  const normalized = normalizeLookupValue(value);
+  if (!normalized) return '';
+  if (['italia','italy','italiana','italiano','cittadinanza italiana','nazionalita italiana','nazionalita: italia'].includes(normalized)) return 'Italia';
+  return String(value || '').trim();
+}
 
 // ── Init ──
 (async()=>{

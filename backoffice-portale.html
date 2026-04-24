@@ -76,12 +76,11 @@
     .btn-full { width: 100%; margin-top: 8px; padding: 12px; font-size: 14px; }
     .msg-err { background: var(--red-l); border: 1px solid #fecaca; color: var(--red); border-radius: 6px; padding: 10px 13px; font-size: 13px; margin-bottom: 12px; display: none; }
 
-    .navbar { display:flex; align-items:center; justify-content:space-between; padding:0 24px; height:44px; background:#111; border-bottom:1px solid #2a2a2a; position:sticky; top:0; z-index:100; }
-    .navbar-links { display:flex; align-items:center; gap:4px; }
+    .navbar { display:flex; align-items:center; justify-content:flex-end; gap:12px; padding:0 24px; height:44px; background:#111; border-bottom:1px solid #2a2a2a; position:sticky; top:0; z-index:100; }
+    .navbar-links { display:flex; align-items:center; gap:12px; margin-left:auto; }
     .navbar-link { font-family:var(--mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#888; text-decoration:none; padding:5px 13px; border-radius:5px; transition:background 0.15s,color 0.15s; }
     .navbar-link:hover { background:#222; color:#ccc; }
     .navbar-link.active { background:#222; color:#fff; }
-    .navbar-brand { font-family:var(--serif); font-size:18px; color:#fff; font-weight:500; }
 
     .header { display:flex; align-items:center; justify-content:space-between; padding:0 24px; height:56px; background:var(--white); border-bottom:1px solid var(--border); position:sticky; top:44px; z-index:50; }
     .header-left { display:flex; align-items:baseline; gap:10px; }
@@ -109,6 +108,59 @@
       background-position:right 10px center;
     }
     .apt-status { font-size:12px; font-family:var(--mono); color:var(--muted); }
+    .links-wrap { padding:16px 24px 0; }
+    .links-card { background:var(--white); border:1px solid var(--border); border-radius:10px; padding:18px 20px; }
+    .links-head { display:flex; align-items:end; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+    .links-title { font-family:var(--serif); font-size:20px; font-weight:500; }
+    .links-sub { font-size:12px; color:var(--muted); font-family:var(--mono); }
+    .links-search { min-width:240px; max-width:360px; width:100%; }
+    .links-table-wrap { overflow:auto; border:1px solid var(--border); border-radius:8px; }
+    .links-table { width:100%; border-collapse:collapse; min-width:980px; }
+    .links-table th, .links-table td { padding:10px 12px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+    .links-table th { font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); background:var(--surf); }
+    .links-table tr:last-child td { border-bottom:none; }
+    .cell-main { font-weight:500; }
+    .cell-sub { margin-top:4px; font-size:12px; color:var(--muted); }
+    .link-out { color:var(--accent); text-decoration:none; word-break:break-all; }
+    .link-out:hover { text-decoration:underline; }
+    .mono { font-family:var(--mono); font-size:12px; word-break:break-all; }
+    .status-inline { font-size:12px; color:var(--red); font-family:var(--mono); }
+    .actions-cell { white-space:nowrap; }
+    .empty-note { padding:16px; font-size:13px; color:var(--muted); }
+    .status-stack { display:flex; flex-wrap:wrap; gap:6px; }
+    .mini-badge { display:inline-flex; align-items:center; padding:3px 8px; border-radius:999px; font-size:11px; font-family:var(--mono); }
+    .mini-badge.ok { background:var(--green-l); color:var(--green); }
+    .mini-badge.warn { background:var(--yellow-l); color:var(--yellow); }
+    .mini-badge.err { background:var(--red-l); color:var(--red); }
+    .ops-wrap { padding:16px 24px 0; }
+    .ops-grid { display:grid; grid-template-columns:1.2fr 0.8fr; gap:16px; }
+    .hint-box { background:var(--surf); border:1px solid var(--border); border-radius:8px; padding:12px 14px; font-size:12px; color:var(--text2); }
+    .check-list { display:flex; flex-direction:column; gap:8px; }
+    .check-row { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:10px 12px; background:var(--surf); border:1px solid var(--border); border-radius:8px; }
+    .check-label { font-weight:500; }
+    .check-meta { font-size:12px; color:var(--muted); margin-top:3px; }
+    .soft-divider { height:1px; background:var(--border); margin:16px 0; }
+    .workspace-wrap { padding:16px 24px 0; }
+    .workspace-card { background:var(--white); border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+    .workspace-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 20px; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+    .workspace-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .panel-tabs { display:flex; gap:0; padding:0 24px; background:var(--white); border-bottom:1px solid var(--border); }
+    .panel-tab { font-family:var(--mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); padding:12px 18px; cursor:pointer; border-bottom:2px solid transparent; transition:color 0.15s,border-color 0.15s; background:none; border-top:none; border-left:none; border-right:none; }
+    .panel-tab:hover { color:var(--text2); }
+    .panel-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+    .hidden-panel { display:none; }
+    .empty-state { padding:28px 24px; }
+    .empty-state-card { background:var(--surf); border:1px dashed var(--border2); border-radius:10px; padding:26px 24px; }
+    .empty-state-title { font-family:var(--serif); font-size:20px; margin-bottom:6px; }
+    .empty-state-sub { color:var(--text2); font-size:13px; }
+    .report-grid { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:10px; margin-top:14px; }
+    .report-card { background:var(--surf); border:1px solid var(--border); border-radius:8px; padding:12px 14px; }
+    .report-card-label { font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+    .report-card-value { font-size:20px; font-weight:600; }
+    .report-json { background:var(--surf); border:1px solid var(--border); border-radius:8px; padding:12px 14px; font-family:var(--mono); font-size:12px; line-height:1.5; color:var(--text2); overflow:auto; max-height:280px; white-space:pre-wrap; word-break:break-word; }
+    .candidate-list { display:flex; flex-direction:column; gap:6px; }
+    .candidate-item { background:var(--surf); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-size:12px; color:var(--text2); }
+    .report-section { padding:16px 24px 0; }
 
     .tabs { display:flex; gap:0; padding:0 24px; background:var(--white); border-bottom:1px solid var(--border); }
     .tab { font-family:var(--mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); padding:12px 18px; cursor:pointer; border-bottom:2px solid transparent; transition:color 0.15s,border-color 0.15s; background:none; border-top:none; border-left:none; border-right:none; }
@@ -142,13 +194,18 @@
 
     @media (max-width: 768px) {
       .field-2, .preview-grid { grid-template-columns:1fr; }
-      .navbar-brand, .header-user { display:none; }
+      .header-user { display:none; }
       .content { padding:16px; }
       .apt-bar { padding:12px 16px; }
       .tabs { padding:0 16px; }
       .header { padding:0 16px; }
       .navbar { padding:0 16px; }
       .numeri-row { grid-template-columns:1fr; }
+      .ops-wrap { padding:16px 16px 0; }
+      .ops-grid { grid-template-columns:1fr; }
+      .workspace-wrap { padding:16px 16px 0; }
+      .panel-tabs { padding:0 16px; }
+      .report-grid { grid-template-columns:1fr 1fr; }
     }
   </style>
 </head>
@@ -157,18 +214,22 @@
 <div id="_toast"></div>
 
 <script>
-const sb = window.sb || supabase.createClient(
-  'https://tysxeikqbgebpfyblgeb.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5c3hlaWtxYmdlYnBmeWJsZ2ViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyODczODAsImV4cCI6MjA5MDg2MzM4MH0.yXmS2MFh47eRkCX2voemdBkK5m_tyJiKAFhfyp1YEbw'
-);
+const sb = window.sb;
 
 const LINGUE = ['IT','EN','DE','FR','ES','RU'];
 
 const S = {
   session: null,
   apartments: [],
+  accounts: [],
+  links: [],
+  istatConfigs: [],
+  portalRows: [],
   selectedApt: null,
   tab: 'accesso',
+  showInactive: false,
+  apartmentSearch: '',
+  portalSearch: '',
   creds: null,
   info: null,
   aptData: null,
@@ -176,12 +237,39 @@ const S = {
   saving: false,
   toastTimer: null,
   fCreds: { codice_accesso:'', luogo_chiavi:'', istruzioni_accesso:'', video_url:'' },
-  fInfo:  { come_arrivare:'', dove_parcheggiare:'', come_entrare:'', cosa_fare_se_luce_spenta:'', cosa_fare_se_chiuso_fuori:'', numeri_utili:[] },
+  fInfo:  { come_arrivare:'', dove_parcheggiare:'', come_entrare:'', regole_della_casa:'', cosa_fare_se_luce_spenta:'', cosa_fare_se_chiuso_fuori:'', numeri_utili:[] },
   fMappa: { indirizzo_completo:'', latitudine:'', longitudine:'', maps_url_override:'' },
+  fApartment: { nome_appartamento:'' },
+  fConn:  { alloggiati_account_id:'', id_appartamento_portale:'', invio_automatico:false, istat_attivo:true, istat_regione:'', istat_portal_url:'', istat_codice_struttura:'', istat_auth_type:'', istat_username:'', istat_password:'', istat_note:'' },
+  fNewApt: { nome_appartamento:'', codice_interno:'', struttura_nome:'', public_checkin_key:'', attivo:true, alloggiati_account_id:'', id_appartamento_portale:'', invio_automatico:false, istat_attivo:true, istat_regione:'', istat_portal_url:'', istat_codice_struttura:'', istat_auth_type:'', istat_username:'', istat_password:'', istat_note:'' },
+  showNewApartmentForm: false,
+  dashboardView: 'details',
+  syncReport: null,
+  syncBusyAction: '',
+  syncError: '',
 };
 
 function esc(s) { if(s==null)return''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function fmtTs(ts) { if(!ts)return'—'; return new Date(ts).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+function normSort(v) { return String(v || '').trim().toLowerCase(); }
+function cleanVal(v) { return String(v || '').trim(); }
+function slugify(v) { return cleanVal(v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').replace(/-+/g, '-'); }
+function getDeadlineRuleByRegion(regione) {
+  return {
+    'emilia-romagna': 'entro il 5 del mese successivo',
+    'marche': 'entro il 5 del mese successivo',
+    'veneto': 'entro i primi 10 giorni lavorativi del mese successivo',
+    'valle-daosta': 'entro il 5 del mese successivo',
+  }[regione] || '';
+}
+function getSystemByRegion(regione) {
+  return {
+    'emilia-romagna': 'ross1000',
+    'marche': 'istrice_ross1000',
+    'veneto': 'ross1000',
+    'valle-daosta': 'vit_albergatori',
+  }[regione] || '';
+}
 
 function toast(msg, type='ok') {
   clearTimeout(S.toastTimer);
@@ -212,8 +300,713 @@ function validateUrl(url) {
 }
 
 async function loadApartments() {
-  const { data } = await sb.from('apartments').select('id,nome_appartamento').order('nome_appartamento');
-  S.apartments = data || [];
+  const { data } = await sb
+    .from('apartments')
+    .select('id,nome_appartamento,codice_interno,struttura_nome,attivo,public_checkin_key')
+    .order('struttura_nome', { ascending: true, nullsFirst: false })
+    .order('nome_appartamento', { ascending: true });
+  S.apartments = (data || []).sort((a, b) =>
+    normSort(a.struttura_nome).localeCompare(normSort(b.struttura_nome), 'it') ||
+    normSort(a.nome_appartamento).localeCompare(normSort(b.nome_appartamento), 'it')
+  );
+}
+
+async function loadConnections() {
+  const [accountsRes, linksRes, istatRes] = await Promise.all([
+    sb.from('alloggiati_accounts').select('id,nome_account,questura,attivo').order('nome_account'),
+    sb.from('apartment_alloggiati').select('*'),
+    sb.from('apartment_istat_config_public').select('id,apartment_id,attivo,regione,sistema,portal_url,codice_struttura,auth_type,username,note,supports_file_import,supports_webservice,requires_open_close,deadline_rule').order('created_at', { ascending: false }),
+  ]);
+  S.accounts = accountsRes.data || [];
+  S.links = linksRes.data || [];
+  S.istatConfigs = istatRes.data || [];
+}
+
+async function loadPortalRows() {
+  const { data } = await sb
+    .from('ospiti_check_in')
+    .select('id,nome,cognome,email,data_checkin,created_at,stato,apartment_id,portale_token,apartments(nome_appartamento)')
+    .not('portale_token', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(200);
+
+  S.portalRows = (data || []).map(row => ({
+    ...row,
+    nome_appartamento: row.apartments?.nome_appartamento || '',
+  }));
+}
+
+function getVisibleApartments() {
+  return S.apartments.filter(item => S.showInactive || item.attivo !== false);
+}
+
+function getFilteredApartments() {
+  const q = S.apartmentSearch.trim().toLowerCase();
+  return getVisibleApartments().filter(item => {
+    if (!q) return true;
+    return [
+      item.nome_appartamento,
+      item.codice_interno,
+      item.struttura_nome,
+      item.public_checkin_key,
+    ].some(value => String(value || '').toLowerCase().includes(q));
+  });
+}
+
+function getSelectedApartment() {
+  return S.apartments.find(a => String(a.id) === String(S.selectedApt)) || null;
+}
+
+function getAlloggiatiLink(apartmentId) {
+  return S.links.find(link => String(link.apartment_id) === String(apartmentId)) || null;
+}
+
+function getAlloggiatiAccount(apartmentId) {
+  const link = getAlloggiatiLink(apartmentId);
+  if (!link) return null;
+  return S.accounts.find(account => String(account.id) === String(link.alloggiati_account_id)) || null;
+}
+
+function getIstatConfig(apartmentId) {
+  return S.istatConfigs.find(cfg => String(cfg.apartment_id) === String(apartmentId)) || null;
+}
+
+function buildGuestPortalUrl(row) {
+  if (!row?.portale_token) return '';
+  return `${window.location.origin.replace(/\/+$/,'')}/portale.html?token=${encodeURIComponent(row.portale_token)}`;
+}
+
+function getFilteredPortalRows() {
+  const q = S.portalSearch.trim().toLowerCase();
+  return (S.portalRows || []).filter(item => {
+    if (!q) return true;
+    return [
+      item.nome,
+      item.cognome,
+      item.email,
+      item.nome_appartamento,
+      item.portale_token,
+      item.stato,
+      item.data_checkin,
+    ].some(value => String(value || '').toLowerCase().includes(q));
+  });
+}
+
+function buildPublicCheckinUrl(apartment) {
+  if (!apartment?.public_checkin_key) return '';
+  return `https://checkin.illupoaffitta.com/?apt=${encodeURIComponent(apartment.public_checkin_key)}`;
+}
+
+function buildOpenApartmentPortalUrl(apartment) {
+  if (!apartment?.public_checkin_key) return '';
+  return `https://checkin.illupoaffitta.com/portale.html?apt=${encodeURIComponent(apartment.public_checkin_key)}&mode=open`;
+}
+
+function syncBadgeClass(status) {
+  if (['PRESENT', 'PRESENTE', 'CONNECTED', 'OK', 'CANDIDATE_HIGH'].includes(status)) return 'ok';
+  if (['AMBIGUOUS', 'AMBIGUO', 'CANDIDATE_MEDIUM'].includes(status)) return 'warn';
+  return 'err';
+}
+
+function renderSyncSection() {
+  const report = S.syncReport;
+  return `
+  <div class="report-section">
+    <div class="links-card">
+      <div class="links-head">
+        <div>
+          <div class="links-title">Sincronizzazione appartamenti</div>
+          <div class="links-sub">Prima audit leggibile e non distruttivo, poi apply solo sui casi sicuri e ad alta confidenza</div>
+        </div>
+        <div class="workspace-actions">
+          <button id="btnAuditApartmentLinks" class="btn btn-ghost" ${S.syncBusyAction ? 'disabled' : ''}>${S.syncBusyAction === 'audit' ? 'Audit in corso…' : 'Audit collegamenti'}</button>
+          <button id="btnApplyApartmentLinks" class="btn btn-primary" ${S.syncBusyAction ? 'disabled' : ''}>${S.syncBusyAction === 'apply' ? 'Apply in corso…' : 'Applica collegamenti sicuri'}</button>
+        </div>
+      </div>
+      ${S.syncError ? `<div class="hint-box" style="margin-top:12px;border-color:#fecaca;background:var(--red-l);color:var(--red)">${esc(S.syncError)}</div>` : ''}
+      ${!report ? `<div class="empty-note">Nessun report ancora eseguito. Lancia prima l’audit per vedere lo stato reale di ID portale, Alloggiati e ISTAT.</div>` : `
+        <div class="report-grid">
+          <div class="report-card"><div class="report-card-label">Appartamenti</div><div class="report-card-value">${report.summary.apartments_total}</div></div>
+          <div class="report-card"><div class="report-card-label">ID Portale Presenti</div><div class="report-card-value">${report.summary.public_checkin_key_present}</div></div>
+          <div class="report-card"><div class="report-card-label">ID Portale Creati</div><div class="report-card-value">${report.summary.public_checkin_key_created}</div></div>
+          <div class="report-card"><div class="report-card-label">Duplicati/Sospetti</div><div class="report-card-value">${report.summary.public_checkin_key_duplicate_suspect}</div></div>
+          <div class="report-card"><div class="report-card-label">Alloggiati Collegati</div><div class="report-card-value">${report.summary.alloggiati_connected}</div></div>
+          <div class="report-card"><div class="report-card-label">Alloggiati Auto-linked</div><div class="report-card-value">${report.summary.alloggiati_auto_linked}</div></div>
+          <div class="report-card"><div class="report-card-label">ISTAT Presenti</div><div class="report-card-value">${report.summary.istat_present}</div></div>
+          <div class="report-card"><div class="report-card-label">ISTAT Creati</div><div class="report-card-value">${report.summary.istat_created}</div></div>
+        </div>
+        <div class="links-table-wrap" style="margin-top:16px">
+          <table class="links-table">
+            <thead>
+              <tr>
+                <th>Appartamento</th>
+                <th>ID portale</th>
+                <th>Alloggiati</th>
+                <th>ISTAT</th>
+                <th>Suggested action</th>
+                <th>Note</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${report.apartments.map(row => `
+                <tr>
+                  <td>
+                    <div class="cell-main">${esc(row.apartment_label || '—')}</div>
+                    <div class="cell-sub mono">${esc(row.apartment_id || '—')}</div>
+                  </td>
+                  <td>
+                    <div class="status-stack">
+                      <span class="mini-badge ${syncBadgeClass(row.public_checkin_key_status)}">${esc(row.public_checkin_key_status)}</span>
+                      ${row.current_public_checkin_key ? `<span class="mono">${esc(row.current_public_checkin_key)}</span>` : ''}
+                    </div>
+                  </td>
+                  <td>
+                    <div class="status-stack">
+                      <span class="mini-badge ${syncBadgeClass(row.alloggiati_status)}">${esc(row.alloggiati_status)}</span>
+                    </div>
+                    ${row.alloggiati_candidate_matches?.length ? `
+                      <div class="candidate-list" style="margin-top:8px">
+                        ${row.alloggiati_candidate_matches.slice(0, 2).map(candidate => `
+                          <div class="candidate-item">
+                            <strong>${esc(candidate.nome_account)}</strong>
+                            <span class="mini-badge ${candidate.confidence === 'HIGH' ? 'ok' : candidate.confidence === 'MEDIUM' ? 'warn' : 'err'}" style="margin-left:6px">${esc(candidate.confidence)}</span>
+                            <div class="cell-sub">${esc((candidate.reasons || []).join(' · '))}</div>
+                          </div>`).join('')}
+                      </div>` : ''}
+                  </td>
+                  <td>
+                    <div class="status-stack">
+                      <span class="mini-badge ${syncBadgeClass(row.istat_status)}">${esc(row.istat_status)}</span>
+                    </div>
+                    <div class="cell-sub">${esc([row.current_istat_regione, row.current_istat_codice_struttura || row.istat_codice_struttura_source].filter(Boolean).join(' · ') || '—')}</div>
+                  </td>
+                  <td>${esc((row.suggested_action || []).join(' · '))}</td>
+                  <td>${esc((row.notes || []).join(' · ') || '—')}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+        <details style="margin-top:16px">
+          <summary class="links-sub" style="cursor:pointer">Apri JSON strutturato</summary>
+          <pre class="report-json">${esc(JSON.stringify(report, null, 2))}</pre>
+        </details>
+      `}
+    </div>
+  </div>`;
+}
+
+function getConnectivityStatus(apartment) {
+  const errors = [];
+  const warnings = [];
+  const checks = [];
+  const publicUrl = buildPublicCheckinUrl(apartment);
+  const link = getAlloggiatiLink(apartment?.id);
+  const account = getAlloggiatiAccount(apartment?.id);
+  const istat = getIstatConfig(apartment?.id);
+
+  if (!apartment?.public_checkin_key) {
+    errors.push('Chiave pubblica mancante');
+    checks.push({ ok: false, label: 'Link check-in pubblico', meta: 'Impossibile costruire il link finale' });
+  } else {
+    checks.push({ ok: true, label: 'Link check-in pubblico', meta: publicUrl });
+  }
+
+  if (!link) {
+    errors.push('Alloggiati non collegato');
+    checks.push({ ok: false, label: 'Collegamento Alloggiati', meta: 'Manca il mapping apartment_alloggiati' });
+  } else if (!account) {
+    errors.push('Account Alloggiati non trovato');
+    checks.push({ ok: false, label: 'Collegamento Alloggiati', meta: 'Link presente ma account non risolto' });
+  } else if (account.attivo === false) {
+    errors.push('Account Alloggiati disattivo');
+    checks.push({ ok: false, label: 'Collegamento Alloggiati', meta: `${account.nome_account} (${account.questura || '—'}) disattivo` });
+  } else {
+    checks.push({ ok: true, label: 'Collegamento Alloggiati', meta: `${account.nome_account}${account.questura ? ' · ' + account.questura : ''}` });
+    if (!cleanVal(link.id_appartamento_portale)) warnings.push('ID portale Alloggiati mancante');
+  }
+
+  if (!istat || istat.attivo === false) {
+    errors.push('ISTAT non collegato');
+    checks.push({ ok: false, label: 'Configurazione ISTAT', meta: 'Nessuna configurazione attiva' });
+  } else {
+    const missingIstat = [];
+    if (!cleanVal(istat.regione)) missingIstat.push('regione');
+    if (!cleanVal(istat.sistema)) missingIstat.push('sistema');
+    if (!cleanVal(istat.codice_struttura)) missingIstat.push('codice struttura');
+    if (missingIstat.length) {
+      errors.push('ISTAT incompleto');
+      checks.push({ ok: false, label: 'Configurazione ISTAT', meta: `Mancano: ${missingIstat.join(', ')}` });
+    } else {
+      checks.push({ ok: true, label: 'Configurazione ISTAT', meta: `${istat.regione} · ${istat.sistema} · ${istat.codice_struttura}` });
+      if (!cleanVal(istat.portal_url)) warnings.push('Portal URL ISTAT mancante');
+    }
+  }
+
+  return { errors, warnings, checks, publicUrl, link, account, istat, ok: errors.length === 0 };
+}
+
+function getPublicCheckinStatus(apartment) {
+  if (apartment?.attivo === false) return 'APPARTAMENTO_DISATTIVO';
+  if (!apartment?.public_checkin_key) return 'MISSING_PUBLIC_KEY';
+  return 'OK';
+}
+
+async function copyText(text) {
+  if (!text) {
+    toast('Chiave pubblica mancante', 'err');
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('✓ Link copiato', 'ok');
+  } catch {
+    toast('Copia non riuscita', 'err');
+  }
+}
+
+function resetNewApartmentForm() {
+  S.fNewApt = { nome_appartamento:'', codice_interno:'', struttura_nome:'', public_checkin_key:'', attivo:true, alloggiati_account_id:'', id_appartamento_portale:'', invio_automatico:false, istat_attivo:true, istat_regione:'', istat_portal_url:'', istat_codice_struttura:'', istat_auth_type:'', istat_username:'', istat_password:'', istat_note:'' };
+}
+
+function syncConnectionDraft(apartmentId) {
+  const link = getAlloggiatiLink(apartmentId);
+  const istat = getIstatConfig(apartmentId);
+  S.fConn = {
+    alloggiati_account_id: link?.alloggiati_account_id || '',
+    id_appartamento_portale: link?.id_appartamento_portale || '',
+    invio_automatico: !!link?.invio_automatico,
+    istat_attivo: istat?.attivo !== false,
+    istat_regione: istat?.regione || '',
+    istat_portal_url: istat?.portal_url || '',
+    istat_codice_struttura: istat?.codice_struttura || '',
+    istat_auth_type: istat?.auth_type || '',
+    istat_username: istat?.username || '',
+    istat_password: '',
+    istat_note: istat?.note || '',
+  };
+}
+
+function syncApartmentDraft(apartmentId) {
+  const apartment = S.apartments.find(item => String(item.id) === String(apartmentId));
+  S.fApartment = {
+    nome_appartamento: apartment?.nome_appartamento || '',
+  };
+}
+
+async function saveApartmentAlloggiati(apartmentId, form) {
+  const existing = getAlloggiatiLink(apartmentId);
+  if (!form.alloggiati_account_id) {
+    if (existing) {
+      const { error } = await sb.from('apartment_alloggiati').delete().eq('id', existing.id);
+      if (error) throw new Error(error.message);
+    }
+    return;
+  }
+  const payload = {
+    apartment_id: apartmentId,
+    alloggiati_account_id: form.alloggiati_account_id,
+    id_appartamento_portale: cleanVal(form.id_appartamento_portale) || null,
+    invio_automatico: !!form.invio_automatico,
+  };
+  const res = existing
+    ? await sb.from('apartment_alloggiati').update(payload).eq('id', existing.id)
+    : await sb.from('apartment_alloggiati').insert(payload);
+  if (res.error) throw new Error(res.error.message);
+}
+
+async function saveApartmentIstat(apartmentId, form) {
+  if (!cleanVal(form.istat_regione)) return;
+  const session = await sb.auth.getSession();
+  const accessToken = session?.data?.session?.access_token;
+  if (!accessToken) throw new Error('Sessione non disponibile per salvare ISTAT');
+  const regione = cleanVal(form.istat_regione);
+  const sistema = getSystemByRegion(regione);
+  if (!sistema) throw new Error(`Regione ISTAT non supportata: ${regione}`);
+  const payload = {
+    apartment_id: apartmentId,
+    attivo: form.istat_attivo !== false,
+    regione,
+    sistema,
+    portal_url: cleanVal(form.istat_portal_url) || null,
+    codice_struttura: cleanVal(form.istat_codice_struttura) || null,
+    auth_type: cleanVal(form.istat_auth_type) || null,
+    username: cleanVal(form.istat_username) || null,
+    password: form.istat_password || '',
+    supports_file_import: regione === 'marche',
+    supports_webservice: false,
+    requires_open_close: regione === 'marche' || regione === 'valle-daosta',
+    deadline_rule: getDeadlineRuleByRegion(regione) || null,
+    note: cleanVal(form.istat_note) || null,
+  };
+  const res = await fetch('/.netlify/functions/save-istat-config', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Salvataggio configurazione ISTAT fallito');
+}
+
+function validateNewApartmentForm(form) {
+  const missing = [];
+  if (!cleanVal(form.nome_appartamento)) missing.push('nome appartamento');
+  if (!cleanVal(form.codice_interno)) missing.push('codice interno');
+  if (!cleanVal(form.public_checkin_key)) missing.push('public checkin key');
+  if (cleanVal(form.istat_regione) && !cleanVal(form.istat_codice_struttura)) missing.push('codice struttura ISTAT');
+  return missing;
+}
+
+async function createApartmentFromForm() {
+  const form = S.fNewApt;
+  const missing = validateNewApartmentForm(form);
+  if (missing.length) {
+    toast('Campi obbligatori mancanti: ' + missing.join(', '), 'err');
+    return;
+  }
+  const apartmentPayload = {
+    nome_appartamento: cleanVal(form.nome_appartamento),
+    codice_interno: cleanVal(form.codice_interno),
+    struttura_nome: cleanVal(form.struttura_nome) || null,
+    public_checkin_key: slugify(form.public_checkin_key),
+    attivo: form.attivo !== false,
+  };
+  const { data, error } = await sb.from('apartments').insert(apartmentPayload).select('id').single();
+  if (error) {
+    toast('Errore creazione appartamento: ' + error.message, 'err');
+    return;
+  }
+  try {
+    await saveApartmentAlloggiati(data.id, form);
+    if (cleanVal(form.istat_regione)) await saveApartmentIstat(data.id, form);
+    await Promise.all([loadApartments(), loadConnections()]);
+    resetNewApartmentForm();
+    await openApartmentSheet(data.id, true);
+    toast('✓ Appartamento creato e collegato', 'ok');
+  } catch (err) {
+    toast('Appartamento creato ma collegamenti incompleti: ' + err.message, 'err');
+    await Promise.all([loadApartments(), loadConnections()]);
+    await openApartmentSheet(data.id, true);
+  }
+}
+
+function renderApartmentLinksSection() {
+  const rows = getFilteredApartments();
+  return `
+  <div class="links-wrap">
+    <div class="links-card">
+      <div class="links-head">
+        <div>
+          <div class="links-title">Link check-in appartamenti</div>
+          <div class="links-sub">Solo appartamenti attivi di default · link costruito dinamicamente da <code>public_checkin_key</code></div>
+        </div>
+        <div class="field links-search" style="margin-bottom:0">
+          <label>Cerca</label>
+          <input id="apartmentSearch" value="${esc(S.apartmentSearch)}" placeholder="Nome, codice, struttura, chiave pubblica"/>
+        </div>
+      </div>
+      <div class="links-table-wrap">
+        ${rows.length ? `
+        <table class="links-table">
+          <thead>
+            <tr>
+              <th>Appartamento</th>
+              <th>Codice interno</th>
+              <th>Struttura</th>
+              <th>Public checkin key</th>
+              <th>Link check-in finale</th>
+              <th>Link portale aperto</th>
+              <th>Stato collegamenti</th>
+              <th>Azioni</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(a => {
+              const link = buildPublicCheckinUrl(a);
+              const openPortalLink = buildOpenApartmentPortalUrl(a);
+              const status = getPublicCheckinStatus(a);
+              const conn = getConnectivityStatus(a);
+              return `
+              <tr>
+                <td>
+                  <div class="cell-main">${esc(a.nome_appartamento || '—')}</div>
+                  <div class="cell-sub">${a.attivo === false ? 'Disattivo' : 'Attivo'}</div>
+                </td>
+                <td class="mono">${esc(a.codice_interno || '—')}</td>
+                <td>${esc(a.struttura_nome || '—')}</td>
+                <td class="mono">${esc(a.public_checkin_key || '—')}</td>
+                <td>
+                  ${link
+                    ? `<a class="link-out" href="${esc(link)}" target="_blank" rel="noopener noreferrer">${esc(link)}</a>`
+                    : `<span class="status-inline">${status === 'MISSING_PUBLIC_KEY' ? 'Chiave pubblica mancante' : 'Appartamento disattivo'}</span>`
+                  }
+                </td>
+                <td>
+                  ${openPortalLink
+                    ? `<a class="link-out" href="${esc(openPortalLink)}" target="_blank" rel="noopener noreferrer">${esc(openPortalLink)}</a>`
+                    : `<span class="status-inline">${status === 'MISSING_PUBLIC_KEY' ? 'Chiave pubblica mancante' : 'Appartamento disattivo'}</span>`
+                  }
+                </td>
+                <td>
+                  <div class="status-stack">
+                    <span class="mini-badge ${conn.ok ? 'ok' : 'err'}">${conn.ok ? 'OK' : 'Da completare'}</span>
+                    ${conn.warnings.map(item => `<span class="mini-badge warn">${esc(item)}</span>`).join('')}
+                    ${conn.errors.map(item => `<span class="mini-badge err">${esc(item)}</span>`).join('')}
+                  </div>
+                </td>
+                <td class="actions-cell">
+                  <button class="btn btn-ghost btn-sm" data-copy-link="${a.id}" ${link ? '' : 'disabled'}>Copia link</button>
+                  <button class="btn btn-ghost btn-sm" data-copy-open-portal="${a.id}" ${openPortalLink ? '' : 'disabled'}>Copia portale</button>
+                  <button class="btn btn-ghost btn-sm" data-select-apt="${a.id}">Apri scheda</button>
+                </td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>`
+        : `<div class="empty-note">Nessun appartamento trovato con i filtri attuali.</div>`}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderGuestPortalLinksSection() {
+  const rows = getFilteredPortalRows();
+  return `
+  <div class="links-wrap">
+    <div class="links-card">
+      <div class="links-head">
+        <div>
+          <div class="links-title">Link portale ospite</div>
+          <div class="links-sub">Ultimi soggiorni con <code>portale_token</code> generato · link personale per rientrare nel portale</div>
+        </div>
+        <div class="field links-search" style="margin-bottom:0">
+          <label>Cerca</label>
+          <input id="portalSearch" value="${esc(S.portalSearch)}" placeholder="Ospite, email, appartamento, token"/>
+        </div>
+      </div>
+      <div class="links-table-wrap">
+        ${rows.length ? `
+        <table class="links-table">
+          <thead>
+            <tr>
+              <th>Ospite</th>
+              <th>Appartamento</th>
+              <th>Check-in</th>
+              <th>Stato</th>
+              <th>Portale token</th>
+              <th>Link portale</th>
+              <th>Azioni</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(row => {
+              const portalUrl = buildGuestPortalUrl(row);
+              return `
+              <tr>
+                <td>
+                  <div class="cell-main">${esc([row.nome, row.cognome].filter(Boolean).join(' ') || '—')}</div>
+                  <div class="cell-sub">${esc(row.email || '—')}</div>
+                </td>
+                <td>${esc(row.nome_appartamento || '—')}</td>
+                <td class="mono">${esc(row.data_checkin || '—')}</td>
+                <td>${esc(row.stato || '—')}</td>
+                <td class="mono">${esc(row.portale_token || '—')}</td>
+                <td>${portalUrl ? `<a class="link-out" href="${esc(portalUrl)}" target="_blank" rel="noopener noreferrer">${esc(portalUrl)}</a>` : '<span class="status-inline">Token mancante</span>'}</td>
+                <td class="actions-cell">
+                  <button class="btn btn-ghost btn-sm" data-copy-portal="${row.id}" ${portalUrl ? '' : 'disabled'}>Copia link</button>
+                  <a class="btn btn-ghost btn-sm" href="${esc(portalUrl)}" target="_blank" rel="noopener noreferrer" ${portalUrl ? '' : 'style="pointer-events:none;opacity:.38"'}>Apri portale</a>
+                </td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>`
+        : `<div class="empty-note">Nessun link portale trovato con i filtri attuali.</div>`}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderOperationsSection() {
+  const form = S.fNewApt;
+  return `
+  <div class="ops-wrap">
+    <div class="ops-grid">
+      <div class="links-card">
+        <div class="section-title">Nuovo appartamento</div>
+        <div class="section-sub">Creazione completa: anagrafica, link check-in, Alloggiati e ISTAT</div>
+        <div class="field-2">
+          <div class="field"><label>Nome appartamento</label><input id="new_nome_appartamento" value="${esc(form.nome_appartamento)}" placeholder="APT-39 - Via Example - Rimini"/></div>
+          <div class="field"><label>Codice interno</label><input id="new_codice_interno" value="${esc(form.codice_interno)}" placeholder="APT-39"/></div>
+        </div>
+        <div class="field-2">
+          <div class="field"><label>Struttura nome</label><input id="new_struttura_nome" value="${esc(form.struttura_nome)}" placeholder="Rimini"/></div>
+          <div class="field"><label>Public checkin key</label><input id="new_public_checkin_key" value="${esc(form.public_checkin_key)}" placeholder="apt-39"/></div>
+        </div>
+        <div class="field">
+          <label style="display:inline-flex;align-items:center;gap:8px;font-size:12px;letter-spacing:normal;text-transform:none;color:var(--text2)">
+            <input id="new_attivo" type="checkbox" ${form.attivo ? 'checked' : ''}/>
+            Appartamento attivo
+          </label>
+        </div>
+        <div class="soft-divider"></div>
+        <div class="card-section-title">Collegamento Alloggiati</div>
+        <div class="field-2">
+          <div class="field">
+            <label>Account Alloggiati</label>
+            <select id="new_alloggiati_account_id">
+              <option value="">— Nessun collegamento —</option>
+              ${S.accounts.map(a => `<option value="${a.id}" ${String(form.alloggiati_account_id)===String(a.id)?'selected':''}>${esc(a.nome_account)}${a.questura ? ' · ' + esc(a.questura) : ''}${a.attivo===false ? ' · DISATTIVO' : ''}</option>`).join('')}
+            </select>
+          </div>
+          <div class="field"><label>ID portale Alloggiati</label><input id="new_id_appartamento_portale" value="${esc(form.id_appartamento_portale)}" placeholder="000001"/></div>
+        </div>
+        <div class="field">
+          <label style="display:inline-flex;align-items:center;gap:8px;font-size:12px;letter-spacing:normal;text-transform:none;color:var(--text2)">
+            <input id="new_invio_automatico" type="checkbox" ${form.invio_automatico ? 'checked' : ''}/>
+            Invio automatico Alloggiati
+          </label>
+        </div>
+        <div class="soft-divider"></div>
+        <div class="card-section-title">Collegamento ISTAT</div>
+        <div class="field-2">
+          <div class="field">
+            <label>Regione ISTAT</label>
+            <select id="new_istat_regione">
+              <option value="">— Nessuna configurazione —</option>
+              <option value="emilia-romagna" ${form.istat_regione==='emilia-romagna'?'selected':''}>Emilia-Romagna</option>
+              <option value="marche" ${form.istat_regione==='marche'?'selected':''}>Marche</option>
+              <option value="veneto" ${form.istat_regione==='veneto'?'selected':''}>Veneto</option>
+              <option value="valle-daosta" ${form.istat_regione==='valle-daosta'?'selected':''}>Valle d'Aosta</option>
+            </select>
+          </div>
+          <div class="field"><label>Sistema</label><input value="${esc(getSystemByRegion(form.istat_regione) || '')}" disabled/></div>
+        </div>
+        <div class="field-2">
+          <div class="field"><label>Portal URL ISTAT</label><input id="new_istat_portal_url" value="${esc(form.istat_portal_url)}" placeholder="https://..."/></div>
+          <div class="field"><label>Codice struttura ISTAT</label><input id="new_istat_codice_struttura" value="${esc(form.istat_codice_struttura)}" placeholder="Codice struttura"/></div>
+        </div>
+        <div class="field-2">
+          <div class="field"><label>Auth type</label><input id="new_istat_auth_type" value="${esc(form.istat_auth_type)}" placeholder="basic | portale"/></div>
+          <div class="field"><label>Username ISTAT</label><input id="new_istat_username" value="${esc(form.istat_username)}"/></div>
+        </div>
+        <div class="field-2">
+          <div class="field"><label>Password ISTAT</label><input id="new_istat_password" type="password" value="${esc(form.istat_password)}" placeholder="Facoltativa al primo salvataggio"/></div>
+          <div class="field">
+            <label style="display:inline-flex;align-items:center;gap:8px;font-size:12px;letter-spacing:normal;text-transform:none;color:var(--text2);margin-top:24px">
+              <input id="new_istat_attivo" type="checkbox" ${form.istat_attivo ? 'checked' : ''}/>
+              Configurazione ISTAT attiva
+            </label>
+          </div>
+        </div>
+        <div class="field"><label>Note ISTAT</label><textarea id="new_istat_note">${esc(form.istat_note)}</textarea></div>
+        <div class="save-row">
+          <button id="btnCreateApartment" class="btn btn-primary">Crea appartamento e collega tutto</button>
+        </div>
+      </div>
+      <div class="links-card">
+        <div class="section-title">Controlli</div>
+        <div class="section-sub">Un appartamento e pronto quando ha link pubblico, Alloggiati e ISTAT tutti collegati</div>
+        <div class="check-list">
+          <div class="check-row">
+            <div>
+              <div class="check-label">Link check-in pubblico</div>
+              <div class="check-meta">Richiede <code>public_checkin_key</code> valorizzata</div>
+            </div>
+            <span class="mini-badge ok">Richiesto</span>
+          </div>
+          <div class="check-row">
+            <div>
+              <div class="check-label">Collegamento Alloggiati</div>
+              <div class="check-meta">Richiede account Alloggiati e mapping <code>apartment_alloggiati</code></div>
+            </div>
+            <span class="mini-badge ok">Richiesto</span>
+          </div>
+          <div class="check-row">
+            <div>
+              <div class="check-label">Configurazione ISTAT</div>
+              <div class="check-meta">Richiede regione, sistema e codice struttura</div>
+            </div>
+            <span class="mini-badge ok">Richiesto</span>
+          </div>
+        </div>
+        <div class="hint-box" style="margin-top:16px">
+          Se un collegamento manca, la tabella sotto mostra subito gli errori per ogni appartamento. Dopo la creazione, l'appartamento compare anche nelle altre aree che leggono da <code>public.apartments</code>.
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderSelectedApartmentSection() {
+  const apt = getSelectedApartment();
+  return `
+  <div class="workspace-wrap">
+    <div class="workspace-card">
+      <div class="workspace-head">
+        <div>
+          <div class="section-title">${apt ? 'Scheda appartamento selezionato' : 'Dettaglio appartamento selezionato'}</div>
+          <div class="section-sub" style="margin-bottom:0">${apt ? `${esc(apt.nome_appartamento || '—')}${apt.struttura_nome ? ' · ' + esc(apt.struttura_nome) : ''}${apt.attivo===false ? ' · DISATTIVO' : ''}` : 'Seleziona un appartamento per vedere i dettagli'}</div>
+        </div>
+        <div class="workspace-actions">
+          <button id="btnToggleNewApartment" class="btn btn-ghost">${S.showNewApartmentForm ? 'Chiudi nuovo appartamento' : '+ Nuovo appartamento'}</button>
+        </div>
+      </div>
+      <div id="newApartmentPanel" class="${S.showNewApartmentForm ? '' : 'hidden-panel'}">
+        ${renderOperationsSection()}
+      </div>
+      <div id="selectedApartmentPanel">
+        ${apt ? `
+        <div id="tabsBar">
+          <div class="tabs">
+            <button class="tab ${S.tab==='accesso'?'active':''}" data-tab="accesso">Accesso</button>
+            <button class="tab ${S.tab==='istruzioni'?'active':''}" data-tab="istruzioni">Istruzioni</button>
+            <button class="tab ${S.tab==='mappa'?'active':''}" data-tab="mappa">Mappa</button>
+            <button class="tab ${S.tab==='collegamenti'?'active':''}" data-tab="collegamenti">Collegamenti</button>
+            <button class="tab ${S.tab==='preview'?'active':''}" data-tab="preview">Preview</button>
+          </div>
+        </div>
+        <div id="tabContent"></div>
+        ` : `
+        <div class="empty-state">
+          <div class="empty-state-card">
+            <div class="empty-state-title">Seleziona un appartamento</div>
+            <div class="empty-state-sub">Usa il menu in alto per aprire subito la scheda e modificare accessi, istruzioni, mappa e collegamenti.</div>
+          </div>
+        </div>
+        `}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderLinksWorkspace() {
+  return `
+  <div class="workspace-wrap">
+    <div class="workspace-card">
+      <div class="workspace-head">
+        <div>
+          <div class="section-title">Lista link pubblici</div>
+          <div class="section-sub" style="margin-bottom:0">Ricerca, copia rapida e apertura scheda per tutti gli appartamenti</div>
+        </div>
+      </div>
+      ${renderSyncSection()}
+      ${renderApartmentLinksSection()}
+    </div>
+  </div>`;
+}
+
+function renderGuestPortalWorkspace() {
+  return `
+  <div class="workspace-wrap">
+    <div class="workspace-card">
+      <div class="workspace-head">
+        <div>
+          <div class="section-title">Portale ospiti</div>
+          <div class="section-sub" style="margin-bottom:0">Ricerca, copia rapida e apertura dei link portale generati dai soggiorni</div>
+        </div>
+      </div>
+      ${renderGuestPortalLinksSection()}
+    </div>
+  </div>`;
 }
 
 async function loadApartmentCredentials(aptId) {
@@ -234,6 +1027,7 @@ async function loadApartmentInfo(aptId, lingua) {
     come_arrivare:             data?.come_arrivare             || '',
     dove_parcheggiare:         data?.dove_parcheggiare         || '',
     come_entrare:              data?.come_entrare              || '',
+    regole_della_casa:         data?.regole_della_casa         || '',
     cosa_fare_se_luce_spenta:  data?.cosa_fare_se_luce_spenta  || '',
     cosa_fare_se_chiuso_fuori: data?.cosa_fare_se_chiuso_fuori || '',
     numeri_utili: numeriToArray(data?.numeri_utili),
@@ -259,17 +1053,63 @@ async function loadAll(aptId) {
   ]);
 }
 
-// Per gli upsert servono vincoli unici su queste colonne (il nome della constraint non conta):
-// apartment_credentials  -> UNIQUE (apartment_id)
-// apartment_info         -> UNIQUE (apartment_id, lingua)
+async function openApartmentSheet(aptId, scrollIntoView = false) {
+  if (!aptId) return;
+  S.selectedApt = aptId;
+  S.tab = 'accesso';
+  S.showNewApartmentForm = false;
+  S.dashboardView = 'details';
+  syncApartmentDraft(aptId);
+  let select = document.getElementById('aptSelect');
+  let tabsBar = document.getElementById('tabsBar');
+  let tabContent = document.getElementById('tabContent');
+  let detailArea = document.getElementById('selectedApartmentPanel');
+  if (!tabContent) {
+    renderDashboard();
+    select = document.getElementById('aptSelect');
+    tabsBar = document.getElementById('tabsBar');
+    tabContent = document.getElementById('tabContent');
+    detailArea = document.getElementById('selectedApartmentPanel');
+  }
+  if (select) select.value = aptId;
+  let statusEl = document.getElementById('aptStatus');
+  let apartment = getSelectedApartment();
+  if (statusEl) statusEl.textContent = apartment?.attivo === false ? 'Disattivo · Caricamento…' : 'Caricamento…';
+  await loadAll(aptId);
+  statusEl = document.getElementById('aptStatus');
+  apartment = getSelectedApartment();
+  if (statusEl) statusEl.textContent = apartment?.attivo === false ? 'Disattivo' : 'Attivo';
+  document.querySelectorAll('.tab').forEach(el => el.classList.toggle('active', el.dataset.tab === S.tab));
+  renderTab();
+  if (scrollIntoView && (detailArea || tabsBar || tabContent)) {
+    (detailArea || tabsBar || tabContent).scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+async function saveSingleRowByLookup(table, lookup, payload) {
+  let query = sb.from(table).select('id');
+  Object.entries(lookup).forEach(([key, value]) => {
+    query = query.eq(key, value);
+  });
+
+  const { data: existing, error: lookupError } = await query.maybeSingle();
+  if (lookupError) return { error: lookupError };
+
+  if (existing?.id) {
+    return sb.from(table).update(payload).eq('id', existing.id);
+  }
+
+  return sb.from(table).insert({ ...lookup, ...payload });
+}
 
 async function saveApartmentCredentials(aptId) {
-  if (S.fCreds.video_url && !validateUrl(S.fCreds.video_url)) {
-    toast('URL video non valido','err');
-    return false;
-  }
-  const payload = { ...S.fCreds, apartment_id: aptId, updated_at: new Date().toISOString() };
-  const { error } = await sb.from('apartment_credentials').upsert(payload, { onConflict: 'apartment_id' });
+  const payload = {
+    codice_accesso: S.fCreds.codice_accesso || '',
+    luogo_chiavi: S.fCreds.luogo_chiavi || '',
+    istruzioni_accesso: S.fCreds.istruzioni_accesso || '',
+    updated_at: new Date().toISOString(),
+  };
+  const { error } = await saveSingleRowByLookup('apartment_credentials', { apartment_id: aptId }, payload);
   if (error) {
     toast('Errore: ' + error.message, 'err');
     return false;
@@ -279,15 +1119,32 @@ async function saveApartmentCredentials(aptId) {
   return true;
 }
 
+async function saveApartmentVideoUrl(aptId) {
+  if (S.fCreds.video_url && !validateUrl(S.fCreds.video_url)) {
+    toast('URL video non valido','err');
+    return false;
+  }
+  const payload = {
+    video_url: S.fCreds.video_url || '',
+    updated_at: new Date().toISOString(),
+  };
+  const { error } = await saveSingleRowByLookup('apartment_credentials', { apartment_id: aptId }, payload);
+  if (error) {
+    toast('Errore: ' + error.message, 'err');
+    return false;
+  }
+  await loadApartmentCredentials(aptId);
+  toast('✓ Video salvato','ok');
+  return true;
+}
+
 async function saveApartmentInfo(aptId, lingua) {
   const payload = {
     ...S.fInfo,
     numeri_utili: arrayToNumeri(S.fInfo.numeri_utili),
-    apartment_id: aptId,
-    lingua,
     updated_at: new Date().toISOString(),
   };
-  const { error } = await sb.from('apartment_info').upsert(payload, { onConflict: 'apartment_id,lingua' });
+  const { error } = await saveSingleRowByLookup('apartment_info', { apartment_id: aptId, lingua }, payload);
   if (error) {
     toast('Errore: ' + error.message, 'err');
     return false;
@@ -297,6 +1154,44 @@ async function saveApartmentInfo(aptId, lingua) {
   return true;
 }
 
+async function translateItalianInfo(aptId, targetLangs) {
+  const langs = Array.from(new Set((targetLangs || []).filter(lang => lang && lang !== 'IT')));
+  if (!langs.length) return { ok: true, translated: [] };
+
+  const session = await sb.auth.getSession();
+  const accessToken = session?.data?.session?.access_token;
+  if (!accessToken) {
+    return { ok: false, error: 'Sessione non disponibile per tradurre le istruzioni' };
+  }
+
+  const payload = {
+    apartment_id: String(aptId),
+    source: {
+      come_arrivare: S.fInfo.come_arrivare || '',
+      dove_parcheggiare: S.fInfo.dove_parcheggiare || '',
+      regole_della_casa: S.fInfo.regole_della_casa || '',
+      cosa_fare_se_luce_spenta: S.fInfo.cosa_fare_se_luce_spenta || '',
+      cosa_fare_se_chiuso_fuori: S.fInfo.cosa_fare_se_chiuso_fuori || '',
+      numeri_utili: arrayToNumeri(S.fInfo.numeri_utili),
+    },
+    target_langs: langs,
+  };
+
+  const res = await fetch('/.netlify/functions/translate-apartment-info', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.success) {
+    return { ok: false, error: data.error || 'Traduzione non riuscita' };
+  }
+  return { ok: true, translated: data.translated_langs || [] };
+}
+
 async function saveApartmentMapSettings(aptId) {
   if (S.fMappa.maps_url_override && !validateUrl(S.fMappa.maps_url_override)) {
     toast('URL Maps non valido','err');
@@ -304,8 +1199,6 @@ async function saveApartmentMapSettings(aptId) {
   }
   const payload = {
     indirizzo_completo: S.fMappa.indirizzo_completo || null,
-    latitudine: S.fMappa.latitudine ? parseFloat(S.fMappa.latitudine) : null,
-    longitudine: S.fMappa.longitudine ? parseFloat(S.fMappa.longitudine) : null,
     maps_url_override: S.fMappa.maps_url_override || null,
   };
   const { error } = await sb.from('apartments').update(payload).eq('id', aptId);
@@ -318,25 +1211,95 @@ async function saveApartmentMapSettings(aptId) {
   return true;
 }
 
+async function saveApartmentIdentity(aptId) {
+  const nome = cleanVal(S.fApartment.nome_appartamento);
+  if (!nome) {
+    toast('Nome appartamento obbligatorio','err');
+    return false;
+  }
+  const { error } = await sb.from('apartments').update({ nome_appartamento: nome }).eq('id', aptId);
+  if (error) {
+    toast('Errore: ' + error.message, 'err');
+    return false;
+  }
+  await Promise.all([loadApartments(), loadPortalRows()]);
+  renderDashboard();
+  await openApartmentSheet(aptId, false);
+  toast('✓ Nome appartamento salvato','ok');
+  return true;
+}
+
+async function runApartmentLinksSync(mode) {
+  const session = await sb.auth.getSession();
+  const accessToken = session?.data?.session?.access_token;
+  if (!accessToken) {
+    toast('Sessione non disponibile per eseguire la sincronizzazione', 'err');
+    return;
+  }
+
+  S.syncBusyAction = mode;
+  S.syncError = '';
+  renderDashboard();
+
+  try {
+    const endpoint = mode === 'apply'
+      ? '/.netlify/functions/apply-apartment-links'
+      : '/.netlify/functions/audit-apartment-links';
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({}),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Operazione non riuscita');
+    S.syncReport = data.report || null;
+    if (mode === 'apply') {
+      await Promise.all([loadApartments(), loadConnections()]);
+    }
+    toast(mode === 'apply' ? '✓ Apply completato' : '✓ Audit completato', 'ok');
+  } catch (err) {
+    S.syncError = err.message || 'Errore sincronizzazione';
+    toast(S.syncError, 'err');
+  } finally {
+    S.syncBusyAction = '';
+    renderDashboard();
+    if (S.selectedApt && S.dashboardView === 'details' && document.getElementById('tabContent')) {
+      renderTab();
+    }
+  }
+}
+
 async function copyItalianToCurrentLanguage(aptId, lingua) {
   if (lingua === 'IT') {
-    toast('Sei già in IT','info');
+    toast('Seleziona una lingua diversa da IT per tradurre','info');
     return;
   }
   const { data: itData } = await sb.from('apartment_info').select('*').eq('apartment_id', aptId).eq('lingua','IT').maybeSingle();
   if (!itData) {
-    toast('Nessun contenuto IT da copiare','err');
+    toast('Nessun contenuto IT da tradurre','err');
     return;
   }
+  const previousInfo = S.fInfo;
   S.fInfo = {
     come_arrivare:             itData.come_arrivare             || '',
     dove_parcheggiare:         itData.dove_parcheggiare         || '',
     come_entrare:              itData.come_entrare              || '',
+    regole_della_casa:         itData.regole_della_casa         || '',
     cosa_fare_se_luce_spenta:  itData.cosa_fare_se_luce_spenta  || '',
     cosa_fare_se_chiuso_fuori: itData.cosa_fare_se_chiuso_fuori || '',
     numeri_utili: numeriToArray(itData.numeri_utili),
   };
-  toast('IT copiato in ' + lingua + ' — non dimenticare di salvare','info');
+  const translated = await translateItalianInfo(aptId, [lingua]);
+  if (!translated.ok) {
+    S.fInfo = previousInfo;
+    toast(translated.error, 'err');
+    return;
+  }
+  await loadApartmentInfo(aptId, lingua);
+  toast('IT tradotto in ' + lingua,'ok');
   renderTab();
 }
 
@@ -389,14 +1352,14 @@ function renderLogin() {
 }
 
 function renderDashboard() {
-  const email = S.session?.user?.email || '';
+  const displayEmail = 'fatturazione@illupoaffitta.com';
   document.getElementById('app').innerHTML = `
   <nav class="navbar">
-    <span class="navbar-brand">Impatto</span>
     <div class="navbar-links">
       <a href="/backoffice.html" class="navbar-link">Fatturazione</a>
       <a href="/backoffice-documenti.html" class="navbar-link">Documenti</a>
       <a href="/backoffice-portale.html" class="navbar-link active">Portale Admin</a>
+      <a href="/backoffice-contabilita.html" class="navbar-link">Contabilita</a>
     </div>
   </nav>
   <header class="header">
@@ -405,7 +1368,7 @@ function renderDashboard() {
       <span class="header-badge">PORTALE ADMIN</span>
     </div>
     <div class="header-right">
-      <span class="header-user">${esc(email)}</span>
+      <span class="header-user">${esc(displayEmail)}</span>
       <button id="btnLogout" class="btn btn-ghost" style="padding:6px 13px;font-size:12px">Esci</button>
     </div>
   </header>
@@ -414,46 +1377,167 @@ function renderDashboard() {
     <label>Appartamento</label>
     <select id="aptSelect">
       <option value="">— Seleziona —</option>
-      ${S.apartments.map(a => `<option value="${a.id}">${esc(a.nome_appartamento)}</option>`).join('')}
+      ${getVisibleApartments().map(a => `<option value="${a.id}">${esc(a.nome_appartamento)}${a.struttura_nome ? ' · ' + esc(a.struttura_nome) : ''}${a.attivo===false ? ' · DISATTIVO' : ''}</option>`).join('')}
     </select>
+    <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;letter-spacing:normal;text-transform:none;color:var(--text2)">
+      <input id="toggleInactive" type="checkbox" ${S.showInactive ? 'checked' : ''}/>
+      Mostra disattivi
+    </label>
     <span id="aptStatus" class="apt-status"></span>
   </div>
 
-  <div id="tabsBar" style="display:none">
-    <div class="tabs">
-      <button class="tab ${S.tab==='accesso'?'active':''}" data-tab="accesso">Accesso</button>
-      <button class="tab ${S.tab==='istruzioni'?'active':''}" data-tab="istruzioni">Istruzioni</button>
-      <button class="tab ${S.tab==='mappa'?'active':''}" data-tab="mappa">Mappa</button>
-      <button class="tab ${S.tab==='preview'?'active':''}" data-tab="preview">Preview</button>
-    </div>
+  <div class="panel-tabs">
+    <button class="panel-tab ${S.dashboardView==='details'?'active':''}" data-panel-view="details">Dettaglio appartamento</button>
+    <button class="panel-tab ${S.dashboardView==='links'?'active':''}" data-panel-view="links">Link check-in</button>
+    <button class="panel-tab ${S.dashboardView==='guest-portals'?'active':''}" data-panel-view="guest-portals">Portale ospiti</button>
   </div>
-
-  <div id="tabContent"></div>`;
+  ${S.dashboardView === 'details' ? renderSelectedApartmentSection() : S.dashboardView === 'guest-portals' ? renderGuestPortalWorkspace() : renderLinksWorkspace()}`;
 
   document.getElementById('btnLogout').addEventListener('click', () => sb.auth.signOut());
-  document.getElementById('aptSelect').addEventListener('change', async e => {
-    const id = e.target.value;
-    if (!id) {
-      S.selectedApt = null;
-      document.getElementById('tabsBar').style.display = 'none';
-      document.getElementById('tabContent').innerHTML = '';
-      return;
+  document.querySelectorAll('[data-panel-view]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      S.dashboardView = btn.dataset.panelView;
+      renderDashboard();
+      if (S.selectedApt && S.dashboardView === 'details') renderTab();
+    });
+  });
+  document.getElementById('toggleInactive').addEventListener('change', e => {
+    S.showInactive = !!e.target.checked;
+    const current = S.selectedApt;
+    renderDashboard();
+    if (current && getVisibleApartments().some(a => String(a.id) === String(current))) {
+      S.selectedApt = current;
+      document.getElementById('aptSelect').value = current;
+      if (S.dashboardView === 'details') renderTab();
     }
-    S.selectedApt = id;
-    document.getElementById('aptStatus').textContent = 'Caricamento…';
-    await loadAll(id);
-    document.getElementById('aptStatus').textContent = '';
-    document.getElementById('tabsBar').style.display = 'block';
-    renderTab();
+  });
+  const apartmentSearch = document.getElementById('apartmentSearch');
+  if (apartmentSearch) {
+    apartmentSearch.addEventListener('input', e => {
+      S.apartmentSearch = e.target.value;
+      renderDashboard();
+      if (S.selectedApt && S.dashboardView === 'details') renderTab();
+    });
+  }
+  const portalSearch = document.getElementById('portalSearch');
+  if (portalSearch) {
+    portalSearch.addEventListener('input', e => {
+      S.portalSearch = e.target.value;
+      renderDashboard();
+      if (S.selectedApt && S.dashboardView === 'details') renderTab();
+    });
+  }
+  const aptSelect = document.getElementById('aptSelect');
+  if (aptSelect) {
+    aptSelect.addEventListener('change', async e => {
+      const id = e.target.value;
+      if (!id) {
+        S.selectedApt = null;
+        renderDashboard();
+        return;
+      }
+      await openApartmentSheet(id, false);
+    });
+  }
+
+  const toggleNewApartment = document.getElementById('btnToggleNewApartment');
+  if (toggleNewApartment) {
+    toggleNewApartment.addEventListener('click', () => {
+      S.showNewApartmentForm = !S.showNewApartmentForm;
+      renderDashboard();
+      if (S.selectedApt && S.dashboardView === 'details') renderTab();
+    });
+  }
+
+  const tabsBar = document.getElementById('tabsBar');
+  if (tabsBar) {
+    tabsBar.addEventListener('click', e => {
+      const t = e.target.closest('[data-tab]');
+      if (!t) return;
+      S.tab = t.dataset.tab;
+      document.querySelectorAll('.tab').forEach(el => el.classList.toggle('active', el.dataset.tab === S.tab));
+      renderTab();
+    });
+  }
+
+  document.querySelectorAll('[data-copy-link]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const apartment = S.apartments.find(item => String(item.id) === String(btn.dataset.copyLink));
+      await copyText(buildPublicCheckinUrl(apartment));
+    });
   });
 
-  document.getElementById('tabsBar').addEventListener('click', e => {
-    const t = e.target.closest('[data-tab]');
-    if (!t) return;
-    S.tab = t.dataset.tab;
-    document.querySelectorAll('.tab').forEach(el => el.classList.toggle('active', el.dataset.tab === S.tab));
-    renderTab();
+  document.querySelectorAll('[data-copy-open-portal]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const apartment = S.apartments.find(item => String(item.id) === String(btn.dataset.copyOpenPortal));
+      await copyText(buildOpenApartmentPortalUrl(apartment));
+    });
   });
+
+  document.querySelectorAll('[data-select-apt]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.selectApt;
+      await openApartmentSheet(id, true);
+    });
+  });
+
+  document.querySelectorAll('[data-copy-portal]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const row = S.portalRows.find(item => String(item.id) === String(btn.dataset.copyPortal));
+      await copyText(buildGuestPortalUrl(row));
+    });
+  });
+
+  [
+    'nome_appartamento','codice_interno','struttura_nome','public_checkin_key',
+    'alloggiati_account_id','id_appartamento_portale','istat_regione','istat_portal_url',
+    'istat_codice_struttura','istat_auth_type','istat_username','istat_password','istat_note'
+  ].forEach(key => {
+    const el = document.getElementById(`new_${key}`);
+    if (!el) return;
+    el.addEventListener('input', e => { S.fNewApt[key] = e.target.value; });
+    el.addEventListener('change', e => { S.fNewApt[key] = e.target.value; renderDashboard(); if (S.selectedApt && S.dashboardView === 'details') { document.getElementById('aptSelect').value = S.selectedApt; renderTab(); } });
+  });
+  ['attivo','invio_automatico','istat_attivo'].forEach(key => {
+    const el = document.getElementById(`new_${key}`);
+    if (!el) return;
+    el.addEventListener('change', e => { S.fNewApt[key] = !!e.target.checked; });
+  });
+  const btnCreateApartment = document.getElementById('btnCreateApartment');
+  if (btnCreateApartment) {
+    btnCreateApartment.addEventListener('click', async () => {
+      btnCreateApartment.disabled = true;
+      btnCreateApartment.textContent = 'Creo…';
+      await createApartmentFromForm();
+      btnCreateApartment.disabled = false;
+      btnCreateApartment.textContent = 'Crea appartamento e collega tutto';
+      renderDashboard();
+      if (S.selectedApt && S.dashboardView === 'details') {
+        const nextAptSelect = document.getElementById('aptSelect');
+        if (nextAptSelect) nextAptSelect.value = S.selectedApt;
+        renderTab();
+      }
+    });
+  }
+
+  const btnAuditApartmentLinks = document.getElementById('btnAuditApartmentLinks');
+  if (btnAuditApartmentLinks) {
+    btnAuditApartmentLinks.addEventListener('click', async () => {
+      await runApartmentLinksSync('audit');
+    });
+  }
+
+  const btnApplyApartmentLinks = document.getElementById('btnApplyApartmentLinks');
+  if (btnApplyApartmentLinks) {
+    btnApplyApartmentLinks.addEventListener('click', async () => {
+      await runApartmentLinksSync('apply');
+    });
+  }
+
+  if (S.selectedApt && S.dashboardView === 'details' && document.getElementById('tabContent')) {
+    document.getElementById('aptSelect').value = S.selectedApt;
+    renderTab();
+  }
 }
 
 function renderTab() {
@@ -465,19 +1549,41 @@ function renderTab() {
   if (S.tab === 'accesso') renderTabAccesso(el);
   if (S.tab === 'istruzioni') renderTabIstruzioni(el);
   if (S.tab === 'mappa') renderTabMappa(el);
+  if (S.tab === 'collegamenti') renderTabCollegamenti(el);
   if (S.tab === 'preview') renderTabPreview(el);
 }
 
 function renderTabAccesso(el) {
   const f = S.fCreds;
+  const apt = getSelectedApartment();
+  const apartmentDraft = S.fApartment;
+  const publicUrl = buildPublicCheckinUrl(apt);
   el.innerHTML = `
   <div class="content">
     <div class="section-title">Accesso appartamento</div>
-    <div class="section-sub">Tabella: apartment_credentials · Ultimo salvataggio: ${fmtTs(S.creds?.updated_at)}</div>
+    <div class="section-sub">Tabella: apartment_credentials · Ultimo salvataggio: ${fmtTs(S.creds?.updated_at)}${apt?.struttura_nome ? ' · Struttura: ' + esc(apt.struttura_nome) : ''}${apt?.attivo===false ? ' · DISATTIVO' : ''}</div>
+
+    <div class="card-section">
+      <div class="card-section-title">Anagrafica appartamento</div>
+      <div class="field">
+        <label>Nome appartamento</label>
+        <input id="apt_nome_appartamento" value="${esc(apartmentDraft.nome_appartamento)}" placeholder="Via Bovio 25 - Cattolica"/>
+      </div>
+      <div class="save-row">
+        <button id="btnSaveApartmentIdentity" class="btn btn-primary">Salva nome appartamento</button>
+      </div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-title">Link check-in pubblico</div>
+      <div class="field"><label>Chiave pubblica</label><input value="${esc(apt?.public_checkin_key || '')}" disabled/></div>
+      <div class="field"><label>URL dinamico</label><input value="${esc(publicUrl || 'Chiave pubblica mancante')}" disabled/></div>
+      <div class="field-hint">Il link viene costruito dinamicamente e non viene salvato come URL completo nel database.</div>
+    </div>
 
     <div class="card-section">
       <div class="card-section-title">Codici e istruzioni</div>
-      <div class="field"><label>Codice accesso</label><input id="codice_accesso" value="${esc(f.codice_accesso)}"/></div>
+      <div class="field"><label>Codice cassettina sicurezza</label><input id="codice_accesso" value="${esc(f.codice_accesso)}"/></div>
       <div class="field"><label>Luogo chiavi</label><input id="luogo_chiavi" value="${esc(f.luogo_chiavi)}"/></div>
       <div class="field"><label>Istruzioni accesso</label><textarea id="istruzioni_accesso">${esc(f.istruzioni_accesso)}</textarea></div>
       <div class="save-row">
@@ -508,6 +1614,19 @@ function renderTabAccesso(el) {
     document.getElementById(k).addEventListener('input', e => { S.fCreds[k] = e.target.value; });
   });
 
+  document.getElementById('apt_nome_appartamento').addEventListener('input', e => {
+    S.fApartment.nome_appartamento = e.target.value;
+  });
+
+  document.getElementById('btnSaveApartmentIdentity').addEventListener('click', async () => {
+    const btn = document.getElementById('btnSaveApartmentIdentity');
+    btn.disabled = true;
+    btn.textContent = 'Salvo…';
+    await saveApartmentIdentity(S.selectedApt);
+    btn.disabled = false;
+    btn.textContent = 'Salva nome appartamento';
+  });
+
   document.getElementById('btnSaveCreds').addEventListener('click', async () => {
     const btn = document.getElementById('btnSaveCreds');
     btn.disabled = true;
@@ -522,7 +1641,7 @@ function renderTabAccesso(el) {
     const btn = document.getElementById('btnSaveVideo');
     btn.disabled = true;
     btn.textContent = 'Salvo…';
-    await saveApartmentCredentials(S.selectedApt);
+    await saveApartmentVideoUrl(S.selectedApt);
     btn.disabled = false;
     btn.textContent = 'Salva URL video';
   });
@@ -585,7 +1704,7 @@ function renderTabIstruzioni(el) {
         <select id="linguaSelect" style="background:var(--surf);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:12px;font-family:var(--mono)">
           ${LINGUE.map(l => `<option${S.lingua===l?' selected':''}>${l}</option>`).join('')}
         </select>
-        <button id="btnCopyIT" class="btn btn-ghost btn-sm">↓ Copia da IT</button>
+        <button id="btnCopyIT" class="btn btn-ghost btn-sm">↓ Traduci da IT</button>
       </div>
     </div>
 
@@ -593,13 +1712,17 @@ function renderTabIstruzioni(el) {
       <div class="card-section-title">Arrivo</div>
       <div class="field"><label>Come arrivare</label><textarea id="come_arrivare">${esc(f.come_arrivare)}</textarea></div>
       <div class="field"><label>Dove parcheggiare</label><textarea id="dove_parcheggiare">${esc(f.dove_parcheggiare)}</textarea></div>
-      <div class="field"><label>Come entrare</label><textarea id="come_entrare">${esc(f.come_entrare)}</textarea></div>
     </div>
 
     <div class="card-section">
       <div class="card-section-title">Emergenze</div>
       <div class="field"><label>Cosa fare se la luce è spenta</label><textarea id="cosa_fare_se_luce_spenta">${esc(f.cosa_fare_se_luce_spenta)}</textarea></div>
       <div class="field"><label>Cosa fare se sei chiuso fuori</label><textarea id="cosa_fare_se_chiuso_fuori">${esc(f.cosa_fare_se_chiuso_fuori)}</textarea></div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-title">Regole della casa</div>
+      <div class="field"><label>Regole della casa</label><textarea id="regole_della_casa">${esc(f.regole_della_casa)}</textarea></div>
     </div>
 
     <div class="card-section">
@@ -625,7 +1748,7 @@ function renderTabIstruzioni(el) {
     await copyItalianToCurrentLanguage(S.selectedApt, S.lingua);
   });
 
-  ['come_arrivare','dove_parcheggiare','come_entrare','cosa_fare_se_luce_spenta','cosa_fare_se_chiuso_fuori'].forEach(k => {
+  ['come_arrivare','dove_parcheggiare','regole_della_casa','cosa_fare_se_luce_spenta','cosa_fare_se_chiuso_fuori'].forEach(k => {
     document.getElementById(k).addEventListener('input', e => { S.fInfo[k] = e.target.value; });
   });
 
@@ -638,7 +1761,16 @@ function renderTabIstruzioni(el) {
     const btn = document.getElementById('btnSaveInfo');
     btn.disabled = true;
     btn.textContent = 'Salvo…';
-    await saveApartmentInfo(S.selectedApt, S.lingua);
+    const saved = await saveApartmentInfo(S.selectedApt, S.lingua);
+    if (saved && S.lingua === 'IT') {
+      btn.textContent = 'Traduco…';
+      const translated = await translateItalianInfo(S.selectedApt, LINGUE.filter(lang => lang !== 'IT'));
+      if (translated.ok && translated.translated.length) {
+        toast('✓ Istruzioni IT tradotte in: ' + translated.translated.join(', '), 'ok');
+      } else if (!translated.ok) {
+        toast(translated.error, 'err');
+      }
+    }
     btn.disabled = false;
     btn.textContent = `Salva istruzioni (${S.lingua})`;
     renderTab();
@@ -649,18 +1781,15 @@ function renderTabIstruzioni(el) {
 
 function renderTabMappa(el) {
   const f = S.fMappa;
+  const apt = getSelectedApartment();
   el.innerHTML = `
   <div class="content">
     <div class="section-title">Mappa e posizione</div>
-    <div class="section-sub">Tabella: apartments</div>
+    <div class="section-sub">Tabella: apartments${apt?.struttura_nome ? ' · Struttura: ' + esc(apt.struttura_nome) : ''}${apt?.attivo===false ? ' · DISATTIVO' : ''}</div>
 
     <div class="card-section">
-      <div class="card-section-title">Indirizzo e coordinate</div>
+      <div class="card-section-title">Indirizzo</div>
       <div class="field"><label>Indirizzo completo</label><input id="indirizzo_completo" value="${esc(f.indirizzo_completo)}"/></div>
-      <div class="field-2">
-        <div class="field"><label>Latitudine</label><input id="latitudine" value="${esc(f.latitudine)}"/></div>
-        <div class="field"><label>Longitudine</label><input id="longitudine" value="${esc(f.longitudine)}"/></div>
-      </div>
     </div>
 
     <div class="card-section">
@@ -677,7 +1806,7 @@ function renderTabMappa(el) {
     </div>
   </div>`;
 
-  ['indirizzo_completo','latitudine','longitudine','maps_url_override'].forEach(k => {
+  ['indirizzo_completo','maps_url_override'].forEach(k => {
     document.getElementById(k).addEventListener('input', e => { S.fMappa[k] = e.target.value; });
   });
 
@@ -691,11 +1820,149 @@ function renderTabMappa(el) {
   });
 }
 
+function renderTabCollegamenti(el) {
+  const apt = getSelectedApartment();
+  syncConnectionDraft(S.selectedApt);
+  const f = S.fConn;
+  const status = getConnectivityStatus(apt);
+  el.innerHTML = `
+  <div class="content">
+    <div class="section-title">Collegamenti operativi</div>
+    <div class="section-sub">${esc(apt?.nome_appartamento || '—')}${apt?.struttura_nome ? ' · ' + esc(apt.struttura_nome) : ''}</div>
+
+    <div class="card-section">
+      <div class="card-section-title">Diagnostica</div>
+      <div class="check-list">
+        ${status.checks.map(check => `
+          <div class="check-row">
+            <div>
+              <div class="check-label">${esc(check.label)}</div>
+              <div class="check-meta">${esc(check.meta || '')}</div>
+            </div>
+            <span class="mini-badge ${check.ok ? 'ok' : 'err'}">${check.ok ? 'OK' : 'Errore'}</span>
+          </div>`).join('')}
+      </div>
+      ${status.warnings.length ? `<div class="hint-box" style="margin-top:12px">Avvisi: ${esc(status.warnings.join(' · '))}</div>` : ''}
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-title">Alloggiati</div>
+      <div class="field-2">
+        <div class="field">
+          <label>Account Alloggiati</label>
+          <select id="conn_alloggiati_account_id">
+            <option value="">— Nessun collegamento —</option>
+            ${S.accounts.map(a => `<option value="${a.id}" ${String(f.alloggiati_account_id)===String(a.id)?'selected':''}>${esc(a.nome_account)}${a.questura ? ' · ' + esc(a.questura) : ''}${a.attivo===false ? ' · DISATTIVO' : ''}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field"><label>ID portale Alloggiati</label><input id="conn_id_appartamento_portale" value="${esc(f.id_appartamento_portale)}" placeholder="000001"/></div>
+      </div>
+      <div class="field">
+        <label style="display:inline-flex;align-items:center;gap:8px;font-size:12px;letter-spacing:normal;text-transform:none;color:var(--text2)">
+          <input id="conn_invio_automatico" type="checkbox" ${f.invio_automatico ? 'checked' : ''}/>
+          Invio automatico
+        </label>
+      </div>
+      <div class="save-row">
+        <button id="btnSaveAlloggiati" class="btn btn-primary">Salva collegamento Alloggiati</button>
+      </div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-title">ISTAT</div>
+      <div class="field-2">
+        <div class="field">
+          <label>Regione</label>
+          <select id="conn_istat_regione">
+            <option value="">— Nessuna configurazione —</option>
+            <option value="emilia-romagna" ${f.istat_regione==='emilia-romagna'?'selected':''}>Emilia-Romagna</option>
+            <option value="marche" ${f.istat_regione==='marche'?'selected':''}>Marche</option>
+            <option value="veneto" ${f.istat_regione==='veneto'?'selected':''}>Veneto</option>
+            <option value="valle-daosta" ${f.istat_regione==='valle-daosta'?'selected':''}>Valle d'Aosta</option>
+          </select>
+        </div>
+        <div class="field"><label>Sistema</label><input value="${esc(getSystemByRegion(f.istat_regione) || '')}" disabled/></div>
+      </div>
+      <div class="field-2">
+        <div class="field"><label>Portal URL</label><input id="conn_istat_portal_url" value="${esc(f.istat_portal_url)}" placeholder="https://..."/></div>
+        <div class="field"><label>Codice struttura</label><input id="conn_istat_codice_struttura" value="${esc(f.istat_codice_struttura)}"/></div>
+      </div>
+      <div class="field-2">
+        <div class="field"><label>Auth type</label><input id="conn_istat_auth_type" value="${esc(f.istat_auth_type)}" placeholder="basic | portale"/></div>
+        <div class="field"><label>Username</label><input id="conn_istat_username" value="${esc(f.istat_username)}"/></div>
+      </div>
+      <div class="field-2">
+        <div class="field"><label>Password</label><input id="conn_istat_password" type="password" value="" placeholder="Lascia vuoto per non cambiare"/></div>
+        <div class="field">
+          <label style="display:inline-flex;align-items:center;gap:8px;font-size:12px;letter-spacing:normal;text-transform:none;color:var(--text2);margin-top:24px">
+            <input id="conn_istat_attivo" type="checkbox" ${f.istat_attivo ? 'checked' : ''}/>
+            Configurazione attiva
+          </label>
+        </div>
+      </div>
+      <div class="field"><label>Note</label><textarea id="conn_istat_note">${esc(f.istat_note)}</textarea></div>
+      <div class="save-row">
+        <button id="btnSaveIstat" class="btn btn-primary">Salva collegamento ISTAT</button>
+      </div>
+    </div>
+  </div>`;
+
+  ['alloggiati_account_id','id_appartamento_portale','istat_regione','istat_portal_url','istat_codice_struttura','istat_auth_type','istat_username','istat_password','istat_note'].forEach(key => {
+    const elField = document.getElementById(`conn_${key}`);
+    if (!elField) return;
+    elField.addEventListener('input', e => { S.fConn[key] = e.target.value; });
+    elField.addEventListener('change', e => {
+      S.fConn[key] = e.target.value;
+      if (key === 'istat_regione') renderTabCollegamenti(el);
+    });
+  });
+  ['invio_automatico','istat_attivo'].forEach(key => {
+    const elField = document.getElementById(`conn_${key}`);
+    if (!elField) return;
+    elField.addEventListener('change', e => { S.fConn[key] = !!e.target.checked; });
+  });
+
+  document.getElementById('btnSaveAlloggiati').addEventListener('click', async () => {
+    const btn = document.getElementById('btnSaveAlloggiati');
+    btn.disabled = true;
+    btn.textContent = 'Salvo…';
+    try {
+      await saveApartmentAlloggiati(S.selectedApt, S.fConn);
+      await loadConnections();
+      toast('✓ Collegamento Alloggiati salvato', 'ok');
+      renderTabCollegamenti(el);
+    } catch (err) {
+      toast('Errore: ' + err.message, 'err');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Salva collegamento Alloggiati';
+    }
+  });
+
+  document.getElementById('btnSaveIstat').addEventListener('click', async () => {
+    const btn = document.getElementById('btnSaveIstat');
+    btn.disabled = true;
+    btn.textContent = 'Salvo…';
+    try {
+      await saveApartmentIstat(S.selectedApt, S.fConn);
+      await loadConnections();
+      toast('✓ Collegamento ISTAT salvato', 'ok');
+      renderTabCollegamenti(el);
+    } catch (err) {
+      toast('Errore: ' + err.message, 'err');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Salva collegamento ISTAT';
+    }
+  });
+}
+
 function renderTabPreview(el) {
   const c = S.creds;
   const i = S.info;
   const m = S.aptData;
-  const apt = S.apartments.find(a => String(a.id) === String(S.selectedApt));
+  const apt = getSelectedApartment();
+  const publicUrl = buildPublicCheckinUrl(apt);
 
   const chk = (val, label) => `
     <div class="preview-item">
@@ -703,15 +1970,18 @@ function renderTabPreview(el) {
       <div class="preview-value ${val ? 'ok' : 'miss'}">${val ? '✓ Presente' : '✗ Mancante'}</div>
     </div>`;
 
-  const hasMap = m?.maps_url_override || (m?.latitudine && m?.longitudine) || m?.indirizzo_completo;
-  const hasInfo = i?.come_arrivare || i?.come_entrare;
+  const hasMap =
+    (m?.maps_url_override != null && String(m.maps_url_override).trim() !== '') ||
+    (m?.latitudine != null && String(m.latitudine).trim() !== '' && m?.longitudine != null && String(m.longitudine).trim() !== '') ||
+    (m?.indirizzo_completo != null && String(m.indirizzo_completo).trim() !== '');
+  const hasInfo = i?.come_arrivare || i?.regole_della_casa;
   const hasCreds = c?.codice_accesso || c?.istruzioni_accesso;
   const numeriCount = Object.keys(i?.numeri_utili || {}).length;
 
   el.innerHTML = `
   <div class="content">
     <div class="section-title">Preview configurazione</div>
-    <div class="section-sub">${esc(apt?.nome_appartamento || '—')}</div>
+    <div class="section-sub">${esc(apt?.nome_appartamento || '—')}${apt?.struttura_nome ? ' · ' + esc(apt.struttura_nome) : ''}${apt?.attivo===false ? ' · DISATTIVO' : ''}</div>
 
     <div class="card-section">
       <div class="card-section-title">Stato configurazione</div>
@@ -722,27 +1992,52 @@ function renderTabPreview(el) {
         ${chk(numeriCount > 0, 'Numeri utili')}
         ${chk(hasMap, 'Mappa / Posizione')}
         ${chk(m?.maps_url_override, 'Override Google Maps')}
+        ${chk(apt?.attivo !== false, 'Appartamento attivo')}
+        ${chk(!!apt?.public_checkin_key, 'Chiave link pubblico')}
       </div>
+    </div>
+    <div class="card-section">
+      <div class="card-section-title">Link pubblico</div>
+      <div class="field"><label>URL check-in</label><input value="${esc(publicUrl || 'Chiave pubblica mancante')}" disabled/></div>
     </div>
   </div>`;
 }
 
 async function init() {
+  if (!sb) {
+    document.getElementById('app').innerHTML = `
+    <div class="login-wrap">
+      <div class="login-card">
+        <div class="login-logo">Impatto</div>
+        <div class="login-sub">Portale Admin</div>
+        <div class="msg-err" style="display:block">Client Supabase non disponibile in pagina.</div>
+      </div>
+    </div>`;
+    return;
+  }
+  if (S.session) {
+    await Promise.all([loadApartments(), loadConnections(), loadPortalRows()]);
+    renderDashboard();
+    return;
+  }
   await loadApartments();
-  if (S.session) renderDashboard();
-  else renderLogin();
+  renderLogin();
 }
 
-sb.auth.onAuthStateChange((event, session) => {
-  S.session = session;
-  if (event === 'SIGNED_IN') init();
-  else if (event === 'SIGNED_OUT') renderLogin();
-});
+if (sb) {
+  sb.auth.onAuthStateChange((event, session) => {
+    S.session = session;
+    if (event === 'SIGNED_IN') init();
+    else if (event === 'SIGNED_OUT') renderLogin();
+  });
 
-sb.auth.getSession().then(({ data: { session } }) => {
-  S.session = session;
+  sb.auth.getSession().then(({ data: { session } }) => {
+    S.session = session;
+    init();
+  });
+} else {
   init();
-});
+}
 </script>
 </body>
 </html>

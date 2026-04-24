@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Impatto SRL — Check-in</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/codice-fiscale-js@2.3.23/dist/codice.fiscale.var.js"></script>
 <style>
 :root {
   --bg:#f5f4f0;--surface:#ffffff;--surface2:#f0efeb;--surface3:#e5e3de;
@@ -16,7 +17,7 @@
   --radius:12px;--radius-sm:8px;--radius-xs:5px;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-html{scroll-behavior:smooth;}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;padding-bottom:100px;-webkit-font-smoothing:antialiased;}
 .header{border-bottom:1px solid var(--border);padding:22px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:rgba(247,246,243,0.96);backdrop-filter:blur(16px);z-index:100;}
 .logo{display:flex;align-items:center;gap:13px;}
@@ -58,15 +59,46 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .field{margin-bottom:13px;}
 .field label{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text2);margin-bottom:6px;font-family:'DM Mono',monospace;letter-spacing:0.02em;font-weight:500;}
 .field label .req{color:var(--accent);}
-.field input,.field select,.field textarea{width:100%;background:#ffffff;border:1.5px solid var(--border);border-radius:var(--radius-xs);padding:11px 13px;color:#111111;font-size:15px;font-family:'DM Sans',sans-serif;font-weight:400;outline:none;transition:border-color 0.15s;-webkit-appearance:none;}
-.field input:focus,.field select:focus{border-color:var(--accent);}
+.field input,.field select,.field textarea{width:100%;background:#ffffff;border:1.5px solid var(--border);border-radius:var(--radius-xs);padding:11px 13px;color:#111111;font-size:16px;font-family:'DM Sans',sans-serif;font-weight:400;outline:none;transition:border-color 0.15s,box-shadow 0.15s,background 0.15s;-webkit-appearance:none;}
+.field input:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(138,98,0,0.08);}
 .field input.filled{border-color:var(--green-border);}
+.field.has-error input,.field.has-error select,.field.has-error textarea{border-color:var(--red);background:#fffdfd;box-shadow:none;}
 .field input::placeholder{color:#aaa9a4;}
 .field select option{background:#ffffff;}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .field-row-3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;}
+.date-parts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
 .cf-warning{display:none;align-items:center;gap:8px;padding:9px 12px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:var(--radius-xs);font-size:11px;color:#c0392b;font-family:'DM Mono',monospace;margin-top:5px;line-height:1.5;}
 .country-notice{display:none;padding:9px 12px;background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:var(--radius-xs);font-size:11px;font-family:'DM Mono',monospace;color:#2962b4;margin-top:8px;line-height:1.5;}
+.helper-note{margin-top:8px;font-size:11px;color:var(--text3);line-height:1.5;font-family:'DM Mono',monospace;}
+.helper-note.warn{color:var(--red);}
+.comune-choice-field{margin-top:2px;}
+.comune-choice-list{display:grid;gap:8px;margin-top:2px;}
+.comune-choice-btn{width:100%;text-align:left;background:#fff;border:1.5px solid var(--border);border-radius:var(--radius-xs);padding:12px 13px;color:var(--text);font-size:16px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:border-color 0.15s,background 0.15s;}
+.comune-choice-btn:hover{border-color:var(--border2);}
+.comune-choice-btn.active{border-color:var(--accent);background:var(--accent-bg);}
+.role-choice-grid{display:grid;grid-template-columns:1fr;gap:8px;}
+.role-choice-option{display:flex;align-items:flex-start;gap:10px;padding:12px 13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:#fff;cursor:pointer;transition:border-color 0.15s,background 0.15s;}
+.role-choice-option:hover{border-color:var(--border2);}
+.role-choice-option input[type="radio"]{width:18px;height:18px;margin:2px 0 0;min-width:18px;padding:0;border:none;border-radius:50%;background:transparent;box-shadow:none;accent-color:var(--accent);flex:0 0 18px;-webkit-appearance:auto;appearance:auto;}
+.role-choice-option.active{border-color:var(--accent);background:var(--accent-bg);}
+.role-choice-copy{flex:1;min-width:0;}
+.role-choice-copy strong{display:block;font-size:14px;font-weight:500;color:var(--text);}
+.role-choice-copy span{display:block;margin-top:4px;font-size:11px;line-height:1.5;color:var(--text3);font-family:'DM Mono',monospace;}
+.dynamic-guest-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-top:10px;}
+.dynamic-guest-card h4{font-size:12px;font-family:'DM Mono',monospace;letter-spacing:0.08em;color:var(--text2);margin-bottom:12px;text-transform:uppercase;}
+.checkbox-row{display:flex;align-items:flex-start;gap:10px;}
+.checkbox-row input[type="checkbox"]{width:16px;height:16px;margin-top:2px;accent-color:var(--accent);flex-shrink:0;cursor:pointer;}
+.checkbox-copy{font-size:13px;color:var(--text2);line-height:1.5;}
+.guest-documents{margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);}
+.guest-documents:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
+.upload-list{display:grid;gap:8px;margin-top:10px;}
+.upload-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid var(--border);border-radius:var(--radius-xs);background:#fff;}
+.upload-name{font-size:12px;color:var(--text);word-break:break-word;}
+.upload-remove{background:transparent;border:1px solid var(--border2);border-radius:var(--radius-xs);padding:4px 8px;font-size:10px;font-family:'DM Mono',monospace;cursor:pointer;color:var(--text2);}
+.upload-remove:hover{border-color:var(--accent);color:var(--accent);}
+.field-error{display:none;margin-top:6px;font-size:11px;line-height:1.45;color:var(--red);font-family:'DM Mono',monospace;}
+.field-error.visible{display:block;}
 .btn-primary{width:100%;padding:15px;background:var(--accent);color:#ffffff;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all 0.18s;margin-top:6px;}
 .btn-primary:hover{background:#6a4a00;transform:translateY(-1px);}
 .btn-primary:active{transform:translateY(0);}
@@ -95,24 +127,31 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .ocr-status.success{background:var(--green-bg);border-color:var(--green-border);color:#2d7a4a;}
 .ocr-status.error{background:var(--red-bg);border-color:var(--red-border);color:#c0392b;}
 .spinner{width:12px;height:12px;border:2px solid rgba(41,98,180,0.2);border-top-color:#2962b4;border-radius:50%;animation:spin 0.75s linear infinite;flex-shrink:0;}
+.upload-note{margin-top:10px;font-size:11px;color:var(--text3);line-height:1.5;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .success-screen{display:none;text-align:center;padding:64px 24px;animation:fadeUp 0.5s ease;}
 .success-icon{width:56px;height:56px;background:var(--green-bg);border:1px solid var(--green-border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 22px;}
 .success-screen h2{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;margin-bottom:12px;}
-.success-screen p{font-size:13px;color:var(--text2);line-height:1.7;max-width:340px;margin:0 auto;}
+.success-screen p{font-size:13px;color:var(--text2);line-height:1.7;max-width:360px;margin:0 auto;}
+.success-actions{margin-top:24px;}
+.success-link{display:inline-block;background:#8a6200;color:#fff;padding:14px 28px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;text-decoration:none;box-shadow:0 10px 24px rgba(138,98,0,0.14);}
+.inline-alert{display:none;max-width:560px;margin:0 auto 18px;padding:12px 14px;border:1px solid var(--red-border);background:var(--red-bg);color:var(--red);border-radius:var(--radius-sm);font-size:12px;line-height:1.5;font-family:'DM Mono',monospace;}
+.inline-alert.visible{display:block;}
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface3);border:1px solid var(--border2);color:var(--text);padding:10px 18px;border-radius:var(--radius-sm);font-size:12px;font-family:'DM Mono',monospace;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);z-index:999;white-space:nowrap;max-width:90vw;}
 .toast.show{transform:translateX(-50%) translateY(0);}
-.privacy-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:14px;display:flex;align-items:flex-start;gap:12px;}
+.privacy-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:14px;display:flex;align-items:flex-start;gap:12px;transition:border-color 0.15s,background 0.15s;}
 .privacy-block input[type="checkbox"]{width:16px;height:16px;margin-top:2px;accent-color:var(--accent);flex-shrink:0;cursor:pointer;}
 .privacy-block label{font-size:12px;color:var(--text2);line-height:1.55;cursor:pointer;}
 .privacy-block label a{color:var(--accent);text-decoration:underline;}
 .privacy-block.err{border-color:var(--red-border);background:var(--red-bg);}
+.privacy-block.has-error{border-color:var(--red);background:#fffdfd;}
 @media(max-width:500px){
   .header{padding:16px 14px;}
   .main{padding:28px 14px 0;}
   .intro h2{font-size:26px;}
   .field-row,.field-row-3{grid-template-columns:1fr;}
   .step-label{display:none;}
+  .field input,.field select,.field textarea{font-size:16px;}
 }
 </style>
 </head>
@@ -136,6 +175,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
 
 <div class="main" id="mainContent">
+  <div class="inline-alert" id="topAlert"></div>
   <div class="steps">
     <div class="step active" id="s1"><div class="step-num">1</div><span class="step-label" data-t="step1">DATI</span></div>
     <div class="step-line"></div>
@@ -150,19 +190,21 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
     </div>
 
     <div class="card">
-      <div class="card-header"><span class="card-title" data-t="tipoLabel">TIPO SOGGETTO</span></div>
+      <div class="card-header"><span class="card-title" data-t="stayInfoLabel">DATI SOGGIORNO</span></div>
       <div class="card-body">
-        <div class="type-selector">
-          <button class="type-btn active" onclick="setType('privato')" id="btn-privato">
-            <div class="type-icon">&#128100;</div>
-            <span class="type-label" data-t="privato">Privato</span>
-            <span class="type-desc" data-t="privatoDesc">CF / documento</span>
-          </button>
-          <button class="type-btn" onclick="setType('azienda')" id="btn-azienda">
-            <div class="type-icon">&#127970;</div>
-            <span class="type-label" data-t="azienda">Azienda</span>
-            <span class="type-desc" data-t="aziendaDesc">Fattura B2B / P.IVA</span>
-          </button>
+        <div class="field-row">
+          <div class="field">
+            <label><span data-t="checkin">Check-in</span> <span class="req">*</span></label>
+            <input type="date" id="checkin" oninput="markFilled(this)" onchange="markFilled(this)">
+          </div>
+          <div class="field">
+            <label><span data-t="checkout">Check-out</span> <span class="req">*</span></label>
+            <input type="date" id="checkout" oninput="markFilled(this)" onchange="markFilled(this)">
+          </div>
+        </div>
+        <div class="field">
+          <label><span data-t="guestsCountLabel">Numero ospiti</span> <span class="req">*</span></label>
+          <input type="number" id="numeroPersone" min="1" value="1" oninput="handleNumeroPersoneInput()" onchange="handleNumeroPersoneChange()" onblur="handleNumeroPersoneChange()" inputmode="numeric">
         </div>
       </div>
     </div>
@@ -210,11 +252,11 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
           <div class="field-row">
             <div class="field">
               <label><span data-t="nome">Nome</span> <span class="req">*</span></label>
-              <input type="text" id="nome" placeholder="Mario" oninput="markFilled(this)" autocomplete="given-name">
+              <input type="text" id="nome" placeholder="Mario" oninput="markFilled(this);scheduleCfAutofill()" autocomplete="given-name">
             </div>
             <div class="field">
               <label><span data-t="cognome">Cognome</span> <span class="req">*</span></label>
-              <input type="text" id="cognome" placeholder="Rossi" oninput="markFilled(this)" autocomplete="family-name">
+              <input type="text" id="cognome" placeholder="Rossi" oninput="markFilled(this);scheduleCfAutofill()" autocomplete="family-name">
             </div>
           </div>
           <div class="field">
@@ -225,10 +267,121 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
             <label><span data-t="telefono">Telefono</span> <span class="req">*</span></label>
             <input type="tel" id="telefono" placeholder="+39 333 1234567" oninput="markFilled(this)" autocomplete="tel">
           </div>
+          <div class="guest-documents">
+            <div class="field">
+              <label><span data-t="guestDocumentsLabel">Documenti ospite</span></label>
+              <div class="upload-optional" id="mainUploadArea">
+                <input type="file" id="mainFileInput" accept="image/*" capture="environment" multiple onchange="handleGuestFiles(0, this.files)">
+                <div class="upload-icon">&#128196;</div>
+                <h3 data-t="uploadTitle">Aggiungi foto documento</h3>
+                <p data-t="uploadSub">Carta d'identita - Passaporto - Patente</p>
+              </div>
+              <div class="upload-list" id="mainUploadList"></div>
+              <div class="upload-note" data-t="uploadMultiHint">Puoi caricare piu file per la stessa persona, anche fronte e retro.</div>
+              <div class="ocr-status" id="mainOcrStatus">
+                <div class="spinner" id="mainOcrSpinner"></div>
+                <span id="mainOcrMsg"></span>
+              </div>
+            </div>
+          </div>
+          <div class="field" id="singleGuestRoleField">
+            <label><span data-t="guestRole">Ruolo nel gruppo/famiglia</span></label>
+            <input type="text" id="groupRoleText" value="Ospite principale" disabled>
+          </div>
+          <div class="field" id="primaryGuestRoleField" style="display:none">
+            <label><span data-t="guestRole">Ruolo nel gruppo/famiglia</span> <span class="req">*</span></label>
+            <div class="role-choice-grid">
+              <label class="role-choice-option" id="primaryRoleOption18">
+                <input type="radio" name="primaryGuestRole" id="primaryGuestRole18" value="18" checked onchange="handlePrimaryGuestRoleChange()">
+                <span class="role-choice-copy">
+                  <strong data-t="role18">Capogruppo</strong>
+                  <span data-t="role18Hint">Usa questa opzione se viaggi con amici, colleghi o conoscenti.</span>
+                </span>
+              </label>
+              <label class="role-choice-option" id="primaryRoleOption17">
+                <input type="radio" name="primaryGuestRole" id="primaryGuestRole17" value="17" onchange="handlePrimaryGuestRoleChange()">
+                <span class="role-choice-copy">
+                  <strong data-t="role17">Capofamiglia</strong>
+                  <span data-t="role17Hint">Usa questa opzione se viaggi con il tuo nucleo familiare.</span>
+                </span>
+              </label>
+            </div>
+          </div>
+          <div class="field">
+            <label><span data-t="birthDate">Data di nascita</span> <span class="req">*</span></label>
+              <input type="date" id="dataNascita" onchange="updatePrimaryGuestUi()" oninput="markFilled(this);scheduleCfAutofill()" autocomplete="bday">
+          </div>
+          <div class="field">
+            <label><span data-t="birthOriginLabel">Luogo di nascita</span> <span class="req">*</span></label>
+            <select id="natoInItalia" onchange="updateBirthOriginUi();markFilled(this);scheduleCfAutofill()">
+              <option value="1" data-t="bornInItaly">Nato in Italia</option>
+              <option value="0" data-t="bornAbroad">Nato all'estero</option>
+            </select>
+            <div class="helper-note" data-t="birthOriginHint">Seleziona dove e nato il guest principale per compilare i codici Alloggiati in modo corretto.</div>
+          </div>
+          <div class="field" id="birthPlaceItalyField">
+            <label><span data-t="birthPlaceComune">Comune di nascita</span> <span class="req">*</span></label>
+            <input type="text" id="luogoNascita" placeholder="Pesaro" oninput="markFilled(this);handleComuneFieldInput('birth');scheduleCfAutofill()" onchange="handleComuneFieldInput('birth');scheduleCfAutofill()">
+            <input type="hidden" id="luogoNascitaCodice">
+            <div class="helper-note warn" id="luogoNascitaStatus" style="display:none"></div>
+          </div>
+          <div class="field comune-choice-field" id="birthPlaceItalyChoiceField" style="display:none">
+            <label><span data-t="comuneChoiceLabel">Seleziona il comune corretto</span> <span class="req">*</span></label>
+            <div class="comune-choice-list" id="luogoNascitaChoiceList"></div>
+            <div class="helper-note" data-t="comuneChoiceHint">Questo comune esiste in piu province. Seleziona l'opzione corretta.</div>
+          </div>
+          <div class="field" id="birthPlaceForeignField" style="display:none">
+            <label><span data-t="birthCountryLabel">Stato/Paese di nascita</span> <span class="req">*</span></label>
+            <input type="text" id="statoNascitaEstero" placeholder="Francia" oninput="markFilled(this);scheduleCfAutofill()" autocomplete="country-name">
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label><span data-t="sexLabel">Sesso</span> <span class="req">*</span></label>
+              <select id="sesso" onchange="markFilled(this);scheduleCfAutofill()">
+                <option value="">-</option>
+                <option value="M">M</option>
+                <option value="F">F</option>
+              </select>
+            </div>
+            <div class="field">
+              <label><span data-t="citizenshipLabel">Cittadinanza</span> <span class="req">*</span></label>
+              <input type="text" id="cittadinanza" placeholder="Italia" oninput="markFilled(this)" autocomplete="country-name">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label><span data-t="documentTypeLabel">Tipo documento</span> <span class="req">*</span></label>
+              <select id="tipoDocumento" onchange="markFilled(this)">
+                <option value="">-</option>
+                <option value="Carta d'identita" data-t="documentTypeIdentity">Carta d'identita</option>
+                <option value="Passaporto" data-t="documentTypePassport">Passaporto</option>
+                <option value="Patente" data-t="documentTypeDrivingLicense">Patente</option>
+              </select>
+            </div>
+            <div class="field">
+              <label><span data-t="documentNumberLabel">Numero documento</span> <span class="req">*</span></label>
+              <input type="text" id="numeroDocumento" placeholder="YA1234567" oninput="markFilled(this)" autocomplete="off">
+            </div>
+          </div>
+          <div class="field">
+            <label><span data-t="issuePlaceLabel">Comune di rilascio documento</span> <span class="req">*</span></label>
+            <input type="text" id="luogoRilascioDocumento" placeholder="Pesaro" oninput="markFilled(this);handleComuneFieldInput('issue')" onchange="handleComuneFieldInput('issue')">
+            <input type="hidden" id="luogoRilascioCodice">
+            <div class="helper-note warn" id="luogoRilascioStatus" style="display:none"></div>
+          </div>
+          <div class="field comune-choice-field" id="issuePlaceChoiceField" style="display:none">
+            <label><span data-t="comuneChoiceLabel">Seleziona il comune corretto</span> <span class="req">*</span></label>
+            <div class="comune-choice-list" id="luogoRilascioChoiceList"></div>
+            <div class="helper-note" data-t="comuneChoiceHint">Questo comune esiste in piu province. Seleziona l'opzione corretta.</div>
+          </div>
           <div class="field" id="cfField">
             <label><span data-t="cf">Codice fiscale</span> <span class="req" id="cfReq">*</span></label>
-            <input type="text" id="cf" placeholder="RSSMRA80A01H501Z" oninput="markFilled(this)" style="font-family:'DM Mono',monospace;letter-spacing:0.05em;text-transform:uppercase" autocomplete="off">
+            <input type="text" id="cf" placeholder="RSSMRA80A01H501Z" oninput="markFilled(this);handleCfManualInput()" style="font-family:'DM Mono',monospace;letter-spacing:0.05em;text-transform:uppercase" autocomplete="off">
             <div class="cf-warning" id="cfWarning">&#9888; <span data-t="cfWarning">Il codice fiscale non sembra valido. Correggi o prosegui se sei sicuro.</span></div>
+          </div>
+          <div id="additionalGuestsSection" style="display:none">
+            <div class="helper-note" data-t="additionalGuestsTitle">Altri ospiti</div>
+            <div id="additionalGuestsContainer"></div>
           </div>
         </div>
       </div>
@@ -242,26 +395,31 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
           <div class="field-row-3">
             <div class="field">
               <label><span data-t="citta">Citta</span> <span class="req">*</span></label>
-              <input type="text" id="citta" placeholder="Riccione" oninput="markFilled(this)">
+              <input type="text" id="citta" placeholder="Riccione" oninput="markFilled(this);scheduleResidenceCityLookup()">
             </div>
             <div class="field">
               <label><span data-t="cap">CAP</span> <span class="req">*</span></label>
-              <input type="text" id="cap" placeholder="47841" maxlength="10" oninput="markFilled(this)" style="font-family:'DM Mono',monospace">
+              <input type="text" id="cap" placeholder="47841" maxlength="10" oninput="markFilled(this);handleCapManualInput()" style="font-family:'DM Mono',monospace">
+              <div class="helper-note" id="capLookupStatus" style="display:none"></div>
             </div>
             <div class="field">
               <label><span data-t="prov">Prov.</span></label>
-              <input type="text" id="provincia" placeholder="RN" maxlength="5" style="text-transform:uppercase;font-family:'DM Mono',monospace">
+              <input type="text" id="provincia" placeholder="RN" maxlength="5" oninput="markFilled(this);this.value=normalizeUpperNoSpaces(this.value).slice(0,2);scheduleResidenceCityLookup()" style="text-transform:uppercase;font-family:'DM Mono',monospace">
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- AZIENDA -->
-    <div id="fields-azienda" style="display:none">
-      <div class="card">
-        <div class="card-header"><span class="card-title" data-t="aziendaLabel">DATI AZIENDA</span></div>
-        <div class="card-body">
+    <div class="card">
+      <div class="card-header"><span class="card-title" data-t="invoiceLabel">FATTURA</span></div>
+      <div class="card-body">
+        <div class="checkbox-row">
+          <input type="checkbox" id="vuoiFattura" onchange="toggleInvoiceFields()">
+          <label class="checkbox-copy" for="vuoiFattura" data-t="invoiceToggle">Vuoi fattura?</label>
+        </div>
+        <div class="helper-note" data-t="invoiceNote">Se sei una persona fisica, non serve compilare la sezione azienda: la fattura verra emessa automaticamente con i dati gia inseriti sopra e inviata alla tua email. Questa sezione serve solo se ti occorrono dati aziendali o un'intestazione diversa.</div>
+        <div id="invoiceFields" style="display:none;margin-top:14px">
           <div class="field">
             <label><span data-t="ragSoc">Ragione sociale</span> <span class="req">*</span></label>
             <input type="text" id="ragioneSociale" placeholder="Esempio SRL" oninput="markFilled(this)">
@@ -269,10 +427,11 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
           <div class="field-row">
             <div class="field">
               <label><span data-t="piva">Partita IVA</span> <span class="req">*</span></label>
-              <input type="text" id="piva" placeholder="01234567890" maxlength="13" oninput="markFilled(this)" style="font-family:'DM Mono',monospace;letter-spacing:0.04em">
+              <input type="text" id="piva" placeholder="01234567890" maxlength="20" oninput="markFilled(this);handleVatInput()" style="font-family:'DM Mono',monospace;letter-spacing:0.04em">
+              <div class="helper-note" data-t="vatHelper">Italia: controllo formale reale. UE con prefisso paese: controllo di formato base. Extra-UE: inserimento manuale, non bloccato da controlli automatici.</div>
             </div>
             <div class="field">
-              <label><span data-t="sdi">Codice SDI</span> <span class="req">*</span></label>
+              <label><span data-t="sdi">Codice SDI</span> <span class="req" id="sdiReq" style="display:none">*</span></label>
               <input type="text" id="sdi" placeholder="XXXXXXX" maxlength="7" oninput="markFilled(this)" style="font-family:'DM Mono',monospace;text-transform:uppercase">
             </div>
           </div>
@@ -283,30 +442,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
           <div class="field">
             <label><span data-t="indirizzoAzLabel">Sede legale</span> <span class="req">*</span></label>
             <input type="text" id="indirizzoAz" placeholder="Via Roma 1, 20100 Milano" oninput="markFilled(this)">
-          </div>
-          <div class="field">
-            <label><span data-t="email">Email referente</span> <span class="req">*</span></label>
-            <input type="email" id="emailAz" placeholder="admin@azienda.it" oninput="markFilled(this)">
-          </div>
-          <div class="field">
-            <label><span data-t="telefono">Telefono</span> <span class="req">*</span></label>
-            <input type="tel" id="telefonoAz" placeholder="+39 02 1234567" oninput="markFilled(this)">
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-header"><span class="card-title" data-t="soggiornoLabel">SOGGIORNO</span></div>
-      <div class="card-body">
-        <div class="field-row">
-          <div class="field">
-            <label><span data-t="checkin">Check-in</span> <span class="req">*</span></label>
-            <input type="date" id="checkin">
-          </div>
-          <div class="field">
-            <label><span data-t="checkout">Check-out</span> <span class="req">*</span></label>
-            <input type="date" id="checkout">
           </div>
         </div>
       </div>
@@ -331,29 +466,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
       <div class="card-body"><div class="review-box" id="reviewBox"></div></div>
     </div>
 
-    <div class="card">
-      <div class="card-header">
-        <span class="card-title" data-t="fotoLabel">FOTO DOCUMENTO</span>
-        <span class="card-opt">OPZIONALE</span>
-      </div>
-      <div class="card-body">
-        <div class="img-preview-small" id="imgPreviewSmall">
-          <img id="previewImgSmall" src="" alt="documento">
-          <button class="remove-img" onclick="removeImage()">X</button>
-        </div>
-        <div class="upload-optional" id="uploadAreaSmall">
-          <input type="file" id="fileInput" accept="image/*" capture="environment" onchange="handleFile(this.files[0])">
-          <div class="upload-icon">&#128196;</div>
-          <h3 data-t="uploadTitle">Aggiungi foto documento</h3>
-          <p data-t="uploadSub">Carta d'identita - Passaporto - Patente</p>
-        </div>
-        <div class="ocr-status" id="ocrStatus">
-          <div class="spinner" id="ocrSpinner"></div>
-          <span id="ocrMsg"></span>
-        </div>
-      </div>
-    </div>
-
     <button class="btn-primary" onclick="submitForm()" id="submitBtn" data-t="invia">Invia dati</button>
     <button class="btn-secondary" onclick="goToStep(1)" data-t="indietro">Indietro</button>
   </div>
@@ -363,31 +475,47 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
   <div class="success-icon">&#10003;</div>
   <h2 data-t="successTitle">Dati ricevuti</h2>
   <p data-t="successMsg">I tuoi dati sono stati inviati correttamente.<br>Riceverai a breve una email con le istruzioni per il check-in.<br><br>Grazie per aver scelto Impatto.</p>
+  <div class="success-actions" id="successActions"></div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-var SUPABASE_URL='https://tysxeikqbgebpfyblgeb.supabase.co';
-var SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5c3hlaWtxYmdlYnBmeWJsZ2ViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyODczODAsImV4cCI6MjA5MDg2MzM4MH0.yXmS2MFh47eRkCX2voemdBkK5m_tyJiKAFhfyp1YEbw';
-
+var PORTAL_BASE_URL = window.CHECKIN_PORTAL_BASE_URL || window.location.origin;
 var T={
-  it:{step1:'DATI',step2:'CONFERMA',title1:'I tuoi dati<br><em>check-in</em>',sub1:'Compila i campi per completare il check-in.',title2:'Conferma<br><em>i tuoi dati</em>',sub2:'Controlla che tutto sia corretto.',tipoLabel:'TIPO SOGGETTO',privato:'Privato',privatoDesc:'CF / documento',azienda:'Azienda',aziendaDesc:'Fattura B2B / P.IVA',residenzaLabel:'PAESE DI RESIDENZA',paese:'Paese',countryNotice:'Per ospiti non residenti in Italia, codice fiscale e indirizzo non sono obbligatori.',anagraficaLabel:'DATI ANAGRAFICI',nome:'Nome',cognome:'Cognome',email:'Email',telefono:'Telefono',cf:'Codice fiscale',cfWarning:'Il codice fiscale non sembra valido. Correggi o prosegui se sei sicuro.',indirizzoLabel:'INDIRIZZO DI RESIDENZA',indirizzo:'Indirizzo',citta:'Citta',cap:'CAP',prov:'Prov.',aziendaLabel:'DATI AZIENDA',ragSoc:'Ragione sociale',piva:'Partita IVA',sdi:'Codice SDI',pecLabel:'PEC',indirizzoAzLabel:'Sede legale',soggiornoLabel:'SOGGIORNO',checkin:'Check-in',checkout:'Check-out',riepilogoLabel:'RIEPILOGO',fotoLabel:'FOTO DOCUMENTO',uploadTitle:'Aggiungi foto documento',uploadSub:"Carta d'identita - Passaporto - Patente",continua:'Continua',indietro:'Indietro',invia:'Invia dati',ocrLoading:'Caricamento...',ocrOk:'Documento allegato',ocrErr:'Errore caricamento',successTitle:'Dati ricevuti',successMsg:"I tuoi dati sono stati inviati correttamente.<br>Riceverai a breve una email con le istruzioni per il check-in.<br><br>Grazie per aver scelto Il Lupo Affitta.",errRequired:'Compila tutti i campi obbligatori',errDate:'Inserisci le date di soggiorno',errSending:'Errore di invio - riprova',errPrivacy:'Accetta l\'informativa privacy per continuare',privacyLabel:'Ho letto e compreso l\'<a href="privacy-policy.html" target="_blank" rel="noopener">informativa sul trattamento dei dati personali</a> ai sensi dell\'art. 13 GDPR. I miei dati saranno comunicati all\'Autorità di Pubblica Sicurezza ai sensi dell\'art. 109 TULPS.',NOME:'NOME',EMAIL:'EMAIL',TELEFONO:'TELEFONO',CF:'CODICE FISCALE',INDIRIZZO:'INDIRIZZO',CHECKIN:'CHECK-IN',CHECKOUT:'CHECK-OUT',PAESE:'PAESE',RAGIONE:'RAGIONE SOCIALE',PIVA:'PARTITA IVA',SDI:'SDI'},
-  en:{step1:'DATA',step2:'CONFIRM',title1:'Your fiscal<br><em>details</em>',sub1:'Fill in the fields to complete your check-in.',title2:'Confirm<br><em>your details</em>',sub2:'Make sure everything is correct.',tipoLabel:'SUBJECT TYPE',privato:'Private',privatoDesc:'Tax ID / document',azienda:'Company',aziendaDesc:'B2B invoice / VAT',residenzaLabel:'COUNTRY OF RESIDENCE',paese:'Country',countryNotice:'For guests not residing in Italy, tax code and address are not required.',anagraficaLabel:'PERSONAL DETAILS',nome:'First name',cognome:'Last name',email:'Email',telefono:'Phone',cf:'Tax code (Codice fiscale)',cfWarning:'The tax code does not appear valid. Please check or continue if sure.',indirizzoLabel:'HOME ADDRESS',indirizzo:'Address',citta:'City',cap:'Postal code',prov:'Prov.',aziendaLabel:'COMPANY DETAILS',ragSoc:'Company name',piva:'VAT number',sdi:'SDI code',pecLabel:'PEC email',indirizzoAzLabel:'Registered address',soggiornoLabel:'STAY',checkin:'Check-in',checkout:'Check-out',riepilogoLabel:'SUMMARY',fotoLabel:'DOCUMENT PHOTO',uploadTitle:'Add document photo',uploadSub:'ID card - Passport - Driving licence',continua:'Continue',indietro:'Back',invia:'Submit',ocrLoading:'Uploading...',ocrOk:'Document attached',ocrErr:'Upload error',successTitle:'Data received',successMsg:"Your details have been submitted.<br>You will receive an email shortly with check-in instructions.<br><br>Thank you for choosing Il Lupo Affitta.",errRequired:'Please fill in all required fields',errDate:'Please enter your stay dates',errSending:'Submission error - please try again',errPrivacy:'Please accept the privacy policy to continue',privacyLabel:'I have read and understood the <a href="privacy-policy.html" target="_blank" rel="noopener">privacy policy</a> (art. 13 GDPR). My personal data will be communicated to the Public Security Authority as required by Italian law.',NOME:'NAME',EMAIL:'EMAIL',TELEFONO:'PHONE',CF:'TAX CODE',INDIRIZZO:'ADDRESS',CHECKIN:'CHECK-IN',CHECKOUT:'CHECK-OUT',PAESE:'COUNTRY',RAGIONE:'COMPANY',PIVA:'VAT NUMBER',SDI:'SDI CODE'},
+  it:{step1:'DATI',step2:'CONFERMA',title1:'I tuoi dati<br><em>check-in</em>',sub1:'Compila i campi per completare il check-in.',title2:'Conferma<br><em>i tuoi dati</em>',sub2:'Controlla che tutto sia corretto.',residenzaLabel:'PAESE DI RESIDENZA',paese:'Paese',countryNotice:'Per ospiti non residenti in Italia, codice fiscale e indirizzo non sono obbligatori.',anagraficaLabel:'DATI ANAGRAFICI',stayInfoLabel:'DATI SOGGIORNO',guestsCountLabel:'Numero ospiti',guestDocumentsLabel:'Documenti ospite principale',guestDocumentsLabelOther:'Documenti ospite',groupRoleAutoHint:'Scegli il ruolo del primo ospite quando viaggiate in piu persone.',invoiceLabel:'FATTURA',invoiceToggle:'Vuoi fattura?',invoiceNote:'Se sei una persona fisica, non serve compilare la sezione azienda: la fattura verra emessa automaticamente con i dati gia inseriti sopra e inviata alla tua email. Questa sezione serve solo se ti occorrono dati aziendali o un\'intestazione diversa.',nome:'Nome',cognome:'Cognome',email:'Email',telefono:'Telefono',birthDate:'Data di nascita',birthPlace:'Luogo di nascita',birthOriginLabel:'Luogo di nascita',birthOriginHint:'Seleziona dove e nato il guest principale per compilare i codici Alloggiati in modo corretto.',bornInItaly:'Nato in Italia',bornAbroad:"Nato all'estero",birthPlaceComune:'Comune di nascita',birthCountryLabel:'Stato/Paese di nascita',sexLabel:'Sesso',citizenshipLabel:'Cittadinanza',documentTypeLabel:'Tipo documento',documentTypeIdentity:"Carta d'identita",documentTypePassport:'Passaporto',documentTypeDrivingLicense:'Patente',documentNumberLabel:'Numero documento',issuePlaceLabel:'Comune di rilascio documento',comuneChoiceLabel:'Seleziona il comune corretto',comuneChoiceHint:'Questo comune esiste in piu province. Seleziona l\'opzione corretta.',comuneChoicePlaceholder:'Seleziona provincia e comune',comuneNotFoundHint:'Comune non trovato nel dataset Alloggiati. Il testo resta salvato ma senza codice.',comuneMatchedHint:'Comune riconosciuto automaticamente:',comuneChoiceRequiredMsg:'Seleziona una delle opzioni proposte per usare il codice corretto.',dayLabel:'Giorno',monthLabel:'Mese',yearLabel:'Anno',travelersCount:'Numero persone che viaggiano',guestRole:'Ruolo nel gruppo/famiglia',additionalGuestsTitle:'Altri ospiti',guestLabel:'Ospite',guestSex:'Sesso',guestStateBirth:'Stato di nascita',role16:'Ospite singolo',role17:'Capofamiglia',role18:'Capogruppo',role19:'Familiare',role20:'Membro gruppo',role17Hint:'Usa questa opzione se viaggi con il tuo nucleo familiare.',role18Hint:'Usa questa opzione se viaggi con amici, colleghi o conoscenti.',cf:'Codice fiscale',cfWarning:'Il codice fiscale non sembra valido. Correggi o prosegui se sei sicuro.',indirizzoLabel:'INDIRIZZO DI RESIDENZA',indirizzo:'Indirizzo',citta:'Citta',cap:'CAP',prov:'Prov.',ragSoc:'Ragione sociale',piva:'Partita IVA',vatHelper:'Italia: controllo formale reale. UE con prefisso paese: controllo di formato base. Extra-UE: inserimento manuale, non bloccato da controlli automatici.',sdi:'Codice SDI',pecLabel:'PEC',indirizzoAzLabel:'Sede legale',checkin:'Check-in',checkout:'Check-out',riepilogoLabel:'RIEPILOGO',uploadTitle:'Aggiungi foto documento',uploadSub:"Carta d'identita - Passaporto - Patente",uploadMultiHint:'Puoi caricare piu file per la stessa persona, anche fronte e retro.',continua:'Continua',indietro:'Indietro',invia:'Invia dati',ocrLoading:'Caricamento...',ocrErr:'Errore caricamento',successTitle:'Dati ricevuti',successMsg:"I tuoi dati sono stati inviati correttamente.<br>Riceverai a breve una email con le istruzioni per il check-in.<br><br>Grazie per aver scelto Il Lupo Affitta.",errRequired:'Compila tutti i campi obbligatori',errDate:'Inserisci le date di soggiorno',errSending:'Errore di invio - riprova',errPrivacy:'Accetta l\'informativa privacy per continuare',privacyLabel:'Ho letto e compreso l\'<a href="privacy-policy.html" target="_blank" rel="noopener">informativa sul trattamento dei dati personali</a> ai sensi dell\'art. 13 GDPR. I miei dati saranno comunicati all\'Autorità di Pubblica Sicurezza ai sensi dell\'art. 109 TULPS.',NOME:'NOME',EMAIL:'EMAIL',TELEFONO:'TELEFONO',CF:'CODICE FISCALE',INDIRIZZO:'INDIRIZZO',CHECKIN:'CHECK-IN',CHECKOUT:'CHECK-OUT',PAESE:'PAESE',RAGIONE:'RAGIONE SOCIALE',PIVA:'PARTITA IVA',SDI:'SDI'},
+  en:{step1:'DATA',step2:'CONFIRM',title1:'Your<br><em>check-in</em>',sub1:'Fill in the fields to complete your check-in.',title2:'Confirm<br><em>your details</em>',sub2:'Make sure everything is correct.',residenzaLabel:'COUNTRY OF RESIDENCE',paese:'Country',countryNotice:'For guests not residing in Italy, tax code and address are not required.',anagraficaLabel:'PERSONAL DETAILS',stayInfoLabel:'STAY DETAILS',guestsCountLabel:'Guests count',guestDocumentsLabel:'Main guest documents',guestDocumentsLabelOther:'Guest documents',groupRoleAutoHint:'Choose the main guest role when more than one guest is staying.',invoiceLabel:'INVOICE',invoiceToggle:'Do you need an invoice?',nome:'First name',cognome:'Last name',email:'Email',telefono:'Phone',birthDate:'Date of birth',birthPlace:'Place of birth',birthOriginLabel:'Place of birth',birthOriginHint:'Choose whether the main guest was born in Italy or abroad to resolve Alloggiati codes correctly.',bornInItaly:'Born in Italy',bornAbroad:'Born abroad',birthPlaceComune:'Italian town of birth',birthCountryLabel:'Country of birth',sexLabel:'Sex',citizenshipLabel:'Citizenship',documentTypeLabel:'Document type',documentTypeIdentity:'ID card',documentTypePassport:'Passport',documentTypeDrivingLicense:'Driving licence',documentNumberLabel:'Document number',issuePlaceLabel:'Town of document issue',comuneChoiceLabel:'Select the correct town',comuneChoiceHint:'This town exists in more than one province. Select the correct option.',comuneChoicePlaceholder:'Select province and town',comuneNotFoundHint:'Town not found in the Alloggiati dataset. The text is kept but no code is saved.',comuneMatchedHint:'Town recognized automatically:',comuneChoiceRequiredMsg:'Select one of the proposed options to use the correct code.',dayLabel:'Day',monthLabel:'Month',yearLabel:'Year',travelersCount:'Number of travelers',guestRole:'Role in group',additionalGuestsTitle:'Other guests',guestLabel:'Guest',guestSex:'Sex',guestStateBirth:'Country of birth',role16:'Single guest',role17:'Head of household',role18:'Group leader',role19:'Family member',role20:'Group member',role17Hint:'Use this option if you are traveling with your household.',role18Hint:'Use this option if you are traveling with friends, colleagues or acquaintances.',cf:'Tax code',cfWarning:'The tax code does not appear valid. Please check or continue if sure.',indirizzoLabel:'HOME ADDRESS',indirizzo:'Address',citta:'City',cap:'Postal code',prov:'Prov.',ragSoc:'Company name',piva:'VAT number',sdi:'SDI code',pecLabel:'PEC email',indirizzoAzLabel:'Registered address',checkin:'Check-in',checkout:'Check-out',riepilogoLabel:'SUMMARY',uploadTitle:'Add document photo',uploadSub:'ID card - Passport - Driving licence',uploadMultiHint:'You can upload multiple files for the same guest, including front and back.',continua:'Continue',indietro:'Back',invia:'Submit',ocrLoading:'Uploading...',ocrErr:'Upload error',successTitle:'Data received',successMsg:"Your details have been submitted.<br>You will receive an email shortly with check-in instructions.<br><br>Thank you for choosing Il Lupo Affitta.",errRequired:'Please fill in all required fields',errDate:'Please enter your stay dates',errSending:'Submission error - please try again',errPrivacy:'Please accept the privacy policy to continue',privacyLabel:'I have read and understood the <a href="privacy-policy.html" target="_blank" rel="noopener">privacy policy</a> (art. 13 GDPR). My personal data will be communicated to the Public Security Authority as required by Italian law.',NOME:'NAME',EMAIL:'EMAIL',TELEFONO:'PHONE',CF:'TAX CODE',INDIRIZZO:'ADDRESS',CHECKIN:'CHECK-IN',CHECKOUT:'CHECK-OUT',PAESE:'COUNTRY',RAGIONE:'COMPANY',PIVA:'VAT NUMBER',SDI:'SDI CODE'},
   de:{step1:'DATEN',step2:'BESTATIGUNG',title1:'Ihr<br><em>Check-in</em>',sub1:'Bitte fullen Sie die Felder aus, um den Check-in abzuschliessen.',title2:'Angaben<br><em>bestatigen</em>',sub2:'Stellen Sie sicher, dass alles korrekt ist.',tipoLabel:'ART DES SUBJEKTS',privato:'Privatperson',privatoDesc:'Steuer-ID / Dok.',azienda:'Unternehmen',aziendaDesc:'B2B-Rechnung / USt-ID',residenzaLabel:'WOHNSITZLAND',paese:'Land',countryNotice:'Fur Gaste ausserhalb Italiens sind Steuernummer und Adresse nicht erforderlich.',anagraficaLabel:'PERSONLICHE DATEN',nome:'Vorname',cognome:'Nachname',email:'E-Mail',telefono:'Telefon',cf:'Steuernummer',cfWarning:'Die Steuernummer scheint ungultig. Prufen Sie sie oder fahren Sie fort.',indirizzoLabel:'HEIMATADRESSE',indirizzo:'Adresse',citta:'Stadt',cap:'PLZ',prov:'Prov.',aziendaLabel:'UNTERNEHMENSDATEN',ragSoc:'Firmenname',piva:'USt-ID',sdi:'SDI-Code',pecLabel:'PEC',indirizzoAzLabel:'Geschaftssitz',soggiornoLabel:'AUFENTHALT',checkin:'Check-in',checkout:'Check-out',riepilogoLabel:'ZUSAMMENFASSUNG',fotoLabel:'DOKUMENTFOTO',uploadTitle:'Dokumentfoto hinzufugen',uploadSub:'Personalausweis - Reisepass - Fuhrerschein',continua:'Weiter',indietro:'Zuruck',invia:'Absenden',ocrLoading:'Wird hochgeladen...',ocrOk:'Dokument angehangt',ocrErr:'Fehler beim Hochladen',successTitle:'Daten erhalten',successMsg:'Ihre Angaben wurden ubermittelt.<br>Sie erhalten eine E-Mail mit Check-in-Anweisungen.<br><br>Vielen Dank.',errRequired:'Bitte alle Pflichtfelder ausfullen',errDate:'Bitte Aufenthaltsdaten eingeben',errSending:'Ubermittlungsfehler - erneut versuchen',errPrivacy:'Bitte akzeptieren Sie die Datenschutzerklarung um fortzufahren',privacyLabel:'Ich habe die <a href="privacy-policy.html" target="_blank" rel="noopener">Datenschutzerklarung</a> (Art. 13 DSGVO) gelesen. Meine Daten werden gemaß dem italienischen TULPS an die Behorden ubermittelt.',NOME:'NAME',EMAIL:'E-MAIL',TELEFONO:'TELEFON',CF:'STEUERNUMMER',INDIRIZZO:'ADRESSE',CHECKIN:'CHECK-IN',CHECKOUT:'CHECK-OUT',PAESE:'LAND',RAGIONE:'FIRMA',PIVA:'UST-ID',SDI:'SDI-CODE'},
   fr:{step1:'DONNEES',step2:'CONFIRMATION',title1:'Votre<br><em>check-in</em>',sub1:'Remplissez les champs pour finaliser votre check-in.',title2:'Confirmez<br><em>vos donnees</em>',sub2:'Assurez-vous que tout est correct.',tipoLabel:'TYPE DE SUJET',privato:'Particulier',privatoDesc:'Code fiscal / doc.',azienda:'Entreprise',aziendaDesc:'Facture B2B / TVA',residenzaLabel:'PAYS DE RESIDENCE',paese:'Pays',countryNotice:"Pour les clients ne residant pas en Italie, le code fiscal et l'adresse ne sont pas obligatoires.",anagraficaLabel:'DONNEES PERSONNELLES',nome:'Prenom',cognome:'Nom',email:'Email',telefono:'Telephone',cf:'Code fiscal',cfWarning:'Le code fiscal ne semble pas valide. Verifiez ou continuez.',indirizzoLabel:'ADRESSE DE RESIDENCE',indirizzo:'Adresse',citta:'Ville',cap:'Code postal',prov:'Prov.',aziendaLabel:"DONNEES D'ENTREPRISE",ragSoc:'Raison sociale',piva:'Numero TVA',sdi:'Code SDI',pecLabel:'PEC',indirizzoAzLabel:'Siege social',soggiornoLabel:'SEJOUR',checkin:'Arrivee',checkout:'Depart',riepilogoLabel:'RECAPITULATIF',fotoLabel:'PHOTO DU DOCUMENT',uploadTitle:'Ajouter photo document',uploadSub:"Carte d'identite - Passeport - Permis",continua:'Continuer',indietro:'Retour',invia:'Envoyer',ocrLoading:'Chargement...',ocrOk:'Document joint',ocrErr:'Erreur de chargement',successTitle:'Donnees recues',successMsg:'Vos donnees ont ete soumises.<br>Vous recevrez un email avec les instructions.<br><br>Merci.',errRequired:'Veuillez remplir tous les champs obligatoires',errDate:'Veuillez saisir les dates',errSending:"Erreur d'envoi - reessayez",errPrivacy:'Veuillez accepter la politique de confidentialite pour continuer',privacyLabel:"J'ai lu et compris la <a href=\"privacy-policy.html\" target=\"_blank\" rel=\"noopener\">politique de confidentialite</a> (art. 13 RGPD). Mes donnees seront communiquees aux autorites de securite publique conformement a la loi italienne.",NOME:'PRENOM / NOM',EMAIL:'EMAIL',TELEFONO:'TELEPHONE',CF:'CODE FISCAL',INDIRIZZO:'ADRESSE',CHECKIN:'ARRIVEE',CHECKOUT:'DEPART',PAESE:'PAYS',RAGIONE:'RAISON SOCIALE',PIVA:'TVA',SDI:'CODE SDI'},
   es:{step1:'DATOS',step2:'CONFIRMACION',title1:'Su<br><em>check-in</em>',sub1:'Complete los campos para finalizar su check-in.',title2:'Confirme<br><em>sus datos</em>',sub2:'Asegurese de que todo sea correcto.',tipoLabel:'TIPO DE SUJETO',privato:'Particular',privatoDesc:'NIF / documento',azienda:'Empresa',aziendaDesc:'Factura B2B / IVA',residenzaLabel:'PAIS DE RESIDENCIA',paese:'Pais',countryNotice:'Para huespedes no residentes en Italia, el codigo fiscal y la direccion no son obligatorios.',anagraficaLabel:'DATOS PERSONALES',nome:'Nombre',cognome:'Apellido',email:'Email',telefono:'Telefono',cf:'Codigo fiscal',cfWarning:'El codigo fiscal no parece valido. Verifique o continue.',indirizzoLabel:'DIRECCION DE RESIDENCIA',indirizzo:'Direccion',citta:'Ciudad',cap:'Codigo postal',prov:'Prov.',aziendaLabel:'DATOS DE EMPRESA',ragSoc:'Razon social',piva:'Numero IVA',sdi:'Codigo SDI',pecLabel:'PEC',indirizzoAzLabel:'Domicilio social',soggiornoLabel:'ESTANCIA',checkin:'Llegada',checkout:'Salida',riepilogoLabel:'RESUMEN',fotoLabel:'FOTO DEL DOCUMENTO',uploadTitle:'Anadir foto documento',uploadSub:'DNI - Pasaporte - Carne de conducir',continua:'Continuar',indietro:'Atras',invia:'Enviar',ocrLoading:'Cargando...',ocrOk:'Documento adjunto',ocrErr:'Error al cargar',successTitle:'Datos recibidos',successMsg:'Sus datos han sido enviados.<br>Recibira un email con las instrucciones.<br><br>Gracias.',errRequired:'Complete todos los campos obligatorios',errDate:'Introduzca las fechas de estancia',errSending:'Error de envio - intentelo de nuevo',errPrivacy:'Por favor acepte la politica de privacidad para continuar',privacyLabel:'He leido y comprendido la <a href="privacy-policy.html" target="_blank" rel="noopener">politica de privacidad</a> (art. 13 RGPD). Mis datos seran comunicados a la Autoridad de Seguridad Publica segun la ley italiana.',NOME:'NOMBRE',EMAIL:'EMAIL',TELEFONO:'TELEFONO',CF:'CODIGO FISCAL',INDIRIZZO:'DIRECCION',CHECKIN:'LLEGADA',CHECKOUT:'SALIDA',PAESE:'PAIS',RAGIONE:'RAZON SOCIAL',PIVA:'IVA',SDI:'SDI'},
   ru:{step1:'DANNYE',step2:'PODTVERZHDENIE',title1:'Vash<br><em>chek-in</em>',sub1:'Zapolnite polya dlya zaversheniya registratsii.',title2:'Podtverdite<br><em>dannye</em>',sub2:'Ubedites, chto vse verno.',tipoLabel:'TIP SUBEKTA',privato:'Fizlitso',privatoDesc:'INN / dokument',azienda:'Yurlitso',aziendaDesc:'B2B schet / NDS',residenzaLabel:'STRANA PROZHIVANIYA',paese:'Strana',countryNotice:'Dlya gostey ne iz Italii nalogovyy kod i adres ne obyazatelny.',anagraficaLabel:'LICHNYE DANNYE',nome:'Imya',cognome:'Familiya',email:'Email',telefono:'Telefon',cf:'Nalogovyy kod',cfWarning:'Nalogovyy kod kazhetsya nedeystvitelnym. Proverte ili prodolzhite.',indirizzoLabel:'ADRES PROZHIVANIYA',indirizzo:'Adres',citta:'Gorod',cap:'Indeks',prov:'Provinciya',aziendaLabel:'DANNYE KOMPANII',ragSoc:'Nazvanie',piva:'NDS nomer',sdi:'Kod SDI',pecLabel:'PEC',indirizzoAzLabel:'Yur. adres',soggiornoLabel:'PROZHIVANIE',checkin:'Vselenie',checkout:'Vyselenie',riepilogoLabel:'SVODNAYA',fotoLabel:'FOTO DOKUMENTA',uploadTitle:'Dobavit foto dokumenta',uploadSub:'Pasport - Udostoverenie lichnosti',continua:'Dalee',indietro:'Nazad',invia:'Otpravit',ocrLoading:'Zagruzka...',ocrOk:'Dokument prikreplyon',ocrErr:'Oshibka zagruzki',successTitle:'Dannye polucheny',successMsg:'Vashi dannye uspeshno otpravleny.<br>Skoro vy poluchite email s instruktsiyami.<br><br>Spasibo.',errRequired:'Zapolnite vse obyazatelnye polya',errDate:'Vvedite daty prozhivaniya',errSending:'Oshibka otpravki - povtorite',errPrivacy:'Pozhaluysta, primite politiku konfidentsialnosti dlya prodolzheniya',privacyLabel:'Ya oznakomilsya s <a href="privacy-policy.html" target="_blank" rel="noopener">politikoy konfidentsialnosti</a> (st. 13 GDPR). Moi dannye budut peredany organam publichnoy bezopasnosti v sootvetstvii s zakonodatelstvom Italii.',NOME:'IMYA / FAMILIYA',EMAIL:'EMAIL',TELEFONO:'TELEFON',CF:'NAL. KOD',INDIRIZZO:'ADRES',CHECKIN:'VSELENIE',CHECKOUT:'VYSELENIE',PAESE:'STRANA',RAGIONE:'KOMPANIYA',PIVA:'NDS',SDI:'KOD SDI'}
 };
 
-var lang='it',currentType='privato',currentStep=1,isItalian=true,cfAttempts=0,uploadedImageBase64=null;
-var aptId=new URLSearchParams(window.location.search).get('apt')||null;
+var MESSAGES={
+  it:{sending:'Invio in corso...',portalCta:'Entra nel tuo portale',invalidEmail:'Email non valida',invalidPhone:'Telefono non valido',invalidCap:'CAP non valido',invalidVat:'Partita IVA non valida',invalidSdi:'Codice SDI non valido',invalidCheckout:'Il check-out deve essere dopo il check-in',invalidApartment:'Link non valido: appartamento mancante',ocrOkClean:'Dati letti dal documento',ocrMultiOk:'Documenti analizzati',ocrNoData:'Nessun dato leggibile rilevato'},
+  en:{sending:'Sending...',portalCta:'Open your portal',invalidEmail:'Invalid email',invalidPhone:'Invalid phone number',invalidCap:'Invalid postal code',invalidVat:'Invalid VAT number',invalidSdi:'Invalid SDI code',invalidCheckout:'Check-out must be after check-in',invalidApartment:'Invalid link: missing apartment',ocrOkClean:'Data read from the document',ocrMultiOk:'Documents analyzed',ocrNoData:'No readable data detected'},
+};
+
+var lang='it',currentStep=1,isItalian=true,cfAttempts=0;
+var guestDocumentStore={0:[]};
+var activeOCRTarget={scope:'main',index:0};
+var comuneLookupCache={},comuneLookupTimers={birth:null,issue:null,residence_city:null};
+var cfAutofillState={manual:false,lastGenerated:''};
+var capAutofillState={manual:false,lastCap:'',lastProvince:''};
+var MONTH_LABELS={
+  it:['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'],
+  en:['January','February','March','April','May','June','July','August','September','October','November','December']
+};
+var initialParams=new URLSearchParams(window.location.search);
+var aptRef=(initialParams.get('apt')||initialParams.get('aptId')||'').trim();
 function t(k){return(T[lang]&&T[lang][k]!==undefined)?T[lang][k]:(T.it[k]||k);}
+function msg(k){return(MESSAGES[lang]&&MESSAGES[lang][k]!==undefined)?MESSAGES[lang][k]:(MESSAGES.it[k]||k);}
+function normalizeUpperNoSpaces(value){return String(value||'').replace(/\s+/g,'').trim().toUpperCase();}
 
 function onPrivacyChange(){
   var cb=document.getElementById('privacyCheck');
   var bl=document.getElementById('privacyBlock');
-  if(cb.checked) bl.classList.remove('err');
+  if(cb.checked){ bl.classList.remove('err'); bl.classList.remove('has-error'); clearFieldError('privacyCheck'); }
 }
 
 function setLang(l){
@@ -398,6 +526,11 @@ function setLang(l){
     var v=T[l]&&T[l][k]!==undefined?T[l][k]:(T.it[k]!==undefined?T.it[k]:null);
     if(v!==null&&el.tagName!=='INPUT'&&el.tagName!=='TEXTAREA'&&el.tagName!=='SELECT')el.innerHTML=v;
   });
+  initDateParts();
+  renderAdditionalGuests();
+  updateBirthOriginUi();
+  updatePrimaryGuestUi();
+  renderGuestUploads(0);
 }
 
 function goToStep(n){
@@ -410,23 +543,961 @@ function goToStep(n){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-function setType(type){
-  currentType=type;
-  document.getElementById('btn-privato').classList.toggle('active',type==='privato');
-  document.getElementById('btn-azienda').classList.toggle('active',type==='azienda');
-  document.getElementById('fields-privato').style.display=type==='privato'?'':'none';
-  document.getElementById('fields-azienda').style.display=type==='azienda'?'':'none';
+function toggleInvoiceFields(){
+  var enabled=!!document.getElementById('vuoiFattura').checked;
+  document.getElementById('invoiceFields').style.display=enabled?'':'none';
+  if(!enabled){
+    ['ragioneSociale','piva','sdi','pec','indirizzoAz'].forEach(function(id){
+      var el=document.getElementById(id);
+      if(el){el.value='';markFilled(el);}
+      clearFieldError(id);
+    });
+  }
+  updateInvoiceBusinessRequirements();
+}
+function requiresItalianCompanySdi(){
+  if(!document.getElementById('vuoiFattura').checked)return false;
+  var vatCheck=classifyVatNumber(document.getElementById('piva').value);
+  return vatCheck.kind==='it' && vatCheck.valid;
+}
+function updateInvoiceBusinessRequirements(){
+  var reqEl=document.getElementById('sdiReq');
+  if(reqEl)reqEl.style.display=requiresItalianCompanySdi()?'':'none';
 }
 
 function onPaeseChange(){
   var v=document.getElementById('paeseResidenza').value;
   isItalian=v==='IT';
+  clearAllErrors();
+  clearTopAlert();
+  resetCfWarning();
   document.getElementById('indirizzoCard').style.display=isItalian?'':'none';
   document.getElementById('countryNotice').style.display=isItalian?'none':'block';
   document.getElementById('cfReq').style.display=isItalian?'':'none';
 }
 
 function markFilled(el){el.classList.toggle('filled',el.value.length>0);}
+function normalizeValue(v){return(v||'').trim();}
+function digitsOnly(v){return String(v||'').replace(/\D/g,'');}
+function isValidEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeValue(v));}
+function isValidPhone(v){return digitsOnly(v).length>=6;}
+function isValidCap(v){return /^\d{5}$/.test(normalizeValue(v));}
+function isValidSdi(v){return /^[A-Z0-9]{7}$/.test(normalizeValue(v).toUpperCase());}
+function normalizeVatInput(value){
+  return normalizeUpperNoSpaces(value).replace(/[^A-Z0-9]/g,'');
+}
+function isValidItalianVatNumber(value){
+  var raw=normalizeVatInput(value);
+  if(raw.indexOf('IT')===0)raw=raw.slice(2);
+  if(!/^\d{11}$/.test(raw))return false;
+  var sum=0;
+  for(var i=0;i<10;i++){
+    var digit=parseInt(raw.charAt(i),10);
+    if(i%2===0)sum+=digit;
+    else{
+      var doubled=digit*2;
+      sum+=doubled>9?doubled-9:doubled;
+    }
+  }
+  return ((10-(sum%10))%10)===parseInt(raw.charAt(10),10);
+}
+function classifyVatNumber(value){
+  var raw=normalizeVatInput(value);
+  if(!raw)return { kind:'empty', valid:false };
+  if(/^(IT)?\d{11}$/.test(raw))return { kind:'it', valid:isValidItalianVatNumber(raw) };
+  if(/^[A-Z]{2}[A-Z0-9]{2,14}$/.test(raw))return { kind:'eu', valid:true };
+  if(/^[A-Z0-9][A-Z0-9./ -]{2,20}$/.test(normalizeValue(value).toUpperCase()))return { kind:'extra', valid:true };
+  return { kind:'invalid', valid:false };
+}
+function isValidPiva(v){return classifyVatNumber(v).valid;}
+function parseDateParts(value){
+  if(!value)return null;
+  var parts=String(value).split('-');
+  if(parts.length!==3)return null;
+  var year=parseInt(parts[0],10),month=parseInt(parts[1],10),day=parseInt(parts[2],10);
+  if(!year||!month||!day)return null;
+  return {year:year,month:month,day:day};
+}
+function getAgeFromBirthDate(value){
+  var parts=parseDateParts(value);
+  if(!parts)return null;
+  var today=new Date();
+  var age=today.getFullYear()-parts.year;
+  var monthDiff=(today.getMonth()+1)-parts.month;
+  if(monthDiff<0||(monthDiff===0&&today.getDate()<parts.day))age--;
+  return age;
+}
+function escAttr(value){
+  return String(value||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function getNumeroPersone(){
+  var el=document.getElementById('numeroPersone');
+  var value=parseInt(el&&el.value?el.value:'1',10);
+  return value>1?value:1;
+}
+function getPrimaryGuestRoleType(){
+  if(getNumeroPersone()<=1)return 16;
+  var selected=document.querySelector('input[name="primaryGuestRole"]:checked');
+  var value=parseInt(selected&&selected.value?selected.value:'18',10);
+  return value===17?17:18;
+}
+function getPrimaryGuestRoleLabel(){
+  var type=getPrimaryGuestRoleType();
+  if(type===17)return t('role17');
+  if(type===18)return t('role18');
+  return t('role16');
+}
+function getAdditionalGuestRoleType(){
+  return getPrimaryGuestRoleType()===17?19:20;
+}
+function getAdditionalGuestRoleLabel(){
+  return getAdditionalGuestRoleType()===19?t('role19'):t('role20');
+}
+function getResolvedApartmentRef(){return aptRef;}
+function getMonthLabels(){
+  return MONTH_LABELS[lang]||MONTH_LABELS.it;
+}
+function buildDatePartOptions(target){
+  var dayEl=document.getElementById(target+'_day');
+  var monthEl=document.getElementById(target+'_month');
+  var yearEl=document.getElementById(target+'_year');
+  if(!dayEl||!monthEl||!yearEl)return;
+  var months=getMonthLabels();
+  var currentYear=(new Date()).getFullYear();
+  dayEl.innerHTML='<option value="">'+t('dayLabel')+'</option>'+Array.from({length:31},function(_,idx){var value=String(idx+1).padStart(2,'0');return '<option value="'+value+'">'+(idx+1)+'</option>';}).join('');
+  monthEl.innerHTML='<option value="">'+t('monthLabel')+'</option>'+months.map(function(label,idx){var value=String(idx+1).padStart(2,'0');return '<option value="'+value+'">'+label+'</option>';}).join('');
+  var years=[];
+  for(var year=currentYear-1;year<=currentYear+4;year++)years.push(year);
+  yearEl.innerHTML='<option value="">'+t('yearLabel')+'</option>'+years.map(function(year){return '<option value="'+year+'">'+year+'</option>';}).join('');
+}
+function setDatePartsFromValue(target,value){
+  var hiddenEl=document.getElementById(target);
+  var dayEl=document.getElementById(target+'_day');
+  var monthEl=document.getElementById(target+'_month');
+  var yearEl=document.getElementById(target+'_year');
+  if(!hiddenEl||!dayEl||!monthEl||!yearEl)return;
+  var match=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  hiddenEl.value=match?match[0]:'';
+  yearEl.value=match?match[1]:'';
+  monthEl.value=match?match[2]:'';
+  dayEl.value=match?match[3]:'';
+  [dayEl,monthEl,yearEl].forEach(markFilled);
+}
+function syncDateFromParts(target){
+  var hiddenEl=document.getElementById(target);
+  var dayEl=document.getElementById(target+'_day');
+  var monthEl=document.getElementById(target+'_month');
+  var yearEl=document.getElementById(target+'_year');
+  if(!hiddenEl||!dayEl||!monthEl||!yearEl)return;
+  [dayEl,monthEl,yearEl].forEach(markFilled);
+  hiddenEl.value=(dayEl.value&&monthEl.value&&yearEl.value)?(yearEl.value+'-'+monthEl.value+'-'+dayEl.value):'';
+  clearFieldError(target);
+}
+function initDateParts(){
+  ['checkin','checkout'].forEach(function(target){
+    buildDatePartOptions(target);
+    setDatePartsFromValue(target,document.getElementById(target)?.value||'');
+  });
+}
+function normalizeComuneLookupValue(value){
+  return String(value||'')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .replace(/[’`´']/g,'')
+    .replace(/\s+/g,' ')
+    .trim()
+    .toLowerCase();
+}
+function getComuneFieldConfig(kind){
+  var additionalBirthMatch=String(kind||'').match(/^additional_birth_(\d+)$/);
+  if(additionalBirthMatch){
+    var index=additionalBirthMatch[1];
+    return {
+      inputId:'additionalGuest_'+index+'_luogo_nascita',
+      codeId:'additionalGuest_'+index+'_luogo_nascita_codice',
+      choiceListId:'additionalGuest_'+index+'_luogo_nascita_choice_list',
+      fieldId:'additionalGuest_'+index+'_luogo_nascita_choice',
+      statusId:'additionalGuest_'+index+'_luogo_nascita_status'
+    };
+  }
+  return kind==='birth'
+    ? {inputId:'luogoNascita',codeId:'luogoNascitaCodice',choiceListId:'luogoNascitaChoiceList',fieldId:'birthPlaceItalyChoiceField',statusId:'luogoNascitaStatus'}
+    : {inputId:'luogoRilascioDocumento',codeId:'luogoRilascioCodice',choiceListId:'luogoRilascioChoiceList',fieldId:'issuePlaceChoiceField',statusId:'luogoRilascioStatus'};
+}
+function normalizeComuneInputValue(value){
+  return String(value||'').replace(/[’`´]/g,"'").replace(/\s+/g,' ').trim();
+}
+function getComuneSelectedLabel(kind){
+  var cfg=getComuneFieldConfig(kind);
+  var codeEl=document.getElementById(cfg.codeId);
+  return codeEl&&codeEl.dataset?codeEl.dataset.label||'':'';
+}
+function setComuneStatus(kind,message){
+  var cfg=getComuneFieldConfig(kind);
+  var statusEl=document.getElementById(cfg.statusId);
+  if(!statusEl)return;
+  statusEl.textContent=message||'';
+  statusEl.style.display=message?'block':'none';
+}
+function setComuneResolvedValue(kind,match,inputValue){
+  var cfg=getComuneFieldConfig(kind);
+  var codeEl=document.getElementById(cfg.codeId);
+  var listEl=document.getElementById(cfg.choiceListId);
+  var fieldEl=document.getElementById(cfg.fieldId);
+  var rawInput=normalizeComuneInputValue(inputValue);
+  var normalizedInput=normalizeComuneLookupValue(rawInput);
+  var label=(match.nome||rawInput)+' ('+(match.provincia||'')+')';
+  if(codeEl){
+    codeEl.value=match.codice||'';
+    codeEl.dataset.label=label;
+    codeEl.dataset.resolvedInput=normalizedInput;
+  }
+  if(listEl){
+    listEl.dataset.ambiguous='0';
+    listEl.innerHTML='';
+  }
+  if(fieldEl)fieldEl.style.display='none';
+  setComuneStatus(kind,t('comuneMatchedHint')+' '+label);
+  if(kind==='birth')scheduleCfAutofill();
+}
+function resetComuneChoice(kind){
+  var cfg=getComuneFieldConfig(kind);
+  var codeEl=document.getElementById(cfg.codeId);
+  var listEl=document.getElementById(cfg.choiceListId);
+  var fieldEl=document.getElementById(cfg.fieldId);
+  if(codeEl){
+    codeEl.value='';
+    codeEl.dataset.label='';
+    codeEl.dataset.resolvedInput='';
+  }
+  if(listEl){
+    listEl.innerHTML='';
+    listEl.dataset.ambiguous='0';
+  }
+  if(fieldEl)fieldEl.style.display='none';
+  setComuneStatus(kind,'');
+}
+function renderComuneChoice(kind,matches){
+  var cfg=getComuneFieldConfig(kind);
+  var codeEl=document.getElementById(cfg.codeId);
+  var listEl=document.getElementById(cfg.choiceListId);
+  var fieldEl=document.getElementById(cfg.fieldId);
+  if(!codeEl||!listEl||!fieldEl)return;
+  var currentValue=normalizeValue(document.getElementById(cfg.inputId).value);
+  var normalizedCurrent=normalizeComuneLookupValue(currentValue);
+  if(kind==='birth'&&!isBornInItaly()){
+    resetComuneChoice(kind);
+    return;
+  }
+  if(isAdditionalGuestBirthKind(kind)&&!isAdditionalGuestBornInItaly(getAdditionalGuestIndexFromKind(kind))){
+    resetComuneChoice(kind);
+    return;
+  }
+  if(matches.length===1){
+    setComuneResolvedValue(kind,matches[0],currentValue);
+    return;
+  }
+  if(codeEl&&codeEl.value&&codeEl.dataset.resolvedInput===normalizedCurrent){
+    var selectedMatch=(matches||[]).find(function(item){return (item.codice||'')===codeEl.value;});
+    if(selectedMatch){
+      setComuneResolvedValue(kind,selectedMatch,currentValue);
+      return;
+    }
+  }
+  if(matches.length>1){
+    listEl.dataset.ambiguous='1';
+    listEl.innerHTML=matches.map(function(item){
+      var label=(item.nome||currentValue)+' ('+(item.provincia||'')+')';
+      var active=(codeEl.value&&codeEl.value===String(item.codice||''))?' active':'';
+      return '<button type="button" class="comune-choice-btn'+active+'" onclick="handleComuneChoiceChange(\''+kind+'\',\''+escAttr(item.codice||'')+'\',\''+escAttr(label)+'\')">'+label+'</button>';
+    }).join('');
+    if(codeEl.value&&(matches||[]).some(function(item){return String(item.codice||'')===codeEl.value;})){
+      setComuneStatus(kind,codeEl.dataset.label||t('comuneChoiceRequiredMsg'));
+    }else{
+      codeEl.value='';
+      codeEl.dataset.label='';
+      codeEl.dataset.resolvedInput='';
+      setComuneStatus(kind,t('comuneChoiceRequiredMsg'));
+    }
+    fieldEl.style.display='';
+    return;
+  }
+  resetComuneChoice(kind);
+  setComuneStatus(kind,t('comuneNotFoundHint'));
+}
+async function resolveComuneMatches(kind,value){
+  var raw=normalizeComuneInputValue(value);
+  var normalized=normalizeComuneLookupValue(raw);
+  if(!normalized){
+    resetComuneChoice(kind);
+    return;
+  }
+  if(kind==='birth'&&!isBornInItaly()){
+    resetComuneChoice(kind);
+    return;
+  }
+  if(isAdditionalGuestBirthKind(kind)&&!isAdditionalGuestBornInItaly(getAdditionalGuestIndexFromKind(kind))){
+    resetComuneChoice(kind);
+    return;
+  }
+  if(comuneLookupCache[normalized]){
+    renderComuneChoice(kind,comuneLookupCache[normalized]);
+    return;
+  }
+  try{
+    var res=await fetch('/.netlify/functions/lookup-comuni',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({q:raw})
+    });
+    if(!res.ok)throw new Error('lookup failed');
+    var data=await res.json();
+    var matches=Array.isArray(data.matches)?data.matches:[];
+    comuneLookupCache[normalized]=matches;
+    if(normalizeComuneLookupValue(document.getElementById(getComuneFieldConfig(kind).inputId).value)!==normalized)return;
+    renderComuneChoice(kind,matches);
+  }catch(err){
+    console.warn('lookup-comuni error',err);
+    resetComuneChoice(kind);
+  }
+}
+function handleComuneFieldInput(kind){
+  var cfg=getComuneFieldConfig(kind);
+  var inputEl=document.getElementById(cfg.inputId);
+  var codeEl=document.getElementById(cfg.codeId);
+  var listEl=document.getElementById(cfg.choiceListId);
+  var normalizedValue=inputEl?normalizeComuneInputValue(inputEl.value):'';
+  var normalizedLookup=normalizeComuneLookupValue(normalizedValue);
+  if(inputEl){
+    if(inputEl.value!==normalizedValue)inputEl.value=normalizedValue;
+  }
+  if(codeEl&&codeEl.value&&codeEl.dataset.resolvedInput===normalizedLookup){
+    if(listEl){
+      listEl.dataset.ambiguous='0';
+      listEl.innerHTML='';
+    }
+    document.getElementById(cfg.fieldId).style.display='none';
+    setComuneStatus(kind,t('comuneMatchedHint')+' '+(codeEl.dataset.label||''));
+    clearFieldError(cfg.fieldId);
+    return;
+  }
+  if(codeEl){
+    codeEl.value='';
+    codeEl.dataset.label='';
+    codeEl.dataset.resolvedInput='';
+  }
+  if(listEl){
+    listEl.dataset.ambiguous='0';
+    listEl.innerHTML='';
+  }
+  document.getElementById(cfg.fieldId).style.display='none';
+  setComuneStatus(kind,'');
+  clearFieldError(cfg.fieldId);
+  if(comuneLookupTimers[kind])clearTimeout(comuneLookupTimers[kind]);
+  comuneLookupTimers[kind]=setTimeout(function(){
+    resolveComuneMatches(kind,document.getElementById(cfg.inputId).value);
+  },250);
+}
+function handleComuneChoiceChange(kind,code,label){
+  var cfg=getComuneFieldConfig(kind);
+  var codeEl=document.getElementById(cfg.codeId);
+  var listEl=document.getElementById(cfg.choiceListId);
+  if(codeEl&&code){
+    codeEl.value=code||'';
+    codeEl.dataset.label=label||'';
+    codeEl.dataset.resolvedInput=normalizeComuneLookupValue(document.getElementById(cfg.inputId).value);
+    if(listEl){
+      listEl.dataset.ambiguous='0';
+      listEl.innerHTML='';
+    }
+    document.getElementById(cfg.fieldId).style.display='none';
+  }else if(codeEl){
+    codeEl.value='';
+    codeEl.dataset.label='';
+    codeEl.dataset.resolvedInput='';
+  }
+  setComuneStatus(kind,codeEl&&codeEl.value?codeEl.dataset.label:t('comuneChoiceRequiredMsg'));
+  if(kind==='birth')scheduleCfAutofill();
+}
+function isComuneChoiceRequired(kind){
+  var cfg=getComuneFieldConfig(kind);
+  var listEl=document.getElementById(cfg.choiceListId);
+  return !!(listEl&&listEl.dataset.ambiguous==='1');
+}
+function isAdditionalGuestBirthKind(kind){
+  return /^additional_birth_\d+$/.test(String(kind||''));
+}
+function getAdditionalGuestIndexFromKind(kind){
+  var match=String(kind||'').match(/^additional_birth_(\d+)$/);
+  return match?parseInt(match[1],10):-1;
+}
+function isAdditionalGuestBornInItaly(index){
+  var stateEl=document.getElementById('additionalGuest_'+index+'_stato_nascita');
+  var normalized=normalizeComuneLookupValue(stateEl&&stateEl.value?stateEl.value:'');
+  return normalized==='italia'||normalized==='italy'||normalized==='it';
+}
+function getAdditionalGuestComuneKind(index){
+  return 'additional_birth_'+index;
+}
+function handleAdditionalGuestBirthStateChange(index){
+  var kind=getAdditionalGuestComuneKind(index);
+  if(!isAdditionalGuestBornInItaly(index)){
+    resetComuneChoice(kind);
+    return;
+  }
+  var inputEl=document.getElementById('additionalGuest_'+index+'_luogo_nascita');
+  if(inputEl&&normalizeValue(inputEl.value)){
+    resolveComuneMatches(kind,inputEl.value);
+  }
+}
+function getAdditionalGuestBirthSummary(index){
+  var kind=getAdditionalGuestComuneKind(index);
+  return getComuneSelectedLabel(kind)||normalizeValue(document.getElementById('additionalGuest_'+index+'_luogo_nascita')?.value);
+}
+function isBornInItaly(){
+  return document.getElementById('natoInItalia')?.value!=='0';
+}
+function updateBirthOriginUi(){
+  var italyField=document.getElementById('birthPlaceItalyField');
+  var italyChoiceField=document.getElementById('birthPlaceItalyChoiceField');
+  var foreignField=document.getElementById('birthPlaceForeignField');
+  var italy=isBornInItaly();
+  if(italyField)italyField.style.display=italy?'':'none';
+  if(italyChoiceField)italyChoiceField.style.display=italy&&isComuneChoiceRequired('birth')?'':'none';
+  if(foreignField)foreignField.style.display=italy?'none':'';
+  if(!italy)resetComuneChoice('birth');
+  scheduleCfAutofill();
+}
+function extractProvinceFromComuneLabel(label){
+  var match=String(label||'').match(/\(([^)]+)\)\s*$/);
+  return match?normalizeUpperNoSpaces(match[1]).slice(0,2):'';
+}
+function getBirthProvinceForCf(){
+  if(!isBornInItaly())return 'EE';
+  return extractProvinceFromComuneLabel(getComuneSelectedLabel('birth'));
+}
+function computeSuggestedCF(){
+  if(!window.CodiceFiscale || typeof window.CodiceFiscale.compute!=='function')return '';
+  var nome=normalizeValue(document.getElementById('nome')?.value);
+  var cognome=normalizeValue(document.getElementById('cognome')?.value);
+  var sesso=normalizeUpperNoSpaces(document.getElementById('sesso')?.value).slice(0,1);
+  var data=document.getElementById('dataNascita')?.value||'';
+  var parts=parseDateParts(data);
+  if(!nome || !cognome || !parts || !['M','F'].includes(sesso))return '';
+  var luogo='';
+  var provincia='';
+  if(isBornInItaly()){
+    luogo=normalizeValue(document.getElementById('luogoNascita')?.value);
+    provincia=getBirthProvinceForCf();
+    if(!luogo || !provincia)return '';
+  }else{
+    luogo=normalizeValue(document.getElementById('statoNascitaEstero')?.value);
+    provincia='EE';
+    if(!luogo)return '';
+  }
+  try{
+    return normalizeUpperNoSpaces(window.CodiceFiscale.compute({
+      name:nome,
+      surname:cognome,
+      gender:sesso,
+      day:parts.day,
+      month:parts.month,
+      year:parts.year,
+      birthplace:luogo,
+      birthplace_provincia:provincia
+    }));
+  }catch(err){
+    console.warn('cf compute failed',err);
+    return '';
+  }
+}
+function applySuggestedCF(force){
+  var cfEl=document.getElementById('cf');
+  if(!cfEl || !isItalian)return;
+  var generated=computeSuggestedCF();
+  if(!generated)return;
+  var current=normalizeUpperNoSpaces(cfEl.value);
+  var canOverwrite=force || !cfAutofillState.manual || !current || current===cfAutofillState.lastGenerated;
+  if(!canOverwrite)return;
+  cfEl.value=generated;
+  markFilled(cfEl);
+  cfAutofillState.lastGenerated=generated;
+  if(!cfAutofillState.manual)resetCfWarning();
+}
+function scheduleCfAutofill(){
+  window.clearTimeout(window.__cfAutofillTimer);
+  window.__cfAutofillTimer=window.setTimeout(function(){ applySuggestedCF(false); },180);
+}
+function handleCfManualInput(){
+  var cfEl=document.getElementById('cf');
+  if(!cfEl)return;
+  var current=normalizeUpperNoSpaces(cfEl.value);
+  cfEl.value=current;
+  if(!current){
+    cfAutofillState.manual=false;
+    cfAutofillState.lastGenerated='';
+    scheduleCfAutofill();
+    return;
+  }
+  cfAutofillState.manual=current!==cfAutofillState.lastGenerated;
+}
+function handleVatInput(){
+  var pivaEl=document.getElementById('piva');
+  if(!pivaEl)return;
+  pivaEl.value=normalizeValue(pivaEl.value).toUpperCase().replace(/[^A-Z0-9./ -]/g,'');
+  updateInvoiceBusinessRequirements();
+}
+function handleCapManualInput(){
+  var capEl=document.getElementById('cap');
+  if(!capEl)return;
+  capEl.value=digitsOnly(capEl.value).slice(0,5);
+  var current=normalizeValue(capEl.value);
+  capAutofillState.manual=!!(current && current!==capAutofillState.lastCap);
+}
+function setCapLookupStatus(message,isWarn){
+  var el=document.getElementById('capLookupStatus');
+  if(!el)return;
+  el.textContent=message||'';
+  el.style.display=message?'block':'none';
+  el.className='helper-note'+(isWarn?' warn':'');
+}
+function normalizeCitizenshipValue(value){
+  var normalized=normalizeComuneLookupValue(value||'');
+  if(!normalized)return '';
+  if(['italia','italy','italiana','italiano','cittadinanza italiana','nazionalita italiana','nazionalita: italia'].indexOf(normalized)>=0)return 'Italia';
+  return normalizeValue(value);
+}
+function resolveOcrBirthOrigin(data){
+  var explicitState=normalizeCitizenshipValue(data.stato_nascita||'');
+  if(explicitState && normalizeComuneLookupValue(explicitState)!=='italia' && normalizeComuneLookupValue(explicitState)!=='italy' && normalizeComuneLookupValue(explicitState)!=='it'){
+    document.getElementById('natoInItalia').value='0';
+    updateBirthOriginUi();
+    updateFieldValue('statoNascitaEstero',explicitState);
+    return;
+  }
+  if(normalizeValue(data.luogo_nascita)){
+    document.getElementById('natoInItalia').value='1';
+    updateBirthOriginUi();
+  }
+}
+function applyMainOcrLinkedResolutions(data){
+  resolveOcrBirthOrigin(data);
+  if(normalizeValue(data.luogo_nascita) && isBornInItaly())handleComuneFieldInput('birth');
+  if(normalizeValue(data.luogo_rilascio))handleComuneFieldInput('issue');
+  if(normalizeValue(data.citta) || normalizeValue(data.provincia))scheduleResidenceCityLookup();
+}
+function applyAdditionalGuestOcrLinkedResolutions(index,data){
+  var prefix='additionalGuest_'+index+'_';
+  var explicitState=normalizeCitizenshipValue(data.stato_nascita||'');
+  if(explicitState){
+    updateFieldValue(prefix+'stato_nascita',explicitState,function(){handleAdditionalGuestBirthStateChange(index);});
+  }else if(!normalizeValue(document.getElementById(prefix+'stato_nascita')?.value)){
+    updateFieldValue(prefix+'stato_nascita',inferGuestBirthState(data),function(){handleAdditionalGuestBirthStateChange(index);});
+  }else{
+    handleAdditionalGuestBirthStateChange(index);
+  }
+  if(normalizeValue(data.luogo_nascita))handleComuneFieldInput(getAdditionalGuestComuneKind(index));
+}
+function applyResidenceCityMatch(match){
+  if(!match)return;
+  var capEl=document.getElementById('cap');
+  var provEl=document.getElementById('provincia');
+  var canFillCap=!!match.cap && (!capAutofillState.manual || !normalizeValue(capEl.value) || normalizeValue(capEl.value)===capAutofillState.lastCap);
+  if(canFillCap){
+    capEl.value=String(match.cap).trim();
+    markFilled(capEl);
+    capAutofillState.lastCap=normalizeValue(capEl.value);
+    setCapLookupStatus('CAP riconosciuto automaticamente dal match comune/provincia.',false);
+  }else if(match.cap){
+    setCapLookupStatus('CAP disponibile sul match trovato, ma lasciato invariato perche modificato manualmente.',false);
+  }
+  if(match.provincia && (!normalizeValue(provEl.value) || normalizeUpperNoSpaces(provEl.value)===capAutofillState.lastProvince)){
+    provEl.value=normalizeUpperNoSpaces(match.provincia).slice(0,2);
+    markFilled(provEl);
+    capAutofillState.lastProvince=normalizeUpperNoSpaces(provEl.value);
+  }
+}
+async function resolveResidenceCityCap(cityValue,provinceValue){
+  var city=normalizeComuneInputValue(cityValue);
+  var province=normalizeUpperNoSpaces(provinceValue).slice(0,2);
+  if(!city){ setCapLookupStatus('',false); return; }
+  try{
+    var res=await fetch('/.netlify/functions/lookup-comuni',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({q:city,provincia:province})
+    });
+    if(!res.ok)throw new Error('lookup failed');
+    var data=await res.json();
+    var matches=Array.isArray(data.matches)?data.matches:[];
+    if(normalizeComuneLookupValue(document.getElementById('citta')?.value)!==normalizeComuneLookupValue(city))return;
+    if(province && normalizeUpperNoSpaces(document.getElementById('provincia')?.value).slice(0,2)!==province)return;
+    if(matches.length===1){
+      applyResidenceCityMatch(matches[0]);
+      if(!matches[0].cap){
+        setCapLookupStatus(
+          data.cap_supported===false
+            ? 'Comune trovato, ma il CAP non e disponibile in automatico. Inseriscilo a mano.'
+            : 'Comune trovato, ma qui il CAP non e disponibile in automatico. Inseriscilo a mano.',
+          true
+        );
+      }
+      return;
+    }
+    setCapLookupStatus('',false);
+  }catch(err){
+    console.warn('residence city lookup failed',err);
+    setCapLookupStatus('Lookup CAP non disponibile in questo momento.',true);
+  }
+}
+function scheduleResidenceCityLookup(){
+  if(!isItalian)return;
+  window.clearTimeout(window.__cityCapTimer);
+  window.__cityCapTimer=window.setTimeout(function(){
+    resolveResidenceCityCap(document.getElementById('citta')?.value||'',document.getElementById('provincia')?.value||'');
+  },250);
+}
+function getGuestStoreKey(index){
+  return Number(index)===0?0:Number(index);
+}
+function normalizeOCRDocumentType(value){
+  var normalized=normalizeValue(value).toUpperCase();
+  if(normalized==='IDENT' || normalized==="CARTA D'IDENTITA" || normalized==='CARTA DI IDENTITA')return "Carta d'identita";
+  if(normalized==='PASOR' || normalized==='PASSAPORTO')return 'Passaporto';
+  if(normalized==='PATEN' || normalized==='PATENTE')return 'Patente';
+  return normalizeValue(value);
+}
+function mergeOCRResults(results){
+  var merged={};
+  ['nome','cognome','data_nascita','sesso','cittadinanza','stato_nascita','tipo_documento','numero_documento','luogo_nascita','luogo_rilascio','codice_fiscale','indirizzo','cap','citta','provincia'].forEach(function(key){
+    merged[key]='';
+  });
+  (Array.isArray(results)?results:[]).forEach(function(row){
+    if(!row||typeof row!=='object')return;
+    Object.keys(merged).forEach(function(key){
+      if(!merged[key] && normalizeValue(row[key]))merged[key]=normalizeValue(row[key]);
+    });
+  });
+  merged.tipo_documento=normalizeOCRDocumentType(merged.tipo_documento);
+  merged.cittadinanza=normalizeCitizenshipValue(merged.cittadinanza);
+  if(merged.sesso)merged.sesso=merged.sesso.toUpperCase().charAt(0);
+  if(merged.codice_fiscale)merged.codice_fiscale=merged.codice_fiscale.toUpperCase();
+  if(merged.provincia)merged.provincia=merged.provincia.toUpperCase();
+  return merged;
+}
+function updateFieldValue(id,value,onAfter){
+  var el=document.getElementById(id);
+  if(!el || value===undefined || value===null)return;
+  if(normalizeValue(String(value))==='')return;
+  el.value=String(value);
+  markFilled(el);
+  if(typeof onAfter==='function')onAfter();
+}
+function inferGuestBirthState(data){
+  var cittadinanza=normalizeComuneLookupValue(normalizeCitizenshipValue(data.cittadinanza)||'');
+  if(cittadinanza==='italia' || cittadinanza==='italy' || cittadinanza==='it')return 'Italia';
+  return '';
+}
+function applyOCRToForm(data){
+  var target=activeOCRTarget||{scope:'main',index:0};
+  if(target.scope==='main'){
+    updateFieldValue('nome',data.nome);
+    updateFieldValue('cognome',data.cognome);
+    updateFieldValue('dataNascita',data.data_nascita,updatePrimaryGuestUi);
+    updateFieldValue('sesso',data.sesso);
+    updateFieldValue('cittadinanza',normalizeCitizenshipValue(data.cittadinanza));
+    updateFieldValue('tipoDocumento',data.tipo_documento);
+    updateFieldValue('numeroDocumento',data.numero_documento);
+    if(normalizeValue(data.luogo_nascita))updateFieldValue('luogoNascita',data.luogo_nascita);
+    if(normalizeValue(data.stato_nascita))updateFieldValue('statoNascitaEstero',normalizeCitizenshipValue(data.stato_nascita));
+    updateFieldValue('luogoRilascioDocumento',data.luogo_rilascio);
+    updateFieldValue('cf',data.codice_fiscale);
+    if(normalizeValue(data.codice_fiscale)){
+      cfAutofillState.manual=true;
+      cfAutofillState.lastGenerated='';
+    }
+    updateFieldValue('indirizzo',data.indirizzo);
+    updateFieldValue('cap',data.cap);
+    if(normalizeValue(data.cap)){
+      capAutofillState.manual=true;
+      capAutofillState.lastCap=normalizeValue(data.cap);
+    }
+    updateFieldValue('citta',data.citta,function(){scheduleResidenceCityLookup();});
+    updateFieldValue('provincia',data.provincia,function(){scheduleResidenceCityLookup();});
+    applyMainOcrLinkedResolutions(data);
+    return;
+  }
+
+  var prefix='additionalGuest_'+target.index+'_';
+  updateFieldValue(prefix+'nome',data.nome);
+  updateFieldValue(prefix+'cognome',data.cognome);
+  updateFieldValue(prefix+'data_nascita',data.data_nascita);
+  updateFieldValue(prefix+'sesso',data.sesso);
+  updateFieldValue(prefix+'cittadinanza',normalizeCitizenshipValue(data.cittadinanza));
+  updateFieldValue(prefix+'tipo_documento',data.tipo_documento);
+  updateFieldValue(prefix+'numero_documento',data.numero_documento);
+  updateFieldValue(prefix+'luogo_nascita',data.luogo_nascita);
+  updateFieldValue(prefix+'luogo_rilascio_documento',data.luogo_rilascio);
+  applyAdditionalGuestOcrLinkedResolutions(target.index,data);
+}
+function setOcrStatus(scope,index,state,message){
+  var prefix=scope==='main'?'main':'additionalGuest_'+index+'_';
+  var statusEl=document.getElementById(prefix+(scope==='main'?'OcrStatus':'ocr_status'));
+  var spinnerEl=document.getElementById(prefix+(scope==='main'?'OcrSpinner':'ocr_spinner'));
+  var msgEl=document.getElementById(prefix+(scope==='main'?'OcrMsg':'ocr_msg'));
+  if(!statusEl||!spinnerEl||!msgEl)return;
+  statusEl.style.display='flex';
+  statusEl.className='ocr-status'+(state==='success'?' success':state==='error'?' error':'');
+  spinnerEl.style.display=state==='loading'?'block':'none';
+  msgEl.textContent=message||'';
+}
+function renderGuestUploads(index){
+  var isMain=Number(index)===0;
+  var domIndex=isMain?0:Number(index)-1;
+  var listEl=document.getElementById(isMain?'mainUploadList':'additionalGuest_'+domIndex+'_upload_list');
+  if(!listEl)return;
+  var files=guestDocumentStore[getGuestStoreKey(index)]||[];
+  listEl.innerHTML=files.map(function(file, fileIndex){
+    return '<div class="upload-item"><span class="upload-name">'+escAttr(file.name||('file-'+(fileIndex+1)))+'</span><button type="button" class="upload-remove" onclick="removeGuestFile('+index+','+fileIndex+')">X</button></div>';
+  }).join('');
+}
+function removeGuestFile(index,fileIndex){
+  var key=getGuestStoreKey(index);
+  if(!Array.isArray(guestDocumentStore[key]))return;
+  guestDocumentStore[key].splice(fileIndex,1);
+  renderGuestUploads(index);
+  var input=document.getElementById(index===0?'mainFileInput':'additionalGuest_'+(index-1)+'_file');
+  if(input)input.value='';
+}
+async function readFileAsBase64(file){
+  return new Promise(function(resolve,reject){
+    var reader=new FileReader();
+    reader.onload=function(event){
+      resolve(String(event.target.result||'').split(',')[1]||'');
+    };
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+async function handleGuestFiles(index,files){
+  var selected=Array.prototype.slice.call(files||[]).filter(Boolean);
+  if(!selected.length)return;
+  var isMain=Number(index)===0;
+  var guestIndex=isMain?0:Number(index)-1;
+  var key=getGuestStoreKey(index);
+  guestDocumentStore[key]=(guestDocumentStore[key]||[]).concat(selected.map(function(file){ return {name:file.name,size:file.size,type:file.type,file:file}; }));
+  renderGuestUploads(index);
+  activeOCRTarget=isMain?{scope:'main',index:0}:{scope:'guest',index:guestIndex};
+  setOcrStatus(activeOCRTarget.scope,guestIndex,'loading',t('ocrLoading'));
+  try{
+    var allFiles=(guestDocumentStore[key]||[]).map(function(item){ return item.file; }).filter(Boolean);
+    var encoded=await Promise.all(allFiles.map(readFileAsBase64));
+    var res=await fetch('/.netlify/functions/ocr',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({images:encoded,tipo:'privato'})
+    });
+    if(!res.ok)throw new Error('OCR error');
+    var response=await res.json();
+    var merged=mergeOCRResults(Array.isArray(response)?response:[]);
+    applyOCRToForm(merged);
+    setOcrStatus(activeOCRTarget.scope,guestIndex,'success',Object.values(merged).some(function(value){return normalizeValue(value);})?msg('ocrMultiOk'):msg('ocrNoData'));
+    if(currentStep===2)buildReview();
+  }catch(err){
+    console.error(err);
+    setOcrStatus(activeOCRTarget.scope,guestIndex,'error',t('ocrErr'));
+  }
+}
+function collectAdditionalGuests(){
+  var guests=[];
+  var count=getNumeroPersone();
+  for(var i=0;i<count-1;i++){
+    var kind=getAdditionalGuestComuneKind(i);
+    var codeEl=document.getElementById('additionalGuest_'+i+'_luogo_nascita_codice');
+    guests.push({
+      nome:normalizeValue(document.getElementById('additionalGuest_'+i+'_nome')?.value),
+      cognome:normalizeValue(document.getElementById('additionalGuest_'+i+'_cognome')?.value),
+      sesso:normalizeValue(document.getElementById('additionalGuest_'+i+'_sesso')?.value).toUpperCase(),
+      data_nascita:normalizeValue(document.getElementById('additionalGuest_'+i+'_data_nascita')?.value),
+      luogo_nascita:normalizeValue(document.getElementById('additionalGuest_'+i+'_luogo_nascita')?.value),
+      luogo_nascita_codice:normalizeValue(codeEl?.value),
+      luogo_nascita_label:codeEl&&codeEl.dataset?normalizeValue(codeEl.dataset.label):getComuneSelectedLabel(kind),
+      stato_nascita:normalizeValue(document.getElementById('additionalGuest_'+i+'_stato_nascita')?.value),
+      cittadinanza:normalizeCitizenshipValue(document.getElementById('additionalGuest_'+i+'_cittadinanza')?.value),
+      tipo_documento:normalizeValue(document.getElementById('additionalGuest_'+i+'_tipo_documento')?.value),
+      numero_documento:normalizeValue(document.getElementById('additionalGuest_'+i+'_numero_documento')?.value),
+      luogo_rilascio_documento:normalizeValue(document.getElementById('additionalGuest_'+i+'_luogo_rilascio_documento')?.value),
+      tipo_alloggiato:getAdditionalGuestRoleType()
+    });
+  }
+  return guests;
+}
+function renderAdditionalGuests(){
+  var section=document.getElementById('additionalGuestsSection');
+  var container=document.getElementById('additionalGuestsContainer');
+  if(!section||!container)return;
+  var count=getNumeroPersone();
+  var existing=collectAdditionalGuests();
+  if(count<=1){
+    section.style.display='none';
+    container.innerHTML='';
+    return;
+  }
+  section.style.display='';
+  var html=[];
+  for(var i=0;i<count-1;i++){
+    var guest=existing[i]||{};
+    var guestKind=getAdditionalGuestComuneKind(i);
+    html.push(
+      '<div class="dynamic-guest-card">'+
+        '<h4>'+t('guestLabel')+' '+(i+2)+' · '+getAdditionalGuestRoleLabel()+'</h4>'+
+        '<div class="guest-documents">'+
+          '<div class="field">'+
+            '<label>'+t('guestDocumentsLabelOther')+'</label>'+
+            '<div class="upload-optional">'+
+              '<input type="file" id="additionalGuest_'+i+'_file" accept="image/*" capture="environment" multiple onchange="handleGuestFiles('+(i+1)+', this.files)">'+
+              '<div class="upload-icon">&#128196;</div>'+
+              '<h3>'+t('uploadTitle')+'</h3>'+
+              '<p>'+t('uploadSub')+'</p>'+
+            '</div>'+
+            '<div class="upload-list" id="additionalGuest_'+i+'_upload_list"></div>'+
+            '<div class="upload-note">'+t('uploadMultiHint')+'</div>'+
+            '<div class="ocr-status" id="additionalGuest_'+i+'_ocr_status"><div class="spinner" id="additionalGuest_'+i+'_ocr_spinner"></div><span id="additionalGuest_'+i+'_ocr_msg"></span></div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="field-row">'+
+          '<div class="field"><label>'+t('nome')+' <span class="req">*</span></label><input type="text" id="additionalGuest_'+i+'_nome" value="'+escAttr(guest.nome||'')+'" oninput="markFilled(this)"></div>'+
+          '<div class="field"><label>'+t('cognome')+' <span class="req">*</span></label><input type="text" id="additionalGuest_'+i+'_cognome" value="'+escAttr(guest.cognome||'')+'" oninput="markFilled(this)"></div>'+
+        '</div>'+
+        '<div class="field-row">'+
+          '<div class="field"><label>'+t('guestSex')+' <span class="req">*</span></label><select id="additionalGuest_'+i+'_sesso"><option value="">-</option><option value="M"'+(guest.sesso==='M'?' selected':'')+'>M</option><option value="F"'+(guest.sesso==='F'?' selected':'')+'>F</option></select></div>'+
+          '<div class="field"><label>'+t('birthDate')+' <span class="req">*</span></label><input type="date" id="additionalGuest_'+i+'_data_nascita" value="'+escAttr(guest.data_nascita||'')+'" oninput="markFilled(this)"></div>'+
+        '</div>'+
+        '<div class="field-row">'+
+          '<div class="field"><label>'+t('birthPlace')+' <span class="req">*</span></label><input type="text" id="additionalGuest_'+i+'_luogo_nascita" value="'+escAttr(guest.luogo_nascita||'')+'" oninput="markFilled(this);handleComuneFieldInput(\''+guestKind+'\')" onchange="handleComuneFieldInput(\''+guestKind+'\')"><input type="hidden" id="additionalGuest_'+i+'_luogo_nascita_codice" value="'+escAttr(guest.luogo_nascita_codice||'')+'" data-label="'+escAttr(guest.luogo_nascita_label||'')+'"><div class="helper-note warn" id="additionalGuest_'+i+'_luogo_nascita_status" style="display:none"></div></div>'+
+          '<div class="field"><label>'+t('guestStateBirth')+' <span class="req">*</span></label><input type="text" id="additionalGuest_'+i+'_stato_nascita" value="'+escAttr(guest.stato_nascita||'')+'" oninput="markFilled(this);handleAdditionalGuestBirthStateChange('+i+')" onchange="handleAdditionalGuestBirthStateChange('+i+')"></div>'+
+        '</div>'+
+        '<div class="field comune-choice-field" id="additionalGuest_'+i+'_luogo_nascita_choice" style="display:none">'+
+          '<label>'+t('comuneChoiceLabel')+' <span class="req">*</span></label><div class="comune-choice-list" id="additionalGuest_'+i+'_luogo_nascita_choice_list"></div>'+
+          '<div class="helper-note">'+t('comuneChoiceHint')+'</div>'+
+        '</div>'+
+        '<div class="field">'+
+          '<label>'+t('citizenshipLabel')+' <span class="req">*</span></label><input type="text" id="additionalGuest_'+i+'_cittadinanza" value="'+escAttr(guest.cittadinanza||'')+'" oninput="markFilled(this)" autocomplete="country-name">'+
+        '</div>'+
+      '</div>'
+    );
+  }
+  container.innerHTML=html.join('');
+  for(var j=0;j<count-1;j++){
+    handleAdditionalGuestBirthStateChange(j);
+    renderGuestUploads(j+1);
+  }
+}
+function handleNumeroPersoneChange(){
+  var el=document.getElementById('numeroPersone');
+  var value=parseInt(el.value||'1',10);
+  if(!value||value<1)value=1;
+  el.value=String(value);
+  updatePrimaryGuestUi();
+}
+function handleNumeroPersoneInput(){
+  var el=document.getElementById('numeroPersone');
+  var raw=String(el.value||'').replace(/[^\d]/g,'');
+  if(el.value!==raw)el.value=raw;
+  if(raw==='')return;
+  updatePrimaryGuestUi();
+}
+function updatePrimaryGuestRoleUi(){
+  var type=getPrimaryGuestRoleType();
+  var option18=document.getElementById('primaryRoleOption18');
+  var option17=document.getElementById('primaryRoleOption17');
+  if(option18)option18.classList.toggle('active',type===18);
+  if(option17)option17.classList.toggle('active',type===17);
+}
+function handlePrimaryGuestRoleChange(){
+  updatePrimaryGuestRoleUi();
+  renderAdditionalGuests();
+  if(currentStep===2)buildReview();
+}
+function updatePrimaryGuestUi(){
+  var count=getNumeroPersone();
+  var singleField=document.getElementById('singleGuestRoleField');
+  var multiField=document.getElementById('primaryGuestRoleField');
+  if(singleField)singleField.style.display=count>1?'none':'';
+  if(multiField)multiField.style.display=count>1?'':'none';
+  renderAdditionalGuests();
+  var roleText=document.getElementById('groupRoleText');
+  if(roleText)roleText.value=count>1?getPrimaryGuestRoleLabel():t('role16');
+  updatePrimaryGuestRoleUi();
+}
+function isCheckoutAfterCheckin(checkin,checkout){return !!checkin&&!!checkout&&checkout>checkin;}
+
+function resetCfWarning(){
+  cfAttempts=0;
+  document.getElementById('cfWarning').style.display='none';
+}
+
+function getFieldContainer(id){
+  if(id==='privacyCheck')return document.getElementById('privacyBlock');
+  var el=document.getElementById(id);
+  return el?el.closest('.field'):null;
+}
+
+function setFieldError(id,message){
+  var container=getFieldContainer(id);
+  if(!container)return;
+  container.classList.add('has-error');
+  if(container.id==='privacyBlock')container.classList.add('err');
+  var err=container.querySelector('.field-error');
+  if(!err){
+    err=document.createElement('div');
+    err.className='field-error';
+    container.appendChild(err);
+  }
+  err.textContent=message;
+  err.classList.add('visible');
+}
+
+function clearFieldError(id){
+  var container=getFieldContainer(id);
+  if(!container)return;
+  container.classList.remove('has-error');
+  if(container.id==='privacyBlock')container.classList.remove('err');
+  var err=container.querySelector('.field-error');
+  if(err){err.textContent='';err.classList.remove('visible');}
+}
+
+function clearAllErrors(){
+  document.querySelectorAll('.field.has-error,.privacy-block.has-error').forEach(function(el){el.classList.remove('has-error');});
+  document.querySelectorAll('.privacy-block.err').forEach(function(el){el.classList.remove('err');});
+  document.querySelectorAll('.field-error.visible').forEach(function(el){el.textContent='';el.classList.remove('visible');});
+}
+
+function showTopAlert(message){
+  var el=document.getElementById('topAlert');
+  el.textContent=message;
+  el.classList.add('visible');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function clearTopAlert(){
+  var el=document.getElementById('topAlert');
+  el.textContent='';
+  el.classList.remove('visible');
+}
+
+function focusField(id){
+  if(id==='privacyCheck'){document.getElementById('privacyBlock').scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('privacyCheck').focus();return;}
+  var el=document.getElementById(id);
+  if(el&&typeof el.focus==='function')el.focus();
+  else if(el&&typeof el.scrollIntoView==='function')el.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+function mapServerFieldId(id){
+  if(id==='email_fattura')return 'email';
+  if(id==='indirizzo_fatturazione')return 'indirizzoAz';
+  return id;
+}
 
 function validateCF(){
   var cf=(document.getElementById('cf')?document.getElementById('cf').value:'').trim().toUpperCase();
@@ -434,53 +1505,139 @@ function validateCF(){
   return /^[A-Z]{6}[0-9LMNPQRSTUV]{2}[ABCDEHLMPRST][0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{3}[A-Z]$/.test(cf);
 }
 
-function goToStep2(){
-  // Controlla checkbox privacy
-  var privCb=document.getElementById('privacyCheck');
-  var privBl=document.getElementById('privacyBlock');
-  if(!privCb.checked){
-    privBl.classList.add('err');
-    privBl.scrollIntoView({behavior:'smooth',block:'center'});
-    showToast(t('errPrivacy'));
-    return;
+function validateClientData(){
+  clearAllErrors();
+  var errors=[];
+  var paese=document.getElementById('paeseResidenza').value;
+  var wantsInvoice=!!document.getElementById('vuoiFattura').checked;
+
+  if(!getResolvedApartmentRef()){
+    showTopAlert(msg('invalidApartment'));
+    errors.push({id:'submitBtn',msg:msg('invalidApartment')});
+    return errors;
   }
-  if(currentType==='privato'){
-    var req=['nome','cognome','email','telefono'];
-    if(isItalian)req.push('indirizzo','cap','citta');
-    for(var i=0;i<req.length;i++){var el=document.getElementById(req[i]);if(!el||!el.value.trim()){showToast(t('errRequired'));if(el)el.focus();return;}}
-    if(isItalian){
-      var cfEl=document.getElementById('cf');
-      if(!cfEl.value.trim()){showToast(t('errRequired'));cfEl.focus();return;}
-      if(!validateCF()){cfAttempts++;if(cfAttempts<2){document.getElementById('cfWarning').style.display='flex';showToast(t('cfWarning'));return;}}
-      else{document.getElementById('cfWarning').style.display='none';}
-    }
+
+  if(!document.getElementById('privacyCheck').checked){
+    errors.push({id:'privacyCheck',msg:t('errPrivacy')});
+  }
+
+  ['nome','cognome','email','telefono','dataNascita','sesso','cittadinanza','tipoDocumento','numeroDocumento','luogoRilascioDocumento','numeroPersone'].forEach(function(id){
+    if(!normalizeValue(document.getElementById(id).value))errors.push({id:id,msg:t('errRequired')});
+  });
+  if(isBornInItaly()){
+    if(!normalizeValue(document.getElementById('luogoNascita').value))errors.push({id:'luogoNascita',msg:t('errRequired')});
+    if(isComuneChoiceRequired('birth')&&!normalizeValue(document.getElementById('luogoNascitaCodice').value))errors.push({id:'birthPlaceItalyChoiceField',msg:t('comuneChoiceRequiredMsg')});
   }else{
-    var req2=['ragioneSociale','piva','sdi','indirizzoAz','emailAz','telefonoAz'];
-    for(var j=0;j<req2.length;j++){var el2=document.getElementById(req2[j]);if(!el2||!el2.value.trim()){showToast(t('errRequired'));if(el2)el2.focus();return;}}
+    if(!normalizeValue(document.getElementById('statoNascitaEstero').value))errors.push({id:'statoNascitaEstero',msg:t('errRequired')});
   }
-  if(!document.getElementById('checkin').value||!document.getElementById('checkout').value){showToast(t('errDate'));return;}
+  if(isComuneChoiceRequired('issue')&&!normalizeValue(document.getElementById('luogoRilascioCodice').value))errors.push({id:'issuePlaceChoiceField',msg:t('comuneChoiceRequiredMsg')});
+  if(normalizeValue(document.getElementById('email').value) && !isValidEmail(document.getElementById('email').value))errors.push({id:'email',msg:msg('invalidEmail')});
+  if(normalizeValue(document.getElementById('telefono').value) && !isValidPhone(document.getElementById('telefono').value))errors.push({id:'telefono',msg:msg('invalidPhone')});
+  if(getNumeroPersone()>1){
+    var age=getAgeFromBirthDate(document.getElementById('dataNascita').value);
+    if(age!==null&&age<18)errors.push({id:'dataNascita',msg:(getPrimaryGuestRoleType()===17?'Il capofamiglia':'Il capogruppo')+' deve essere maggiorenne'});
+    collectAdditionalGuests().forEach(function(guest,index){
+      ['nome','cognome','sesso','data_nascita','luogo_nascita','cittadinanza'].forEach(function(key){
+        if(!normalizeValue(guest[key]))errors.push({id:'additionalGuest_'+index+'_'+key,msg:t('errRequired')});
+      });
+      if(!isAdditionalGuestBornInItaly(index) && !normalizeValue(guest.stato_nascita)){
+        errors.push({id:'additionalGuest_'+index+'_stato_nascita',msg:t('errRequired')});
+      }
+      if(isAdditionalGuestBornInItaly(index)&&isComuneChoiceRequired(getAdditionalGuestComuneKind(index))&&!normalizeValue(guest.luogo_nascita_codice)){
+        errors.push({id:'additionalGuest_'+index+'_luogo_nascita_choice',msg:t('comuneChoiceRequiredMsg')});
+      }
+    });
+  }
+
+  if(isItalian){
+    ['indirizzo','citta','cap'].forEach(function(id){
+      if(!normalizeValue(document.getElementById(id).value))errors.push({id:id,msg:t('errRequired')});
+    });
+    if(normalizeValue(document.getElementById('cap').value) && !isValidCap(document.getElementById('cap').value))errors.push({id:'cap',msg:msg('invalidCap')});
+    var cfEl=document.getElementById('cf');
+    if(!normalizeValue(cfEl.value))errors.push({id:'cf',msg:t('errRequired')});
+    else if(!validateCF()){
+      cfAttempts++;
+      if(cfAttempts<2){
+        document.getElementById('cfWarning').style.display='flex';
+        errors.push({id:'cf',msg:t('cfWarning')});
+      }
+    } else {
+      document.getElementById('cfWarning').style.display='none';
+    }
+  }
+
+  if(wantsInvoice){
+    ['ragioneSociale','piva','indirizzoAz'].forEach(function(id){
+      if(!normalizeValue(document.getElementById(id).value))errors.push({id:id,msg:t('errRequired')});
+    });
+    var sdiValue=normalizeValue(document.getElementById('sdi').value).toUpperCase();
+    if(normalizeValue(document.getElementById('piva').value)){
+      var vatCheck=classifyVatNumber(document.getElementById('piva').value);
+      if(!vatCheck.valid)errors.push({id:'piva',msg:vatCheck.kind==='it'?'Partita IVA italiana non valida':'Numero IVA/Tax ID non valido'});
+      if(vatCheck.kind==='it' && vatCheck.valid && !sdiValue)errors.push({id:'sdi',msg:'Codice SDI obbligatorio per fattura aziendale italiana'});
+    }
+    if(sdiValue && !isValidSdi(sdiValue))errors.push({id:'sdi',msg:msg('invalidSdi')});
+    if(normalizeValue(document.getElementById('pec').value) && !isValidEmail(document.getElementById('pec').value))errors.push({id:'pec',msg:msg('invalidEmail')});
+  }
+
+  var checkin=document.getElementById('checkin').value;
+  var checkout=document.getElementById('checkout').value;
+  if(!checkin)errors.push({id:'checkin',msg:t('errDate')});
+  if(!checkout)errors.push({id:'checkout',msg:t('errDate')});
+  if(checkin&&checkout&&!isCheckoutAfterCheckin(checkin,checkout))errors.push({id:'checkout',msg:msg('invalidCheckout')});
+
+  if(errors.length){
+    var seen={};
+    errors.forEach(function(err){
+      if(seen[err.id])return;
+      seen[err.id]=true;
+      setFieldError(err.id,err.msg);
+    });
+    focusField(errors[0].id);
+  }
+  return errors;
+}
+
+function goToStep2(){
+  var errors=validateClientData();
+  if(errors.length){showToast(errors[0].msg);return;}
   buildReview();goToStep(2);
 }
 
 function buildReview(){
   var box=document.getElementById('reviewBox');
   var rows=[];
-  if(currentType==='privato'){
-    var pEl=document.getElementById('paeseResidenza');
-    rows.push([t('NOME'),document.getElementById('nome').value+' '+document.getElementById('cognome').value]);
-    rows.push([t('EMAIL'),document.getElementById('email').value]);
-    rows.push([t('TELEFONO'),document.getElementById('telefono').value]);
-    rows.push([t('PAESE'),pEl.options[pEl.selectedIndex].text]);
-    if(isItalian){
-      rows.push([t('CF'),document.getElementById('cf').value.toUpperCase()]);
-      rows.push([t('INDIRIZZO'),[document.getElementById('indirizzo').value,document.getElementById('citta').value,document.getElementById('cap').value,document.getElementById('provincia').value].filter(Boolean).join(', ')]);
-    }
-  }else{
+  var pEl=document.getElementById('paeseResidenza');
+  var birthSummary=isBornInItaly()?(getComuneSelectedLabel('birth')||document.getElementById('luogoNascita').value):document.getElementById('statoNascitaEstero').value;
+  var issueSummary=getComuneSelectedLabel('issue')||document.getElementById('luogoRilascioDocumento').value;
+  rows.push([t('NOME'),document.getElementById('nome').value+' '+document.getElementById('cognome').value]);
+  rows.push([t('EMAIL'),document.getElementById('email').value]);
+  rows.push([t('TELEFONO'),document.getElementById('telefono').value]);
+  rows.push([t('birthDate'),document.getElementById('dataNascita').value]);
+  rows.push([isBornInItaly()?t('birthPlaceComune'):t('birthCountryLabel'),birthSummary]);
+  rows.push([t('sexLabel'),document.getElementById('sesso').value]);
+  rows.push([t('citizenshipLabel'),document.getElementById('cittadinanza').value]);
+  rows.push([t('documentTypeLabel'),document.getElementById('tipoDocumento').value]);
+  rows.push([t('documentNumberLabel'),document.getElementById('numeroDocumento').value]);
+  rows.push([t('issuePlaceLabel'),issueSummary]);
+  rows.push([t('travelersCount'),String(getNumeroPersone())]);
+  rows.push([t('guestRole'),getNumeroPersone()>1?getPrimaryGuestRoleLabel():t('role16')]);
+  rows.push([t('PAESE'),pEl.options[pEl.selectedIndex].text]);
+  if(getNumeroPersone()>1){
+    collectAdditionalGuests().forEach(function(guest,index){
+      var birthText=isAdditionalGuestBornInItaly(index)?(guest.luogo_nascita_label||getAdditionalGuestBirthSummary(index)||guest.luogo_nascita):(guest.stato_nascita||guest.luogo_nascita);
+      rows.push([t('guestLabel')+' '+(index+2)+' · '+getAdditionalGuestRoleLabel(),[guest.nome,guest.cognome,birthText].filter(Boolean).join(' · ')]);
+    });
+  }
+  if(isItalian){
+    rows.push([t('CF'),document.getElementById('cf').value.toUpperCase()]);
+    rows.push([t('INDIRIZZO'),[document.getElementById('indirizzo').value,document.getElementById('citta').value,document.getElementById('cap').value,document.getElementById('provincia').value].filter(Boolean).join(', ')]);
+  }
+  if(document.getElementById('vuoiFattura').checked){
     rows.push([t('RAGIONE'),document.getElementById('ragioneSociale').value]);
     rows.push([t('PIVA'),document.getElementById('piva').value]);
     rows.push([t('SDI'),document.getElementById('sdi').value.toUpperCase()]);
-    rows.push([t('EMAIL'),document.getElementById('emailAz').value]);
-    rows.push([t('TELEFONO'),document.getElementById('telefonoAz').value]);
     rows.push([t('INDIRIZZO'),document.getElementById('indirizzoAz').value]);
   }
   rows.push([t('CHECKIN'),document.getElementById('checkin').value]);
@@ -489,129 +1646,93 @@ function buildReview(){
   box.innerHTML=rows.map(function(r){return '<div class="review-row"><span class="review-key">'+r[0]+'</span><span class="review-val'+(monoKeys.indexOf(r[0])>=0?' mono':'')+'">'+( r[1]||'—')+'</span></div>';}).join('');
 }
 
-function handleFile(file){
-  if(!file)return;
-  var reader=new FileReader();
-  reader.onload=async function(e){
-    uploadedImageBase64=e.target.result.split(',')[1];
-    document.getElementById('previewImgSmall').src=e.target.result;
-    document.getElementById('imgPreviewSmall').style.display='block';
-    document.getElementById('uploadAreaSmall').style.display='none';
-    var st=document.getElementById('ocrStatus');
-    st.style.display='flex';st.className='ocr-status';
-    document.getElementById('ocrSpinner').style.display='block';
-    document.getElementById('ocrMsg').textContent=t('ocrLoading');
-    try {
-      var res=await fetch('/.netlify/functions/ocr',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({image:uploadedImageBase64,tipo:currentType})
-      });
-      if(!res.ok)throw new Error('OCR error');
-      var data=await res.json();
-      // Auto-compila i campi
-      if(data.nome)        { var el=document.getElementById('nome');        if(el){el.value=data.nome;        markFilled(el);} }
-      if(data.cognome)     { var el=document.getElementById('cognome');     if(el){el.value=data.cognome;     markFilled(el);} }
-      if(data.codice_fiscale){ var el=document.getElementById('cf');        if(el){el.value=data.codice_fiscale.toUpperCase(); markFilled(el);} }
-      if(data.indirizzo)   { var el=document.getElementById('indirizzo');   if(el){el.value=data.indirizzo;   markFilled(el);} }
-      if(data.citta)       { var el=document.getElementById('citta');       if(el){el.value=data.citta;       markFilled(el);} }
-      if(data.cap)         { var el=document.getElementById('cap');         if(el){el.value=data.cap;         markFilled(el);} }
-      if(data.provincia)   { var el=document.getElementById('provincia');   if(el){el.value=data.provincia.toUpperCase(); markFilled(el);} }
-      // Azienda
-      if(data.ragione_sociale){ var el=document.getElementById('ragioneSociale'); if(el){el.value=data.ragione_sociale; markFilled(el);} }
-      if(data.partita_iva) { var el=document.getElementById('piva');        if(el){el.value=data.partita_iva; markFilled(el);} }
-      if(data.sdi)         { var el=document.getElementById('sdi');         if(el){el.value=data.sdi.toUpperCase(); markFilled(el);} }
-      if(data.pec)         { var el=document.getElementById('pec');         if(el){el.value=data.pec;         markFilled(el);} }
-      st.className='ocr-status success';
-      document.getElementById('ocrSpinner').style.display='none';
-      document.getElementById('ocrMsg').textContent=t('ocrOk');
-    } catch(err) {
-      st.className='ocr-status error';
-      document.getElementById('ocrSpinner').style.display='none';
-      document.getElementById('ocrMsg').textContent=t('ocrErr');
-    }
+function buildPayload(){
+  var paese=document.getElementById('paeseResidenza').value;
+  var numeroPersone=getNumeroPersone();
+  var hasBusinessInvoiceData=[
+    document.getElementById('ragioneSociale').value,
+    document.getElementById('piva').value,
+    document.getElementById('indirizzoAz').value
+  ].some(function(value){ return normalizeValue(value); });
+  return {
+    apartment_ref:getResolvedApartmentRef(),
+    data_checkin:document.getElementById('checkin').value,
+    data_checkout:document.getElementById('checkout').value,
+    lingua:lang.toUpperCase(),
+    tipo_cliente:hasBusinessInvoiceData?'azienda':'privato',
+    vuoi_fattura:document.getElementById('vuoiFattura').checked,
+    paese_residenza:paese,
+    numero_persone:numeroPersone,
+    nome:document.getElementById('nome').value.trim(),
+    cognome:document.getElementById('cognome').value.trim(),
+    email:document.getElementById('email').value.trim().toLowerCase(),
+    telefono:document.getElementById('telefono').value.trim(),
+    data_nascita:document.getElementById('dataNascita').value,
+    luogo_nascita:document.getElementById('luogoNascita').value.trim(),
+    luogo_nascita_codice:document.getElementById('luogoNascitaCodice').value.trim(),
+    nato_in_italia:isBornInItaly(),
+    stato_nascita:document.getElementById('statoNascitaEstero').value.trim(),
+    sesso:document.getElementById('sesso').value,
+    cittadinanza:normalizeCitizenshipValue(document.getElementById('cittadinanza').value.trim()),
+    tipo_documento:document.getElementById('tipoDocumento').value,
+    numero_documento:document.getElementById('numeroDocumento').value.trim(),
+    luogo_rilascio_documento:document.getElementById('luogoRilascioDocumento').value.trim(),
+    luogo_rilascio_codice:document.getElementById('luogoRilascioCodice').value.trim(),
+    tipo_alloggiato:getPrimaryGuestRoleType(),
+    additional_guests:numeroPersone>1?collectAdditionalGuests():[],
+    codice_fiscale:isItalian?document.getElementById('cf').value.trim().toUpperCase():'',
+    codice_fiscale_verificato:isItalian?validateCF():true,
+    indirizzo_residenza:isItalian?[document.getElementById('indirizzo').value.trim(),document.getElementById('citta').value.trim(),document.getElementById('cap').value.trim(),document.getElementById('provincia').value.trim().toUpperCase()].filter(Boolean).join(', '):'',
+    ragione_sociale:document.getElementById('ragioneSociale').value.trim(),
+    indirizzo_fatturazione:document.getElementById('indirizzoAz').value.trim(),
+    piva_cliente:document.getElementById('piva').value.trim(),
+    sdi:document.getElementById('sdi').value.trim().toUpperCase(),
+    pec:document.getElementById('pec').value.trim().toLowerCase()
   };
-  reader.readAsDataURL(file);
 }
-
-function removeImage(){
-  uploadedImageBase64=null;
-  document.getElementById('imgPreviewSmall').style.display='none';
-  document.getElementById('uploadAreaSmall').style.display='block';
-  document.getElementById('fileInput').value='';
-  document.getElementById('ocrStatus').style.display='none';
-}
-
-var ua=document.getElementById('uploadAreaSmall');
-ua.addEventListener('dragover',function(e){e.preventDefault();ua.classList.add('dragover');});
-ua.addEventListener('dragleave',function(){ua.classList.remove('dragover');});
-ua.addEventListener('drop',function(e){e.preventDefault();ua.classList.remove('dragover');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0]);});
 
 async function submitForm(){
   var btn=document.getElementById('submitBtn');
-  btn.disabled=true;btn.textContent='...';
-  var cfVal=currentType==='privato'?(document.getElementById('cf')?document.getElementById('cf').value.trim().toUpperCase():null):null;
-  var cfOk=currentType==='privato'&&isItalian?validateCF():true;
-  var needsFlag=currentType==='privato'&&isItalian&&!cfOk;
-  var pEl=document.getElementById('paeseResidenza');
-  var payload={
-    apartment_id:aptId,
-    data_checkin:document.getElementById('checkin').value,
-    data_checkout:document.getElementById('checkout').value,
-    stato:'CHECK_IN_COMPLETATO',
-    lingua:lang.toUpperCase(),
-    dati_completi:true,
-    codice_fiscale_verificato:cfOk,
-    segnalazione_jessica:needsFlag?'CF non verificato al secondo tentativo - verificare':null
-  };
-  if(currentType==='privato'){
-    Object.assign(payload,{
-      nome:document.getElementById('nome').value.trim(),
-      cognome:document.getElementById('cognome').value.trim(),
-      email:document.getElementById('email').value.trim().toLowerCase(),
-      telefono:document.getElementById('telefono').value.trim(),
-      paese_residenza:pEl?pEl.value:'IT',
-      codice_fiscale:isItalian?cfVal:null,
-      indirizzo_residenza:isItalian?[document.getElementById('indirizzo').value,document.getElementById('citta').value,document.getElementById('cap').value,document.getElementById('provincia').value].filter(Boolean).join(', '):null,
-      tipo_cliente:'privato',iva_percentuale:10
-    });
-  }else{
-    Object.assign(payload,{
-      nome:document.getElementById('ragioneSociale').value.trim(),
-      cognome:'',
-      email:document.getElementById('emailAz').value.trim().toLowerCase(),
-      telefono:document.getElementById('telefonoAz').value.trim(),
-      paese_residenza:'IT',
-      indirizzo_residenza:document.getElementById('indirizzoAz').value.trim(),
-      piva_cliente:document.getElementById('piva').value.trim(),
-      tipo_cliente:'azienda',iva_percentuale:22,codice_fiscale:null,
-      segnalazione_jessica:'SDI:'+document.getElementById('sdi').value+(document.getElementById('pec').value?'|PEC:'+document.getElementById('pec').value:'')
-    });
-  }
-  payload.apartment_id = '27663c90-8936-4556-b05f-dddc9ae9e1e0';
+  clearTopAlert();
+  var errors=validateClientData();
+  if(errors.length){showToast(errors[0].msg);return;}
+  btn.disabled=true;btn.textContent=msg('sending');
+  var payload=buildPayload();
   try{
-    var res=await fetch(SUPABASE_URL+'/rest/v1/ospiti_check_in',{
+    var res=await fetch('/.netlify/functions/submit-public-checkin',{
       method:'POST',
-      headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Prefer':'return=minimal'},
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify(payload)
     });
-    if(!res.ok){var err=await res.text();throw new Error(err);}
-    // Leggi il portale_token appena salvato
-var getRes = await fetch(SUPABASE_URL+'/rest/v1/ospiti_check_in?select=portale_token&email=eq.'+encodeURIComponent(payload.email)+'&order=created_at.desc&limit=1',{
-  headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}
-});
-var getData = await getRes.json();
-var token = getData?.[0]?.portale_token || null;
+    var data=await res.json();
+    if(!res.ok){
+      if(Array.isArray(data.fields)&&data.fields.length){
+        clearAllErrors();
+        data.fields.forEach(function(field){
+          if(field&&field.field&&field.message){
+            if(field.field==='apartment_id') showTopAlert(field.message);
+            else setFieldError(mapServerFieldId(field.field),field.message);
+          }
+        });
+        if(data.fields[0].field!=='apartment_id') focusField(mapServerFieldId(data.fields[0].field));
+        throw new Error(data.fields[0].message||t('errSending'));
+      }
+      throw new Error(data.error||t('errSending'));
+    }
 
-document.getElementById('mainContent').style.display='none';
-var ss = document.getElementById('successScreen');
-ss.style.display='block';
-if (token) {
-  var portalUrl = 'https://checkinillupoaffitta.netlify.app/portale.html?token='+token;
-  ss.innerHTML += '<div style="margin-top:28px"><a href="'+portalUrl+'" style="display:inline-block;background:#8a6200;color:#fff;padding:14px 28px;border-radius:8px;font-family:DM Sans,sans-serif;font-size:15px;font-weight:500;text-decoration:none;">Entra nel tuo portale →</a></div>';
-}
+    document.getElementById('mainContent').style.display='none';
+    var ss = document.getElementById('successScreen');
+    ss.style.display='block';
+    var actions=document.getElementById('successActions');
+    actions.innerHTML='';
+    if(data.portal_url){
+      var portalUrl=data.portal_url.replace(/^https?:\/\/[^/]+/,PORTAL_BASE_URL.replace(/\/+$/,''));
+      actions.innerHTML='<a href="'+portalUrl+'" class="success-link">'+msg('portalCta')+' →</a>';
+      setTimeout(function(){ window.location.href = portalUrl; }, 600);
+    }
   }catch(err){
-    console.error(err);showToast(t('errSending'));
+    console.error(err);
+    showToast(err.message||t('errSending'));
     btn.disabled=false;btn.innerHTML=t('invia');
   }
 }
@@ -626,8 +1747,32 @@ setLang('it');
 var urlParams=new URLSearchParams(window.location.search);
 var urlLang=urlParams.get('lingua');
 if(urlLang&&T[urlLang.toLowerCase()])setLang(urlLang.toLowerCase());
+if(!getResolvedApartmentRef()){
+  showTopAlert(msg('invalidApartment'));
+  var submitEl=document.getElementById('submitBtn');
+  if(submitEl)submitEl.disabled=true;
+}
 if(urlParams.get('checkin'))document.getElementById('checkin').value=urlParams.get('checkin');
 if(urlParams.get('checkout'))document.getElementById('checkout').value=urlParams.get('checkout');
+initDateParts();
+updateBirthOriginUi();
+updatePrimaryGuestUi();
+document.addEventListener('input',function(e){
+  if(e.target&&e.target.id){
+    clearFieldError(e.target.id);
+    if(e.target.id==='cf')resetCfWarning();
+    if(['nome','cognome','dataNascita','sesso','luogoNascita','statoNascitaEstero'].indexOf(e.target.id)>=0)scheduleCfAutofill();
+    if(e.target.id==='citta')scheduleResidenceCityLookup();
+  }
+});
+document.addEventListener('change',function(e){
+  if(e.target&&e.target.id){
+    clearFieldError(e.target.id);
+    if(e.target.id==='cf')resetCfWarning();
+    if(['natoInItalia','nome','cognome','dataNascita','sesso','luogoNascita','statoNascitaEstero'].indexOf(e.target.id)>=0)scheduleCfAutofill();
+    if(e.target.id==='citta')scheduleResidenceCityLookup();
+  }
+});
 </script>
 </body>
 </html>

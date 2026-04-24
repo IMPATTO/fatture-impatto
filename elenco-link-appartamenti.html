@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Elenco Link Appartamenti</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #f5f4f1;
+      --card: #ffffff;
+      --border: #e2e0db;
+      --text: #1a1917;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --accent-soft: #eff4ff;
+      --danger: #dc2626;
+      --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+      --sans: Inter, system-ui, sans-serif;
+      --serif: Georgia, serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px;
+    }
+    .wrap {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .head {
+      padding: 20px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-family: var(--serif);
+      font-size: 32px;
+      font-weight: 500;
+    }
+    .sub {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .search {
+      width: 320px;
+      max-width: 100%;
+    }
+    .search input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 14px;
+      background: #fff;
+    }
+    .meta {
+      padding: 14px 22px 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-family: var(--mono);
+    }
+    .table-wrap {
+      padding: 16px 22px 22px;
+      overflow: auto;
+    }
+    table {
+      width: 100%;
+      min-width: 1100px;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px 10px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+      text-align: left;
+    }
+    th {
+      font-size: 11px;
+      font-family: var(--mono);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+    }
+    td code, .mono {
+      font-family: var(--mono);
+      font-size: 12px;
+      word-break: break-all;
+    }
+    a.link {
+      color: var(--accent);
+      text-decoration: none;
+      word-break: break-all;
+    }
+    a.link:hover {
+      text-decoration: underline;
+    }
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    button, .btn-link {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      border-radius: 8px;
+      padding: 7px 11px;
+      font-size: 12px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    button:hover, .btn-link:hover {
+      background: var(--accent-soft);
+      border-color: #cfd9f7;
+    }
+    .missing {
+      color: var(--danger);
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+    .empty {
+      padding: 22px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="head">
+        <div>
+          <h1>Link Appartamenti</h1>
+          <div class="sub">Primo link: check-in pubblico · Secondo link: portale aperto per appartamento</div>
+        </div>
+        <div class="search">
+          <input id="search" type="text" placeholder="Cerca per nome, codice, struttura, chiave pubblica"/>
+        </div>
+      </div>
+      <div class="meta" id="meta">Caricamento…</div>
+      <div class="table-wrap" id="content"></div>
+    </div>
+  </div>
+
+  <script>
+    const sb = supabase.createClient(
+      'https://tysxeikqbgebpfyblgeb.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5c3hlaWtxYmdlYnBmeWJsZ2ViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyODczODAsImV4cCI6MjA5MDg2MzM4MH0.yXmS2MFh47eRkCX2voemdBkK5m_tyJiKAFhfyp1YEbw'
+    );
+
+    const state = {
+      apartments: [],
+      query: '',
+    };
+
+    function esc(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function buildCheckinUrl(row) {
+      return row.public_checkin_key
+        ? `https://checkin.illupoaffitta.com/?apt=${encodeURIComponent(row.public_checkin_key)}`
+        : '';
+    }
+
+    function buildOpenPortalUrl(row) {
+      return row.public_checkin_key
+        ? `https://checkin.illupoaffitta.com/portale.html?apt=${encodeURIComponent(row.public_checkin_key)}&mode=open`
+        : '';
+    }
+
+    function filteredRows() {
+      const q = state.query.trim().toLowerCase();
+      if (!q) return state.apartments;
+      return state.apartments.filter(row =>
+        [row.nome_appartamento, row.codice_interno, row.struttura_nome, row.public_checkin_key]
+          .some(v => String(v || '').toLowerCase().includes(q))
+      );
+    }
+
+    async function copyText(text) {
+      if (!text) return;
+      await navigator.clipboard.writeText(text);
+    }
+
+    function render() {
+      const rows = filteredRows();
+      document.getElementById('meta').textContent = `${rows.length} appartamenti visibili`;
+
+      if (!rows.length) {
+        document.getElementById('content').innerHTML = `<div class="empty">Nessun appartamento trovato.</div>`;
+        return;
+      }
+
+      document.getElementById('content').innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Appartamento</th>
+              <th>Codice interno</th>
+              <th>Struttura</th>
+              <th>Public checkin key</th>
+              <th>Primo link</th>
+              <th>Secondo link aperto</th>
+              <th>Azioni</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(row => {
+              const checkinUrl = buildCheckinUrl(row);
+              const openPortalUrl = buildOpenPortalUrl(row);
+              return `
+                <tr>
+                  <td>${esc(row.nome_appartamento || '—')}</td>
+                  <td class="mono">${esc(row.codice_interno || '—')}</td>
+                  <td>${esc(row.struttura_nome || '—')}</td>
+                  <td class="mono">${esc(row.public_checkin_key || '—')}</td>
+                  <td>${checkinUrl ? `<a class="link" href="${esc(checkinUrl)}" target="_blank" rel="noopener">${esc(checkinUrl)}</a>` : `<span class="missing">Chiave mancante</span>`}</td>
+                  <td>${openPortalUrl ? `<a class="link" href="${esc(openPortalUrl)}" target="_blank" rel="noopener">${esc(openPortalUrl)}</a>` : `<span class="missing">Chiave mancante</span>`}</td>
+                  <td>
+                    <div class="actions">
+                      <button data-copy="${esc(checkinUrl)}" ${checkinUrl ? '' : 'disabled'}>Copia primo</button>
+                      <button data-copy="${esc(openPortalUrl)}" ${openPortalUrl ? '' : 'disabled'}>Copia secondo</button>
+                      <a class="btn-link" href="${esc(checkinUrl || '#')}" target="_blank" rel="noopener" ${checkinUrl ? '' : 'style="pointer-events:none;opacity:.4"'}>Apri primo</a>
+                      <a class="btn-link" href="${esc(openPortalUrl || '#')}" target="_blank" rel="noopener" ${openPortalUrl ? '' : 'style="pointer-events:none;opacity:.4"'}>Apri secondo</a>
+                    </div>
+                  </td>
+                </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+
+      document.querySelectorAll('[data-copy]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          await copyText(btn.dataset.copy);
+          const old = btn.textContent;
+          btn.textContent = 'Copiato';
+          setTimeout(() => { btn.textContent = old; }, 1200);
+        });
+      });
+    }
+
+    async function loadApartments() {
+      const res = await fetch('/.netlify/functions/get-public-apartment-links');
+      const payload = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        document.getElementById('meta').textContent = 'Errore caricamento';
+        document.getElementById('content').innerHTML = `<div class="empty">${esc(payload.error || 'Errore caricamento')}</div>`;
+        return;
+      }
+
+      state.apartments = payload.apartments || [];
+      render();
+    }
+
+    document.getElementById('search').addEventListener('input', e => {
+      state.query = e.target.value;
+      render();
+    });
+
+    loadApartments();
+  </script>
+</body>
+</html>

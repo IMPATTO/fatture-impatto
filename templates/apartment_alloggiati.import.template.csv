@@ -1,0 +1,4 @@
+apartment_ref,alloggiati_account_id,id_appartamento_portale,invio_automatico,orario_invio,istat_codice_struttura_override
+montefeltro-01,77cea3f1-6251-48da-a36f-9dffc5375cd5,000001,true,22:00,
+montefeltro-02,77cea3f1-6251-48da-a36f-9dffc5375cd5,000002,true,22:00,
+via-amalfi-5-sotto-bilo,850b402d-f007-4e18-bbd8-b77a4518257b,,false,22:00,

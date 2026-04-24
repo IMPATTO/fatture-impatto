@@ -1,279 +1,274 @@
-const { createClient } = require('@supabase/supabase-js');
-
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const FIC_TOKEN = process.env.FATTURE_CLOUD_TOKEN;
-const FIC_COMPANY_ID = process.env.FATTURE_CLOUD_COMPANY_ID;
-const FIC_BASE = 'https://api-v2.fattureincloud.it';
-
-const VAT_IDS = {
-  22: 0,
-  10: 3,
-  4: 4,
-  5: 54,
-  0: 6
-};
+const {
+  authenticateRequest,
+  buildClientEntity,
+  buildFicPayload,
+  buildInvoiceItems,
+  computeInvoiceTotals,
+  createDraftOnFic,
+  createSupabaseAdmin,
+  detectOptionalColumns,
+  insertAuditLog,
+  jsonResponse,
+  parseEventJson,
+  resolvePaymentAccountId,
+  resolvePaymentAccountType,
+  resolvePaymentStatus,
+  resolveSezionale,
+  saveFatturaStaging
+} = require('./_lib/fatture-fic');
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
+    return jsonResponse(405, { error: 'Method not allowed' });
   }
 
-  let body;
-  try {
-    body = JSON.parse(event.body);
-  } catch {
-    return { statusCode: 400, body: JSON.stringify({ error: 'Invalid JSON' }) };
-  }
+  const parsed = parseEventJson(event);
+  if (parsed.errorResponse) return parsed.errorResponse;
+  const body = parsed.body;
 
   const { ospiti_check_in_id } = body;
   if (!ospiti_check_in_id) {
-    return { statusCode: 400, body: JSON.stringify({ error: 'ospiti_check_in_id richiesto' }) };
+    return jsonResponse(400, { error: 'ospiti_check_in_id richiesto' });
   }
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-  const authHeader = event.headers.authorization || event.headers.Authorization;
+  const supabase = createSupabaseAdmin();
+  const auth = await authenticateRequest(event, supabase);
+  if (auth.errorResponse) return auth.errorResponse;
+  const { user } = auth;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return {
-      statusCode: 401,
-      body: JSON.stringify({ error: 'Unauthorized' })
-    };
-  }
-
-  const token = authHeader.replace('Bearer ', '').trim();
-
-  const {
-    data: { user },
-    error: userError
-  } = await supabase.auth.getUser(token);
-
-  if (userError || !user) {
-    return {
-      statusCode: 401,
-      body: JSON.stringify({ error: 'Unauthorized' })
-    };
-  }
+  const columnSupport = await detectOptionalColumns(supabase);
+  const selectFields = [
+    'id',
+    'nome',
+    'cognome',
+    'email',
+    'telefono',
+    'stato',
+    'tipo_cliente',
+    'piva_cliente',
+    'iva_percentuale',
+    'importo_lordo',
+    'data_checkin',
+    'data_checkout',
+    'codice_fiscale',
+    'codice_fiscale_verificato',
+    'indirizzo_residenza',
+    'apartments(nome_appartamento)'
+  ];
+  if (columnSupport.ragione_sociale) selectFields.push('ragione_sociale');
+  if (columnSupport.indirizzo_fatturazione) selectFields.push('indirizzo_fatturazione');
 
   const { data: ospite, error: ospiteError } = await supabase
     .from('ospiti_check_in')
-    .select('*, apartments(nome_appartamento)')
+    .select(selectFields.join(','))
     .eq('id', ospiti_check_in_id)
     .single();
 
   if (ospiteError || !ospite) {
-    return {
-      statusCode: 404,
-      body: JSON.stringify({ error: 'Ospite non trovato', detail: ospiteError?.message })
-    };
+    return jsonResponse(404, {
+      error: 'Ospite non trovato',
+      detail: ospiteError?.message
+    });
   }
 
-  const isAzienda = ospite.tipo_cliente === 'azienda' && ospite.piva_cliente;
+  const existingStagingSelect = ['id', 'numero_fattura', 'link_fatture_cloud', 'stato'];
+  if (columnSupport.fatture_staging_fic_document_id) existingStagingSelect.push('fic_document_id');
+  if (columnSupport.fatture_staging_sezionale) existingStagingSelect.push('sezionale');
+  if (columnSupport.fatture_staging_payment_status) existingStagingSelect.push('payment_status');
+
   const { data: existingStaging, error: existingStagingError } = await supabase
     .from('fatture_staging')
-    .select('id, numero_fattura, link_fatture_cloud, stato')
+    .select(existingStagingSelect.join(', '))
     .eq('ospiti_check_in_id', ospiti_check_in_id)
     .maybeSingle();
 
   if (existingStagingError) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        error: 'Errore controllo fattura esistente',
-        detail: existingStagingError.message
-      })
-    };
+    return jsonResponse(500, {
+      error: 'Errore controllo fattura esistente',
+      detail: existingStagingError.message
+    });
   }
 
   if (existingStaging) {
-    return {
-      statusCode: 409,
-      body: JSON.stringify({
-        error: 'Fattura già presente',
-        fattura_staging_id: existingStaging.id,
-        numero_fattura: existingStaging.numero_fattura ?? null,
-        link_fatture_cloud: existingStaging.link_fatture_cloud ?? null,
-        stato: existingStaging.stato ?? null
-      })
-    };
-  }
-  const tipoDocumento = body.document_type || 'invoice';
-
-  const ivaPerc = Number(ospite.iva_percentuale ?? 22);
-  const vatId = VAT_IDS[ivaPerc];
-
-  if (vatId === undefined) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({
-        error: `iva_percentuale ${ivaPerc} non supportata`,
-        allowed: Object.keys(VAT_IDS)
-      })
-    };
+    return jsonResponse(409, {
+      error: 'Fattura già presente',
+      fattura_staging_id: existingStaging.id,
+      fic_document_id: existingStaging.fic_document_id ?? null,
+      numero_fattura: existingStaging.numero_fattura ?? null,
+      link_fatture_cloud: existingStaging.link_fatture_cloud ?? null,
+      payment_status: existingStaging.payment_status ?? null,
+      sezionale: existingStaging.sezionale ?? null,
+      stato: existingStaging.stato ?? null
+    });
   }
 
-  // importo_lordo viene trattato come LORDO IVA INCLUSA
-  const importoLordo = parseFloat(ospite.importo_lordo ?? 0);
-
-  if (!Number.isFinite(importoLordo) || importoLordo <= 0) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'importo_lordo non valido' })
-    };
+  const totals = computeInvoiceTotals(ospite.importo_lordo, ospite.iva_percentuale ?? 22);
+  if (!totals.ok) {
+    return jsonResponse(400, {
+      error: totals.error,
+      allowed: totals.allowed || undefined
+    });
   }
 
-  const imponibile = parseFloat((importoLordo / (1 + ivaPerc / 100)).toFixed(2));
-  const importoTotale = parseFloat(importoLordo.toFixed(2));
+  const paymentStatus = resolvePaymentStatus(body.payment_status);
+  const paymentAccountType = resolvePaymentAccountType(body.payment_account_type);
+  const paymentAccount = resolvePaymentAccountId(paymentAccountType);
+  if (!paymentAccount.ok) {
+    return jsonResponse(500, {
+      error: paymentAccount.error,
+      detail: paymentAccount.detail
+    });
+  }
+
+  const {
+    requestedSezionale,
+    sezionale,
+    sezionaleSource,
+    sezionaleWarning
+  } = resolveSezionale(body.sezionale);
 
   const today = new Date().toISOString().split('T')[0];
-  const nomeApp = ospite.apartments?.nome_appartamento ?? 'Appartamento';
-  const paymentStatus = body.payment_status === 'not_paid' ? 'not_paid' : 'paid';
-const PAYMENT_ACCOUNT_ID = process.env.FIC_PAYMENT_ACCOUNT_ID;
+  const itemsList = buildInvoiceItems({
+    description: 'Soggiorno',
+    itemDescription: `Check-in: ${ospite.data_checkin ?? '-'} | Check-out: ${ospite.data_checkout ?? '-'}`,
+    importoTotale: totals.importoTotale,
+    vatId: totals.vatId,
+    bolloApplicato: totals.bolloApplicato
+  });
 
-  const ficPayload = {
-    data: {
-      type: tipoDocumento,
-      date: today,
-      currency: { id: 'EUR' },
-      language: { code: 'it', name: 'Italiano' },
-      entity: buildClient(ospite, isAzienda),
-      use_gross_prices: true,
-            items_list: [
-        {
-          name: `Soggiorno`,
-          description: `Check-in: ${ospite.data_checkin ?? '-'} | Check-out: ${ospite.data_checkout ?? '-'}`,
-          qty: 1,
-          gross_price: importoTotale,
-          vat: { id: vatId },
-          discount: 0,
-          order: 1
-        }
-  ],
-         payments_list: [
-        {
-          amount: importoTotale,
-          due_date: today,
-          status: paymentStatus,
-          payment_account: {
-            id: Number(PAYMENT_ACCOUNT_ID)
-          }
-        }
-      ],
-      gross_worth: importoTotale,
-      net_worth: imponibile,
-      is_marked: false,
-      e_invoice: false
-    }
-  };
+  const ficPayload = buildFicPayload({
+    entity: buildClientEntity(ospite, { tipoCliente: ospite.tipo_cliente }),
+    date: today,
+    itemsList,
+    sezionale,
+    paymentStatus,
+    paymentAccountId: paymentAccount.paymentAccountId,
+    paymentAccountType,
+    importoTotaleDocumento: totals.importoTotaleDocumento,
+    imponibileDocumento: totals.imponibileDocumento
+  });
 
-  let ficResponse;
-  try {
-    const res = await fetch(`${FIC_BASE}/c/${FIC_COMPANY_ID}/issued_documents`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${FIC_TOKEN}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/json'
-      },
-      body: JSON.stringify(ficPayload)
+  const ficResult = await createDraftOnFic(ficPayload);
+  if (!ficResult.ok) {
+    return jsonResponse(ficResult.statusCode, {
+      error: ficResult.error,
+      detail: ficResult.detail,
+      raw_response: ficResult.raw_response,
+      tipoDocumento: 'invoice'
     });
-
-    ficResponse = await res.json();
-
-    if (!res.ok) {
-      console.error('FiC API error:', JSON.stringify(ficResponse));
-      return {
-        statusCode: res.status,
-        body: JSON.stringify({ error: 'Errore FiC API', detail: ficResponse, tipoDocumento })
-      };
-    }
-  } catch (e) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Errore chiamata FiC', detail: e.message })
-    };
   }
 
-  const ficDoc = ficResponse?.data;
-  const ficDocId = ficDoc?.id ?? null;
-  const ficDocUrl = ficDoc?.url ?? null;
-  const ficNumero = ficDoc?.number ?? null;
+  const stagingPayload = {
+    ospiti_check_in_id,
+    numero_fattura: ficResult.ficNumero ? String(ficResult.ficNumero) : null,
+    data_fattura: today,
+    importo_lordo: totals.importoTotale,
+    iva_percentuale: totals.ivaPercentuale,
+    importo_totale_con_iva: totals.importoTotaleDocumento,
+    nome_cliente: ospite.nome,
+    cognome_cliente: ospite.cognome,
+    stato: 'BOZZA_CREATA',
+    link_fatture_cloud: ficResult.ficDocUrl
+  };
+  if (columnSupport.fatture_staging_payment_status) {
+    stagingPayload.payment_status = paymentStatus;
+  }
+  if (columnSupport.fatture_staging_fic_document_id) {
+    stagingPayload.fic_document_id = ficResult.ficDocId;
+  }
+  if (columnSupport.fatture_staging_sezionale) {
+    stagingPayload.sezionale = sezionale;
+  }
 
-  const { data: staging, error: stagingError } = await supabase
-    .from('fatture_staging')
-    .upsert(
-      {
-        ospiti_check_in_id,
-        numero_fattura: ficNumero ? String(ficNumero) : null,
-        data_fattura: today,
-        importo_lordo: importoTotale,
-        iva_percentuale: ivaPerc,
-        importo_totale_con_iva: importoTotale,
-        nome_cliente: ospite.nome,
-        cognome_cliente: ospite.cognome,
-        stato: 'BOZZA_CREATA',
-        payment_status: paymentStatus,
-        link_fatture_cloud: ficDocUrl ?? `https://secure.fattureincloud.it/issued_documents/${ficDocId}`
-      },
-      {
-        onConflict: 'ospiti_check_in_id',
-        returning: 'representation'
+  const localSyncDetails = [];
+  let staging = null;
+
+  const stagingResult = await saveFatturaStaging(supabase, stagingPayload);
+  if (stagingResult.error) {
+    console.error('Errore upsert fatture_staging:', stagingResult.error);
+    localSyncDetails.push({
+      step: 'fatture_staging_upsert',
+      message: stagingResult.error.message,
+      detail: {
+        code: stagingResult.error.code || null,
+        details: stagingResult.error.details || null,
+        hint: stagingResult.error.hint || null
       }
-    )
-    .select()
-    .single();
-
-  if (stagingError) {
-    console.error('Errore upsert fatture_staging:', stagingError);
+    });
+  } else {
+    staging = stagingResult.data;
   }
 
-  await supabase
+  const { error: ospiteUpdateError } = await supabase
     .from('ospiti_check_in')
     .update({ stato: 'BOZZA_CREATA', updated_at: new Date().toISOString() })
     .eq('id', ospiti_check_in_id)
     .eq('stato', 'APPROVATA');
 
-  await supabase.from('audit_log').insert({
-    user_email: 'system@illupoaffitta.com',
+  if (ospiteUpdateError) {
+    console.error('Errore update ospiti_check_in post FiC:', ospiteUpdateError);
+    localSyncDetails.push({
+      step: 'ospiti_check_in_update',
+      message: ospiteUpdateError.message,
+      detail: {
+        code: ospiteUpdateError.code || null,
+        details: ospiteUpdateError.details || null,
+        hint: ospiteUpdateError.hint || null
+      }
+    });
+  }
+
+  const { error: auditError } = await insertAuditLog(supabase, {
+    userEmail: user.email,
     action: 'CREATE_FATTURA_FIC',
-    table_name: 'fatture_staging',
-    record_id: staging?.id ?? ospiti_check_in_id,
-    timestamp: new Date().toISOString()
+    tableName: 'fatture_staging',
+    recordId: staging?.id ?? ospiti_check_in_id
   });
 
-  return {
-    statusCode: 200,
-    body: JSON.stringify({
-      success: true,
-      fic_document_id: ficDocId,
-      fic_url: ficDocUrl,
-      numero_fattura: ficNumero,
-      fattura_staging_id: staging?.id ?? null,
-      payment_status: paymentStatus,
-      importo_lordo: importoTotale,
-      imponibile_calcolato: imponibile
-    })
-  };
+  if (auditError) {
+    console.error('Errore audit_log post FiC:', auditError);
+    localSyncDetails.push({
+      step: 'audit_log_insert',
+      message: auditError.message,
+      detail: {
+        code: auditError.code || null,
+        details: auditError.details || null,
+        hint: auditError.hint || null
+      }
+    });
+  }
+
+  const localSyncWarning = localSyncDetails.length > 0;
+
+  return jsonResponse(200, {
+    success: true,
+    created_on_fic: true,
+    fic_document_id: ficResult.ficDocId,
+    fic_url: ficResult.ficDocUrl,
+    numero_fattura: ficResult.ficNumero,
+    fic_numeration: ficResult.ficReturnedNumeration,
+    fattura_staging_id: staging?.id ?? null,
+    sezionale,
+    requested_sezionale: requestedSezionale,
+    sezionale_source: sezionaleSource,
+    sezionale_warning: sezionaleWarning,
+    bollo_applicato: totals.bolloApplicato,
+    payment_status: paymentStatus,
+    payment_account_type: paymentAccountType,
+    importo_lordo: totals.importoTotale,
+    importo_totale_documento: totals.importoTotaleDocumento,
+    imponibile_calcolato: totals.imponibileDocumento,
+    local_sync_warning: localSyncWarning,
+    local_sync_details: localSyncDetails,
+    local_sync_context: localSyncWarning
+      ? {
+          fic_document_id: ficResult.ficDocId,
+          fic_url: ficResult.ficDocUrl,
+          numero_fattura: ficResult.ficNumero,
+          fic_numeration: ficResult.ficReturnedNumeration || sezionale,
+          payment_status: paymentStatus,
+          recovery_hint: 'Documento creato su Fatture in Cloud ma sincronizzazione locale incompleta. Verificare fatture_staging e registrare manualmente i riferimenti FiC se necessario.'
+        }
+      : null
+  });
 };
-
-function buildClient(ospite, isAzienda) {
-  const client = {
-    name: isAzienda
-      ? (ospite.piva_cliente ?? ospite.nome)
-      : [ospite.nome, ospite.cognome].filter(Boolean).join(' '),
-    type: isAzienda ? 'company' : 'person',
-    address_street: ospite.indirizzo_residenza ?? null
-  };
-
-  if (!isAzienda && ospite.codice_fiscale && ospite.codice_fiscale_verificato) {
-    client.tax_code = ospite.codice_fiscale;
-  }
-
-  if (isAzienda && ospite.piva_cliente) {
-    client.vat_number = ospite.piva_cliente;
-  }
-
-  if (ospite.email) client.email = ospite.email;
-
-  return client;
-}

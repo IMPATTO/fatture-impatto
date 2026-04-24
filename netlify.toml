@@ -1,7 +1,10 @@
 [build]
   publish = "."
-  functions = "netlify/functions"
   command = "npm install"
+
+[functions]
+  directory = "netlify/functions"
+  included_files = ["stati.csv"]
 
 [[headers]]
   for = "/*"

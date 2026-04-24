@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Portale Ospite — Impatto</title>
+  <title>Portale Ospite — Il Lupo Affitta</title>
 
   <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -324,9 +324,20 @@
     .card:nth-child(5) { animation-delay: 0.25s; }
 
     .card-header {
+      width: 100%;
       padding: 18px 20px 14px;
+      border: none;
       border-bottom: 1px solid var(--border);
       display: flex; align-items: center; gap: 12px;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+      color: inherit;
+      font: inherit;
+    }
+
+    .card-header:hover {
+      background: var(--surface-2);
     }
 
     .card-icon {
@@ -342,10 +353,25 @@
       font-family: var(--font-display);
       font-size: 17px;
       color: var(--text-primary);
+      flex: 1;
+    }
+
+    .card-chevron {
+      color: var(--text-muted);
+      transition: transform var(--transition);
+      flex-shrink: 0;
+    }
+
+    .card.collapsed .card-chevron {
+      transform: rotate(-90deg);
     }
 
     .card-body {
       padding: 20px;
+    }
+
+    .card.collapsed .card-body {
+      display: none;
     }
 
     /* ─── Credentials ─── */
@@ -671,11 +697,9 @@
 <body>
 
 <nav class="navbar" id="mainNavbar">
-  <a href="/backoffice.html" class="navbar-brand">Impatto</a>
+  <a href="/portale.html" class="navbar-brand">Il Lupo Affitta</a>
   <button class="navbar-toggle" id="navbarToggle" aria-label="Apri menu" aria-expanded="false" aria-controls="navbarMenu">☰</button>
   <div class="navbar-menu" id="navbarMenu">
-    <a href="/backoffice.html" class="navbar-link">Fatturazione</a>
-    <a href="/backoffice-documenti.html" class="navbar-link">Documenti</a>
     <a href="/portale.html" class="navbar-link active active-portale">Portale</a>
     <span class="navbar-user" id="navUser"></span>
   </div>
@@ -683,7 +707,7 @@
 
   <!-- Loading Screen -->
   <div id="loading-screen">
-    <div class="loading-logo">Impatto</div>
+    <div class="loading-logo">Il Lupo Affitta</div>
     <div class="loading-spinner"></div>
   </div>
 
@@ -696,7 +720,7 @@
         Questo link non è più valido o è già stato utilizzato.<br>
         Contatta il supporto per ricevere un nuovo link di accesso.
       </p>
-      <a href="mailto:info@impatto.srl" class="btn-contact">
+      <a href="mailto:info@illupoaffitta.com" class="btn-contact">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg>
         Contatta il supporto
       </a>
@@ -709,11 +733,11 @@
     <!-- Header -->
     <header class="section-header">
       <div class="section-header-left">
-        <span class="section-header-brand">Impatto</span>
+        <span class="section-header-brand">Il Lupo Affitta</span>
         <span class="section-header-tag tag-portale">PORTALE</span>
       </div>
       <div class="section-header-right">
-        <span class="section-header-user" id="sectionUser">fatturazione@illupoaffitta.com</span>
+        <span class="section-header-user" id="sectionUser"></span>
       </div>
     </header>
 
@@ -746,7 +770,7 @@
     </main>
 
     <footer class="portal-footer">
-      <p>Impatto SRL &nbsp;·&nbsp; <a href="mailto:info@impatto.srl" style="color:var(--accent);text-decoration:none;">info@impatto.srl</a></p>
+      <p>Il Lupo Affitta &nbsp;·&nbsp; <a href="mailto:info@illupoaffitta.com" style="color:var(--accent);text-decoration:none;">info@illupoaffitta.com</a></p>
     </footer>
 
   </div>
@@ -763,20 +787,22 @@
     const T = {
       IT: {
         welcome: 'Benvenuto',
+        open_portal_label: 'Portale appartamento',
+        open_portal_note: 'Link diretto sempre disponibile per questo appartamento',
         checkin_label: 'Check-in',
         checkout_label: 'Check-out',
         section_credentials: 'Accesso Appartamento',
         section_instructions: 'Istruzioni',
         section_map: 'Come Arrivare',
         section_contacts: 'Numeri Utili',
-        access_code: 'Codice Accesso',
+        access_code: 'Codice Cassettina Sicurezza',
         key_location: 'Dove si trovano le chiavi',
         access_instructions: 'Istruzioni Accesso',
         video_tour: 'Video istruzioni',
         watch_video: 'Guarda il video',
         how_to_arrive: 'Come Arrivare',
         parking: 'Parcheggio',
-        how_to_enter: 'Come Entrare',
+        house_rules: 'Regole della Casa',
         no_power: 'Se la luce è spenta',
         locked_out: 'Se sei chiuso fuori',
         open_maps: 'Apri in Maps',
@@ -790,20 +816,22 @@
       },
       EN: {
         welcome: 'Welcome',
+        open_portal_label: 'Apartment Portal',
+        open_portal_note: 'Always-available direct link for this apartment',
         checkin_label: 'Check-in',
         checkout_label: 'Check-out',
         section_credentials: 'Apartment Access',
         section_instructions: 'Instructions',
         section_map: 'How to Arrive',
         section_contacts: 'Useful Numbers',
-        access_code: 'Access Code',
+        access_code: 'Lockbox Code',
         key_location: 'Key Location',
         access_instructions: 'Access Instructions',
         video_tour: 'Video instructions',
         watch_video: 'Watch video',
         how_to_arrive: 'How to Arrive',
         parking: 'Parking',
-        how_to_enter: 'How to Enter',
+        house_rules: 'House Rules',
         no_power: 'If the power is out',
         locked_out: 'If you\'re locked out',
         open_maps: 'Open in Maps',
@@ -817,20 +845,22 @@
       },
       DE: {
         welcome: 'Willkommen',
+        open_portal_label: 'Apartment-Portal',
+        open_portal_note: 'Direkter Dauerlink fur dieses Apartment',
         checkin_label: 'Check-in',
         checkout_label: 'Check-out',
         section_credentials: 'Wohnungszugang',
         section_instructions: 'Anweisungen',
         section_map: 'Anreise',
         section_contacts: 'Nützliche Nummern',
-        access_code: 'Zugangscode',
+        access_code: 'Schlusselkasten-Code',
         key_location: 'Schlüssellage',
         access_instructions: 'Zugangsinstruktionen',
         video_tour: 'Video-Anleitung',
         watch_video: 'Video ansehen',
         how_to_arrive: 'Anreise',
         parking: 'Parken',
-        how_to_enter: 'Eingang',
+        house_rules: 'Hausregeln',
         no_power: 'Bei Stromausfall',
         locked_out: 'Wenn ausgesperrt',
         open_maps: 'In Maps öffnen',
@@ -844,20 +874,22 @@
       },
       FR: {
         welcome: 'Bienvenue',
+        open_portal_label: 'Portail appartement',
+        open_portal_note: 'Lien direct toujours disponible pour cet appartement',
         checkin_label: 'Arrivée',
         checkout_label: 'Départ',
         section_credentials: 'Accès Appartement',
         section_instructions: 'Instructions',
         section_map: 'Comment Arriver',
         section_contacts: 'Numéros Utiles',
-        access_code: 'Code d\'Accès',
+        access_code: 'Code de la Boite a Cles',
         key_location: 'Emplacement des Clés',
         access_instructions: 'Instructions d\'Accès',
         video_tour: 'Vidéo instructions',
         watch_video: 'Regarder la vidéo',
         how_to_arrive: 'Comment Arriver',
         parking: 'Stationnement',
-        how_to_enter: 'Comment Entrer',
+        house_rules: 'Regles de la Maison',
         no_power: 'En cas de coupure',
         locked_out: 'Si vous êtes bloqué',
         open_maps: 'Ouvrir dans Maps',
@@ -871,20 +903,22 @@
       },
       ES: {
         welcome: 'Bienvenido',
+        open_portal_label: 'Portal del apartamento',
+        open_portal_note: 'Enlace directo siempre disponible para este apartamento',
         checkin_label: 'Llegada',
         checkout_label: 'Salida',
         section_credentials: 'Acceso al Apartamento',
         section_instructions: 'Instrucciones',
         section_map: 'Cómo Llegar',
         section_contacts: 'Números Útiles',
-        access_code: 'Código de Acceso',
+        access_code: 'Codigo de la Caja de Seguridad',
         key_location: 'Ubicación de las Llaves',
         access_instructions: 'Instrucciones de Acceso',
         video_tour: 'Video instrucciones',
         watch_video: 'Ver el vídeo',
         how_to_arrive: 'Cómo Llegar',
         parking: 'Aparcamiento',
-        how_to_enter: 'Cómo Entrar',
+        house_rules: 'Reglas de la Casa',
         no_power: 'Sin electricidad',
         locked_out: 'Si te quedas fuera',
         open_maps: 'Abrir en Maps',
@@ -898,20 +932,22 @@
       },
       RU: {
         welcome: 'Добро пожаловать',
+        open_portal_label: 'Портал апартаментов',
+        open_portal_note: 'Постоянная прямая ссылка для этих апартаментов',
         checkin_label: 'Заезд',
         checkout_label: 'Выезд',
         section_credentials: 'Доступ в квартиру',
         section_instructions: 'Инструкции',
         section_map: 'Как добраться',
         section_contacts: 'Полезные номера',
-        access_code: 'Код доступа',
+        access_code: 'Код сейф-бокса',
         key_location: 'Местонахождение ключей',
         access_instructions: 'Инструкции по доступу',
         video_tour: 'Видео-инструкция',
         watch_video: 'Смотреть видео',
         how_to_arrive: 'Как добраться',
         parking: 'Парковка',
-        how_to_enter: 'Как войти',
+        house_rules: 'Правила дома',
         no_power: 'Если нет света',
         locked_out: 'Если заперты снаружи',
         open_maps: 'Открыть в Maps',
@@ -970,10 +1006,13 @@
       card.className = 'card';
       card.style.animationDelay = `${animDelay}s`;
       card.innerHTML = `
-        <div class="card-header">
+        <button class="card-header" type="button" onclick="toggleCard(this)">
           <div class="card-icon">${svgIcon(iconName)}</div>
           <h2 class="card-title">${titleText}</h2>
-        </div>
+          <span class="card-chevron" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+        </button>
         <div class="card-body">${bodyHTML}</div>
       `;
       return card;
@@ -986,7 +1025,7 @@
         <div class="cred-item">
           <div class="cred-label">${label}</div>
           <div class="cred-value">
-            <span class="cred-value-text" id="${id}">${value}</span>
+            <span class="cred-value-text" id="${id}">${linkifyText(value)}</span>
             <button class="copy-btn" onclick="copyText('${id}', this)">${t('copy')}</button>
           </div>
         </div>`;
@@ -999,7 +1038,7 @@
           <div class="instr-num">${num}</div>
           <div class="instr-content">
             <div class="instr-title">${title}</div>
-            <div class="instr-text">${escHtml(text)}</div>
+            <div class="instr-text">${linkifyText(text)}</div>
           </div>
         </div>`;
     }
@@ -1008,6 +1047,15 @@
       const d = document.createElement('div');
       d.textContent = str;
       return d.innerHTML;
+    }
+
+    function linkifyText(str) {
+      const escaped = escHtml(String(str || ''));
+      const urlRegex = /((?:https?:\/\/|www\.)[^\s<]+)/gi;
+      return escaped.replace(urlRegex, (rawUrl) => {
+        const href = rawUrl.startsWith('www.') ? `https://${rawUrl}` : rawUrl;
+        return `<a href="${href}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;word-break:break-word">${rawUrl}</a>`;
+      }).replace(/\n/g, '<br>');
     }
 
     // ─── Copy to clipboard ──────────────────────────────────────
@@ -1021,6 +1069,12 @@
           btn.classList.remove('copied');
         }, 2000);
       });
+    };
+
+    window.toggleCard = function(button) {
+      const card = button?.closest('.card');
+      if (!card) return;
+      card.classList.toggle('collapsed');
     };
 
     // ─── Contact icon by key ────────────────────────────────────
@@ -1059,238 +1113,234 @@
       });
     }
 
+    async function fetchPublicPortalContext({ token = '', apt = '', lang = 'IT' }) {
+      const params = new URLSearchParams();
+      if (token) params.set('token', token);
+      if (apt) params.set('apt', apt);
+      if (lang) params.set('lang', lang);
+      const res = await fetch(`/.netlify/functions/get-public-portal-data?${params.toString()}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Errore caricamento portale');
+      return data;
+    }
+
+    function renderPortalCards(apt, creds, info) {
+      const main = document.getElementById('portal-main');
+      main.innerHTML = '';
+      let delay = 0.05;
+
+      if (creds) {
+        let credsHTML = `<div class="cred-grid">`;
+        credsHTML += credItem(t('access_code'), creds.codice_accesso);
+        credsHTML += credItem(t('key_location'), creds.luogo_chiavi);
+        credsHTML += credItem(t('access_instructions'), creds.istruzioni_accesso);
+        credsHTML += `</div>`;
+
+        if (creds.video_url) {
+          const ytId = extractYoutubeId(creds.video_url);
+          if (ytId) {
+            credsHTML += `
+              <div style="margin-top:16px">
+                <div class="cred-label" style="margin-bottom:10px">${t('video_tour')}</div>
+                <div class="video-container">
+                  <iframe src="https://www.youtube.com/embed/${ytId}" allowfullscreen
+                    title="Video istruzioni" loading="lazy"></iframe>
+                </div>
+              </div>`;
+          } else {
+            credsHTML += `
+              <div class="video-fallback" style="margin-top:12px">
+                <a href="${escHtml(creds.video_url)}" target="_blank" rel="noopener" class="video-link">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  ${t('watch_video')}
+                </a>
+              </div>`;
+          }
+        }
+
+        const credsCard = buildCard('key', t('section_credentials'), credsHTML, delay);
+        main.appendChild(credsCard);
+        delay += 0.05;
+      }
+
+      if (info) {
+        let num = 1;
+        let instrHTML = `<div class="instructions-list">`;
+        instrHTML += instrItem(num++, t('how_to_arrive'), info.come_arrivare);
+        instrHTML += instrItem(num++, t('parking'), info.dove_parcheggiare);
+        instrHTML += instrItem(num++, t('house_rules'), info.regole_della_casa);
+        instrHTML += instrItem(num++, t('no_power'), info.cosa_fare_se_luce_spenta);
+        instrHTML += instrItem(num++, t('locked_out'), info.cosa_fare_se_chiuso_fuori);
+        instrHTML += `</div>`;
+
+        const hasAny = info.come_arrivare || info.dove_parcheggiare || info.regole_della_casa ||
+                       info.cosa_fare_se_luce_spenta || info.cosa_fare_se_chiuso_fuori;
+        if (hasAny) {
+          const instrCard = buildCard('list', t('section_instructions'), instrHTML, delay);
+          instrCard.classList.add('collapsed');
+          main.appendChild(instrCard);
+          delay += 0.05;
+        }
+      }
+
+      if (apt) {
+        let mapHTML = '';
+        const address = apt.indirizzo_completo;
+        const lat = apt.latitudine;
+        const lng = apt.longitudine;
+        const override = apt.maps_url_override;
+
+        if (override) {
+          mapHTML = `
+            <div class="map-fallback">
+              <div>
+                ${address ? `<div style="color:var(--text-primary);font-size:15px;margin-bottom:8px">${escHtml(address)}</div>` : ''}
+                <a href="${escHtml(override)}" target="_blank" rel="noopener" class="map-address-link">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+                  ${t('open_maps')}
+                </a>
+              </div>
+            </div>`;
+        } else if (lat && lng) {
+          const mapsUrl = address
+            ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
+            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`;
+          mapHTML = `
+            <div class="map-container">
+              <iframe
+                src="https://maps.google.com/maps?q=${encodeURIComponent(address || `${lat},${lng}`)}&zoom=16&output=embed"
+                loading="lazy"
+                title="Mappa appartamento"
+                referrerpolicy="no-referrer-when-downgrade">
+              </iframe>
+            </div>
+            <div style="margin-top:12px">
+              <a href="${mapsUrl}" target="_blank" rel="noopener" class="map-address-link">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+                ${t('open_maps')}
+                ${address ? `<span style="color:var(--text-muted);font-weight:400"> — ${escHtml(address)}</span>` : ''}
+              </a>
+            </div>`;
+        } else if (address) {
+          const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+          mapHTML = `
+            <div class="map-fallback">
+              <div>
+                <div style="color:var(--text-primary);font-size:15px;margin-bottom:8px">${escHtml(address)}</div>
+                <a href="${mapsUrl}" target="_blank" rel="noopener" class="map-address-link">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+                  ${t('open_maps')}
+                </a>
+              </div>
+            </div>`;
+        }
+
+        if (mapHTML) {
+          const mapCard = buildCard('map', t('section_map'), mapHTML, delay);
+          mapCard.classList.add('collapsed');
+          main.appendChild(mapCard);
+          delay += 0.05;
+        }
+      }
+
+      const contacts = info?.numeri_utili;
+      if (contacts && typeof contacts === 'object') {
+        let contactsHTML = `<div class="contacts-grid">`;
+
+        for (const [key, value] of Object.entries(contacts)) {
+          if (!value) continue;
+          contactsHTML += `
+            <a href="tel:${String(value).replace(/\s/g,'')}" class="contact-item">
+              <div class="contact-icon">${contactEmoji(key)}</div>
+              <div class="contact-info">
+                <div class="contact-label">${escHtml(key)}</div>
+                <div class="contact-number">${escHtml(String(value))}</div>
+              </div>
+              <div class="call-badge">${t('call')} →</div>
+            </a>`;
+        }
+
+        contactsHTML += `</div>`;
+        const contactsCard = buildCard('phone', t('section_contacts'), contactsHTML, delay);
+        contactsCard.classList.add('collapsed');
+        main.appendChild(contactsCard);
+      }
+    }
+
+    function showPortalApp() {
+      const loadingEl = document.getElementById('loading-screen');
+      const appEl = document.getElementById('app');
+      loadingEl.classList.add('fade-out');
+      appEl.classList.add('visible');
+
+      setTimeout(() => {
+        loadingEl.style.display = 'none';
+        appEl.classList.add('loaded');
+      }, 400);
+    }
+
     // ─── Main Load ──────────────────────────────────────────────
     async function init() {
       const params = new URLSearchParams(window.location.search);
-      const token  = params.get('token');
+      const token = params.get('token');
+      const aptKey = params.get('apt');
+      const langParam = (params.get('lang') || 'IT').toUpperCase();
 
-      if (!token) { return showError('error_title', 'error_msg'); }
+      if (!token && !aptKey) { return showError('error_title', 'error_msg'); }
 
       try {
-        // 1. Validate token + get guest data
-        const { data: guests, error: e1 } = await sb
-          .from('ospiti_check_in')
-          .select(`
-            id, nome, cognome, lingua,
-            data_checkin, data_checkout,
-            apartment_id,
-            stato,
-            portale_token,
-            apartments (
-              nome_appartamento,
-              indirizzo_completo,
-              latitudine, longitudine,
-              maps_url_override
-            )
-          `)
-          .eq('portale_token', token)
-          .neq('stato', 'SCARTATA')
-          .limit(1);
-
-        if (e1 || !guests || guests.length === 0) {
+        if (token) {
+        // Il read pubblico passa lato Netlify per mantenere il token flow senza esporre la tabella ospiti in anon.
+        const payload = await fetchPublicPortalContext({ token, lang: langParam });
+        const guest = payload.guest;
+        const apt   = payload.apartment;
+        if (!guest || !apt) {
           return showError('error_title', 'error_msg');
         }
+        initNavbar('');
 
-        const guest = guests[0];
-        const apt   = guest.apartments;
-        initNavbar('fatturazione@illupoaffitta.com');
-
-        // Set language
         lang = (guest.lingua || 'IT').toUpperCase();
         if (!T[lang]) lang = 'IT';
+        const creds = payload.creds || null;
+        const info = payload.info || null;
 
-        // 2. Get apartment credentials
-        const { data: creds } = await sb
-          .from('apartment_credentials')
-          .select('codice_accesso, luogo_chiavi, istruzioni_accesso, video_url')
-          .eq('apartment_id', guest.apartment_id)
-          .limit(1)
-          .maybeSingle();
-
-        // 3. Get apartment info in guest's language (with fallback to IT)
-        let { data: info } = await sb
-          .from('apartment_info')
-          .select('come_arrivare, dove_parcheggiare, come_entrare, cosa_fare_se_luce_spenta, cosa_fare_se_chiuso_fuori, numeri_utili')
-          .eq('apartment_id', guest.apartment_id)
-          .eq('lingua', lang)
-          .maybeSingle();
-
-        if (!info) {
-          const { data: infoIT } = await sb
-            .from('apartment_info')
-            .select('come_arrivare, dove_parcheggiare, come_entrare, cosa_fare_se_luce_spenta, cosa_fare_se_chiuso_fuori, numeri_utili')
-            .eq('apartment_id', guest.apartment_id)
-            .eq('lingua', 'IT')
-            .maybeSingle();
-          info = infoIT;
-        }
-
-        // ── Render ──────────────────────────────────────────────
-
-        // Header dates
         document.getElementById('header-stay').innerHTML =
           `${t('checkin_label')} ${new Date(guest.data_checkin + 'T12:00:00').toLocaleDateString('it-IT', {day:'numeric',month:'short'})} → ${new Date(guest.data_checkout + 'T12:00:00').toLocaleDateString('it-IT', {day:'numeric',month:'short'})}`;
-
-        // Hero
         document.getElementById('label-welcome').textContent = t('welcome');
         document.getElementById('guest-name').textContent    = `${guest.nome} ${guest.cognome}`;
         document.getElementById('checkin-text').textContent  = `${t('checkin_label')}: ${formatDate(guest.data_checkin)}`;
         document.getElementById('checkout-text').textContent = `${t('checkout_label')}: ${formatDate(guest.data_checkout)}`;
         document.getElementById('apt-name').textContent      = apt?.nome_appartamento || '—';
-
-        const main = document.getElementById('portal-main');
-        let delay  = 0.05;
-
-        // ── Card 1: Credentials ──────────────────────────────────
-        if (creds) {
-          let credsHTML = `<div class="cred-grid">`;
-          credsHTML += credItem(t('access_code'),          creds.codice_accesso);
-          credsHTML += credItem(t('key_location'),         creds.luogo_chiavi);
-          credsHTML += credItem(t('access_instructions'),  creds.istruzioni_accesso);
-          credsHTML += `</div>`;
-
-          // Video
-          if (creds.video_url) {
-            const ytId = extractYoutubeId(creds.video_url);
-            if (ytId) {
-              credsHTML += `
-                <div style="margin-top:16px">
-                  <div class="cred-label" style="margin-bottom:10px">${t('video_tour')}</div>
-                  <div class="video-container">
-                    <iframe src="https://www.youtube.com/embed/${ytId}" allowfullscreen
-                      title="Video istruzioni" loading="lazy"></iframe>
-                  </div>
-                </div>`;
-            } else {
-              credsHTML += `
-                <div class="video-fallback" style="margin-top:12px">
-                  <a href="${escHtml(creds.video_url)}" target="_blank" rel="noopener" class="video-link">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                    ${t('watch_video')}
-                  </a>
-                </div>`;
-            }
-          }
-
-          main.appendChild(buildCard('key', t('section_credentials'), credsHTML, delay));
-          delay += 0.05;
+        document.getElementById('checkin-pill').style.display = '';
+        document.getElementById('checkout-pill').style.display = '';
+        renderPortalCards(apt, creds, info);
+        return showPortalApp();
         }
 
-        // ── Card 2: Instructions ─────────────────────────────────
-        if (info) {
-          let num = 1;
-          let instrHTML = `<div class="instructions-list">`;
-          instrHTML += instrItem(num++, t('how_to_arrive'),  info.come_arrivare);
-          instrHTML += instrItem(num++, t('parking'),        info.dove_parcheggiare);
-          instrHTML += instrItem(num++, t('how_to_enter'),   info.come_entrare);
-          instrHTML += instrItem(num++, t('no_power'),       info.cosa_fare_se_luce_spenta);
-          instrHTML += instrItem(num++, t('locked_out'),     info.cosa_fare_se_chiuso_fuori);
-          instrHTML += `</div>`;
-
-          // Only show card if at least one instruction exists
-          const hasAny = info.come_arrivare || info.dove_parcheggiare || info.come_entrare ||
-                         info.cosa_fare_se_luce_spenta || info.cosa_fare_se_chiuso_fuori;
-          if (hasAny) {
-            main.appendChild(buildCard('list', t('section_instructions'), instrHTML, delay));
-            delay += 0.05;
+        if (aptKey) {
+          lang = T[langParam] ? langParam : 'IT';
+          initNavbar('');
+          const payload = await fetchPublicPortalContext({ apt: aptKey, lang });
+          const apartment = payload.apartment;
+          if (!apartment) {
+            return showError('error_title', 'error_msg');
           }
+          const creds = payload.creds || null;
+          const info = payload.info || null;
+          document.getElementById('header-stay').textContent = t('open_portal_note');
+          document.getElementById('label-welcome').textContent = t('open_portal_label');
+          document.getElementById('guest-name').textContent = apartment.nome_appartamento || '—';
+          document.getElementById('apt-name').textContent = apartment.nome_appartamento || '—';
+          document.getElementById('checkin-pill').style.display = 'none';
+          document.getElementById('checkout-pill').style.display = 'none';
+          renderPortalCards(apartment, creds, info);
+          return showPortalApp();
         }
 
-        // ── Card 3: Map ──────────────────────────────────────────
-        if (apt) {
-          let mapHTML = '';
-          const address  = apt.indirizzo_completo;
-          const lat      = apt.latitudine;
-          const lng      = apt.longitudine;
-          const override = apt.maps_url_override;
-
-          if (override) {
-            mapHTML = `
-              <div class="map-fallback">
-                <div>
-                  ${address ? `<div style="color:var(--text-primary);font-size:15px;margin-bottom:8px">${escHtml(address)}</div>` : ''}
-                  <a href="${escHtml(override)}" target="_blank" rel="noopener" class="map-address-link">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
-                    ${t('open_maps')}
-                  </a>
-                </div>
-              </div>`;
-          } else if (lat && lng) {
-            const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-            mapHTML = `
-              <div class="map-container">
-                <iframe
-                  src="https://maps.google.com/maps?q=${lat},${lng}&zoom=16&output=embed"
-                  loading="lazy"
-                  title="Mappa appartamento"
-                  referrerpolicy="no-referrer-when-downgrade">
-                </iframe>
-              </div>
-              <div style="margin-top:12px">
-                <a href="${mapsUrl}" target="_blank" rel="noopener" class="map-address-link">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
-                  ${t('open_maps')}
-                  ${address ? `<span style="color:var(--text-muted);font-weight:400"> — ${escHtml(address)}</span>` : ''}
-                </a>
-              </div>`;
-          } else if (address) {
-            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
-            mapHTML = `
-              <div class="map-fallback">
-                <div>
-                  <div style="color:var(--text-primary);font-size:15px;margin-bottom:8px">${escHtml(address)}</div>
-                  <a href="${mapsUrl}" target="_blank" rel="noopener" class="map-address-link">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
-                    ${t('open_maps')}
-                  </a>
-                </div>
-              </div>`;
-          }
-
-          if (mapHTML) {
-            main.appendChild(buildCard('map', t('section_map'), mapHTML, delay));
-            delay += 0.05;
-          }
-        }
-
-        // ── Card 4: Contacts ─────────────────────────────────────
-        const contacts = info?.numeri_utili;
-        if (contacts && typeof contacts === 'object') {
-          let contactsHTML = `<div class="contacts-grid">`;
-
-          for (const [key, value] of Object.entries(contacts)) {
-            if (!value) continue;
-            const isEmergency = key.toLowerCase().includes('emerg');
-            contactsHTML += `
-              <a href="tel:${String(value).replace(/\s/g,'')}" class="contact-item">
-                <div class="contact-icon">${contactEmoji(key)}</div>
-                <div class="contact-info">
-                  <div class="contact-label">${escHtml(key)}</div>
-                  <div class="contact-number">${escHtml(String(value))}</div>
-                </div>
-                <div class="call-badge">${t('call')} →</div>
-              </a>`;
-          }
-
-          contactsHTML += `</div>`;
-          main.appendChild(buildCard('phone', t('section_contacts'), contactsHTML, delay));
-        }
-
-        // ── Show App ─────────────────────────────────────────────
-        const loadingEl = document.getElementById('loading-screen');
-        const appEl     = document.getElementById('app');
-
-        loadingEl.classList.add('fade-out');
-        appEl.classList.add('visible');
-
-        setTimeout(() => {
-          loadingEl.style.display = 'none';
-          appEl.classList.add('loaded');
-        }, 400);
-
+        return showError('error_title', 'error_msg');
       } catch (err) {
         console.error('Portale error:', err);
-        showError('error_title', 'error_msg');
+        return showError('error_title', 'error_msg');
       }
     }
 

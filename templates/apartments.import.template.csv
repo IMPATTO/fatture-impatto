@@ -1,0 +1,4 @@
+nome_appartamento,codice_interno,public_checkin_key,attivo,struttura_nome,indirizzo_completo,provincia,cap,latitudine,longitudine,maps_url_override,numero_emergenza
+Montefeltro 01,MON-01,montefeltro-01,true,Montefeltro,"Via Example 1, Pesaro",PU,61121,,,,
+Montefeltro 02,MON-02,montefeltro-02,true,Montefeltro,"Via Example 1, Pesaro",PU,61121,,,,
+Via Amalfi 5 sotto · bilo,AMA5-SOTTO-BILO,via-amalfi-5-sotto-bilo,true,,"Via Amalfi 5, Cattolica",RN,47841,,,,

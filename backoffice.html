@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Backoffice · Impatto</title>
+  <title>Backoffice Fatturazione · Impatto</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/supabase-client.js"></script>
@@ -38,7 +38,7 @@
       --mono:     'DM Mono', monospace;
     }
 
-    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; }
+    html, body { min-height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
 
     .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg); }
     .login-card { width: 400px; background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 48px 44px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
@@ -92,10 +92,13 @@
     .filters input:focus, .filters select:focus { border-color: var(--accent); }
     .filters input { min-width: 220px; }
     .filters select { appearance: none; cursor: pointer; padding-right: 28px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a8a29e' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
+    .view-toggle { display: inline-flex; align-items: center; gap: 6px; }
+    .view-chip { background: var(--surf); border: 1px solid var(--border); border-radius: 999px; padding: 8px 14px; font-size: 12px; font-family: var(--mono); color: var(--text2); cursor: pointer; transition: all 0.15s; }
+    .view-chip:hover { border-color: var(--border2); color: var(--text); }
+    .view-chip.active { background: var(--accent-l); border-color: rgba(37,99,235,0.22); color: var(--accent); }
+    .body-wrap { display: flex; min-height: calc(100vh - 56px - 3px - 80px - 52px - 48px - 44px); overflow: hidden; align-items: stretch; }
 
-    .body-wrap { display: flex; height: calc(100vh - 56px - 3px - 80px - 52px - 48px - 44px); overflow: hidden; }
-
-    .table-panel { flex: 1; overflow-y: auto; }
+    .table-panel { flex: 1 1 auto; min-width: 0; overflow-y: auto; overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     thead th { text-align: left; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--surf); position: sticky; top: 0; z-index: 10; white-space: nowrap; }
     tbody tr { border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; }
@@ -110,23 +113,34 @@
     .b-check   { background: #f0f9ff; color: #0369a1; }
     .b-daverif { background: var(--yellow-l); color: var(--yellow); }
     .b-approv  { background: var(--green-l);  color: var(--green); }
+    .b-bozza   { background: var(--blue-l); color: var(--accent); }
     .b-cred    { background: #ecfdf5; color: #059669; }
     .b-scart   { background: var(--red-l);    color: var(--red); }
     .b-segn    { background: var(--purple-l); color: var(--purple); }
+    .b-acc-da-approvare { background: var(--yellow-l); color: var(--yellow); }
+    .b-acc-da-correggere { background: var(--purple-l); color: var(--purple); }
+    .b-acc-approvato { background: var(--green-l); color: var(--green); }
+    .b-acc-scartato { background: var(--red-l); color: var(--red); }
 
     .flag-segn { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: var(--purple-l); font-size: 12px; }
 
-    .drawer { width: 0; min-width: 0; overflow: hidden; background: var(--white); border-left: 1px solid var(--border); display: flex; flex-direction: column; transition: width 0.25s ease, min-width 0.25s ease; }
-    .drawer.open { width: 460px; min-width: 460px; overflow-y: auto; }
+    .drawer { width: 0; min-width: 0; max-width: 0; flex: 0 0 auto; height: 100%; overflow: hidden; background: var(--white); border-left: 1px solid var(--border); display: flex; flex-direction: column; transition: width 0.25s ease, min-width 0.25s ease, max-width 0.25s ease; }
+    .drawer.open { width: 460px; min-width: 460px; max-width: 460px; overflow: hidden; }
     .drawer-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 20px 24px 16px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--white); z-index: 10; }
     .drawer-title { font-family: var(--serif); font-size: 22px; font-weight: 500; }
     .drawer-sub { font-size: 11px; font-family: var(--mono); color: var(--muted); margin-top: 2px; }
     .drawer-close { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 18px; padding: 3px 7px; border-radius: 4px; transition: background 0.15s; }
     .drawer-close:hover { background: var(--border); color: var(--text); }
-    .drawer-body { padding: 20px 24px; flex: 1; }
-    .drawer-footer { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-wrap: wrap; position: sticky; bottom: 0; background: var(--white); }
+    .drawer-body { padding: 20px 24px; flex: 1; min-height: 0; overflow-y: auto; }
+    .drawer-footer { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-wrap: wrap; position: sticky; bottom: 0; background: var(--white); z-index: 11; flex-shrink: 0; box-shadow: 0 -8px 18px rgba(15, 23, 42, 0.06); pointer-events: auto; }
     .drawer-sec { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin: 18px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
     .drawer-sec:first-child { margin-top: 0; }
+    .group-summary { padding: 10px 14px; background: var(--surf); border-radius: 6px; font-size: 13px; margin-bottom: 14px; }
+    .group-meta { margin-top: 6px; font-size: 11px; color: var(--muted); font-family: var(--mono); }
+    .group-link-list { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+    .group-link { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; color: var(--text); cursor: pointer; text-align: left; font-size: 12px; }
+    .group-link:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-l); }
+    .group-link.active { border-color: var(--accent); color: var(--accent); background: var(--accent-l); }
 
     .chk-row { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
     .chk-row input[type=checkbox] { width: 15px; height: 15px; cursor: pointer; accent-color: var(--accent); }
@@ -144,12 +158,60 @@
     .toast-info { border-left: 3px solid var(--purple); color: var(--purple); }
     @keyframes tup { from { transform: translateY(8px); opacity: 0; } }
     .mono-sm { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+    .doc-chip { display:inline-flex; align-items:center; padding:3px 8px; border-radius:999px; background:var(--surf); border:1px solid var(--border); font-size:11px; font-family:var(--mono); color:var(--text2); }
+    .doc-list { display:flex; flex-direction:column; gap:8px; }
+    .doc-item { padding:10px 12px; border:1px solid var(--border); border-radius:8px; background:var(--surf); }
+    .doc-item a { color:var(--accent); text-decoration:none; }
+    .doc-item a:hover { text-decoration:underline; }
+    .text-preview { white-space:pre-wrap; font-size:12px; line-height:1.55; color:var(--text2); background:var(--surf); border:1px solid var(--border); border-radius:8px; padding:12px 14px; max-height:220px; overflow:auto; }
+    .free-invoice-wrap { padding: 16px 24px; background: var(--white); border-bottom: 1px solid var(--border); }
+    .free-invoice-card { border: 1px solid var(--border); border-radius: 10px; background: linear-gradient(180deg, #ffffff 0%, #fafaf8 100%); padding: 18px; }
+    .free-invoice-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:14px; }
+    .free-invoice-title { font-family: var(--serif); font-size: 28px; line-height: 1; }
+    .free-invoice-sub { color: var(--text2); font-size: 13px; max-width: 700px; line-height: 1.5; }
+    .free-invoice-grid { display:grid; grid-template-columns: minmax(0, 1.2fr) minmax(320px, .8fr); gap: 16px; align-items:start; }
+    .free-invoice-preview { border:1px solid var(--border); border-radius:8px; background:var(--white); padding:14px; min-height:100%; }
+    .free-invoice-box { border:1px solid var(--border); border-radius:8px; background:var(--surf); padding:12px 14px; }
+    .free-invoice-box + .free-invoice-box { margin-top: 12px; }
+    .free-invoice-warning { margin-top: 12px; background: var(--yellow-l); border: 1px solid #fde68a; color: var(--yellow); border-radius: 8px; padding: 10px 12px; font-size: 12px; line-height: 1.5; }
+    .free-invoice-ok { margin-top: 12px; background: var(--green-l); border: 1px solid #bbf7d0; color: var(--green); border-radius: 8px; padding: 10px 12px; font-size: 12px; line-height: 1.5; }
+    .free-invoice-meta { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:10px; }
+    .free-invoice-meta div { border:1px solid var(--border); border-radius:8px; background:var(--white); padding:10px 12px; font-size:12px; line-height:1.5; }
+    .free-invoice-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+    .free-invoice-match { margin-top: 12px; }
+    .free-invoice-client-list { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+    .cliente-card {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:10px 12px;
+      border:1px solid var(--border);
+      border-radius:8px;
+      background:var(--white);
+      transition:background .1s,border-color .1s;
+    }
+    .cliente-card:hover { background:var(--blue-l); }
+    .cliente-card.selected { border-color:var(--accent); background:var(--accent-l); }
+    .cliente-card-main { min-width:0; flex:1; }
+    .cliente-card-title { font-weight:500; }
+    .cliente-card-meta { color:var(--muted); font-size:12px; margin-top:4px; line-height:1.4; }
+    @keyframes voicePulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.06); opacity: 0.75; }
+    }
+    .voice-recording {
+      background: #dc2626 !important;
+      color: #fff !important;
+      animation: voicePulse 1.1s ease-in-out infinite;
+    }
 
     /* ── Navbar unificata ── */
     .navbar {
       display:flex;
       align-items:center;
-      gap:24px;
+      justify-content:flex-end;
+      gap:12px;
       padding:0 24px;
       height:44px;
       background:#1a1917;
@@ -158,61 +220,23 @@
       position:relative;
       z-index:1000;
     }
-    .navbar-brand { font-family:var(--serif); font-size:18px; font-weight:500; color:#fff; text-decoration:none; margin-right:auto; }
-    .navbar-menu { display:flex; align-items:center; gap:24px; }
-    .navbar a.navbar-link { color:#a8a29e; text-decoration:none; padding:4px 10px; border-radius:4px; transition:color .15s,background .15s; }
+    .navbar-links { display:flex; align-items:center; gap:12px; margin-left:auto; }
+    .navbar a.navbar-link { font-family:var(--mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#a8a29e; text-decoration:none; padding:5px 13px; border-radius:5px; transition:color .15s,background .15s; }
     .navbar a.navbar-link:hover { color:#fff; background:rgba(255,255,255,.08); }
     .navbar a.navbar-link.active { color:#fff; }
     .navbar .active-fatture { background: var(--accent); }
-    .navbar-user { font-family:var(--mono); font-size:10px; color:#78716c; letter-spacing:.06em; white-space:nowrap; }
-    .navbar-toggle {
-      display:none;
-      background:transparent;
-      border:1px solid rgba(255,255,255,.12);
-      color:#fff;
-      border-radius:6px;
-      padding:6px 10px;
-      font-size:16px;
-      cursor:pointer;
-    }
-    .navbar-toggle:hover { background:rgba(255,255,255,.08); }
-    @media (max-width: 900px) {
-      .navbar { padding:0 16px; }
-      .navbar-toggle {
-        display:inline-flex;
-        align-items:center;
-        justify-content:center;
-      }
-      .navbar-menu {
-        display:none;
-        position:absolute;
-        top:44px;
-        right:16px;
-        min-width:220px;
-        background:#1a1917;
-        border:1px solid rgba(255,255,255,.08);
-        border-radius:10px;
-        box-shadow:0 10px 30px rgba(0,0,0,.25);
-        padding:10px;
-        flex-direction:column;
-        align-items:stretch;
-        gap:8px;
-      }
-      .navbar-menu.open { display:flex; }
-      .navbar-menu .navbar-link {
-        display:block;
-        width:100%;
-      }
-      .navbar-user {
-        display:block;
-        margin-top:6px;
-        padding:8px 10px 0;
-        border-top:1px solid rgba(255,255,255,.08);
-        white-space:normal;
-        word-break:break-word;
-      }
-    }
     @media (max-width: 768px) {
+      .body-wrap {
+        display: block;
+        min-height: auto;
+        overflow: visible;
+      }
+      .table-panel {
+        overflow: visible;
+      }
+      thead th {
+        position: static;
+      }
       .section-header {
         padding: 10px 16px;
         min-height: auto;
@@ -232,18 +256,64 @@
         max-width: 60vw;
         font-size: 11px;
       }
+
+      .stats-row,
+      .free-invoice-wrap,
+      .filters {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+      .stats-row,
+      .free-invoice-grid,
+      .field-2,
+      .field-3 {
+        grid-template-columns: 1fr;
+      }
+      .filters {
+        gap: 8px;
+      }
+      .filters input,
+      .filters select,
+      .view-toggle,
+      .view-chip,
+      .filters .btn {
+        width: 100%;
+      }
+      .view-toggle {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+      .drawer.open {
+        width: 100%;
+        min-width: 100%;
+        max-width: 100%;
+      }
+
+      .drawer-body,
+      .drawer-footer {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+      .table-panel {
+        min-width: 0;
+      }
+      .drawer-header,
+      .drawer-footer {
+        position: static;
+      }
+      .drawer-footer .btn {
+        width: 100%;
+      }
     }
   </style>
 </head>
 <body>
-<nav class="navbar" id="mainNavbar">
-  <a href="/backoffice.html" class="navbar-brand">Impatto</a>
-  <button class="navbar-toggle" id="navbarToggle" aria-label="Apri menu" aria-expanded="false" aria-controls="navbarMenu">☰</button>
-  <div class="navbar-menu" id="navbarMenu">
+<nav class="navbar">
+  <div class="navbar-links">
     <a href="/backoffice.html" class="navbar-link active active-fatture">Fatturazione</a>
     <a href="/backoffice-documenti.html" class="navbar-link">Documenti</a>
-    <a href="/portale.html" class="navbar-link">Portale</a>
-    <span class="navbar-user" id="navUser"></span>
+    <a href="/backoffice-portale.html" class="navbar-link">Portale Admin</a>
+    <a href="/backoffice-contabilita.html" class="navbar-link">Contabilita</a>
   </div>
 </nav>
 <div id="app"></div>
@@ -260,21 +330,1108 @@ const PAESI = ['Italia','Germania','Francia','Spagna','Regno Unito','Russia','Po
   'Stati Uniti','Canada','Australia','Giappone','Cina','Brasile','Argentina','Altro'];
 const IVA_OPT  = [0,4,5,10,22];
 const TIPO_OPT = ['privato','azienda','professionista'];
-const STATI    = ['CHECK_IN_COMPLETATO','DA_VERIFICARE','APPROVATA','CREDENZIALI_INVIATE','SCARTATA'];
+const STATI    = ['CHECK_IN_COMPLETATO','DA_VERIFICARE','APPROVATA','BOZZA_CREATA','CREDENZIALI_INVIATE','SCARTATA'];
+const ACTIVE_STATI = ['CHECK_IN_COMPLETATO','DA_VERIFICARE','APPROVATA'];
+const ARCHIVE_STATI = ['SCARTATA','BOZZA_CREATA','CREDENZIALI_INVIATE'];
+const CONTABILITA_STATI = ['DA_APPROVARE', 'DA_CORREGGERE', 'APPROVATO', 'SCARTATO'];
+const CONTABILITA_DOC_TYPES = ['bolletta', 'fattura_fornitore', 'ricevuta', 'contratto', 'altro'];
+const FREE_INVOICE_CUSTOMER_FIELDS = ['tipo_cliente','nome_visualizzato','ragione_sociale','nome','cognome','localita','piva','codice_fiscale','email','privato_csv','pec','codice_destinatario','indirizzo','cap','citta','provincia','paese','note'];
 
 const S = {
   session: null, rows: [], apartments: [],
   selected: null, form: {},
   loading: true, saving: false,
-  fSearch: '', fStato: '', fApt: '',
+  fSearch: '', fStato: '', fApt: '', fGroupRole: '', viewMode: 'active',
+  panelMode: 'fatture',
+  accountingRows: [],
+  accountingSelected: null,
+  accountingForm: {},
+  accountingEnabled: true,
+  accountingLoading: true,
+  accountingSaving: false,
+  fAccSearch: '',
+  fAccStato: '',
+  fAccApt: '',
+  freeInvoice: getEmptyFreeInvoiceState(),
+  columnSupport: { ragione_sociale: true, indirizzo_fatturazione: true },
   timeLeft: TIMEOUT_MS,
   inTimer: null, cdTimer: null, toastTimer: null,
 };
 
+function getEmptyFreeInvoiceCustomer() {
+  return {
+    tipo_cliente: 'privato',
+    nome_visualizzato: '',
+    ragione_sociale: '',
+    nome: '',
+    cognome: '',
+    localita: '',
+    piva: '',
+    codice_fiscale: '',
+    email: '',
+    privato_csv: '',
+    pec: '',
+    codice_destinatario: '',
+    indirizzo: '',
+    cap: '',
+    citta: '',
+    provincia: '',
+    paese: 'Italia',
+    note: ''
+  };
+}
+
+function getEmptyFreeInvoiceState() {
+  return {
+    rawText: '',
+    analyzing: false,
+    creating: false,
+    voiceRecording: false,
+    voiceTranscribing: false,
+    voiceStatus: '',
+    voiceInterim: '',
+    matchesLoading: false,
+    parsing: null,
+    preview: null,
+    matches: [],
+    selectedClienteId: '',
+    customerForm: getEmptyFreeInvoiceCustomer(),
+    customerBaseline: getEmptyFreeInvoiceCustomer(),
+    requiresClientCompletion: false,
+    requiresConfirmation: false,
+    lastResponse: null,
+    payment_status: 'not_paid',
+    payment_account_type: 'bonifico',
+    sezionale: 'D'
+  };
+}
+
+const voiceRec = {
+  method: null,
+  isRecording: false,
+  recognition: null,
+  recorder: null,
+  chunks: [],
+  audioCtx: null,
+  analyser: null,
+  stream: null
+};
+
+let freeInvoiceClientSearchTimer = null;
+
+function setFreeInvoiceRawText(value) {
+  S.freeInvoice.rawText = String(value || '').trim();
+  const textArea = document.getElementById('freeInvoiceText');
+  if (textArea) textArea.value = S.freeInvoice.rawText;
+}
+
+function appendFreeInvoiceTranscript(text) {
+  const nextText = String(text || '').trim();
+  if (!nextText) return;
+  const merged = [String(S.freeInvoice.rawText || '').trim(), nextText].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+  setFreeInvoiceRawText(merged);
+}
+
+function normalizeFreeInvoiceSearch(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function sanitizeFreeInvoiceIlike(value) {
+  return String(value || '').replace(/[%_,]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function getSpeechRecognitionCtor() {
+  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+}
+
+function getSupportedMimeType() {
+  if (!window.MediaRecorder) return '';
+  const types = [
+    'audio/mp4',
+    'audio/aac',
+    'audio/webm;codecs=opus',
+    'audio/webm'
+  ];
+  return types.find((type) => MediaRecorder.isTypeSupported(type)) || '';
+}
+
+function getAudioMethod() {
+  if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) return 'speech';
+  if ('MediaRecorder' in window && getSupportedMimeType()) return 'mediarecorder';
+  return 'none';
+}
+
 function fmt(d) { if(!d)return'—'; return new Date(d).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+function fmtTs(d) { if(!d)return'—'; return new Date(d).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
 function esc(s) { if(s==null)return''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function badgeCls(s){ return{CHECK_IN_COMPLETATO:'b-check',DA_VERIFICARE:'b-daverif',APPROVATA:'b-approv',CREDENZIALI_INVIATE:'b-cred',SCARTATA:'b-scart'}[s]||'b-daverif'; }
-function badgeLbl(s){ return{CHECK_IN_COMPLETATO:'Check-in',DA_VERIFICARE:'Da verificare',APPROVATA:'Approvata',CREDENZIALI_INVIATE:'Cred. inviate',SCARTATA:'Scartata'}[s]||s; }
+function badgeCls(s){ return{CHECK_IN_COMPLETATO:'b-check',DA_VERIFICARE:'b-daverif',APPROVATA:'b-approv',BOZZA_CREATA:'b-bozza',CREDENZIALI_INVIATE:'b-cred',SCARTATA:'b-scart'}[s]||'b-daverif'; }
+function badgeLbl(s){ return{CHECK_IN_COMPLETATO:'Check-in',DA_VERIFICARE:'Da verificare',APPROVATA:'Approvata',BOZZA_CREATA:'Bozza creata',CREDENZIALI_INVIATE:'Cred. inviate',SCARTATA:'Scartata'}[s]||s; }
+function accountingBadgeCls(s){ return{DA_APPROVARE:'b-acc-da-approvare',DA_CORREGGERE:'b-acc-da-correggere',APPROVATO:'b-acc-approvato',SCARTATO:'b-acc-scartato'}[s]||'b-acc-da-approvare'; }
+function accountingBadgeLbl(s){ return{DA_APPROVARE:'Da approvare',DA_CORREGGERE:'Da correggere',APPROVATO:'Approvato',SCARTATO:'Scartato'}[s]||s; }
+function accountingDocTypeLbl(v){ return{bolletta:'Bolletta',fattura_fornitore:'Fattura fornitore',ricevuta:'Ricevuta',contratto:'Contratto',altro:'Altro'}[v]||v||'—'; }
+function numberVal(v){ const n = Number(String(v ?? '').replace(',', '.')); return Number.isFinite(n) ? n : null; }
+function getChildRows(parentId){ return S.rows.filter(r=>String(r.capogruppo_id||'')===String(parentId||'')); }
+function getParentRow(row){ return row?.capogruppo_id ? (S.rows.find(r=>String(r.id)===String(row.capogruppo_id))||null) : null; }
+function getStoredAdditionalGuests(row){
+  return Array.isArray(row?.additional_guests) ? row.additional_guests.filter(Boolean) : [];
+}
+function getSnapshotChildren(row){
+  const root = getParentRow(row) || row;
+  if (!root || root.capogruppo_id || getChildRows(root.id).length) return [];
+  return getStoredAdditionalGuests(root).map((guest, index) => ({
+    id: `snapshot-${root.id}-${index}`,
+    nome: guest?.nome || '',
+    cognome: guest?.cognome || '',
+    tipo_alloggiato: guest?.tipo_alloggiato || (Number(root.tipo_alloggiato || 18) === 17 ? 19 : 20),
+    capogruppo_id: root.id,
+    _snapshot: true,
+  }));
+}
+function getEffectiveGroupChildren(row){
+  const root = getParentRow(row) || row;
+  if (!root) return [];
+  const liveChildren = getChildRows(root.id);
+  return liveChildren.length ? liveChildren : getSnapshotChildren(root);
+}
+function isLeaderRow(row){ return !!row && !row.capogruppo_id && getEffectiveGroupChildren(row).length>0; }
+function isMemberRow(row){ return !!row?.capogruppo_id; }
+function isPrimaryPracticeRow(row){ return !!row && !row.capogruppo_id; }
+function getVisibleBillingRows(){ return S.rows.filter(isPrimaryPracticeRow); }
+function getPrimaryRoleLabel(row){
+  const tipo = Number(row?.tipo_alloggiato || 16);
+  if (tipo === 17) return 'Capofamiglia';
+  if (tipo === 18) return 'Capogruppo';
+  return 'Singolo';
+}
+function getMemberRoleLabel(row){
+  const root = getParentRow(row);
+  if (Number(root?.tipo_alloggiato || 0) === 17) return 'Familiare';
+  return 'Membro gruppo';
+}
+function getBillingClientKind(row){
+  const kind = String(row?.tipo_cliente || '').toLowerCase();
+  if (kind === 'azienda') return 'azienda';
+  if (kind === 'professionista') return 'professionista';
+  return 'privato';
+}
+function getBillingHeaderName(row, form){
+  const source = form || row || {};
+  const fullName = [source.nome, source.cognome].filter(Boolean).join(' ');
+  const kind = getBillingClientKind(source);
+  if (kind === 'azienda') return source.ragione_sociale || fullName || source.piva_cliente || 'Intestazione fattura';
+  if (kind === 'professionista') return fullName || source.ragione_sociale || 'Professionista';
+  return fullName || 'Ospite';
+}
+function getBillingHeaderMeta(row, form){
+  const source = form || row || {};
+  const kind = getBillingClientKind(source);
+  if (kind === 'azienda') {
+    return [
+      source.piva_cliente ? `P.IVA ${source.piva_cliente}` : '',
+      source.indirizzo_fatturazione || source.indirizzo_residenza || '',
+      source.email || ''
+    ].filter(Boolean).join(' · ');
+  }
+  if (kind === 'professionista') {
+    const fullName = [source.nome, source.cognome].filter(Boolean).join(' ');
+    return [
+      source.piva_cliente ? `P.IVA ${source.piva_cliente}` : '',
+      source.ragione_sociale && source.ragione_sociale !== fullName ? source.ragione_sociale : '',
+      source.email || ''
+    ].filter(Boolean).join(' · ');
+  }
+  return source.email || '';
+}
+function getBillingSearchText(row){
+  return [
+    getBillingHeaderName(row),
+    getBillingHeaderMeta(row),
+    row?.nome || '',
+    row?.cognome || '',
+    row?.email || '',
+    row?.ragione_sociale || '',
+    row?.piva_cliente || ''
+  ].filter(Boolean).join(' ').toLowerCase();
+}
+async function detectBillingOptionalColumns() {
+  const [ragione_sociale, indirizzo_fatturazione] = await Promise.all([
+    hasBillingColumn('ragione_sociale'),
+    hasBillingColumn('indirizzo_fatturazione')
+  ]);
+  S.columnSupport = { ragione_sociale, indirizzo_fatturazione };
+}
+async function hasBillingColumn(column) {
+  const { error } = await sb.from('ospiti_check_in').select(column).limit(1);
+  return !error;
+}
+function getPersistableBillingForm(form) {
+  const payload = { ...form };
+  if (!S.columnSupport.ragione_sociale) delete payload.ragione_sociale;
+  if (!S.columnSupport.indirizzo_fatturazione) delete payload.indirizzo_fatturazione;
+  return payload;
+}
+function groupRoleBadge(row){
+  if (isLeaderRow(row)) return `<span class="badge" style="background:var(--blue-l);color:var(--accent)">${getPrimaryRoleLabel(row)} · ${1+getEffectiveGroupChildren(row).length}</span>`;
+  if (isMemberRow(row)) return `<span class="badge" style="background:var(--yellow-l);color:var(--yellow)">${getMemberRoleLabel(row)}</span>`;
+  return `<span class="badge b-bozza">Singolo</span>`;
+}
+
+function groupMetaLine(row){
+  if (isLeaderRow(row)) return getChildRows(row.id).length ? `Gruppo #${esc(String(row.id).slice(0,8))}` : `Gruppo storico #${esc(String(row.id).slice(0,8))}`;
+  if (isMemberRow(row)) return `Collegato a #${esc(String(row.capogruppo_id).slice(0,8))}`;
+  return 'Record singolo';
+}
+
+function selectRow(row){
+  if (!row) return;
+  S.selected = row;
+  S.form = {
+    nome:row.nome||'', cognome:row.cognome||'', email:row.email||'', telefono:row.telefono||'',
+    paese_residenza:row.paese_residenza||'Italia', indirizzo_residenza:row.indirizzo_residenza||'',
+    codice_fiscale:row.codice_fiscale||'', codice_fiscale_verificato:row.codice_fiscale_verificato||false,
+    iva_percentuale:row.iva_percentuale??10, tipo_cliente:row.tipo_cliente||'privato',
+    ragione_sociale:row.ragione_sociale||'', piva_cliente:row.piva_cliente||'', indirizzo_fatturazione:row.indirizzo_fatturazione||'', importo_lordo:row.importo_lordo||'',
+    data_checkin:row.data_checkin||'', data_checkout:row.data_checkout||'',
+    segnalazione_jessica:row.segnalazione_jessica||'',
+    payment_status: row.payment_status || 'paid',
+    payment_account_type: 'bonifico',
+    sezionale: 'D'
+  };
+}
+
+function selectAccountingRow(row) {
+  if (!row) return;
+  S.accountingSelected = row;
+  S.accountingForm = {
+    supplier_name: row.supplier_name || '',
+    source_email: row.source_email || '',
+    source_subject: row.source_subject || '',
+    document_type: row.document_type || 'bolletta',
+    stato: row.stato || 'DA_APPROVARE',
+    apartment_id: row.apartment_id || '',
+    amount_total: row.amount_total ?? '',
+    currency: row.currency || 'EUR',
+    issue_date: row.issue_date || '',
+    due_date: row.due_date || '',
+    competence_month: row.competence_month || '',
+    approval_notes: row.approval_notes || '',
+  };
+}
+
+function getPaymentStatusLabel(value){
+  return value === 'not_paid' ? 'Da pagare' : 'Gia pagata';
+}
+
+function getSezionaleLabel(value){
+  if (value === 'R') return 'R · Residence';
+  if (value === 'P') return 'P · Portali';
+  return 'D · Diretti';
+}
+
+function formatCurrency(value){
+  const num = Number(value || 0);
+  if (!Number.isFinite(num)) return '€ 0,00';
+  return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(num);
+}
+
+function formatAccountingCurrency(value, currency = 'EUR') {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return '—';
+  return new Intl.NumberFormat('it-IT', { style: 'currency', currency: currency || 'EUR' }).format(num);
+}
+
+function getInvoicePreview(form){
+  const gross = Number(form.importo_lordo || 0);
+  const iva = Number(form.iva_percentuale || 0);
+  if (!Number.isFinite(gross) || gross <= 0) {
+    return { imponibile: 0, bollo: 0, totale: 0, bolloApplicato: false };
+  }
+  const imponibile = Number((gross / (1 + iva / 100)).toFixed(2));
+  const bolloApplicato = iva === 0 && gross > 77.47;
+  const bollo = bolloApplicato ? 2 : 0;
+  const totale = Number((gross + bollo).toFixed(2));
+  return { imponibile, bollo, totale, bolloApplicato };
+}
+
+function getFreeInvoiceEditableParsing() {
+  const parsing = S.freeInvoice.parsing || {};
+  return {
+    cliente_nome_ricerca: String(parsing.cliente_nome_ricerca || '').trim(),
+    importo_lordo: String(parsing.importo_lordo ?? '').trim(),
+    iva_percentuale: Number(parsing.iva_percentuale ?? 22),
+    descrizione: String(parsing.descrizione || 'Prestazione').trim() || 'Prestazione'
+  };
+}
+
+function getFreeInvoicePreviewFromState() {
+  const parsing = getFreeInvoiceEditableParsing();
+  const gross = Number(String(parsing.importo_lordo || '').replace(',', '.'));
+  const iva = Number(parsing.iva_percentuale || 0);
+  if (!Number.isFinite(gross) || gross <= 0 || !IVA_OPT.includes(iva)) {
+    return null;
+  }
+  const preview = getInvoicePreview({ importo_lordo: gross, iva_percentuale: iva });
+  return {
+    imponibile: preview.imponibile,
+    bollo: preview.bollo,
+    totale_documento: preview.totale,
+    bollo_applicato: preview.bolloApplicato
+  };
+}
+
+function getFreeInvoiceMissingFields() {
+  const parsing = getFreeInvoiceEditableParsing();
+  const customer = S.freeInvoice.customerForm || getEmptyFreeInvoiceCustomer();
+  const missing = [];
+  if (!parsing.cliente_nome_ricerca) missing.push('cliente');
+  if (!parsing.importo_lordo || Number(String(parsing.importo_lordo).replace(',', '.')) <= 0) missing.push('importo');
+  if (!IVA_OPT.includes(Number(parsing.iva_percentuale))) missing.push('iva');
+  if (!customer.nome_visualizzato) missing.push('nome_visualizzato');
+  if ((customer.tipo_cliente === 'azienda' || customer.tipo_cliente === 'professionista') && !customer.piva && !customer.codice_fiscale) {
+    missing.push('piva_o_codice_fiscale');
+  }
+  if (customer.tipo_cliente === 'azienda' && !customer.ragione_sociale && !customer.nome_visualizzato) {
+    missing.push('ragione_sociale');
+  }
+  return missing;
+}
+
+function diffFreeInvoiceOverwriteFields() {
+  const baseline = S.freeInvoice.customerBaseline || {};
+  const current = S.freeInvoice.customerForm || {};
+  return FREE_INVOICE_CUSTOMER_FIELDS.filter((field) => {
+    const before = String(baseline[field] || '').trim();
+    const after = String(current[field] || '').trim();
+    return before && after && before !== after;
+  });
+}
+
+function resetFreeInvoiceState(keepRawText = false) {
+  const rawText = keepRawText ? S.freeInvoice.rawText : '';
+  forceStopAudio(true);
+  voiceRec.method = null;
+  S.freeInvoice = {
+    ...getEmptyFreeInvoiceState(),
+    rawText
+  };
+}
+
+function applyFreeInvoiceAnalysis(data) {
+  S.freeInvoice.parsing = data.parsing || null;
+  S.freeInvoice.preview = data.preview || null;
+  S.freeInvoice.matches = data.customer_lookup?.possible_matches || [];
+  S.freeInvoice.selectedClienteId = data.customer_lookup?.selected_match?.id || data.customer_lookup?.exact_match?.id || '';
+  S.freeInvoice.customerForm = { ...getEmptyFreeInvoiceCustomer(), ...(data.cliente_form || {}) };
+  S.freeInvoice.customerBaseline = { ...getEmptyFreeInvoiceCustomer(), ...(data.cliente_form_baseline || data.cliente_form || {}) };
+  S.freeInvoice.requiresClientCompletion = !!data.requires_client_completion;
+  S.freeInvoice.requiresConfirmation = !!data.requires_confirmation;
+  S.freeInvoice.lastResponse = data;
+}
+
+async function refreshFreeInvoiceClientMatches(searchValue, options = {}) {
+  const rawSearch = String(searchValue || '').trim();
+  const normalizedSearch = normalizeFreeInvoiceSearch(rawSearch);
+  if (!normalizedSearch) {
+    S.freeInvoice.matches = [];
+    S.freeInvoice.matchesLoading = false;
+    if (!options.keepSelection) S.freeInvoice.selectedClienteId = '';
+    return;
+  }
+
+  const splitTerms = normalizedSearch.split(' ').filter(Boolean);
+  const firstTerm = sanitizeFreeInvoiceIlike(splitTerms[0] || rawSearch);
+  const lastTerm = sanitizeFreeInvoiceIlike(splitTerms.length > 1 ? splitTerms[splitTerms.length - 1] : '');
+  const wholeTerm = sanitizeFreeInvoiceIlike(rawSearch);
+  const clauses = [
+    wholeTerm ? `nome_visualizzato.ilike.%${wholeTerm}%` : '',
+    wholeTerm ? `ragione_sociale.ilike.%${wholeTerm}%` : '',
+    wholeTerm ? `nome.ilike.%${wholeTerm}%` : '',
+    wholeTerm ? `cognome.ilike.%${wholeTerm}%` : '',
+    firstTerm ? `nome.ilike.%${firstTerm}%` : '',
+    lastTerm ? `cognome.ilike.%${lastTerm}%` : ''
+  ].filter(Boolean);
+
+  if (!clauses.length) return;
+
+  S.freeInvoice.matchesLoading = true;
+  if (options.render !== false) partialFreeInvoicePanel();
+
+  try {
+    const { data, error } = await sb
+      .from('clienti')
+      .select('*')
+      .eq('attivo', true)
+      .or(clauses.join(','))
+      .limit(5);
+
+    if (error) throw error;
+
+    const matches = Array.isArray(data) ? data : [];
+    S.freeInvoice.matches = matches;
+
+    const selectedStillPresent = matches.some((item) => String(item.id) === String(S.freeInvoice.selectedClienteId || ''));
+    if (!selectedStillPresent && !options.keepSelection) {
+      const exactMatches = matches.filter((item) => {
+        const candidate = normalizeFreeInvoiceSearch(item.nome_visualizzato || item.ragione_sociale || [item.nome, item.cognome].filter(Boolean).join(' '));
+        return candidate === normalizedSearch;
+      });
+      if (exactMatches.length === 1) {
+        selectFreeInvoiceMatch(exactMatches[0].id);
+      } else {
+        S.freeInvoice.selectedClienteId = '';
+      }
+    }
+  } catch (error) {
+    console.error('Errore ricerca clienti free invoice:', error);
+  } finally {
+    S.freeInvoice.matchesLoading = false;
+    if (options.render !== false) partialFreeInvoicePanel();
+  }
+}
+
+function scheduleFreeInvoiceClientSearch(searchValue) {
+  if (freeInvoiceClientSearchTimer) clearTimeout(freeInvoiceClientSearchTimer);
+  freeInvoiceClientSearchTimer = setTimeout(() => {
+    refreshFreeInvoiceClientMatches(searchValue);
+  }, 250);
+}
+
+function selectFreeInvoiceMatch(clienteId) {
+  S.freeInvoice.selectedClienteId = clienteId;
+  const match = (S.freeInvoice.matches || []).find((item) => String(item.id) === String(clienteId));
+  if (!match) return;
+  S.freeInvoice.customerForm = { ...getEmptyFreeInvoiceCustomer(), ...match };
+  S.freeInvoice.customerBaseline = { ...getEmptyFreeInvoiceCustomer(), ...match };
+  if (!S.freeInvoice.parsing?.cliente_nome_ricerca) return;
+  S.freeInvoice.parsing.cliente_nome_ricerca = match.nome_visualizzato || S.freeInvoice.parsing.cliente_nome_ricerca;
+}
+
+function canCreateFreeInvoice() {
+  return !S.freeInvoice.creating && !S.freeInvoice.analyzing && !!S.freeInvoice.parsing && getFreeInvoiceMissingFields().length === 0;
+}
+
+async function analyzeFreeInvoice() {
+  const rawText = String(S.freeInvoice.rawText || '').trim();
+  if (!rawText) {
+    toast('Inserisci prima il testo della fattura', 'err');
+    return;
+  }
+
+  S.freeInvoice.analyzing = true;
+  partialFreeInvoicePanel();
+  try {
+    const session = await sb.auth.getSession();
+    const res = await fetch('/.netlify/functions/create-fattura-from-text', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.data.session.access_token}`
+      },
+      body: JSON.stringify({
+        action: 'analyze',
+        raw_text: rawText
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || data.detail || 'Errore analisi testo');
+    }
+    applyFreeInvoiceAnalysis(data);
+    await refreshFreeInvoiceClientMatches(data.parsing?.cliente_nome_ricerca || '', { keepSelection: true, render: false });
+    toast(data.requires_confirmation ? 'Analisi completata: verifica i campi prima di creare la bozza' : '✓ Analisi completata', data.requires_confirmation ? 'info' : 'ok');
+  } catch (err) {
+    toast('❌ ' + err.message, 'err');
+  } finally {
+    S.freeInvoice.analyzing = false;
+    partialFreeInvoicePanel();
+  }
+}
+
+function setVoiceRecording(on) {
+  const btn = document.getElementById('freeInvoiceRecord');
+  S.freeInvoice.voiceRecording = !!on;
+  S.freeInvoice.voiceTranscribing = false;
+  S.freeInvoice.voiceStatus = on ? 'Sto ascoltando…' : '';
+  if (!on) S.freeInvoice.voiceInterim = '';
+  if (btn) {
+    btn.classList.toggle('voice-recording', on);
+    btn.disabled = false;
+    btn.textContent = on ? '🔴 Sto ascoltando…' : '🎙 Parla';
+  }
+}
+
+function setVoiceTranscribing() {
+  const btn = document.getElementById('freeInvoiceRecord');
+  S.freeInvoice.voiceRecording = false;
+  S.freeInvoice.voiceTranscribing = true;
+  S.freeInvoice.voiceStatus = 'Trascrivo…';
+  if (btn) {
+    btn.classList.remove('voice-recording');
+    btn.disabled = true;
+    btn.textContent = '⏳ Trascrivo…';
+  }
+}
+
+function resetVoiceBtn() {
+  const btn = document.getElementById('freeInvoiceRecord');
+  voiceRec.isRecording = false;
+  voiceRec.recognition = null;
+  voiceRec.recorder = null;
+  voiceRec.chunks = [];
+  if (voiceRec.stream) {
+    voiceRec.stream.getTracks().forEach((track) => track.stop());
+    voiceRec.stream = null;
+  }
+  if (voiceRec.audioCtx) {
+    voiceRec.audioCtx.close().catch(() => {});
+    voiceRec.audioCtx = null;
+  }
+  voiceRec.analyser = null;
+  S.freeInvoice.voiceRecording = false;
+  S.freeInvoice.voiceTranscribing = false;
+  S.freeInvoice.voiceStatus = '';
+  S.freeInvoice.voiceInterim = '';
+  if (btn) {
+    btn.classList.remove('voice-recording');
+    btn.disabled = false;
+    btn.textContent = '🎙 Parla';
+  }
+}
+
+function forceStopAudio(skipTranscription = true) {
+  try {
+    if (voiceRec.recognition) {
+      voiceRec.recognition.onend = null;
+      voiceRec.recognition.onerror = null;
+      voiceRec.recognition.abort();
+      voiceRec.recognition = null;
+    }
+  } catch (_) {}
+
+  try {
+    if (voiceRec.recorder && voiceRec.recorder.state !== 'inactive') {
+      if (skipTranscription) voiceRec.recorder.onstop = null;
+      voiceRec.recorder.stop();
+    }
+  } catch (_) {}
+
+  try {
+    if (voiceRec.stream) {
+      voiceRec.stream.getTracks().forEach((track) => track.stop());
+      voiceRec.stream = null;
+    }
+  } catch (_) {}
+
+  try {
+    if (voiceRec.audioCtx && voiceRec.audioCtx.state !== 'closed') {
+      voiceRec.audioCtx.close().catch(() => {});
+      voiceRec.audioCtx = null;
+    }
+  } catch (_) {}
+
+  voiceRec.analyser = null;
+  voiceRec.isRecording = false;
+  voiceRec.chunks = [];
+  resetVoiceBtn();
+}
+
+function stopActiveVoiceRecording(skipTranscription = false) {
+  if (skipTranscription) {
+    forceStopAudio(true);
+    return;
+  }
+  if (voiceRec.recognition) {
+    try { voiceRec.recognition.stop(); } catch (_) {}
+  }
+  if (voiceRec.recorder?.state && voiceRec.recorder.state !== 'inactive') {
+    try { voiceRec.recorder.stop(); } catch (_) {}
+    setTimeout(() => {
+      if (voiceRec.isRecording) forceStopAudio(true);
+    }, 1200);
+  }
+}
+
+function startSpeechRecognition() {
+  const SpeechRecognitionCtor = getSpeechRecognitionCtor();
+  if (!SpeechRecognitionCtor) {
+    toast('Dettatura browser non disponibile su questo browser', 'err');
+    return;
+  }
+
+  const recognition = new SpeechRecognitionCtor();
+  voiceRec.recognition = recognition;
+  voiceRec.isRecording = true;
+  const baseText = String(S.freeInvoice.rawText || '').trim();
+  let finalText = '';
+
+  recognition.lang = 'it-IT';
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  recognition.maxAlternatives = 1;
+
+  recognition.onresult = (event) => {
+    let interimText = '';
+    finalText = '';
+    for (let i = 0; i < event.results.length; i += 1) {
+      const chunk = event.results[i][0]?.transcript || '';
+      if (event.results[i].isFinal) finalText += ` ${chunk}`;
+      else interimText += ` ${chunk}`;
+    }
+    S.freeInvoice.voiceInterim = interimText.trim();
+    const mergedText = [baseText, finalText.trim(), S.freeInvoice.voiceInterim].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+    setFreeInvoiceRawText(mergedText);
+  };
+
+  recognition.onerror = (event) => {
+    resetVoiceBtn();
+    partialFreeInvoicePanel();
+    const msg = event.error === 'not-allowed'
+      ? 'Microfono non autorizzato'
+      : event.error === 'no-speech'
+        ? 'Nessuna voce rilevata'
+        : `Errore dettatura browser: ${event.error}`;
+    toast(msg, 'err');
+  };
+
+  recognition.onend = async () => {
+    const mergedText = [baseText, finalText.trim()].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+    setFreeInvoiceRawText(mergedText || baseText);
+    resetVoiceBtn();
+    partialFreeInvoicePanel();
+    if (mergedText && !S.freeInvoice.analyzing && !S.freeInvoice.creating) {
+      await analyzeFreeInvoice();
+    }
+  };
+
+  setVoiceRecording(true);
+  partialFreeInvoicePanel();
+  try {
+    recognition.start();
+  } catch (error) {
+    resetVoiceBtn();
+    partialFreeInvoicePanel();
+    toast(`Errore avvio dettatura: ${error.message}`, 'err');
+  }
+}
+
+async function transcribeBlob(blob) {
+  try {
+    const session = await sb.auth.getSession();
+    const arrayBuffer = await blob.arrayBuffer();
+    const uint8 = new Uint8Array(arrayBuffer);
+    let binary = '';
+    for (let i = 0; i < uint8.length; i += 1) binary += String.fromCharCode(uint8[i]);
+    const audio_base64 = btoa(binary);
+    const ext = blob.type.includes('mp4') || blob.type.includes('aac') ? 'm4a' : 'webm';
+    const mime_type = blob.type || 'audio/mp4';
+
+    const res = await fetch('/.netlify/functions/transcribe-invoice-audio', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.data.session.access_token}`
+      },
+      body: JSON.stringify({ audio_base64, mime_type, file_name: `voice.${ext}` })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Errore trascrizione');
+
+    const ta = document.getElementById('freeInvoiceText');
+    if (ta) {
+      ta.value = (ta.value + ' ' + (data.text || '')).trim();
+      ta.dispatchEvent(new Event('input'));
+    }
+    setFreeInvoiceRawText(ta?.value || S.freeInvoice.rawText);
+    resetVoiceBtn();
+    partialFreeInvoicePanel();
+    if (String(data.text || '').trim()) {
+      await analyzeFreeInvoice();
+    }
+  } catch (err) {
+    resetVoiceBtn();
+    partialFreeInvoicePanel();
+    toast('Errore trascrizione: ' + err.message, 'err');
+  }
+}
+
+async function startMediaRecorder() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    const mimeType = getSupportedMimeType();
+    const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+    voiceRec.recorder = recorder;
+    voiceRec.stream = stream;
+    voiceRec.chunks = [];
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioCtx.createMediaStreamSource(stream);
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 1024;
+    source.connect(analyser);
+    voiceRec.audioCtx = audioCtx;
+    voiceRec.analyser = analyser;
+
+    const dataArray = new Float32Array(analyser.fftSize);
+    let silenceStart = null;
+    const SILENCE_THRESHOLD = 0.01;
+    const SILENCE_MS = 2000;
+
+    function checkSilence() {
+      if (!voiceRec.isRecording) return;
+      analyser.getFloatTimeDomainData(dataArray);
+      const rms = Math.sqrt(dataArray.reduce((sum, value) => sum + value * value, 0) / dataArray.length);
+      if (rms < SILENCE_THRESHOLD) {
+        if (!silenceStart) silenceStart = Date.now();
+        else if (Date.now() - silenceStart > SILENCE_MS) {
+          recorder.stop();
+          return;
+        }
+      } else {
+        silenceStart = null;
+      }
+      requestAnimationFrame(checkSilence);
+    }
+
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) voiceRec.chunks.push(event.data);
+    };
+
+    recorder.onstop = async () => {
+      try {
+        voiceRec.stream?.getTracks().forEach((track) => track.stop());
+        voiceRec.stream = null;
+      } catch (_) {}
+      try {
+        voiceRec.audioCtx?.close().catch(() => {});
+        voiceRec.audioCtx = null;
+      } catch (_) {}
+      voiceRec.analyser = null;
+      voiceRec.isRecording = false;
+      setVoiceTranscribing();
+      partialFreeInvoicePanel();
+      try {
+        const blob = new Blob(voiceRec.chunks, { type: recorder.mimeType || 'audio/mp4' });
+        await transcribeBlob(blob);
+      } catch (err) {
+        toast('Errore trascrizione: ' + err.message, 'err');
+        resetVoiceBtn();
+        partialFreeInvoicePanel();
+      }
+    };
+
+    recorder.start(100);
+    voiceRec.isRecording = true;
+    setVoiceRecording(true);
+    partialFreeInvoicePanel();
+    requestAnimationFrame(checkSilence);
+  } catch (err) {
+    toast('Microfono non accessibile: ' + err.message, 'err');
+    resetVoiceBtn();
+    partialFreeInvoicePanel();
+  }
+}
+
+async function startVoiceRecording() {
+  if (voiceRec.isRecording) {
+    forceStopAudio(true);
+    partialFreeInvoicePanel();
+    return;
+  }
+
+  if (!voiceRec.method) voiceRec.method = getAudioMethod();
+
+  if (voiceRec.method === 'speech') {
+    startSpeechRecognition();
+  } else if (voiceRec.method === 'mediarecorder') {
+    await startMediaRecorder();
+  } else {
+    toast('Audio non supportato su questo browser', 'info');
+  }
+}
+
+async function createFreeInvoiceFromText() {
+  if (!canCreateFreeInvoice()) {
+    toast('Completa i campi richiesti prima di creare la bozza', 'err');
+    return;
+  }
+
+  S.freeInvoice.creating = true;
+  partialFreeInvoicePanel();
+  try {
+    const session = await sb.auth.getSession();
+    const res = await fetch('/.netlify/functions/create-fattura-from-text', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.data.session.access_token}`
+      },
+      body: JSON.stringify({
+        action: 'create',
+        raw_text: S.freeInvoice.rawText,
+        parsed: getFreeInvoiceEditableParsing(),
+        cliente: S.freeInvoice.customerForm,
+        selected_cliente_id: S.freeInvoice.selectedClienteId || null,
+        overwrite_fields: diffFreeInvoiceOverwriteFields(),
+        payment_status: S.freeInvoice.payment_status,
+        payment_account_type: S.freeInvoice.payment_account_type,
+        sezionale: S.freeInvoice.sezionale
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const detailMessage =
+        data.detail?.error?.message ||
+        data.detail?.message ||
+        data.detail?.reason ||
+        data.detail?.error ||
+        data.supabase_error?.message ||
+        (typeof data.detail === 'string' ? data.detail : '') ||
+        data.error;
+      throw new Error(detailMessage || 'Errore creazione bozza');
+    }
+    if (data.sezionale_warning) {
+      toast(`ℹ️ ${data.sezionale_warning}`, 'info');
+    }
+    const clienteDbMsg = data.cliente_action === 'updated'
+      ? ` · cliente aggiornato nel database${Array.isArray(data.cliente_updated_fields) && data.cliente_updated_fields.length ? ` (${data.cliente_updated_fields.join(', ')})` : ''}`
+      : data.cliente_action === 'created'
+        ? ' · cliente salvato nel database'
+        : '';
+    toast(`✓ Bozza creata per ${data.cliente?.nome_visualizzato || 'cliente'}${data.numero_fattura ? ` · N° ${data.numero_fattura}` : ''}${clienteDbMsg}`, 'ok');
+    if (data.fic_url) window.open(data.fic_url, '_blank');
+    resetFreeInvoiceState(false);
+    await loadData();
+  } catch (err) {
+    toast('❌ ' + err.message, 'err');
+  } finally {
+    S.freeInvoice.creating = false;
+    partialFreeInvoicePanel();
+  }
+}
+
+function partialFreeInvoicePanel() {
+  const panel = document.getElementById('freeInvoicePanel');
+  if (!panel) return;
+  const free = S.freeInvoice;
+  voiceRec.method = getAudioMethod();
+  const parsing = getFreeInvoiceEditableParsing();
+  const preview = getFreeInvoicePreviewFromState() || free.preview;
+  const warnings = free.parsing?.warnings || [];
+  const missing = getFreeInvoiceMissingFields();
+  const matchOptions = free.matches || [];
+
+  panel.innerHTML = `
+  <div class="free-invoice-card">
+    <div class="free-invoice-head">
+      <div>
+        <div class="free-invoice-title">Fai una nuova fattura</div>
+        <div class="free-invoice-sub">Scrivi una richiesta naturale, analizziamo il testo con parser deterministico, cerchiamo il cliente nel database e lasciamo tutto in bozza su Fatture in Cloud per approvazione successiva.</div>
+      </div>
+      <div class="mono-sm">Bozza FiC · auth Supabase</div>
+    </div>
+    <div class="field">
+      <label>Testo libero</label>
+      <textarea id="freeInvoiceText" placeholder="Es. fai una fattura a Costruzioni Italia di 350 euro con iva al 10%">${esc(free.rawText)}</textarea>
+    </div>
+    ${voiceRec.method !== 'none' ? `
+      <div class="free-invoice-actions" style="margin-top:10px">
+        <button id="freeInvoiceRecord" class="btn btn-ghost${free.voiceRecording ? ' voice-recording' : ''}"${free.creating || free.analyzing || free.voiceTranscribing ? ' disabled' : ''}>${free.voiceTranscribing ? '⏳ Trascrivo…' : free.voiceRecording ? '🔴 Sto ascoltando…' : '🎙 Parla'}</button>
+        <div class="mono-sm" style="align-self:center">${voiceRec.method === 'speech' ? 'Dettatura browser attiva' : 'Registrazione audio diretta attiva'}</div>
+      </div>
+    ` : ''}
+    ${free.voiceStatus ? `<div class="free-invoice-ok" style="margin-top:10px">${esc(free.voiceStatus)}${free.voiceInterim ? ` · ${esc(free.voiceInterim)}` : ''}</div>` : ''}
+    <div class="free-invoice-actions" style="margin-top:0">
+      <button id="freeInvoiceAnalyze" class="btn btn-primary"${free.analyzing || free.creating ? ' disabled' : ''}>${free.analyzing ? '<span class="spin"></span> Analizzo…' : 'Analizza'}</button>
+      ${free.parsing ? `<button id="freeInvoiceReset" class="btn btn-ghost"${free.creating ? ' disabled' : ''}>Reset</button>` : ''}
+    </div>
+    ${free.parsing ? `
+      <div class="free-invoice-grid" style="margin-top:16px">
+        <div>
+          <div class="free-invoice-box">
+            <div class="drawer-sec" style="margin:0 0 12px">Campi estratti</div>
+            <div class="field"><label>Cliente</label><input id="freeParsedCliente" value="${esc(parsing.cliente_nome_ricerca)}"/></div>
+            <div class="field-3">
+              <div class="field"><label>Importo lordo</label><input id="freeParsedImporto" type="number" step="0.01" value="${esc(parsing.importo_lordo)}"/></div>
+              <div class="field"><label>IVA %</label><select id="freeParsedIva">${IVA_OPT.map(v=>`<option value="${v}" ${Number(parsing.iva_percentuale)===v?'selected':''}>${v}%</option>`).join('')}</select></div>
+              <div class="field"><label>Sezionale</label><select id="freeInvoiceSezionale">
+                <option value="R" ${free.sezionale==='R'?'selected':''}>R · Residence</option>
+                <option value="D" ${free.sezionale==='D'?'selected':''}>D · Diretti</option>
+                <option value="P" ${free.sezionale==='P'?'selected':''}>P · Portali</option>
+              </select></div>
+            </div>
+            <div class="field"><label>Descrizione</label><input id="freeParsedDescrizione" value="${esc(parsing.descrizione)}"/></div>
+            <div class="field-2">
+              <div class="field"><label>Stato pagamento</label><select id="freeInvoicePaymentStatus">
+                <option value="not_paid" ${free.payment_status==='not_paid'?'selected':''}>Da pagare</option>
+                <option value="paid" ${free.payment_status==='paid'?'selected':''}>Gia pagata</option>
+              </select></div>
+              <div class="field"><label>Metodo incasso</label><select id="freeInvoicePaymentType">
+                <option value="bonifico" ${free.payment_account_type==='bonifico'?'selected':''}>Bonifico</option>
+                <option value="contanti" ${free.payment_account_type==='contanti'?'selected':''}>Contanti</option>
+              </select></div>
+            </div>
+            ${(matchOptions.length || free.matchesLoading) ? `
+              <div class="field free-invoice-match">
+                <label>Clienti trovati nel database</label>
+                <div class="free-invoice-client-list">
+                  ${free.matchesLoading ? `<div class="mono-sm">Ricerca clienti in corso…</div>` : ''}
+                  ${matchOptions.map(match=>`
+                    <div class="cliente-card ${String(free.selectedClienteId)===String(match.id)?'selected':''}" data-id="${esc(match.id)}">
+                      <div class="cliente-card-main">
+                        <div class="cliente-card-title">${esc(match.nome_visualizzato || [match.nome, match.cognome].filter(Boolean).join(' ') || match.ragione_sociale || 'Cliente')}</div>
+                        <div class="cliente-card-meta">${esc([match.email, match.piva ? `P.IVA ${match.piva}` : '', match.codice_fiscale ? `CF ${match.codice_fiscale}` : ''].filter(Boolean).join(' · ') || 'Nessun dettaglio aggiuntivo')}</div>
+                      </div>
+                      <button type="button" class="btn btn-ghost freeInvoiceUseMatch" data-id="${esc(match.id)}" style="padding:4px 10px;font-size:12px">${String(free.selectedClienteId)===String(match.id)?'Selezionato':'Usa questo →'}</button>
+                    </div>
+                  `).join('')}
+                  ${free.selectedClienteId ? `<button type="button" id="freeInvoiceClearMatch" class="btn btn-ghost" style="align-self:flex-start">Nuovo cliente</button>` : ''}
+                </div>
+              </div>
+            ` : ''}
+            ${warnings.length ? `<div class="free-invoice-warning">${warnings.map(msg=>`<div>• ${esc(msg)}</div>`).join('')}</div>` : `<div class="free-invoice-ok">Parsing completo. Puoi comunque correggere i campi prima di creare la bozza.</div>`}
+          </div>
+          <div class="free-invoice-box">
+            <div class="drawer-sec" style="margin:0 0 12px">Dati cliente</div>
+            <div class="field-2">
+              <div class="field"><label>Tipo cliente</label><select id="freeCustomer_tipo_cliente">${TIPO_OPT.map(v=>`<option value="${v}" ${free.customerForm.tipo_cliente===v?'selected':''}>${v}</option>`).join('')}</select></div>
+              <div class="field"><label>Nome visualizzato</label><input id="freeCustomer_nome_visualizzato" value="${esc(free.customerForm.nome_visualizzato)}"/></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Ragione sociale</label><input id="freeCustomer_ragione_sociale" value="${esc(free.customerForm.ragione_sociale)}"/></div>
+              <div class="field"><label>Partita IVA</label><input id="freeCustomer_piva" value="${esc(free.customerForm.piva)}"/></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Nome</label><input id="freeCustomer_nome" value="${esc(free.customerForm.nome)}"/></div>
+              <div class="field"><label>Cognome</label><input id="freeCustomer_cognome" value="${esc(free.customerForm.cognome)}"/></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Localita anagrafica</label><input id="freeCustomer_localita" value="${esc(free.customerForm.localita)}"/></div>
+              <div class="field"><label>Privato (CSV)</label><select id="freeCustomer_privato_csv">
+                <option value="" ${!String(free.customerForm.privato_csv || '').trim()?'selected':''}>Non impostato</option>
+                <option value="Si" ${String(free.customerForm.privato_csv || '').trim()==='Si'?'selected':''}>Si</option>
+                <option value="No" ${String(free.customerForm.privato_csv || '').trim()==='No'?'selected':''}>No</option>
+              </select></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Codice Fiscale</label><input id="freeCustomer_codice_fiscale" value="${esc(free.customerForm.codice_fiscale)}"/></div>
+              <div class="field"><label>Email</label><input id="freeCustomer_email" type="email" value="${esc(free.customerForm.email)}"/></div>
+            </div>
+            <div class="field-3">
+              <div class="field"><label>PEC</label><input id="freeCustomer_pec" value="${esc(free.customerForm.pec)}"/></div>
+              <div class="field"><label>Codice destinatario</label><input id="freeCustomer_codice_destinatario" value="${esc(free.customerForm.codice_destinatario)}"/></div>
+              <div class="field"><label>Paese</label><input id="freeCustomer_paese" value="${esc(free.customerForm.paese)}"/></div>
+            </div>
+            <div class="field"><label>Indirizzo</label><input id="freeCustomer_indirizzo" value="${esc(free.customerForm.indirizzo)}"/></div>
+            <div class="field-3">
+              <div class="field"><label>CAP</label><input id="freeCustomer_cap" value="${esc(free.customerForm.cap)}"/></div>
+              <div class="field"><label>Citta</label><input id="freeCustomer_citta" value="${esc(free.customerForm.citta)}"/></div>
+              <div class="field"><label>Provincia</label><input id="freeCustomer_provincia" value="${esc(free.customerForm.provincia)}"/></div>
+            </div>
+            <div class="field"><label>Note</label><textarea id="freeCustomer_note">${esc(free.customerForm.note)}</textarea></div>
+          </div>
+        </div>
+        <div class="free-invoice-preview">
+          <div class="drawer-sec" style="margin:0 0 12px">Preview bozza</div>
+          <div class="free-invoice-meta">
+            <div>Cliente<br><strong>${esc(parsing.cliente_nome_ricerca || '—')}</strong></div>
+            <div>Importo lordo<br><strong>${preview ? esc(formatCurrency(parsing.importo_lordo)) : '—'}</strong></div>
+            <div>IVA<br><strong>${esc(String(parsing.iva_percentuale || '—'))}${parsing.iva_percentuale != null ? '%' : ''}</strong></div>
+            <div>Descrizione<br><strong>${esc(parsing.descrizione || '—')}</strong></div>
+            <div>Cliente DB<br><strong>${free.selectedClienteId ? 'Cliente esistente' : 'Nuovo cliente / completamento'}</strong></div>
+            <div>Bollo<br><strong>${preview ? esc(formatCurrency(preview.bollo)) : '—'}</strong>${preview?.bollo_applicato ? ' <span class="mono-sm" style="color:var(--yellow)">automatico</span>' : ''}</div>
+            <div>Imponibile<br><strong>${preview ? esc(formatCurrency(preview.imponibile)) : '—'}</strong></div>
+            <div>Totale documento<br><strong>${preview ? esc(formatCurrency(preview.totale_documento)) : '—'}</strong></div>
+          </div>
+          ${missing.length ? `<div class="free-invoice-warning" style="margin-top:14px">${missing.map(msg=>`<div>• Campo richiesto: ${esc(msg)}</div>`).join('')}</div>` : `<div class="free-invoice-ok" style="margin-top:14px">Dati minimi completi. La bozza restera su Fatture in Cloud in attesa di approvazione.</div>`}
+          <div class="free-invoice-actions">
+            <button id="freeInvoiceCreate" class="btn btn-green"${canCreateFreeInvoice() ? '' : ' disabled'}>${free.creating ? '<span class="spin"></span> Creo…' : 'Crea bozza in Fatture in Cloud'}</button>
+          </div>
+        </div>
+      </div>
+    ` : ''}
+  </div>`;
+
+  const textArea = document.getElementById('freeInvoiceText');
+  if (textArea) {
+    textArea.addEventListener('input', (e) => {
+      S.freeInvoice.rawText = e.target.value;
+    });
+  }
+  document.getElementById('freeInvoiceRecord')?.addEventListener('click', startVoiceRecording);
+  document.getElementById('freeInvoiceAnalyze')?.addEventListener('click', analyzeFreeInvoice);
+  document.getElementById('freeInvoiceReset')?.addEventListener('click', () => {
+    resetFreeInvoiceState(false);
+    partialFreeInvoicePanel();
+  });
+
+  if (!free.parsing) return;
+
+  const bindParsingField = (id, key, formatter = (value) => value) => {
+    document.getElementById(id)?.addEventListener('input', (e) => {
+      S.freeInvoice.parsing[key] = formatter(e.target.value);
+      if (key === 'cliente_nome_ricerca' && !S.freeInvoice.customerForm.nome_visualizzato) {
+        S.freeInvoice.customerForm.nome_visualizzato = String(e.target.value || '').trim();
+      }
+      if (key === 'cliente_nome_ricerca') {
+        S.freeInvoice.selectedClienteId = '';
+        scheduleFreeInvoiceClientSearch(S.freeInvoice.parsing[key]);
+      }
+    });
+    document.getElementById(id)?.addEventListener('change', (e) => {
+      S.freeInvoice.parsing[key] = formatter(e.target.value);
+      if (key === 'cliente_nome_ricerca') {
+        S.freeInvoice.selectedClienteId = '';
+        scheduleFreeInvoiceClientSearch(S.freeInvoice.parsing[key]);
+      }
+      partialFreeInvoicePanel();
+    });
+  };
+
+  bindParsingField('freeParsedCliente', 'cliente_nome_ricerca', (value) => String(value || '').trim());
+  bindParsingField('freeParsedImporto', 'importo_lordo', (value) => String(value || '').trim());
+  bindParsingField('freeParsedIva', 'iva_percentuale', (value) => Number(value));
+  bindParsingField('freeParsedDescrizione', 'descrizione', (value) => String(value || '').trim());
+
+  document.getElementById('freeInvoiceSezionale')?.addEventListener('change', (e) => { S.freeInvoice.sezionale = e.target.value; });
+  document.getElementById('freeInvoicePaymentStatus')?.addEventListener('change', (e) => { S.freeInvoice.payment_status = e.target.value; });
+  document.getElementById('freeInvoicePaymentType')?.addEventListener('change', (e) => { S.freeInvoice.payment_account_type = e.target.value; });
+  document.querySelectorAll('.freeInvoiceUseMatch').forEach((btn) => btn.addEventListener('click', (e) => {
+    selectFreeInvoiceMatch(e.currentTarget.dataset.id);
+    partialFreeInvoicePanel();
+  }));
+  document.getElementById('freeInvoiceClearMatch')?.addEventListener('click', () => {
+    S.freeInvoice.selectedClienteId = '';
+    S.freeInvoice.customerForm = getEmptyFreeInvoiceCustomer();
+    S.freeInvoice.customerBaseline = getEmptyFreeInvoiceCustomer();
+    S.freeInvoice.customerForm.nome_visualizzato = S.freeInvoice.parsing?.cliente_nome_ricerca || '';
+    partialFreeInvoicePanel();
+  });
+
+  FREE_INVOICE_CUSTOMER_FIELDS.forEach((field) => {
+    const el = document.getElementById(`freeCustomer_${field}`);
+    if (!el) return;
+    const eventName = el.tagName === 'SELECT' ? 'change' : 'input';
+    el.addEventListener(eventName, (e) => {
+      S.freeInvoice.customerForm[field] = e.target.value;
+      if (field === 'tipo_cliente' && eventName === 'change') partialFreeInvoicePanel();
+    });
+    if (eventName !== 'change') {
+      el.addEventListener('change', (e) => {
+        S.freeInvoice.customerForm[field] = e.target.value;
+        partialFreeInvoicePanel();
+      });
+    }
+  });
+
+  document.getElementById('freeInvoiceCreate')?.addEventListener('click', createFreeInvoiceFromText);
+}
 
 async function audit(action, table, id) {
   await sb.from('audit_log').insert({ user_email: S.session?.user?.email||'', action, table_name: table, record_id: String(id), timestamp: new Date().toISOString() });
@@ -288,53 +1445,179 @@ function toast(msg, type='ok') {
   S.toastTimer = setTimeout(()=>{ el.innerHTML=''; }, 3500);
 }
 
+function getViewStates(mode = S.viewMode) {
+  return mode === 'archive' ? ARCHIVE_STATI : ACTIVE_STATI;
+}
+
+function countByView(mode) {
+  const states = getViewStates(mode);
+  return getVisibleBillingRows().filter(r => states.includes(r.stato)).length;
+}
+
 function filtered() {
-  return S.rows.filter(r=>{
+  if (S.panelMode === 'contabilita') return filteredAccounting();
+  const allowedStates = getViewStates();
+  return getVisibleBillingRows().filter(r=>{
+    if (!allowedStates.includes(r.stato)) return false;
     if (S.fStato && r.stato !== S.fStato) return false;
     if (S.fApt   && String(r.apartment_id) !== S.fApt) return false;
+    if (S.fGroupRole === 'leaders' && !isLeaderRow(r)) return false;
+    if (S.fGroupRole === 'members') return false;
+    if (S.fGroupRole === 'singles' && (isLeaderRow(r) || isMemberRow(r))) return false;
     if (S.fSearch) {
       const q = S.fSearch.toLowerCase();
-      if (!`${r.nome||''} ${r.cognome||''} ${r.email||''}`.toLowerCase().includes(q)) return false;
+      if (!getBillingSearchText(r).includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function filteredAccounting() {
+  return S.accountingRows.filter((row) => {
+    if (S.fAccStato && row.stato !== S.fAccStato) return false;
+    if (S.fAccApt && String(row.apartment_id || '') !== S.fAccApt) return false;
+    if (S.fAccSearch) {
+      const q = S.fAccSearch.toLowerCase();
+      const haystack = [
+        row.supplier_name,
+        row.source_email,
+        row.source_subject,
+        row.nome_appartamento,
+        row.document_type,
+        row.extracted_text,
+      ].filter(Boolean).join(' ').toLowerCase();
+      if (!haystack.includes(q)) return false;
     }
     return true;
   });
 }
 
 function stats() {
+  if (S.panelMode === 'contabilita') {
+    return {
+      tot: S.accountingRows.length,
+      segn: S.accountingRows.filter(r => r.stato === 'DA_CORREGGERE').length,
+      oggi: S.accountingRows.filter(r => (r.received_at || '').slice(0,10) === new Date().toISOString().slice(0,10)).length,
+    };
+  }
   const today = new Date().toISOString().slice(0,10);
+  const rows = getVisibleBillingRows();
   return {
-    tot:   S.rows.length,
-    segn:  S.rows.filter(r=>r.segnalazione_jessica).length,
-    oggi:  S.rows.filter(r=>r.stato==='APPROVATA'&&(r.updated_at||r.created_at||'').slice(0,10)===today).length,
+    tot:   rows.length,
+    segn:  rows.filter(r=>r.segnalazione_jessica).length,
+    oggi:  rows.filter(r=>r.stato==='APPROVATA'&&(r.updated_at||r.created_at||'').slice(0,10)===today).length,
   };
+}
+
+async function restoreSelected() {
+  if (!S.selected) return;
+  const nextStato = {
+    SCARTATA: 'DA_VERIFICARE',
+    CREDENZIALI_INVIATE: 'APPROVATA',
+    BOZZA_CREATA: 'APPROVATA',
+  }[S.selected.stato];
+  if (!nextStato) return;
+  S.saving = true; updateFooter();
+  const { error } = await sb.from('ospiti_check_in').update({ stato: nextStato }).eq('id', S.selected.id);
+  S.saving = false;
+  if (error) { toast('Errore: ' + error.message, 'err'); updateFooter(); return; }
+  await audit('RIPRISTINA','ospiti_check_in', S.selected.id);
+  const i = S.rows.findIndex(r => String(r.id) === String(S.selected.id));
+  if (i >= 0) S.rows[i] = { ...S.rows[i], stato: nextStato };
+  toast('✓ Record ripristinato', 'ok');
+  if (S.viewMode === 'archive') { S.selected = null; S.form = {}; }
+  else if (i >= 0) { S.selected = S.rows[i]; }
+  partialTable(); partialStats(); partialDrawer();
+}
+
+async function deleteArchivedSelected() {
+  if (!S.selected) return false;
+  const root = S.selected?.capogruppo_id ? (getParentRow(S.selected) || S.selected) : S.selected;
+  const rowsToDelete = [root, ...getChildRows(root.id)].filter(Boolean);
+  const idsToDelete = [...new Set(rowsToDelete.map(row => row.id).filter(Boolean))];
+  const label = rowsToDelete.length > 1
+    ? `${root.nome || ''} ${root.cognome || ''}`.trim() || 'questo gruppo'
+    : `${S.selected.nome || ''} ${S.selected.cognome || ''}`.trim() || 'questo record';
+  const message = rowsToDelete.length > 1
+    ? `Confermi l'eliminazione definitiva di ${label} e di ${rowsToDelete.length - 1} record collegati?\n\nQuesta azione non è reversibile.`
+    : `Confermi l'eliminazione definitiva di ${label}?\n\nQuesta azione non è reversibile.`;
+  if (!confirm(message)) return false;
+
+  S.saving = true;
+  updateFooter();
+  const { error } = await sb.from('ospiti_check_in').delete().in('id', idsToDelete);
+  S.saving = false;
+  if (error) {
+    toast('Errore: ' + error.message, 'err');
+    updateFooter();
+    return false;
+  }
+
+  for (const id of idsToDelete) {
+    await audit('DELETE', 'ospiti_check_in', id);
+  }
+
+  S.rows = S.rows.filter(row => !idsToDelete.includes(row.id));
+  S.selected = null;
+  S.form = {};
+  toast(rowsToDelete.length > 1 ? '✓ Gruppo eliminato' : '✓ Record eliminato', 'ok');
+  partialTable();
+  partialStats();
+  partialDrawer();
+  return true;
 }
 
 async function loadData() {
   if (S._loadingLock) return;
   S._loadingLock = true;
-  S.loading = true; partialTable();
+  S.loading = true;
+  S.accountingLoading = true;
+  partialTable();
   console.log("LOAD DATA PARTITO");
   try {
     const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('Timeout')), 120000));
     const query = Promise.all([
-      sb.from('ospiti_da_lavorare').select('*').order('created_at',{ascending:false}),
+      sb.from('ospiti_check_in').select('*').order('created_at',{ascending:false}),
       sb.from('apartments').select('id,nome_appartamento').order('nome_appartamento'),
+      sb.from('contabilita_documenti').select('*, apartments(nome_appartamento)').order('received_at',{ascending:false}),
+      detectBillingOptionalColumns(),
     ]);
-    const [o,a] = await Promise.race([query, timeout]);
-    S.rows = o.data||[]; S.apartments = a.data||[];
+    const [o,a,c] = await Promise.race([query, timeout]);
+    S.apartments = a.data||[];
+    const apartmentNameById = new Map(S.apartments.map(item => [String(item.id), item.nome_appartamento || '']));
+    S.rows = (o.data||[]).map(row => ({
+      ...row,
+      nome_appartamento: apartmentNameById.get(String(row.apartment_id)) || row.nome_appartamento || '',
+    }));
+    if (c?.error) {
+      if (/contabilita_documenti/i.test(String(c.error.message || ''))) {
+        S.accountingEnabled = false;
+        S.accountingRows = [];
+      } else {
+        throw c.error;
+      }
+    } else {
+      S.accountingEnabled = true;
+      S.accountingRows = (c?.data || []).map(row => ({
+        ...row,
+        nome_appartamento: row.apartments?.nome_appartamento || apartmentNameById.get(String(row.apartment_id)) || '',
+      }));
+    }
   } catch(e) {
     console.error('loadData error:', e);
     toast('Errore caricamento dati, riprova','err');
   }
-  S.loading = false; S._loadingLock = false;
+  S.loading = false;
+  S.accountingLoading = false;
+  S._loadingLock = false;
   partialTable(); partialStats();
 }
 
 async function saveForm() {
   if (!S.selected) return;
   S.saving = true; updateFooter();
-  const { document_type, ...formToSave } = S.form;
-  const {error} = await sb.from('ospiti_check_in').update(formToSave).eq('id', S.selected.id);
+  const { payment_status, payment_account_type, sezionale, ...dbForm } = S.form;
+  const {error} = await sb.from('ospiti_check_in').update(getPersistableBillingForm(dbForm)).eq('id', S.selected.id);
   S.saving = false;
   if (error) { toast('Errore: '+error.message,'err'); updateFooter(); return; }
   await audit('UPDATE','ospiti_check_in', S.selected.id);
@@ -350,8 +1633,8 @@ async function setStato(stato) {
     toast('Aggiungi una segnalazione prima di segnalare','err'); return;
   }
   S.saving = true; updateFooter();
-  const { document_type, ...formToSave } = S.form;
-  const payload = {...formToSave, stato};
+  const { payment_status, payment_account_type, sezionale, ...dbForm } = S.form;
+  const payload = {...getPersistableBillingForm(dbForm), stato};
   const {error} = await sb.from('ospiti_check_in').update(payload).eq('id', S.selected.id);
   S.saving = false;
   if (error) { toast('Errore: '+error.message,'err'); updateFooter(); return; }
@@ -361,9 +1644,58 @@ async function setStato(stato) {
   const typ = {APPROVATA:'ok',SCARTATA:'err',DA_VERIFICARE:'info'};
   toast(lbl[stato]||stato, typ[stato]||'ok');
   const i = S.rows.findIndex(r=>String(r.id)===String(S.selected.id));
-  if (i>=0) S.rows[i]={...S.rows[i],...payload,stato};
+  if (i>=0) S.rows[i]={...S.rows[i],...payload};
   if (stato !== 'DA_VERIFICARE') { S.selected=null; S.form={}; }
   else { S.selected=S.rows[i]; }
+  partialTable(); partialStats(); partialDrawer();
+}
+
+async function saveAccountingForm() {
+  if (!S.accountingSelected) return;
+  S.accountingSaving = true;
+  updateFooter();
+  const payload = {
+    ...S.accountingForm,
+    apartment_id: S.accountingForm.apartment_id || null,
+    amount_total: numberVal(S.accountingForm.amount_total),
+    updated_at: new Date().toISOString(),
+  };
+  const { error } = await sb.from('contabilita_documenti').update(payload).eq('id', S.accountingSelected.id);
+  S.accountingSaving = false;
+  if (error) { toast('Errore: ' + error.message, 'err'); updateFooter(); return; }
+  await audit('UPDATE', 'contabilita_documenti', S.accountingSelected.id);
+  const i = S.accountingRows.findIndex(r => String(r.id) === String(S.accountingSelected.id));
+  if (i >= 0) S.accountingRows[i] = { ...S.accountingRows[i], ...payload, nome_appartamento: S.apartments.find(a => String(a.id) === String(payload.apartment_id))?.nome_appartamento || '' };
+  S.accountingSelected = S.accountingRows[i] || S.accountingSelected;
+  toast('✓ Documento contabile salvato', 'ok');
+  partialTable(); partialStats(); partialDrawer();
+}
+
+async function setAccountingStatus(stato) {
+  if (!S.accountingSelected) return;
+  if (stato === 'DA_CORREGGERE' && !String(S.accountingForm.approval_notes || '').trim()) {
+    toast('Aggiungi una nota prima di segnare Da correggere', 'err');
+    return;
+  }
+  S.accountingSaving = true;
+  updateFooter();
+  const payload = {
+    ...S.accountingForm,
+    stato,
+    apartment_id: S.accountingForm.apartment_id || null,
+    amount_total: numberVal(S.accountingForm.amount_total),
+    approved_by: stato === 'APPROVATO' ? (S.session?.user?.email || '') : null,
+    approved_at: stato === 'APPROVATO' ? new Date().toISOString() : null,
+    updated_at: new Date().toISOString(),
+  };
+  const { error } = await sb.from('contabilita_documenti').update(payload).eq('id', S.accountingSelected.id);
+  S.accountingSaving = false;
+  if (error) { toast('Errore: ' + error.message, 'err'); updateFooter(); return; }
+  await audit(stato, 'contabilita_documenti', S.accountingSelected.id);
+  const i = S.accountingRows.findIndex(r => String(r.id) === String(S.accountingSelected.id));
+  if (i >= 0) S.accountingRows[i] = { ...S.accountingRows[i], ...payload, nome_appartamento: S.apartments.find(a => String(a.id) === String(payload.apartment_id))?.nome_appartamento || '' };
+  S.accountingSelected = S.accountingRows[i] || S.accountingSelected;
+  toast(stato === 'APPROVATO' ? '✓ Documento approvato' : stato === 'SCARTATO' ? '✗ Documento scartato' : '⚑ Documento da correggere', stato === 'SCARTATO' ? 'err' : stato === 'APPROVATO' ? 'ok' : 'info');
   partialTable(); partialStats(); partialDrawer();
 }
 
@@ -382,22 +1714,45 @@ async function creaFattura() {
         'Authorization': `Bearer ${session.data.session.access_token}`
       },
       body: JSON.stringify({
-  ospiti_check_in_id: S.selected.id,
-  payment_status: S.form.payment_status,
-  document_type: S.form.document_type
-})
+        ospiti_check_in_id: S.selected.id,
+        payment_status: S.form.payment_status,
+        payment_account_type: S.form.payment_account_type,
+        sezionale: S.form.sezionale
+      })
     });
 
     const data = await res.json();
-    if (!res.ok) throw new Error(data.detail?.message ?? data.error ?? 'Errore sconosciuto');
-    toast(`✓ Bozza creata! N° ${data.numero_fattura ?? '-'}`, 'ok');
+    if (!res.ok) {
+      const detailMessage =
+        data.detail?.message ||
+        data.detail?.reason ||
+        data.supabase_error?.message ||
+        (typeof data.detail === 'string' ? data.detail : '') ||
+        data.error;
+      throw new Error(detailMessage || 'Errore sconosciuto');
+    }
+    if (data.sezionale_warning) {
+      toast(`ℹ️ ${data.sezionale_warning}`, 'info');
+    }
+    if (data.local_sync_warning) {
+      const firstWarning = Array.isArray(data.local_sync_details) && data.local_sync_details.length
+        ? (data.local_sync_details[0].message || data.local_sync_details[0].step || '')
+        : '';
+      const docRef = data.numero_fattura || data.fic_document_id || '-';
+      const warningMsg = firstWarning
+        ? `✓ Documento FiC creato (${docRef}, sezionale ${data.sezionale || '-'}) ma sync locale incompleto: ${firstWarning}`
+        : `✓ Documento FiC creato (${docRef}, sezionale ${data.sezionale || '-'}) ma sync locale incompleto`;
+      toast(warningMsg, 'info');
+    } else {
+      toast(`✓ Bozza creata! N° ${data.numero_fattura ?? '-'} · sezionale ${data.sezionale ?? '-'}`, 'ok');
+    }
     if (data.fic_url) window.open(data.fic_url, '_blank');
     await loadData();
     S.selected = null; S.form = {};
     partialDrawer(); highlightSelected();
   } catch(err) {
     toast('❌ ' + err.message, 'err');
-    if (btn) { btn.disabled=false; btn.textContent='🧾 Fattura'; }
+    if (btn) { btn.disabled=false; btn.textContent=`🧾 Fattura · ${S.form.sezionale || '-'}`; }
   }
 }
 
@@ -427,16 +1782,19 @@ function renderLogin() {
 }
 
 function renderDashboard() {
-  const st=stats(), pct=(S.timeLeft/TIMEOUT_MS)*100, email=S.session?.user?.email||'';
+  const st=stats(), pct=(S.timeLeft/TIMEOUT_MS)*100;
+  const displayEmail = 'fatturazione@illupoaffitta.com';
   const barClr = pct<20?'#dc2626':pct<50?'#d97706':'#2563eb';
+  const activeCount = countByView('active');
+  const archiveCount = countByView('archive');
   document.getElementById('app').innerHTML = `
   <header class="section-header">
     <div class="section-header-left">
       <span class="section-header-brand">Impatto</span>
-      <span class="section-header-tag tag-backoffice">BACKOFFICE</span>
+      <span class="section-header-tag tag-backoffice">FATTURAZIONE</span>
     </div>
     <div class="section-header-right">
-      <span class="section-header-user">${esc(email)}</span>
+      <span class="section-header-user">${esc(displayEmail)}</span>
       <button id="btnLogout" class="btn btn-ghost" style="padding:6px 13px;font-size:12px">Esci</button>
     </div>
   </header>
@@ -446,6 +1804,7 @@ function renderDashboard() {
     <div class="stat-card"><div class="stat-label">Con segnalazione</div><div class="stat-val" id="st1">${st.segn}</div></div>
     <div class="stat-card"><div class="stat-label">Approvati oggi</div><div class="stat-val" id="st2">${st.oggi}</div></div>
   </div>
+  <div id="freeInvoicePanel" class="free-invoice-wrap"></div>
   <div class="filters">
     <input id="fSearch" type="text" placeholder="Cerca nome, cognome, email…" value="${esc(S.fSearch)}"/>
     <select id="fStato">
@@ -456,6 +1815,15 @@ function renderDashboard() {
       <option value="">Tutti gli appartamenti</option>
       ${S.apartments.map(a=>`<option value="${a.id}" ${S.fApt===String(a.id)?'selected':''}>${esc(a.nome_appartamento)}</option>`).join('')}
     </select>
+    <select id="fGroupRole">
+      <option value="">Tutte le pratiche principali</option>
+      <option value="leaders" ${S.fGroupRole==='leaders'?'selected':''}>Solo gruppi/famiglie</option>
+      <option value="singles" ${S.fGroupRole==='singles'?'selected':''}>Solo singoli</option>
+    </select>
+    <div class="view-toggle">
+      <button id="viewActive" class="view-chip ${S.viewMode==='active'?'active':''}">Attivi (${activeCount})</button>
+      <button id="viewArchive" class="view-chip ${S.viewMode==='archive'?'active':''}">Archivio (${archiveCount})</button>
+    </div>
     <button id="btnRefresh" class="btn btn-ghost" style="padding:8px 14px;font-size:12px">↻ Aggiorna</button>
   </div>
   <div class="body-wrap">
@@ -463,13 +1831,19 @@ function renderDashboard() {
     <div class="drawer ${S.selected?'open':''}" id="drawer"></div>
   </div>`;
 
-  document.getElementById('btnLogout').addEventListener('click', ()=>sb.auth.signOut());
-  initNavbar(email);
+  document.getElementById('btnLogout').addEventListener('click', ()=>{
+    forceStopAudio(true);
+    sb.auth.signOut();
+  });
+  initNavbar(displayEmail);
   document.getElementById('btnRefresh').addEventListener('click', loadData);
   document.getElementById('fSearch').addEventListener('input', e=>{ S.fSearch=e.target.value; partialTable(); });
   document.getElementById('fStato').addEventListener('change', e=>{ S.fStato=e.target.value; partialTable(); });
   document.getElementById('fApt').addEventListener('change', e=>{ S.fApt=e.target.value; partialTable(); });
-  partialTable(); partialDrawer();
+  document.getElementById('fGroupRole').addEventListener('change', e=>{ S.fGroupRole=e.target.value; partialTable(); });
+  document.getElementById('viewActive').addEventListener('click', ()=>{ S.viewMode='active'; if (S.selected && !getViewStates().includes(S.selected.stato)) { S.selected=null; S.form={}; } renderDashboard(); });
+  document.getElementById('viewArchive').addEventListener('click', ()=>{ S.viewMode='archive'; if (S.selected && !getViewStates().includes(S.selected.stato)) { S.selected=null; S.form={}; } renderDashboard(); });
+  partialFreeInvoicePanel(); partialTable(); partialDrawer();
 }
 
 function initNavbar(email = '') {
@@ -496,6 +1870,45 @@ function initNavbar(email = '') {
 
 function partialTable() {
   const panel = document.getElementById('tablePanel'); if(!panel) return;
+  if (S.panelMode === 'contabilita') {
+    const rows = filteredAccounting();
+    if (!S.accountingEnabled) {
+      panel.innerHTML = `<div class="empty"><div class="empty-ico">📥</div><div>Tabella contabilità non disponibile. Applica prima la migration <span class="mono-sm">202604220001_create_contabilita_documenti.sql</span>.</div></div>`;
+      return;
+    }
+    if (S.accountingLoading) {
+      panel.innerHTML=`<div class="loading"><span class="spin"></span> Caricamento documenti contabili…</div>`;
+      return;
+    }
+    if (!rows.length) {
+      panel.innerHTML=`<div class="empty"><div class="empty-ico">📎</div><div>Nessun documento contabile trovato</div></div>`;
+      return;
+    }
+    panel.innerHTML = `<table>
+      <thead><tr>
+        <th>Fornitore / email</th><th>Appartamento</th><th>Tipo</th><th>Importo</th><th>Ricevuto</th><th>Stato</th>
+      </tr></thead>
+      <tbody>
+        ${rows.map(r=>`
+        <tr class="row-item${S.accountingSelected?.id===r.id?' selected':''}" data-id="${r.id}">
+          <td><div class="td-name">${esc(r.supplier_name || r.source_email || 'Documento contabile')}</div><div class="mono-sm">${esc(r.source_subject || r.source_email || '—')}</div></td>
+          <td class="td-apt">${esc(r.nome_appartamento || 'Da assegnare')}</td>
+          <td><span class="doc-chip">${esc(accountingDocTypeLbl(r.document_type))}</span></td>
+          <td>${esc(formatAccountingCurrency(r.amount_total, r.currency))}</td>
+          <td class="td-date">${fmtTs(r.received_at || r.created_at)}</td>
+          <td><span class="badge ${accountingBadgeCls(r.stato)}">${accountingBadgeLbl(r.stato)}</span></td>
+        </tr>`).join('')}
+      </tbody></table>`;
+    panel.querySelectorAll('.row-item').forEach(tr=>{
+      tr.addEventListener('click', ()=>{
+        const row = S.accountingRows.find(r=>String(r.id)===String(tr.dataset.id)); if(!row) return;
+        selectAccountingRow(row);
+        partialDrawer();
+        highlightSelected();
+      });
+    });
+    return;
+  }
   const rows = filtered();
   if (S.loading) { panel.innerHTML=`<div class="loading"><span class="spin"></span> Caricamento…</div>`; return; }
   if (!rows.length) { panel.innerHTML=`<div class="empty"><div class="empty-ico">📋</div><div>Nessun ospite trovato</div></div>`; return; }
@@ -506,7 +1919,7 @@ function partialTable() {
     <tbody>
       ${rows.map(r=>`
       <tr class="row-item${S.selected?.id===r.id?' selected':''}" data-id="${r.id}">
-        <td><div class="td-name">${esc(r.nome||'')} ${esc(r.cognome||'')}</div><div class="mono-sm">${esc(r.email||'')}</div></td>
+        <td><div class="td-name">${esc(getBillingHeaderName(r))}</div><div class="mono-sm">${esc(getBillingHeaderMeta(r) || '—')}</div><div style="margin-top:6px">${groupRoleBadge(r)}</div><div class="group-meta">${groupMetaLine(r)}</div></td>
         <td class="td-apt">${esc(r.nome_appartamento||'—')}</td>
         <td class="td-date">${fmt(r.data_checkin)}</td>
         <td class="td-date">${fmt(r.data_checkout)}</td>
@@ -517,17 +1930,8 @@ function partialTable() {
     </tbody></table>`;
   panel.querySelectorAll('.row-item').forEach(tr=>{
     tr.addEventListener('click', ()=>{
-      const row = S.rows.find(r=>String(r.id)===String(tr.dataset.id)); if(!row) return;      S.selected = row;
-      S.form = {
-        nome:row.nome||'', cognome:row.cognome||'', email:row.email||'', telefono:row.telefono||'',
-        paese_residenza:row.paese_residenza||'Italia', indirizzo_residenza:row.indirizzo_residenza||'',
-        codice_fiscale:row.codice_fiscale||'', codice_fiscale_verificato:row.codice_fiscale_verificato||false,
-        iva_percentuale:row.iva_percentuale??10, tipo_cliente:row.tipo_cliente||'privato',
-        piva_cliente:row.piva_cliente||'', importo_lordo:row.importo_lordo||'',
-        data_checkin:row.data_checkin||'', data_checkout:row.data_checkout||'',
-        segnalazione_jessica:row.segnalazione_jessica||'',
-        document_type: row.document_type || 'proforma'
-      };
+      const row = S.rows.find(r=>String(r.id)===String(tr.dataset.id)); if(!row) return;
+      selectRow(row);
       partialDrawer(); highlightSelected();
     });
   });
@@ -535,7 +1939,8 @@ function partialTable() {
 
 function highlightSelected() {
   document.querySelectorAll('.row-item').forEach(tr=>{
-    tr.classList.toggle('selected', String(tr.dataset.id)===String(S.selected?.id));
+    const currentId = S.panelMode === 'contabilita' ? S.accountingSelected?.id : S.selected?.id;
+    tr.classList.toggle('selected', String(tr.dataset.id)===String(currentId));
   });
 }
 
@@ -547,19 +1952,113 @@ function partialStats() {
 
 function partialDrawer() {
   const d = document.getElementById('drawer'); if(!d) return;
+  if (S.panelMode === 'contabilita') {
+    if (!S.accountingSelected) { d.classList.remove('open'); d.innerHTML=''; return; }
+    const r = S.accountingSelected;
+    const f = S.accountingForm;
+    const attachments = Array.isArray(r.attachments) ? r.attachments : [];
+    d.classList.add('open');
+    d.innerHTML = `
+    <div class="drawer-header">
+      <div>
+        <div class="drawer-title">${esc(f.supplier_name || f.source_email || 'Documento contabile')}</div>
+        <div class="drawer-sub">${esc(r.id)} · ${fmtTs(r.received_at || r.created_at)} · ${esc(accountingBadgeLbl(r.stato))}</div>
+      </div>
+      <button id="dClose" class="drawer-close">✕</button>
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-sec">Origine</div>
+      <div class="field"><label>Email mittente</label><input class="df-acc" data-k="source_email" value="${esc(f.source_email)}"/></div>
+      <div class="field"><label>Oggetto email</label><input class="df-acc" data-k="source_subject" value="${esc(f.source_subject)}"/></div>
+      <div class="drawer-sec">Documento</div>
+      <div class="field-2">
+        <div class="field"><label>Fornitore</label><input class="df-acc" data-k="supplier_name" value="${esc(f.supplier_name)}"/></div>
+        <div class="field"><label>Tipo documento</label>
+          <select class="df-acc" data-k="document_type">${CONTABILITA_DOC_TYPES.map(v=>`<option value="${v}" ${f.document_type===v?'selected':''}>${esc(accountingDocTypeLbl(v))}</option>`).join('')}</select>
+        </div>
+      </div>
+      <div class="field-2">
+        <div class="field"><label>Appartamento</label>
+          <select class="df-acc" data-k="apartment_id">
+            <option value="">Da assegnare</option>
+            ${S.apartments.map(a=>`<option value="${a.id}" ${String(f.apartment_id)===String(a.id)?'selected':''}>${esc(a.nome_appartamento)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field"><label>Stato</label>
+          <select class="df-acc" data-k="stato">${CONTABILITA_STATI.map(v=>`<option value="${v}" ${f.stato===v?'selected':''}>${esc(accountingBadgeLbl(v))}</option>`).join('')}</select>
+        </div>
+      </div>
+      <div class="field-3">
+        <div class="field"><label>Importo totale</label><input class="df-acc" data-k="amount_total" type="number" step="0.01" value="${esc(f.amount_total)}"/></div>
+        <div class="field"><label>Valuta</label><input class="df-acc" data-k="currency" value="${esc(f.currency)}"/></div>
+        <div class="field"><label>Competenza</label><input class="df-acc" data-k="competence_month" type="date" value="${esc(f.competence_month)}"/></div>
+      </div>
+      <div class="field-2">
+        <div class="field"><label>Data documento</label><input class="df-acc" data-k="issue_date" type="date" value="${esc(f.issue_date)}"/></div>
+        <div class="field"><label>Scadenza</label><input class="df-acc" data-k="due_date" type="date" value="${esc(f.due_date)}"/></div>
+      </div>
+      <div class="drawer-sec">Allegati</div>
+      ${attachments.length ? `<div class="doc-list">${attachments.map((file, idx)=>`
+        <div class="doc-item">
+          <div><strong>${esc(file.filename || `Allegato ${idx + 1}`)}</strong></div>
+          <div class="mono-sm">${esc(file.content_type || 'file')} ${file.size_bytes ? `· ${esc(String(file.size_bytes))} bytes` : ''}</div>
+          ${file.url ? `<div style="margin-top:6px"><a href="${esc(file.url)}" target="_blank" rel="noopener">Apri allegato</a></div>` : ''}
+          ${file.preview_url ? `<div><a href="${esc(file.preview_url)}" target="_blank" rel="noopener">Anteprima</a></div>` : ''}
+        </div>`).join('')}</div>` : `<div class="mono-sm">Nessun allegato registrato.</div>`}
+      <div class="drawer-sec">Note approvazione</div>
+      <div class="field"><textarea class="df-acc" data-k="approval_notes" placeholder="Correzioni, note interne, tag appartamento…">${esc(f.approval_notes)}</textarea></div>
+      <div class="drawer-sec">Testo OCR</div>
+      <div class="text-preview">${esc(r.extracted_text || 'Nessun testo OCR disponibile')}</div>
+    </div>
+    <div class="drawer-footer">
+      <button id="dSaveAcc" class="btn btn-ghost" style="margin-right:auto">${S.accountingSaving?'<span class="spin"></span>':'💾'} Salva</button>
+      <button id="dFixAcc" class="btn btn-yellow" ${S.accountingSaving?'disabled':''}>⚑ Da correggere</button>
+      <button id="dRejectAcc" class="btn btn-red" ${S.accountingSaving?'disabled':''}>✗ Scarta</button>
+      <button id="dApproveAcc" class="btn btn-green" ${S.accountingSaving?'disabled':''}>✓ Approva</button>
+    </div>`;
+    document.getElementById('dClose').addEventListener('click', ()=>{ S.accountingSelected=null; S.accountingForm={}; partialDrawer(); highlightSelected(); });
+    document.getElementById('dSaveAcc').addEventListener('click', saveAccountingForm);
+    document.getElementById('dFixAcc').addEventListener('click', ()=>setAccountingStatus('DA_CORREGGERE'));
+    document.getElementById('dRejectAcc').addEventListener('click', ()=>setAccountingStatus('SCARTATO'));
+    document.getElementById('dApproveAcc').addEventListener('click', ()=>setAccountingStatus('APPROVATO'));
+    d.querySelectorAll('.df-acc').forEach(el=>{
+      el.addEventListener('input', e=>{ S.accountingForm[e.target.dataset.k]=e.target.value; });
+      el.addEventListener('change', e=>{ S.accountingForm[e.target.dataset.k]=e.target.value; });
+    });
+    return;
+  }
   if (!S.selected) { d.classList.remove('open'); d.innerHTML=''; return; }
-  const r=S.selected, f=S.form;
+  const normalizedRow = getParentRow(S.selected) || S.selected;
+  if (normalizedRow !== S.selected) {
+    selectRow(normalizedRow);
+  }
+  const r=normalizedRow, f=S.form;
   const isBiz = f.tipo_cliente==='azienda'||f.tipo_cliente==='professionista';
+  const isArchiveRow = ARCHIVE_STATI.includes(r.stato);
+  const parentRow = getParentRow(r);
+  const groupRoot = parentRow || r;
+  const childRows = getChildRows(groupRoot.id);
+  const fallbackChildren = childRows.length ? [] : getSnapshotChildren(groupRoot);
+  const invoicePreview = getInvoicePreview(f);
   d.classList.add('open');
   d.innerHTML = `
   <div class="drawer-header">
     <div>
-      <div class="drawer-title">${esc(f.nome||'')} ${esc(f.cognome||'')}</div>
-      <div class="drawer-sub">#${r.id} · ${fmt(r.created_at)}</div>
+      <div class="drawer-title">${esc(getBillingHeaderName(r, f))}</div>
+      <div class="drawer-sub">#${r.id} · ${fmt(r.created_at)}${getBillingHeaderMeta(r, f) ? ` · ${esc(getBillingHeaderMeta(r, f))}` : ''}</div>
     </div>
     <button id="dClose" class="drawer-close">✕</button>
   </div>
   <div class="drawer-body">
+    <div class="drawer-sec">Gruppo</div>
+    <div class="group-summary">
+      <div style="margin-bottom:${parentRow||childRows.length||fallbackChildren.length?'8px':'0'}">${groupRoleBadge(r)}</div>
+      ${parentRow ? `<div>Record principale: <span class="group-link" style="cursor:default">${esc(getBillingHeaderName(parentRow))}</span></div>` : ''}
+      ${childRows.length ? `<div>Componenti gruppo: <strong>${1+childRows.length}</strong></div><div class="group-link-list">${childRows.map(child=>`<div class="group-link" style="cursor:default">${esc(child.nome||'')} ${esc(child.cognome||'')} · ${esc(getMemberRoleLabel(child))}</div>`).join('')}</div>` : ''}
+      ${fallbackChildren.length ? `<div>Componenti gruppo: <strong>${1+fallbackChildren.length}</strong></div><div class="group-link-list">${fallbackChildren.map(child=>`<div class="group-link" style="cursor:default">${esc(child.nome||'')} ${esc(child.cognome||'')} · ${esc(getMemberRoleLabel(child))}</div>`).join('')}</div><div class="group-meta">Gruppo storico: membri presenti nello snapshot del parent, ma non come child DB autonomi.</div>` : ''}
+      ${!parentRow && !childRows.length && !fallbackChildren.length ? `<div>Record singolo, nessun gruppo collegato.</div>` : ''}
+      ${(parentRow || childRows.length || fallbackChildren.length) ? `<div class="group-meta">${groupMetaLine(groupRoot)} · Fatturazione gestita sul record principale del gruppo</div>` : ''}
+    </div>
     <div class="drawer-sec">Dati anagrafici</div>
     <div class="field-2">
       <div class="field"><label>Nome</label><input class="df" data-k="nome" value="${esc(f.nome)}"/></div>
@@ -591,33 +2090,63 @@ function partialDrawer() {
       <input id="cfv" type="checkbox"${f.codice_fiscale_verificato?' checked':''}/>
       <label for="cfv">CF verificato</label>
     </div>
-    ${isBiz?`<div class="field" style="margin-top:12px"><label>Partita IVA</label><input class="df" data-k="piva_cliente" value="${esc(f.piva_cliente)}"/></div>`:''}
+    ${isBiz?`
+      <div class="field-2" style="margin-top:12px">
+        <div class="field"><label>Ragione sociale</label><input class="df" data-k="ragione_sociale" value="${esc(f.ragione_sociale)}"/></div>
+        <div class="field"><label>Partita IVA</label><input class="df" data-k="piva_cliente" value="${esc(f.piva_cliente)}"/></div>
+      </div>
+      <div class="field" style="margin-top:12px">
+        <label>Indirizzo fatturazione</label>
+        <input class="df" data-k="indirizzo_fatturazione" value="${esc(f.indirizzo_fatturazione||'')}"/>
+      </div>
+    `:''}
     <div class="drawer-sec">Soggiorno</div>
-<div class="field">
-  <label>Stato pagamento fattura</label>
-  <select class="df" data-k="payment_status">
-    <option value="paid">Già pagata</option>
-    <option value="not_paid">Da pagare</option>
-  </select>
-</div>
-
-<div class="field">
-  <label>Tipo documento</label>
-  <select class="df" data-k="document_type">
-  <option value="proforma" ${f.document_type === 'proforma' ? 'selected' : ''}>Proforma</option>
-  <option value="invoice" ${f.document_type === 'invoice' ? 'selected' : ''}>Invoice</option>
-</select>
-</div>
-
-<div class="field-2">
-  <div class="field"><label>Importo lordo (€)</label> ... </div>
-  <div class="field"><label>Data check-in</label> ... </div>
-</div>
+    <div class="field-2">
+      <div class="field">
+        <label>Stato pagamento fattura</label>
+        <select class="df" data-k="payment_status">
+          <option value="paid" ${f.payment_status==='paid'?'selected':''}>Già pagata</option>
+          <option value="not_paid" ${f.payment_status==='not_paid'?'selected':''}>Da pagare</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Metodo incasso</label>
+        <select class="df" data-k="payment_account_type">
+          <option value="bonifico" ${f.payment_account_type==='bonifico'?'selected':''}>Bonifico</option>
+          <option value="contanti" ${f.payment_account_type==='contanti'?'selected':''}>Contanti</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-2">
+      <div class="field">
+        <label>Sezionale</label>
+        <select class="df" data-k="sezionale">
+          <option value="R" ${f.sezionale==='R'?'selected':''}>R · Residence</option>
+          <option value="D" ${f.sezionale==='D'?'selected':''}>D · Diretti</option>
+          <option value="P" ${f.sezionale==='P'?'selected':''}>P · Portali</option>
+        </select>
+      </div>
+    </div>
+    ${r.stato==='APPROVATA' ? `
+      <div style="margin-top:12px;padding:11px 13px;border:1px solid var(--border);border-radius:6px;background:var(--surf);font-size:13px;line-height:1.55">
+        <div><strong>Creazione FiC:</strong> verra usato il sezionale <strong>${esc(getSezionaleLabel(f.sezionale))}</strong></div>
+        <div>Stato pagamento inviato: <strong>${esc(getPaymentStatusLabel(f.payment_status))}</strong></div>
+      </div>
+    ` : ''}
+    <div class="field-2">
       <div class="field"><label>Importo lordo (€)</label><input class="df" type="number" step="0.01" data-k="importo_lordo" value="${esc(f.importo_lordo)}"/></div>
       <div class="field"><label>Data check-in</label><input class="df" type="date" data-k="data_checkin" value="${esc(f.data_checkin)}"/></div>
     </div>
     <div class="field-2">
       <div class="field"><label>Data check-out</label><input class="df" type="date" data-k="data_checkout" value="${esc(f.data_checkout)}"/></div>
+      <div class="field">
+        <label>Anteprima totale fattura</label>
+        <div style="padding:11px 13px;border:1px solid var(--border);border-radius:6px;background:var(--surf);font-size:13px;line-height:1.55">
+          <div>Imponibile: <strong>${formatCurrency(invoicePreview.imponibile)}</strong></div>
+          <div>Bollo: <strong>${formatCurrency(invoicePreview.bollo)}</strong>${invoicePreview.bolloApplicato ? ' <span class="mono-sm" style="color:var(--yellow)">aggiunto in anteprima</span>' : ''}</div>
+          <div>Totale documento: <strong>${formatCurrency(invoicePreview.totale)}</strong></div>
+        </div>
+      </div>
     </div>
     <div class="drawer-sec">Segnalazione</div>
     <div class="field"><textarea class="df" data-k="segnalazione_jessica" placeholder="Note o segnalazione…">${esc(f.segnalazione_jessica)}</textarea></div>
@@ -626,24 +2155,34 @@ function partialDrawer() {
   </div>
   <div class="drawer-footer">
     <button id="dSave" class="btn btn-ghost" style="margin-right:auto">${S.saving?'<span class="spin"></span>':'💾'} Salva</button>
-    <button id="dSegn" class="btn btn-yellow" ${S.saving?'disabled':''}>⚑ Segnala</button>
-    <button id="dScar" class="btn btn-red"    ${S.saving?'disabled':''}>✗ Scarta</button>
-    <button id="dAppr" class="btn btn-green"  ${S.saving?'disabled':''}>✓ Approva</button>
-    ${r.stato==='APPROVATA'?`<button id="dFatt" class="btn btn-primary" ${S.saving?'disabled':''} style="background:#7c3aed">🧾 Fattura</button>`:''}
+    ${isArchiveRow ? `
+      <button id="dRestore" class="btn btn-yellow" ${S.saving?'disabled':''}>↺ Ripristina</button>
+      <button id="dDelete" class="btn btn-red" ${S.saving?'disabled':''}>Elimina</button>
+    ` : `
+      <button id="dSegn" class="btn btn-yellow" ${S.saving?'disabled':''}>⚑ Segnala</button>
+      <button id="dScar" class="btn btn-red" ${S.saving?'disabled':''}>✗ Scarta</button>
+      <button id="dAppr" class="btn btn-green" ${S.saving?'disabled':''}>✓ Approva</button>
+      ${r.stato==='APPROVATA'?`<button id="dFatt" class="btn btn-primary" ${S.saving?'disabled':''} style="background:#7c3aed">🧾 Fattura · ${esc(f.sezionale)}</button>`:''}
+    `}
   </div>`;
 
   document.getElementById('dClose').addEventListener('click', ()=>{ S.selected=null; S.form={}; partialDrawer(); highlightSelected(); });
   document.getElementById('dSave').addEventListener('click', saveForm);
-  document.getElementById('dAppr').addEventListener('click', ()=>setStato('APPROVATA'));
-  document.getElementById('dScar').addEventListener('click', ()=>setStato('SCARTATA'));
-  document.getElementById('dSegn').addEventListener('click', ()=>setStato('DA_VERIFICARE'));
+  document.getElementById('dAppr')?.addEventListener('click', ()=>setStato('APPROVATA'));
+  document.getElementById('dScar')?.addEventListener('click', ()=>setStato('SCARTATA'));
+  document.getElementById('dSegn')?.addEventListener('click', ()=>setStato('DA_VERIFICARE'));
   document.getElementById('dFatt')?.addEventListener('click', creaFattura);
-
+  document.getElementById('dRestore')?.addEventListener('click', restoreSelected);
+  document.getElementById('dDelete')?.addEventListener('click', deleteArchivedSelected);
   d.querySelectorAll('.df').forEach(el=>{
     el.addEventListener('input',  e=>{ S.form[e.target.dataset.k]=e.target.value; });
     el.addEventListener('change', e=>{
       S.form[e.target.dataset.k]=e.target.value;
-      if (e.target.dataset.k==='tipo_cliente') partialDrawer();
+      if (e.target.dataset.k==='tipo_cliente') {
+        partialDrawer();
+      } else if (['iva_percentuale','importo_lordo','payment_status','payment_account_type','sezionale'].includes(e.target.dataset.k)) {
+        partialDrawer();
+      }
     });
   });
   document.getElementById('cfv')?.addEventListener('change', e=>{
@@ -654,17 +2193,27 @@ function partialDrawer() {
 }
 
 function updateFooter() {
+  if (S.panelMode === 'contabilita') {
+    const s=document.getElementById('dSaveAcc'); if(!s) return;
+    s.innerHTML = S.accountingSaving ? '<span class="spin"></span> Salvo…' : '💾 Salva';
+    s.disabled = S.accountingSaving;
+    ['dFixAcc','dRejectAcc','dApproveAcc'].forEach(id=>{ const b=document.getElementById(id); if(b) b.disabled=S.accountingSaving; });
+    return;
+  }
   const s=document.getElementById('dSave'); if(!s) return;
   s.innerHTML = S.saving ? '<span class="spin"></span> Salvo…' : '💾 Salva';
   s.disabled  = S.saving;
-  ['dAppr','dScar','dSegn','dFatt'].forEach(id=>{ const b=document.getElementById(id); if(b) b.disabled=S.saving; });
+  ['dAppr','dScar','dSegn','dFatt','dRestore','dDelete'].forEach(id=>{ const b=document.getElementById(id); if(b) b.disabled=S.saving; });
 }
 
 function startInactivity() {
   const reset = () => {
     S.timeLeft = TIMEOUT_MS;
     clearTimeout(S.inTimer);
-    S.inTimer = setTimeout(()=>sb.auth.signOut(), TIMEOUT_MS);
+    S.inTimer = setTimeout(()=>{
+      forceStopAudio(true);
+      sb.auth.signOut();
+    }, TIMEOUT_MS);
   };
   ['mousemove','mousedown','keydown','touchstart','scroll'].forEach(e=>window.addEventListener(e,reset,{passive:true}));
   reset();
