@@ -130,6 +130,23 @@ const TOOLS = [
       required: ['task'],
     },
   },
+  {
+    name: 'update_inventory',
+    description: 'Aggiorna inventory Beds24 per un appartamento reale: apri/chiudi date, cambia prezzo e/o min stay.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        apartment: { type: 'string', description: 'Nome appartamento reale dal sistema' },
+        property_id: { type: 'string', description: 'Property ID Beds24 se gia noto' },
+        date_from: { type: 'string', description: 'Data inizio YYYY-MM-DD' },
+        date_to: { type: 'string', description: 'Data fine YYYY-MM-DD' },
+        price: { type: 'number', description: 'Prezzo giornaliero in EUR (opzionale)' },
+        min_stay: { type: 'number', description: 'Minimo notti (opzionale)' },
+        closed: { type: 'boolean', description: 'true = chiuso/bloccato, false = aperto' },
+      },
+      required: ['date_from', 'date_to'],
+    },
+  },
 ];
 
 async function executeTool(name, input, env) {
@@ -345,6 +362,47 @@ async function executeTool(name, input, env) {
       return { success: true, todo: data[0] };
     }
 
+    case 'update_inventory': {
+      const baseUrl = env.URL || env.DEPLOY_PRIME_URL || env.DEPLOY_URL;
+      if (!baseUrl) return { error: 'URL Netlify non disponibile per aggiornare inventory' };
+      if (!env.AUTH_HEADER?.startsWith('Bearer ')) {
+        return { error: 'Serve una sessione autenticata per aggiornare inventory' };
+      }
+
+      const apartment = await resolveApartmentRecord(input, sbUrl, sbHeaders);
+      if (apartment.error) return apartment;
+
+      const payload = {
+        apartmentId: apartment.id,
+        propertyId: input.property_id ? String(input.property_id) : String(apartment.beds24_room_id),
+        dateFrom: input.date_from,
+        dateTo: input.date_to,
+      };
+      if (input.price !== undefined) payload.price = input.price;
+      if (input.min_stay !== undefined) payload.minStay = input.min_stay;
+      if (input.closed !== undefined) payload.closed = input.closed;
+
+      const res = await fetch(`${baseUrl}/.netlify/functions/update-calendar-inventory`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: env.AUTH_HEADER,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (!res.ok) return data;
+      return {
+        success: true,
+        apartment: apartment.nome_appartamento,
+        property_id: payload.propertyId,
+        update: data.applied || null,
+        modified: data.modified || null,
+        warning: data.warning || null,
+      };
+    }
+
     default:
       return { error: `Tool "${name}" non riconosciuto` };
   }
@@ -362,6 +420,35 @@ async function resolveBeds24RoomId(input, sbUrl, sbHeaders) {
   if (!res.ok) return null;
   const data = await res.json();
   return data?.[0]?.beds24_room_id ? String(data[0].beds24_room_id) : null;
+}
+
+async function resolveApartmentRecord(input, sbUrl, sbHeaders) {
+  if (input.property_id) {
+    const url = `${sbUrl}/rest/v1/apartments?select=id,nome_appartamento,beds24_room_id&beds24_room_id=eq.${encodeURIComponent(input.property_id)}&limit=2`;
+    const res = await fetch(url, { headers: sbHeaders });
+    if (!res.ok) return { error: 'Errore lookup appartamento per property_id' };
+    const data = await res.json();
+    if (data.length === 1) return data[0];
+  }
+
+  const apartment = String(input.apartment || '').trim();
+  if (!apartment) return { error: 'Nome appartamento richiesto per aggiornare inventory' };
+
+  const url = `${sbUrl}/rest/v1/apartments?select=id,nome_appartamento,beds24_room_id&beds24_room_id=not.is.null&nome_appartamento=ilike.*${encodeURIComponent(apartment)}*&limit=6`;
+  const res = await fetch(url, { headers: sbHeaders });
+  if (!res.ok) return { error: 'Errore ricerca appartamento in Supabase' };
+  const data = await res.json();
+  if (!data.length) return { error: `Nessun appartamento trovato per "${apartment}"` };
+
+  const normalized = apartment.toLowerCase();
+  const exact = data.find((row) => String(row.nome_appartamento || '').toLowerCase() === normalized);
+  if (exact) return exact;
+  if (data.length > 1) {
+    return {
+      error: `Match ambiguo per "${apartment}". Possibili appartamenti: ${data.map((row) => row.nome_appartamento).join(', ')}`,
+    };
+  }
+  return data[0];
 }
 
 async function beds24Fetch(path, options = {}, env) {
@@ -473,6 +560,7 @@ COSA SAI FARE:
 - Controllare disponibilita degli appartamenti
 - Modificare prezzi su Beds24 (per data o percentuale)
 - Bloccare date su Beds24
+- Aprire o chiudere date, cambiare prezzo e min stay sull'inventory Beds24
 - Leggere check-in e ospiti da Supabase
 - Inviare schedine alloggiati alla Polizia di Stato
 - Calcolare entrate per periodo
@@ -498,7 +586,8 @@ APPARTAMENTI REALI NEL SISTEMA (usa SOLO questi, non inventarne altri):
 ${apartmentsList}
 
 Quando un utente dice "Via Amalfi" o nome parziale, cerca il match piu vicino nella lista sopra.
-Se non trovi un match certo, chiedi conferma prima di procedere.
+Se non trovi un match certo o trovi piu appartamenti possibili, chiedi conferma prima di procedere.
+Per modifiche inventory (apri/chiudi, prezzo, min stay), se manca anche solo uno dei dati necessari chiedilo prima di eseguire.
 MAI inventare nomi, MAI usare appartamenti non in questa lista.`;
 }
 
@@ -520,6 +609,7 @@ exports.handler = async (event) => {
     URL: process.env.URL || '',
     DEPLOY_URL: process.env.DEPLOY_URL || '',
     DEPLOY_PRIME_URL: process.env.DEPLOY_PRIME_URL || '',
+    AUTH_HEADER: event.headers.authorization || event.headers.Authorization || '',
   };
 
   if (!env.ANTHROPIC_API_KEY) {

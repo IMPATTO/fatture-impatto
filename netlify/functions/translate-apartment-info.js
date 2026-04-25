@@ -78,6 +78,7 @@ exports.handler = async (event) => {
       cosa_fare_se_luce_spenta: translations[lang]?.cosa_fare_se_luce_spenta || '',
       cosa_fare_se_chiuso_fuori: translations[lang]?.cosa_fare_se_chiuso_fuori || '',
       numeri_utili: translations[lang]?.numeri_utili || {},
+      consigli: translations[lang]?.consigli || {},
       updated_at: new Date().toISOString(),
     }));
 
@@ -101,6 +102,7 @@ exports.handler = async (event) => {
         cosa_fare_se_luce_spenta: row.cosa_fare_se_luce_spenta,
         cosa_fare_se_chiuso_fuori: row.cosa_fare_se_chiuso_fuori,
         numeri_utili: row.numeri_utili,
+        consigli: row.consigli,
         updated_at: row.updated_at,
       };
 
@@ -132,6 +134,7 @@ function normalizeSource(source) {
     cosa_fare_se_luce_spenta: cleanText(safe.cosa_fare_se_luce_spenta),
     cosa_fare_se_chiuso_fuori: cleanText(safe.cosa_fare_se_chiuso_fuori),
     numeri_utili: normalizeContacts(safe.numeri_utili),
+    consigli: normalizeConsigli(safe.consigli),
   };
 }
 
@@ -147,6 +150,23 @@ function normalizeContacts(value) {
     if (label && contact) acc[label] = contact;
     return acc;
   }, {});
+}
+
+function normalizeConsigli(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {
+      ristoranti: '',
+      bar_colazione: '',
+      aperitivo_vita_serale: '',
+      attivita_bambini: '',
+    };
+  }
+  return {
+    ristoranti: cleanText(value.ristoranti),
+    bar_colazione: cleanText(value.bar_colazione),
+    aperitivo_vita_serale: cleanText(value.aperitivo_vita_serale),
+    attivita_bambini: cleanText(value.attivita_bambini),
+  };
 }
 
 async function translateFields(source, targetLangs) {
@@ -192,19 +212,21 @@ async function translateFields(source, targetLangs) {
       cosa_fare_se_luce_spenta: cleanText(row.cosa_fare_se_luce_spenta),
       cosa_fare_se_chiuso_fuori: cleanText(row.cosa_fare_se_chiuso_fuori),
       numeri_utili: translateContacts(source.numeri_utili, row.numeri_utili),
+      consigli: normalizeConsigli(row.consigli),
     };
   }
   return out;
 }
 
 function buildPrompt(source, targetLangs) {
-  const schema = targetLangs.map((lang) => `"${lang}":{"come_arrivare":"","dove_parcheggiare":"","regole_della_casa":"","cosa_fare_se_luce_spenta":"","cosa_fare_se_chiuso_fuori":"","numeri_utili":{}}`).join(',');
+  const schema = targetLangs.map((lang) => `"${lang}":{"come_arrivare":"","dove_parcheggiare":"","regole_della_casa":"","cosa_fare_se_luce_spenta":"","cosa_fare_se_chiuso_fuori":"","numeri_utili":{},"consigli":{"ristoranti":"","bar_colazione":"","aperitivo_vita_serale":"","attivita_bambini":""}}`).join(',');
   return [
     'Translate these apartment portal instructions from Italian into the requested languages.',
     'Return ONLY valid JSON, with no markdown and no extra text.',
     'Keep URLs, phone numbers, apartment names, building codes, access codes, and brand names exactly as they are.',
     'Preserve line breaks when useful.',
     'Translate contact labels naturally for the target language, but keep each phone number unchanged.',
+    'Translate each tips subcategory inside "consigli" and preserve the same object keys.',
     `Requested languages: ${targetLangs.map((lang) => `${lang} (${LANG_LABELS[lang]})`).join(', ')}`,
     `Source JSON: ${JSON.stringify(source)}`,
     `Output schema: {${schema}}`,

@@ -129,7 +129,7 @@ async function loadApartmentPortalData(supabase, apartmentId, preferredLang) {
 
   let { data: info, error: infoError } = await supabase
     .from('apartment_info')
-    .select('come_arrivare, dove_parcheggiare, come_entrare, regole_della_casa, cosa_fare_se_luce_spenta, cosa_fare_se_chiuso_fuori, numeri_utili')
+    .select('come_arrivare, dove_parcheggiare, come_entrare, regole_della_casa, cosa_fare_se_luce_spenta, cosa_fare_se_chiuso_fuori, numeri_utili, consigli')
     .eq('apartment_id', apartmentId)
     .eq('lingua', preferredLang)
     .maybeSingle();
@@ -141,7 +141,7 @@ async function loadApartmentPortalData(supabase, apartmentId, preferredLang) {
   if (!info && preferredLang !== 'IT') {
     const fallback = await supabase
       .from('apartment_info')
-      .select('come_arrivare, dove_parcheggiare, come_entrare, regole_della_casa, cosa_fare_se_luce_spenta, cosa_fare_se_chiuso_fuori, numeri_utili')
+      .select('come_arrivare, dove_parcheggiare, come_entrare, regole_della_casa, cosa_fare_se_luce_spenta, cosa_fare_se_chiuso_fuori, numeri_utili, consigli')
       .eq('apartment_id', apartmentId)
       .eq('lingua', 'IT')
       .maybeSingle();

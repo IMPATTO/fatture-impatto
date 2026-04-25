@@ -237,7 +237,7 @@ const S = {
   saving: false,
   toastTimer: null,
   fCreds: { codice_accesso:'', luogo_chiavi:'', istruzioni_accesso:'', video_url:'' },
-  fInfo:  { come_arrivare:'', dove_parcheggiare:'', come_entrare:'', regole_della_casa:'', cosa_fare_se_luce_spenta:'', cosa_fare_se_chiuso_fuori:'', numeri_utili:[] },
+  fInfo:  { come_arrivare:'', dove_parcheggiare:'', come_entrare:'', regole_della_casa:'', cosa_fare_se_luce_spenta:'', cosa_fare_se_chiuso_fuori:'', numeri_utili:[], consigli:{ ristoranti:'', bar_colazione:'', aperitivo_vita_serale:'', attivita_bambini:'' } },
   fMappa: { indirizzo_completo:'', latitudine:'', longitudine:'', maps_url_override:'' },
   fApartment: { nome_appartamento:'' },
   fConn:  { alloggiati_account_id:'', id_appartamento_portale:'', invio_automatico:false, istat_attivo:true, istat_regione:'', istat_portal_url:'', istat_codice_struttura:'', istat_auth_type:'', istat_username:'', istat_password:'', istat_note:'' },
@@ -287,6 +287,16 @@ function arrayToNumeri(arr) {
   const out = {};
   arr.forEach(({ label, numero }) => { if (label.trim()) out[label.trim()] = numero.trim(); });
   return out;
+}
+
+function normalizeConsigli(value) {
+  const safe = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  return {
+    ristoranti: String(safe.ristoranti || ''),
+    bar_colazione: String(safe.bar_colazione || ''),
+    aperitivo_vita_serale: String(safe.aperitivo_vita_serale || ''),
+    attivita_bambini: String(safe.attivita_bambini || ''),
+  };
 }
 
 function validateUrl(url) {
@@ -1031,6 +1041,7 @@ async function loadApartmentInfo(aptId, lingua) {
     cosa_fare_se_luce_spenta:  data?.cosa_fare_se_luce_spenta  || '',
     cosa_fare_se_chiuso_fuori: data?.cosa_fare_se_chiuso_fuori || '',
     numeri_utili: numeriToArray(data?.numeri_utili),
+    consigli: normalizeConsigli(data?.consigli),
   };
 }
 
@@ -1142,6 +1153,7 @@ async function saveApartmentInfo(aptId, lingua) {
   const payload = {
     ...S.fInfo,
     numeri_utili: arrayToNumeri(S.fInfo.numeri_utili),
+    consigli: normalizeConsigli(S.fInfo.consigli),
     updated_at: new Date().toISOString(),
   };
   const { error } = await saveSingleRowByLookup('apartment_info', { apartment_id: aptId, lingua }, payload);
@@ -1173,6 +1185,7 @@ async function translateItalianInfo(aptId, targetLangs) {
       cosa_fare_se_luce_spenta: S.fInfo.cosa_fare_se_luce_spenta || '',
       cosa_fare_se_chiuso_fuori: S.fInfo.cosa_fare_se_chiuso_fuori || '',
       numeri_utili: arrayToNumeri(S.fInfo.numeri_utili),
+      consigli: normalizeConsigli(S.fInfo.consigli),
     },
     target_langs: langs,
   };
@@ -1291,6 +1304,7 @@ async function copyItalianToCurrentLanguage(aptId, lingua) {
     cosa_fare_se_luce_spenta:  itData.cosa_fare_se_luce_spenta  || '',
     cosa_fare_se_chiuso_fuori: itData.cosa_fare_se_chiuso_fuori || '',
     numeri_utili: numeriToArray(itData.numeri_utili),
+    consigli: normalizeConsigli(itData.consigli),
   };
   const translated = await translateItalianInfo(aptId, [lingua]);
   if (!translated.ok) {
@@ -1359,6 +1373,7 @@ function renderDashboard() {
       <a href="/backoffice.html" class="navbar-link">Fatturazione</a>
       <a href="/backoffice-documenti.html" class="navbar-link">Documenti</a>
       <a href="/backoffice-portale.html" class="navbar-link active">Portale Admin</a>
+      <a href="/backoffice-beds24-messaggi.html" class="navbar-link">Beds24 Messaggi</a>
       <a href="/backoffice-contabilita.html" class="navbar-link">Contabilita</a>
     </div>
   </nav>
@@ -1726,6 +1741,14 @@ function renderTabIstruzioni(el) {
     </div>
 
     <div class="card-section">
+      <div class="card-section-title">Consigli</div>
+      <div class="field"><label>Ristoranti</label><textarea id="consigli_ristoranti">${esc(f.consigli?.ristoranti)}</textarea></div>
+      <div class="field"><label>Bar e colazione</label><textarea id="consigli_bar_colazione">${esc(f.consigli?.bar_colazione)}</textarea></div>
+      <div class="field"><label>Aperitivo e vita serale</label><textarea id="consigli_aperitivo_vita_serale">${esc(f.consigli?.aperitivo_vita_serale)}</textarea></div>
+      <div class="field"><label>Attività per bambini</label><textarea id="consigli_attivita_bambini">${esc(f.consigli?.attivita_bambini)}</textarea></div>
+    </div>
+
+    <div class="card-section">
       <div class="card-section-title">Numeri utili</div>
       <div id="numeriList" class="numeri-list">
         ${f.numeri_utili.map((n, i) => numeriRowHTML(n, i)).join('')}
@@ -1750,6 +1773,18 @@ function renderTabIstruzioni(el) {
 
   ['come_arrivare','dove_parcheggiare','regole_della_casa','cosa_fare_se_luce_spenta','cosa_fare_se_chiuso_fuori'].forEach(k => {
     document.getElementById(k).addEventListener('input', e => { S.fInfo[k] = e.target.value; });
+  });
+
+  [
+    ['consigli_ristoranti', 'ristoranti'],
+    ['consigli_bar_colazione', 'bar_colazione'],
+    ['consigli_aperitivo_vita_serale', 'aperitivo_vita_serale'],
+    ['consigli_attivita_bambini', 'attivita_bambini'],
+  ].forEach(([id, key]) => {
+    document.getElementById(id).addEventListener('input', e => {
+      S.fInfo.consigli = normalizeConsigli(S.fInfo.consigli);
+      S.fInfo.consigli[key] = e.target.value;
+    });
   });
 
   document.getElementById('btnAddNumero').addEventListener('click', () => {
@@ -1974,7 +2009,7 @@ function renderTabPreview(el) {
     (m?.maps_url_override != null && String(m.maps_url_override).trim() !== '') ||
     (m?.latitudine != null && String(m.latitudine).trim() !== '' && m?.longitudine != null && String(m.longitudine).trim() !== '') ||
     (m?.indirizzo_completo != null && String(m.indirizzo_completo).trim() !== '');
-  const hasInfo = i?.come_arrivare || i?.regole_della_casa;
+  const hasInfo = i?.come_arrivare || i?.regole_della_casa || i?.consigli?.ristoranti || i?.consigli?.bar_colazione || i?.consigli?.aperitivo_vita_serale || i?.consigli?.attivita_bambini;
   const hasCreds = c?.codice_accesso || c?.istruzioni_accesso;
   const numeriCount = Object.keys(i?.numeri_utili || {}).length;
 

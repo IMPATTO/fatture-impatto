@@ -793,6 +793,7 @@
         checkout_label: 'Check-out',
         section_credentials: 'Accesso Appartamento',
         section_instructions: 'Istruzioni',
+        section_tips: 'Consigli',
         section_map: 'Come Arrivare',
         section_contacts: 'Numeri Utili',
         access_code: 'Codice Cassettina Sicurezza',
@@ -803,6 +804,10 @@
         how_to_arrive: 'Come Arrivare',
         parking: 'Parcheggio',
         house_rules: 'Regole della Casa',
+        tips_restaurants: 'Ristoranti',
+        tips_bar_breakfast: 'Bar e Colazione',
+        tips_aperitivo_nightlife: 'Aperitivo e Vita Serale',
+        tips_kids_activities: 'Attività per Bambini',
         no_power: 'Se la luce è spenta',
         locked_out: 'Se sei chiuso fuori',
         open_maps: 'Apri in Maps',
@@ -822,6 +827,7 @@
         checkout_label: 'Check-out',
         section_credentials: 'Apartment Access',
         section_instructions: 'Instructions',
+        section_tips: 'Tips',
         section_map: 'How to Arrive',
         section_contacts: 'Useful Numbers',
         access_code: 'Lockbox Code',
@@ -832,6 +838,10 @@
         how_to_arrive: 'How to Arrive',
         parking: 'Parking',
         house_rules: 'House Rules',
+        tips_restaurants: 'Restaurants',
+        tips_bar_breakfast: 'Bars and Breakfast',
+        tips_aperitivo_nightlife: 'Aperitivo and Nightlife',
+        tips_kids_activities: 'Activities for Children',
         no_power: 'If the power is out',
         locked_out: 'If you\'re locked out',
         open_maps: 'Open in Maps',
@@ -851,6 +861,7 @@
         checkout_label: 'Check-out',
         section_credentials: 'Wohnungszugang',
         section_instructions: 'Anweisungen',
+        section_tips: 'Tipps',
         section_map: 'Anreise',
         section_contacts: 'Nützliche Nummern',
         access_code: 'Schlusselkasten-Code',
@@ -861,6 +872,10 @@
         how_to_arrive: 'Anreise',
         parking: 'Parken',
         house_rules: 'Hausregeln',
+        tips_restaurants: 'Restaurants',
+        tips_bar_breakfast: 'Bars und Frühstück',
+        tips_aperitivo_nightlife: 'Aperitif und Nachtleben',
+        tips_kids_activities: 'Aktivitäten für Kinder',
         no_power: 'Bei Stromausfall',
         locked_out: 'Wenn ausgesperrt',
         open_maps: 'In Maps öffnen',
@@ -880,6 +895,7 @@
         checkout_label: 'Départ',
         section_credentials: 'Accès Appartement',
         section_instructions: 'Instructions',
+        section_tips: 'Conseils',
         section_map: 'Comment Arriver',
         section_contacts: 'Numéros Utiles',
         access_code: 'Code de la Boite a Cles',
@@ -890,6 +906,10 @@
         how_to_arrive: 'Comment Arriver',
         parking: 'Stationnement',
         house_rules: 'Regles de la Maison',
+        tips_restaurants: 'Restaurants',
+        tips_bar_breakfast: 'Bars et Petit-déjeuner',
+        tips_aperitivo_nightlife: 'Apéritif et Vie Nocturne',
+        tips_kids_activities: 'Activités pour Enfants',
         no_power: 'En cas de coupure',
         locked_out: 'Si vous êtes bloqué',
         open_maps: 'Ouvrir dans Maps',
@@ -909,6 +929,7 @@
         checkout_label: 'Salida',
         section_credentials: 'Acceso al Apartamento',
         section_instructions: 'Instrucciones',
+        section_tips: 'Consejos',
         section_map: 'Cómo Llegar',
         section_contacts: 'Números Útiles',
         access_code: 'Codigo de la Caja de Seguridad',
@@ -919,6 +940,10 @@
         how_to_arrive: 'Cómo Llegar',
         parking: 'Aparcamiento',
         house_rules: 'Reglas de la Casa',
+        tips_restaurants: 'Restaurantes',
+        tips_bar_breakfast: 'Bares y Desayuno',
+        tips_aperitivo_nightlife: 'Aperitivo y Vida Nocturna',
+        tips_kids_activities: 'Actividades para Niños',
         no_power: 'Sin electricidad',
         locked_out: 'Si te quedas fuera',
         open_maps: 'Abrir en Maps',
@@ -938,6 +963,7 @@
         checkout_label: 'Выезд',
         section_credentials: 'Доступ в квартиру',
         section_instructions: 'Инструкции',
+        section_tips: 'Советы',
         section_map: 'Как добраться',
         section_contacts: 'Полезные номера',
         access_code: 'Код сейф-бокса',
@@ -948,6 +974,10 @@
         how_to_arrive: 'Как добраться',
         parking: 'Парковка',
         house_rules: 'Правила дома',
+        tips_restaurants: 'Рестораны',
+        tips_bar_breakfast: 'Бары и Завтрак',
+        tips_aperitivo_nightlife: 'Аперитив и Вечерняя Жизнь',
+        tips_kids_activities: 'Занятия для Детей',
         no_power: 'Если нет света',
         locked_out: 'Если заперты снаружи',
         open_maps: 'Открыть в Maps',
@@ -1041,6 +1071,24 @@
             <div class="instr-text">${linkifyText(text)}</div>
           </div>
         </div>`;
+    }
+
+    function getConsigli(info) {
+      const safe = info?.consigli;
+      if (!safe || typeof safe !== 'object' || Array.isArray(safe)) {
+        return {
+          ristoranti: '',
+          bar_colazione: '',
+          aperitivo_vita_serale: '',
+          attivita_bambini: '',
+        };
+      }
+      return {
+        ristoranti: String(safe.ristoranti || ''),
+        bar_colazione: String(safe.bar_colazione || ''),
+        aperitivo_vita_serale: String(safe.aperitivo_vita_serale || ''),
+        attivita_bambini: String(safe.attivita_bambini || ''),
+      };
     }
 
     function escHtml(str) {
@@ -1179,6 +1227,23 @@
           const instrCard = buildCard('list', t('section_instructions'), instrHTML, delay);
           instrCard.classList.add('collapsed');
           main.appendChild(instrCard);
+          delay += 0.05;
+        }
+
+        const consigli = getConsigli(info);
+        const hasTips = consigli.ristoranti || consigli.bar_colazione || consigli.aperitivo_vita_serale || consigli.attivita_bambini;
+        if (hasTips) {
+          let tipsNum = 1;
+          let tipsHTML = `<div class="instructions-list">`;
+          tipsHTML += instrItem(tipsNum++, t('tips_restaurants'), consigli.ristoranti);
+          tipsHTML += instrItem(tipsNum++, t('tips_bar_breakfast'), consigli.bar_colazione);
+          tipsHTML += instrItem(tipsNum++, t('tips_aperitivo_nightlife'), consigli.aperitivo_vita_serale);
+          tipsHTML += instrItem(tipsNum++, t('tips_kids_activities'), consigli.attivita_bambini);
+          tipsHTML += `</div>`;
+
+          const tipsCard = buildCard('list', t('section_tips'), tipsHTML, delay);
+          tipsCard.classList.add('collapsed');
+          main.appendChild(tipsCard);
           delay += 0.05;
         }
       }

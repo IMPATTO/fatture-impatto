@@ -154,6 +154,13 @@
     }
     .movement-name { font-size: 14px; font-weight: 500; color: var(--text1); }
     .movement-apt  { font-size: 12px; color: var(--text2); margin-top: 2px; }
+    .home-error {
+      margin: 0 16px 12px; padding: 12px 13px;
+      border: 1px solid rgba(163,45,45,0.18);
+      border-radius: 11px; background: var(--danger-bg);
+      color: var(--danger); font-size: 13px; line-height: 1.45;
+      display: none;
+    }
     .tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; }
     .tag-in    { background: var(--accent-bg); color: var(--accent-dk); }
     .tag-out   { background: var(--warn-bg);   color: var(--warn); }
@@ -268,13 +275,20 @@
       background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
       padding: 6px 10px; font-size: 12px; color: var(--text1); outline: none; max-width: 220px;
     }
+    .cal-warning-list { padding: 10px 16px 0; display: none; }
+    .cal-warning-item {
+      background: var(--warn-bg); color: var(--warn);
+      border: 1px solid rgba(186,117,23,0.16);
+      border-radius: 10px; padding: 10px 12px; font-size: 12px; line-height: 1.45;
+      margin-bottom: 8px;
+    }
     #calMultiView { flex: 1; height: calc(100dvh - 160px); overflow: auto; }
     .timeline-header {
       display: flex; position: sticky; top: 0; z-index: 20;
       background: var(--surface); border-bottom: 1px solid var(--border);
     }
     .tl-room-header {
-      width: 110px; flex-shrink: 0; padding: 8px 10px; font-size: 10px; font-weight: 600;
+      width: 148px; flex-shrink: 0; padding: 8px 10px; font-size: 10px; font-weight: 600;
       color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em;
       border-right: 1px solid var(--border); position: sticky; left: 0; background: var(--surface); z-index: 21;
     }
@@ -286,19 +300,26 @@
     .tl-day-hdr.today { color: var(--accent); font-weight: 700; }
     .tl-day-hdr.weekend { background: var(--bg); }
     .timeline-body { min-height: 100%; }
-    .tl-row { display: flex; border-bottom: 1px solid var(--border); height: 40px; position: relative; }
+    .tl-row { display: flex; border-bottom: 1px solid var(--border); height: 48px; position: relative; }
     .tl-room-label {
-      width: 110px; flex-shrink: 0; padding: 0 10px; font-size: 11px; color: var(--text1); font-weight: 500;
+      width: 148px; flex-shrink: 0; padding: 0 10px; font-size: 11px; color: var(--text1); font-weight: 500;
       display: flex; align-items: center; border-right: 1px solid var(--border);
       position: sticky; left: 0; background: var(--surface); z-index: 5;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      white-space: normal; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
     }
     .tl-cells { display: flex; flex: 1; position: relative; }
-    .tl-cell { width: 32px; flex-shrink: 0; border-right: 1px solid var(--border); height: 100%; }
+    .tl-cell {
+      width: 32px; flex-shrink: 0; border-right: 1px solid var(--border); height: 100%;
+      cursor: pointer;
+    }
     .tl-cell.weekend { background: var(--bg); }
     .tl-cell.today { background: var(--accent-bg); }
+    .calendar-day-open { background: #eaf8ef; }
+    .calendar-day-closed { background: #fdeaea; }
+    .calendar-day-booked { outline: 1px solid rgba(0,0,0,.12); outline-offset: -1px; }
     .tl-booking {
-      position: absolute; top: 5px; height: 30px; border-radius: 4px; cursor: pointer;
+      position: absolute; top: 9px; height: 30px; border-radius: 4px; cursor: pointer;
       display: flex; align-items: center; padding: 0 6px; font-size: 10px; font-weight: 500;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: filter 0.1s; z-index: 2;
     }
@@ -311,16 +332,22 @@
     .cal-days { display: contents; }
     .cal-dow { text-align: center; font-size: 10px; font-weight: 600; color: var(--text3); padding: 4px 0; font-family: var(--mono); letter-spacing: 0.04em; }
     .cal-day {
-      aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-      font-size: 13px; color: var(--text1); border-radius: 50%; cursor: pointer; position: relative; transition: background 0.1s;
+      min-height: 66px; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start;
+      gap: 2px; font-size: 13px; color: var(--text1); border-radius: 12px; cursor: pointer; position: relative;
+      transition: background 0.1s; padding: 6px;
     }
     .cal-day:active { background: var(--accent-bg); }
     .cal-day.other { color: var(--text3); }
-    .cal-day.today { background: var(--accent); color: #fff; font-weight: 700; }
-    .cal-day.has-booking::after {
-      content: ''; position: absolute; bottom: 3px; width: 4px; height: 4px; border-radius: 50%; background: var(--warn);
+    .cal-day.today { box-shadow: inset 0 0 0 2px var(--accent); font-weight: 700; }
+    .cal-day-number { font-weight: 700; line-height: 1; }
+    .calendar-price { font-size: 11px; font-weight: 600; line-height: 1.1; }
+    .calendar-minstay { font-size: 10px; opacity: .7; line-height: 1.1; }
+    .calendar-booking-badge {
+      font-size: 9px; padding: 2px 5px; border-radius: 10px;
+      background: rgba(0,0,0,.08); color: var(--text2); font-weight: 600;
+      margin-top: auto;
     }
-    .cal-day.today.has-booking::after { background: rgba(255,255,255,0.7); }
+    .cal-day.today .calendar-booking-badge { background: rgba(29,158,117,.18); color: var(--accent-dk); }
     .booking-section { padding: 4px 16px 16px; }
     .booking-section-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; font-family: var(--mono); margin-bottom: 10px; padding-top: 8px; }
     .booking-card {
@@ -351,6 +378,33 @@
     .sheet-row:last-child { border-bottom: none; }
     .sheet-label { color: var(--text2); }
     .sheet-value { color: var(--text1); font-weight: 500; }
+    .sheet-actions { display: grid; gap: 10px; margin-top: 16px; }
+    .sheet-field label, .todo-field-label {
+      display: block; font-size: 11px; color: var(--text2); margin-bottom: 5px;
+      font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .sheet-field input, .todo-tags-input {
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 12px; font-size: 14px;
+      color: var(--text1); font-family: var(--sans); outline: none;
+    }
+    .sheet-field input:focus, .todo-tags-input:focus { border-color: var(--accent); }
+    .sheet-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .sheet-note {
+      font-size: 12px; color: var(--text2);
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 12px;
+    }
+    .sheet-toggle {
+      display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text1);
+      padding-top: 4px;
+    }
+    .sheet-toggle input, .todo-private-row input { accent-color: var(--accent); }
+    .sheet-save-btn {
+      width: 100%; border: none; border-radius: 12px; background: var(--accent);
+      color: #fff; font-size: 14px; font-weight: 600; padding: 12px 14px; cursor: pointer;
+    }
+    .sheet-save-btn:disabled { opacity: 0.6; cursor: default; }
     .channel-badge {
       display: inline-block; font-size: 11px; padding: 3px 9px; border-radius: 20px; font-weight: 600;
     }
@@ -422,10 +476,30 @@
       font-weight: 500;
     }
     .person-tag.selected { background: var(--accent-bg); color: var(--accent-dk); border-color: var(--accent); }
+    .person-tag.disabled { opacity: 0.45; cursor: not-allowed; }
     .todo-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
     .todo-tag-pill {
       font-size: 10px; padding: 2px 7px; border-radius: 10px;
       background: var(--accent-bg); color: var(--accent-dk); font-weight: 500;
+    }
+    .todo-assignment-pill {
+      font-size: 10px; padding: 2px 7px; border-radius: 10px;
+      background: var(--blue-bg); color: var(--blue); font-weight: 500;
+    }
+    .todo-private-row {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: var(--text2); padding: 2px 0 0;
+    }
+    .todo-extra-fields { display: grid; gap: 8px; }
+
+    @media (max-width: 640px) {
+      .tl-room-header, .tl-room-label { width: 168px; }
+      .tl-room-label { font-size: 11px; line-height: 1.15; }
+      .cal-grid { padding: 8px 10px; gap: 4px 0; }
+      .cal-day { min-height: 74px; padding: 6px 5px; }
+      .calendar-price { font-size: 10px; }
+      .calendar-minstay { font-size: 9px; }
+      .sheet-grid { grid-template-columns: 1fr; }
     }
 
     .skeleton { background: var(--border); border-radius: 6px; animation: shimmer 1.5s infinite; }
@@ -492,6 +566,7 @@
       <div class="stat-card"><div class="stat-label">Occupazione</div><div class="stat-val" id="statOcc">—</div><div class="stat-sub">questo mese</div></div>
       <div class="stat-card"><div class="stat-label">Entrate</div><div class="stat-val" id="statRev">—</div><div class="stat-sub">questo mese</div></div>
     </div>
+    <div class="home-error" id="homeError"></div>
     <div class="section-header"><span class="section-title">Segnalazioni</span></div>
     <div class="alert-list" id="alertList">
       <div class="alert-item"><div class="alert-indicator ind-green"></div><div><div class="alert-title skeleton" style="width:160px;height:14px"></div><div class="alert-sub skeleton" style="width:120px;height:11px;margin-top:5px"></div></div></div>
@@ -560,8 +635,9 @@
 
     <div id="calLoading" style="display:none;padding:20px;text-align:center;color:var(--text3);font-size:13px">
       <div class="loading-spinner" style="margin:0 auto 8px"></div>
-      Carico prenotazioni...
+      Carico prenotazioni e inventory...
     </div>
+    <div class="cal-warning-list" id="calWarnings"></div>
 
     <div id="calMultiView">
       <div class="timeline-header" id="timelineHeader"></div>
@@ -594,13 +670,24 @@
       <div class="todo-section"><div class="todo-section-label">Carico...</div></div>
     </div>
     <div class="add-todo-bar">
+      <div class="todo-field-label">Assegnazione</div>
+      <div class="tag-selector" id="tagSelector"></div>
+      <div class="todo-extra-fields">
+        <div>
+          <label class="todo-field-label" for="todoTagsInput">Tag visuali</label>
+          <input class="todo-tags-input" id="todoTagsInput" placeholder="es. urgente, pulizie, documenti"/>
+        </div>
+        <label class="todo-private-row">
+          <input type="checkbox" id="todoPrivate"/>
+          <span>Privato</span>
+        </label>
+      </div>
       <div class="add-todo-row1">
         <input class="add-todo-input" id="addTodoInput" placeholder="Aggiungi task..." onkeydown="if(event.key==='Enter')addTodo()"/>
         <button class="add-btn" onclick="addTodo()">
           <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </button>
       </div>
-      <div class="tag-selector" id="tagSelector"></div>
     </div>
   </div>
 
@@ -640,8 +727,10 @@ const APP = {
   calMonth: new Date().getMonth(),
   calView: 'multi',
   calBookings: [],
+  calInventoryDays: [],
   calApartments: [],
   calSelectedApt: null,
+  calWarnings: [],
   calLoading: false,
   todos: [],
   selectedTags: [],
@@ -650,6 +739,7 @@ const APP = {
   isListening: false,
   micPermissionGranted: false,
   homePullInit: false,
+  homeLoading: false,
 };
 
 function fmtTime() {
@@ -702,10 +792,13 @@ function goTo(id, btn) {
 }
 
 async function loadHome() {
+  if (APP.homeLoading) return;
+  APP.homeLoading = true;
   const today = new Date().toISOString().slice(0, 10);
   const days = ['Domenica', 'Lunedi', 'Martedi', 'Mercoledi', 'Giovedi', 'Venerdi', 'Sabato'];
   const months = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
   const now = new Date();
+  const homeError = document.getElementById('homeError');
   document.getElementById('homeDate').textContent = `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]}`;
   document.getElementById('welcomeTime').textContent = fmtTime();
   document.getElementById('statCheckin').textContent = '—';
@@ -713,52 +806,93 @@ async function loadHome() {
   document.getElementById('statOcc').textContent = '—';
   document.getElementById('statRev').textContent = '—';
   document.getElementById('aiBriefing').textContent = 'Carico...';
+  homeError.style.display = 'none';
+  homeError.textContent = '';
 
-  const [checkins, revenue] = await Promise.all([
-    sb.from('ospiti_check_in')
-      .select('nome,cognome,data_checkin,data_checkout,alloggiati_stato,apartments(nome_appartamento)')
-      .or(`data_checkin.eq.${today},data_checkout.eq.${today}`)
-      .limit(20),
-    sb.from('ospiti_check_in')
-      .select('importo_lordo')
-      .eq('stato', 'APPROVATA')
-      .gte('data_checkin', `${today.slice(0, 7)}-01`)
-      .lte('data_checkin', today),
-  ]);
+  try {
+    const [checkinsResult, revenueResult, missingResult, pendingResult, occupiedResult] = await Promise.allSettled([
+      sb.from('ospiti_check_in')
+        .select('nome,cognome,data_checkin,data_checkout,alloggiati_stato,apartments(nome_appartamento)')
+        .or(`data_checkin.eq.${today},data_checkout.eq.${today}`)
+        .limit(20),
+      sb.from('ospiti_check_in')
+        .select('importo_lordo')
+        .eq('stato', 'APPROVATA')
+        .gte('data_checkin', `${today.slice(0, 7)}-01`)
+        .lte('data_checkin', today),
+      sb.from('ospiti_check_in')
+        .select('id,nome,cognome,data_checkin,apartments(nome_appartamento)')
+        .neq('alloggiati_stato', 'INVIATA')
+        .lte('data_checkin', today)
+        .neq('stato', 'SCARTATA')
+        .limit(5),
+      sb.from('ospiti_check_in')
+        .select('id,nome,cognome,apartments(nome_appartamento)')
+        .in('stato', ['CHECK_IN_COMPLETATO', 'DA_VERIFICARE'])
+        .limit(5),
+      sb.from('ospiti_check_in')
+        .select('id', { count: 'exact', head: true })
+        .lte('data_checkin', today)
+        .gt('data_checkout', today)
+        .neq('stato', 'SCARTATA'),
+    ]);
 
-  const arrivals = (checkins.data || []).filter((row) => row.data_checkin === today);
-  const departures = (checkins.data || []).filter((row) => row.data_checkout === today);
-  const rev = (revenue.data || []).reduce((sum, row) => sum + parseFloat(row.importo_lordo || 0), 0);
+    const sectionErrors = [];
+    const pickData = (result, label) => {
+      if (result.status !== 'fulfilled') {
+        console.error('[home]', result.reason);
+        sectionErrors.push(label);
+        return [];
+      }
+      if (result.value.error) {
+        console.error('[home]', result.value.error);
+        sectionErrors.push(label);
+        return [];
+      }
+      return result.value.data || [];
+    };
+    const pickCount = (result, label) => {
+      if (result.status !== 'fulfilled') {
+        console.error('[home]', result.reason);
+        sectionErrors.push(label);
+        return null;
+      }
+      if (result.value.error) {
+        console.error('[home]', result.value.error);
+        sectionErrors.push(label);
+        return null;
+      }
+      return typeof result.value.count === 'number' ? result.value.count : null;
+    };
 
-  document.getElementById('statCheckin').textContent = arrivals.length || '—';
-  document.getElementById('statCheckout').textContent = departures.length || '—';
-  document.getElementById('statRev').textContent = rev ? `€${rev >= 1000 ? `${(rev / 1000).toFixed(1)}k` : Math.round(rev)}` : '—';
+    const checkins = pickData(checkinsResult, 'movimenti');
+    const revenue = pickData(revenueResult, 'entrate');
+    const missing = pickData(missingResult, 'schedine');
+    const pending = pickData(pendingResult, 'check-in pendenti');
+    const occupiedCount = pickCount(occupiedResult, 'occupazione');
 
-  const { data: missing } = await sb.from('ospiti_check_in')
-    .select('id,nome,cognome,data_checkin,apartments(nome_appartamento)')
-    .neq('alloggiati_stato', 'INVIATA')
-    .lte('data_checkin', today)
-    .neq('stato', 'SCARTATA')
-    .limit(5);
+    const arrivals = checkins.filter((row) => row.data_checkin === today);
+    const departures = checkins.filter((row) => row.data_checkout === today);
+    const rev = revenue.reduce((sum, row) => sum + parseFloat(row.importo_lordo || 0), 0);
 
-  const { data: pending } = await sb.from('ospiti_check_in')
-    .select('id,nome,cognome,apartments(nome_appartamento)')
-    .in('stato', ['CHECK_IN_COMPLETATO', 'DA_VERIFICARE'])
-    .limit(5);
+    document.getElementById('statCheckin').textContent = arrivals.length || '—';
+    document.getElementById('statCheckout').textContent = departures.length || '—';
+    document.getElementById('statRev').textContent = rev ? `€${rev >= 1000 ? `${(rev / 1000).toFixed(1)}k` : Math.round(rev)}` : '—';
+    document.getElementById('statOcc').textContent = occupiedCount === null ? '—' : String(occupiedCount);
 
-  const alerts = [];
-  (missing || []).forEach((row) => alerts.push({ type: 'red', title: `Schedina mancante - ${row.apartments?.nome_appartamento || ''}`, sub: `${row.nome} ${row.cognome} · ${row.data_checkin}` }));
-  (pending || []).forEach((row) => alerts.push({ type: 'amber', title: 'Check-in da processare', sub: `${row.nome} ${row.cognome} · ${row.apartments?.nome_appartamento || ''}` }));
-  if (arrivals.length > 0) alerts.push({ type: 'green', title: `${arrivals.length} arriv${arrivals.length === 1 ? 'o' : 'i'} oggi`, sub: arrivals.map((row) => `${row.nome} ${row.cognome}`).join(', ') });
+    const alerts = [];
+    missing.forEach((row) => alerts.push({ type: 'red', title: `Schedina mancante - ${row.apartments?.nome_appartamento || ''}`, sub: `${row.nome} ${row.cognome} · ${row.data_checkin}` }));
+    pending.forEach((row) => alerts.push({ type: 'amber', title: 'Check-in da processare', sub: `${row.nome} ${row.cognome} · ${row.apartments?.nome_appartamento || ''}` }));
+    if (arrivals.length > 0) alerts.push({ type: 'green', title: `${arrivals.length} arriv${arrivals.length === 1 ? 'o' : 'i'} oggi`, sub: arrivals.map((row) => `${row.nome} ${row.cognome}`).join(', ') });
 
-  document.getElementById('alertList').innerHTML = alerts.length ? alerts.map((alert) => `
+    document.getElementById('alertList').innerHTML = alerts.length ? alerts.map((alert) => `
     <div class="alert-item">
       <div class="alert-indicator ind-${alert.type}"></div>
       <div><div class="alert-title">${alert.title}</div><div class="alert-sub">${alert.sub}</div></div>
     </div>`).join('') : '<div style="padding:12px 0;color:var(--text3);font-size:13px">Nessuna segnalazione</div>';
 
-  const allMovements = [...arrivals.map((row) => ({ ...row, type: 'in' })), ...departures.map((row) => ({ ...row, type: 'out' }))];
-  document.getElementById('movementList').innerHTML = allMovements.length ? allMovements.map((row) => `
+    const allMovements = [...arrivals.map((row) => ({ ...row, type: 'in' })), ...departures.map((row) => ({ ...row, type: 'out' }))];
+    document.getElementById('movementList').innerHTML = allMovements.length ? allMovements.map((row) => `
     <div class="movement-item">
       <div>
         <div class="movement-name">${row.nome} ${row.cognome}</div>
@@ -767,18 +901,34 @@ async function loadHome() {
       <span class="tag ${row.type === 'in' ? 'tag-in' : 'tag-out'}">${row.type === 'in' ? 'Arrivo' : 'Partenza'}</span>
     </div>`).join('') : '<div style="padding:10px 0;color:var(--text3);font-size:13px">Nessun movimento oggi</div>';
 
-  const totalIssues = (missing || []).length + (pending || []).length;
-  if (totalIssues === 0 && !arrivals.length && !departures.length) {
-    document.getElementById('aiBriefing').textContent = 'Giornata tranquilla - nessuna segnalazione urgente.';
-    return;
-  }
+    const totalIssues = missing.length + pending.length;
+    if (totalIssues === 0 && !arrivals.length && !departures.length) {
+      document.getElementById('aiBriefing').textContent = sectionErrors.length
+        ? 'Dashboard caricata parzialmente. Nessuna urgenza nei dati disponibili.'
+        : 'Giornata tranquilla - nessuna segnalazione urgente.';
+    } else {
+      const parts = [];
+      if (arrivals.length) parts.push(`${arrivals.length} arriv${arrivals.length === 1 ? 'o' : 'i'}`);
+      if (departures.length) parts.push(`${departures.length} partenz${departures.length === 1 ? 'a' : 'e'}`);
+      if (missing.length) parts.push(`${missing.length} schedina${missing.length === 1 ? '' : 'e'} mancante${missing.length === 1 ? '' : 'i'}`);
+      if (pending.length) parts.push(`${pending.length} check-in da processare`);
+      document.getElementById('aiBriefing').textContent = parts.join(' · ');
+    }
 
-  const parts = [];
-  if (arrivals.length) parts.push(`${arrivals.length} arriv${arrivals.length === 1 ? 'o' : 'i'}`);
-  if (departures.length) parts.push(`${departures.length} partenz${departures.length === 1 ? 'a' : 'e'}`);
-  if ((missing || []).length) parts.push(`${missing.length} schedina${missing.length === 1 ? '' : 'e'} mancante${missing.length === 1 ? '' : 'i'}`);
-  if ((pending || []).length) parts.push(`${pending.length} check-in da processare`);
-  document.getElementById('aiBriefing').textContent = parts.join(' · ');
+    if (sectionErrors.length) {
+      homeError.textContent = `Alcune sezioni non sono state caricate correttamente: ${sectionErrors.join(', ')}. La Home resta comunque utilizzabile.`;
+      homeError.style.display = 'block';
+    }
+  } catch (error) {
+    console.error('[home]', error);
+    homeError.textContent = 'Errore nel caricamento della dashboard. Riprova tra poco.';
+    homeError.style.display = 'block';
+    document.getElementById('alertList').innerHTML = '<div style="padding:12px 0;color:var(--text3);font-size:13px">Nessuna segnalazione disponibile</div>';
+    document.getElementById('movementList').innerHTML = '<div style="padding:10px 0;color:var(--text3);font-size:13px">Nessun movimento disponibile</div>';
+    document.getElementById('aiBriefing').textContent = 'Briefing non disponibile al momento.';
+  } finally {
+    APP.homeLoading = false;
+  }
 }
 
 function addMessage(role, text) {
@@ -937,6 +1087,17 @@ function _stopRecognition() {
   document.getElementById('chatStatus').textContent = 'pronto';
 }
 
+function formatApartmentShortName(name) {
+  if (!name) return '—';
+  return String(name)
+    .replace(/\bappartamento\b/gi, '')
+    .replace(/\bapartment\b/gi, '')
+    .replace(/\bviale\b/gi, 'v.le')
+    .replace(/\bvia\b/gi, 'v.')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 async function loadCalendarData() {
   if (APP.calLoading) return;
   APP.calLoading = true;
@@ -954,6 +1115,8 @@ async function loadCalendarData() {
     const data = await res.json();
     APP.calBookings = data.bookings || [];
     APP.calApartments = data.apartments || [];
+    APP.calInventoryDays = data.inventoryDays || [];
+    APP.calWarnings = data.warnings || [];
     const selector = document.getElementById('aptSelector');
     selector.innerHTML = '<option value="">Tutti gli appartamenti...</option>' +
       APP.calApartments.map((apartment) => `<option value="${apartment.beds24_room_id}">${apartment.name}</option>`).join('');
@@ -962,6 +1125,8 @@ async function loadCalendarData() {
     toast(`Errore caricamento calendario: ${error.message}`, 'err');
     APP.calBookings = [];
     APP.calApartments = [];
+    APP.calInventoryDays = [];
+    APP.calWarnings = [error.message];
   } finally {
     APP.calLoading = false;
     document.getElementById('calLoading').style.display = 'none';
@@ -980,8 +1145,20 @@ function setCalView(view) {
 }
 
 function renderCalendarView() {
+  renderCalendarWarnings();
   if (APP.calView === 'multi') renderMultiTimeline();
   else renderSingleMonth();
+}
+
+function renderCalendarWarnings() {
+  const container = document.getElementById('calWarnings');
+  if (!APP.calWarnings.length) {
+    container.style.display = 'none';
+    container.innerHTML = '';
+    return;
+  }
+  container.style.display = 'block';
+  container.innerHTML = APP.calWarnings.map((warning) => `<div class="cal-warning-item">${warning}</div>`).join('');
 }
 
 function onAptChange() {
@@ -1010,6 +1187,27 @@ function encodeBookingPayload(booking) {
   return btoa(unescape(encodeURIComponent(JSON.stringify(booking))));
 }
 
+function encodeDayPayload(payload) {
+  return btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+}
+
+function getInventoryDay(propertyId, date) {
+  return APP.calInventoryDays.find((day) => String(day.propertyId) === String(propertyId) && day.date === date) || null;
+}
+
+function getBookingForDate(propertyId, date) {
+  return APP.calBookings.find((booking) =>
+    String(booking.roomId) === String(propertyId)
+      && booking.checkIn <= date
+      && booking.checkOut > date
+  ) || null;
+}
+
+function formatInventoryPrice(value) {
+  const num = Number(value);
+  return Number.isFinite(num) && num > 0 ? `€${Math.round(num)}` : '—';
+}
+
 function renderMultiTimeline() {
   const daysInMonth = new Date(APP.calYear, APP.calMonth + 1, 0).getDate();
   const today = new Date().toISOString().slice(0, 10);
@@ -1033,12 +1231,24 @@ function renderMultiTimeline() {
   const bodyHtml = APP.calApartments.map((apartment) => {
     const roomId = String(apartment.beds24_room_id);
     const roomBookings = bookingsByRoom[roomId] || [];
-    let rowHtml = `<div class="tl-row"><div class="tl-room-label" title="${apartment.name}">${apartment.name}</div><div class="tl-cells" style="width:${32 * daysInMonth}px">`;
+    let rowHtml = `<div class="tl-row"><div class="tl-room-label" title="${apartment.name}">${formatApartmentShortName(apartment.name)}</div><div class="tl-cells" style="width:${32 * daysInMonth}px">`;
 
     for (let day = 1; day <= daysInMonth; day += 1) {
       const date = new Date(APP.calYear, APP.calMonth, day);
       const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-      rowHtml += `<div class="tl-cell${isWeekend ? ' weekend' : ''}${day === todayDay ? ' today' : ''}" style="left:${(day - 1) * 32}px;position:absolute"></div>`;
+      const dateStr = `${APP.calYear}-${String(APP.calMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const inventory = getInventoryDay(roomId, dateStr);
+      const booking = getBookingForDate(roomId, dateStr);
+      const stateClass = inventory ? (inventory.closed ? ' calendar-day-closed' : ' calendar-day-open') : '';
+      const bookedClass = booking ? ' calendar-day-booked' : '';
+      const encodedDay = encodeDayPayload({
+        apartmentId: apartment.id,
+        propertyId: roomId,
+        apartmentName: apartment.name,
+        dateFrom: dateStr,
+        dateTo: dateStr,
+      });
+      rowHtml += `<div class="tl-cell${isWeekend ? ' weekend' : ''}${day === todayDay ? ' today' : ''}${stateClass}${bookedClass}" style="left:${(day - 1) * 32}px;position:absolute" onclick="openInventorySheet('${encodedDay}')" title="${dateStr}${inventory ? ` · ${inventory.closed ? 'Chiuso' : 'Aperto'} · ${formatInventoryPrice(inventory.price)}${inventory.minStay ? ` · min ${inventory.minStay}` : ''}${inventory.priceSource === 'offers' ? ' · prezzo offers' : ''}` : ''}"></div>`;
     }
 
     roomBookings.forEach((booking) => {
@@ -1069,20 +1279,31 @@ function renderSingleMonth() {
   const offset = firstDay === 0 ? 6 : firstDay - 1;
   const bookings = APP.calSelectedApt ? APP.calBookings.filter((booking) => String(booking.roomId) === String(APP.calSelectedApt)) : APP.calBookings;
 
-  const bookedDays = new Set();
-  bookings.forEach((booking) => {
-    const start = new Date(booking.checkIn);
-    const end = new Date(booking.checkOut);
-    for (let date = new Date(start); date < end; date.setDate(date.getDate() + 1)) {
-      if (date.getFullYear() === APP.calYear && date.getMonth() === APP.calMonth) bookedDays.add(date.getDate());
-    }
-  });
-
   let daysHtml = '';
   for (let index = 0; index < offset; index += 1) daysHtml += '<div class="cal-day other"></div>';
   for (let day = 1; day <= daysInMonth; day += 1) {
     const dateStr = `${APP.calYear}-${String(APP.calMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    daysHtml += `<div class="cal-day${dateStr === today ? ' today' : ''}${bookedDays.has(day) ? ' has-booking' : ''}">${day}</div>`;
+    const inventory = APP.calSelectedApt ? getInventoryDay(APP.calSelectedApt, dateStr) : null;
+    const booking = APP.calSelectedApt ? getBookingForDate(APP.calSelectedApt, dateStr) : null;
+    const encodedDay = APP.calSelectedApt ? encodeDayPayload({
+      apartmentId: APP.calApartments.find((row) => String(row.beds24_room_id) === String(APP.calSelectedApt))?.id || null,
+      propertyId: APP.calSelectedApt,
+      apartmentName: APP.calApartments.find((row) => String(row.beds24_room_id) === String(APP.calSelectedApt))?.name || '',
+      dateFrom: dateStr,
+      dateTo: dateStr,
+    }) : '';
+    const classes = [
+      'cal-day',
+      dateStr === today ? 'today' : '',
+      inventory ? (inventory.closed ? 'calendar-day-closed' : 'calendar-day-open') : '',
+      booking ? 'calendar-day-booked' : '',
+    ].filter(Boolean).join(' ');
+    daysHtml += `<div class="${classes}" ${APP.calSelectedApt ? `onclick="openInventorySheet('${encodedDay}')"` : ''}>
+      <div class="cal-day-number">${day}</div>
+      ${inventory?.price ? `<div class="calendar-price">€${Math.round(inventory.price)}</div>` : '<div class="calendar-price">—</div>'}
+      ${inventory?.minStay ? `<div class="calendar-minstay">min ${inventory.minStay}</div>` : ''}
+      ${booking ? '<div class="calendar-booking-badge">Pren.</div>' : ''}
+    </div>`;
   }
   document.getElementById('calDays').innerHTML = daysHtml;
 
@@ -1126,25 +1347,179 @@ function closeBookingSheet() {
   document.getElementById('bookingSheet').classList.remove('open');
 }
 
+function openInventorySheet(payload) {
+  const parsed = typeof payload === 'string'
+    ? JSON.parse(decodeURIComponent(escape(atob(payload))))
+    : payload;
+  const inventory = getInventoryDay(parsed.propertyId, parsed.dateFrom);
+  const booking = getBookingForDate(parsed.propertyId, parsed.dateFrom);
+  document.getElementById('sheetContent').innerHTML = `
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Inventory giornaliera</div>
+    <div class="sheet-sub">${parsed.apartmentName || 'Appartamento'} · ${parsed.dateFrom}</div>
+    ${booking ? `<div class="sheet-row"><span class="sheet-label">Prenotazione</span><span class="sheet-value">${booking.guestName}</span></div>` : ''}
+    <div class="sheet-actions">
+      <div class="sheet-grid">
+        <div class="sheet-field">
+          <label for="invDateFrom">Dal</label>
+          <input id="invDateFrom" type="date" value="${parsed.dateFrom}"/>
+        </div>
+        <div class="sheet-field">
+          <label for="invDateTo">Al</label>
+          <input id="invDateTo" type="date" value="${parsed.dateTo || parsed.dateFrom}"/>
+        </div>
+      </div>
+      <div class="sheet-grid">
+        <div class="sheet-field">
+          <label for="invPrice">Prezzo</label>
+          <input id="invPrice" type="number" min="0" step="1" value="${inventory?.price ?? ''}" placeholder="140"/>
+        </div>
+        <div class="sheet-field">
+          <label for="invMinStay">Min stay</label>
+          <input id="invMinStay" type="number" min="1" step="1" value="${inventory?.minStay ?? ''}" placeholder="3"/>
+        </div>
+      </div>
+      ${inventory?.priceSource === 'offers' ? '<div class="sheet-note">Prezzo calcolato da Beds24 offers per 2 adulti</div>' : ''}
+      <label class="sheet-toggle">
+        <input id="invClosed" type="checkbox" ${inventory?.closed ? 'checked' : ''}/>
+        <span>Chiudi / blocca date</span>
+      </label>
+      <button class="sheet-save-btn" id="invSaveBtn" onclick="saveInventoryUpdate('${encodeDayPayload(parsed)}')">Salva</button>
+    </div>
+  `;
+  document.getElementById('bookingSheet').classList.add('open');
+}
+
+async function saveInventoryUpdate(payload) {
+  const parsed = typeof payload === 'string'
+    ? JSON.parse(decodeURIComponent(escape(atob(payload))))
+    : payload;
+  const dateFrom = document.getElementById('invDateFrom').value;
+  const dateTo = document.getElementById('invDateTo').value;
+  const priceRaw = document.getElementById('invPrice').value;
+  const minStayRaw = document.getElementById('invMinStay').value;
+  const closed = document.getElementById('invClosed').checked;
+  const btn = document.getElementById('invSaveBtn');
+
+  if (!dateFrom || !dateTo || dateFrom > dateTo) {
+    toast('Intervallo date non valido', 'err');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Salvo...';
+  try {
+    const token = APP.session?.access_token;
+    const res = await fetch('/.netlify/functions/update-calendar-inventory', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({
+        apartmentId: parsed.apartmentId,
+        propertyId: parsed.propertyId,
+        dateFrom,
+        dateTo,
+        price: priceRaw === '' ? null : Number(priceRaw),
+        minStay: minStayRaw === '' ? null : Number(minStayRaw),
+        closed,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Salvataggio inventory non riuscito');
+    }
+    toast('Inventory aggiornata');
+    closeBookingSheet();
+    await loadCalendarData();
+  } catch (error) {
+    toast(error.message, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Salva';
+  }
+}
+
 function renderTagSelector() {
-  document.getElementById('tagSelector').innerHTML = PERSON_TAGS.map((tag) =>
-    `<span class="person-tag${APP.selectedTags.includes(tag) ? ' selected' : ''}" onclick="togglePersonTag('${tag.replace(/'/g, "\\'")}')">${tag}</span>`
+  document.getElementById('tagSelector').innerHTML = PERSON_TAGS.map((tag) => {
+    const disabled = !canAssignToTag(tag);
+    return `<span class="person-tag${APP.selectedTags.includes(tag) ? ' selected' : ''}${disabled ? ' disabled' : ''}" onclick="togglePersonTag('${tag.replace(/'/g, "\\'")}')">${tag}</span>`;
+  }
   ).join('');
 }
 
 function togglePersonTag(tag) {
+  if (!canAssignToTag(tag)) return;
   const index = APP.selectedTags.indexOf(tag);
   if (index >= 0) APP.selectedTags.splice(index, 1);
   else APP.selectedTags.push(tag);
   renderTagSelector();
 }
 
+function getCurrentUserRoleLabels() {
+  const user = APP.session?.user;
+  const email = String(user?.email || '').toLowerCase();
+  const fullName = String(user?.user_metadata?.full_name || user?.user_metadata?.name || '').toLowerCase();
+  const labels = [];
+  const source = `${email} ${fullName}`;
+  if (source.includes('marco')) labels.push('Marco');
+  if (source.includes('veronica')) labels.push('Veronica');
+  if (source.includes('jessica')) labels.push('Jessica');
+  if (source.includes('serena')) labels.push('Serena');
+  if (source.includes('susanna')) labels.push('Susanna');
+  if (source.includes('victor') || source.includes('vanessa')) labels.push('Victor&Vanessa');
+  return [...new Set(labels)];
+}
+
+function isVictorVanessaUser() {
+  return getCurrentUserRoleLabels().includes('Victor&Vanessa');
+}
+
+function isPrivilegedTodoUser() {
+  const labels = getCurrentUserRoleLabels();
+  return labels.includes('Marco') || labels.includes('Veronica');
+}
+
+function canAssignToTag(tag) {
+  return !isVictorVanessaUser() || tag === 'Victor&Vanessa';
+}
+
+function parseTodoVisualTags() {
+  return String(document.getElementById('todoTagsInput').value || '')
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+}
+
+function canUserSeeTodo(todo) {
+  const labels = getCurrentUserRoleLabels();
+  if (!labels.length) return !todo.is_private;
+  if (labels.includes('Victor&Vanessa')) {
+    return Array.isArray(todo.assigned_to) && todo.assigned_to.includes('Victor&Vanessa');
+  }
+  if (todo.is_private) {
+    return labels.some((label) => ['Marco', 'Veronica'].includes(label))
+      || (Array.isArray(todo.assigned_to) && todo.assigned_to.some((label) => labels.includes(label)));
+  }
+  if (!Array.isArray(todo.visible_to) || !todo.visible_to.length) return true;
+  return todo.visible_to.some((label) => labels.includes(label))
+    || (Array.isArray(todo.assigned_to) && todo.assigned_to.some((label) => labels.includes(label)));
+}
+
 async function renderTodos() {
-  const { data } = await sb.from('agent_todos')
+  const { data, error } = await sb.from('agent_todos')
     .select('*')
     .order('created_at', { ascending: false })
     .limit(50);
-  APP.todos = data || [];
+  if (error) {
+    toast('Errore caricamento task', 'err');
+    APP.todos = [];
+    document.getElementById('todoContent').innerHTML = '<div style="padding:24px;color:var(--text3);font-size:13px;text-align:center">Task non disponibili</div>';
+    document.getElementById('todoSubtitle').textContent = 'Errore caricamento';
+    return;
+  }
+  APP.todos = (data || []).filter(canUserSeeTodo);
 
   const urgent = APP.todos.filter((todo) => !todo.done && todo.priority === 'alta');
   const todayItems = APP.todos.filter((todo) => !todo.done && todo.priority === 'media');
@@ -1161,6 +1536,7 @@ async function renderTodos() {
         <div class="todo-text">
           <div class="todo-task${todo.done ? ' done' : ''}">${todo.task}</div>
           <div class="todo-meta">${todo.apartment ? `${todo.apartment} · ` : ''}${todo.due_date || ''}</div>
+          ${(todo.assigned_to && todo.assigned_to.length) ? `<div class="todo-tags">${todo.assigned_to.map((tag) => `<span class="todo-assignment-pill">${tag}</span>`).join('')}${todo.is_private ? '<span class="todo-tag-pill">Privato</span>' : ''}</div>` : (todo.is_private ? '<div class="todo-tags"><span class="todo-tag-pill">Privato</span></div>' : '')}
           ${(todo.tags && todo.tags.length) ? `<div class="todo-tags">${todo.tags.map((tag) => `<span class="todo-tag-pill">${tag}</span>`).join('')}</div>` : ''}
         </div>
       </div>`).join('');
@@ -1186,17 +1562,33 @@ async function addTodo() {
   const input = document.getElementById('addTodoInput');
   const text = input.value.trim();
   if (!text) return;
+  if (!APP.selectedTags.length) {
+    toast('Seleziona almeno un assegnatario', 'err');
+    return;
+  }
+  if (isVictorVanessaUser() && APP.selectedTags.some((tag) => tag !== 'Victor&Vanessa')) {
+    toast('Victor&Vanessa possono assegnare solo a Victor&Vanessa', 'err');
+    return;
+  }
+  const visualTags = parseTodoVisualTags();
+  const isPrivate = document.getElementById('todoPrivate').checked;
   const { error } = await sb.from('agent_todos').insert({
     task: text,
     priority: 'media',
     done: false,
-    tags: APP.selectedTags,
+    tags: visualTags,
+    assigned_to: APP.selectedTags,
+    visible_to: isPrivate ? APP.selectedTags : [],
+    is_private: isPrivate,
+    created_by: APP.session?.user?.id || null,
   });
   if (error) {
     toast('Errore aggiunta task', 'err');
     return;
   }
   input.value = '';
+  document.getElementById('todoTagsInput').value = '';
+  document.getElementById('todoPrivate').checked = false;
   APP.selectedTags = [];
   renderTagSelector();
   toast('Task aggiunto');

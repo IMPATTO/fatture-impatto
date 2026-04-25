@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Backoffice Beds24 Messaggi · Impatto</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/supabase-client.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f4f1;
+      --white: #ffffff;
+      --surf: #fafaf8;
+      --border: #e2e0db;
+      --border2: #d0cdc6;
+      --accent: #2563eb;
+      --accent-l: #eff4ff;
+      --green: #16a34a;
+      --green-l: #f0fdf4;
+      --red: #dc2626;
+      --red-l: #fef2f2;
+      --yellow: #d97706;
+      --yellow-l: #fffbeb;
+      --purple: #9333ea;
+      --purple-l: #fdf4ff;
+      --text: #1a1917;
+      --text2: #57534e;
+      --muted: #a8a29e;
+      --serif: 'Cormorant Garamond', Georgia, serif;
+      --sans: 'DM Sans', sans-serif;
+      --mono: 'DM Mono', monospace;
+    }
+
+    html, body { min-height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; }
+    .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .login-card { width: 400px; background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 48px 44px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+    .login-logo { font-family: var(--serif); font-size: 30px; font-weight: 500; margin-bottom: 4px; }
+    .login-sub { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 36px; }
+
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text2); margin-bottom: 6px; }
+    .field input, .field select, .field textarea {
+      width: 100%;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 13px;
+      font-size: 14px;
+      font-family: var(--sans);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+    .field textarea { resize: vertical; min-height: 180px; line-height: 1.55; }
+    .field select {
+      appearance: none;
+      cursor: pointer;
+      padding-right: 28px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a8a29e' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+    }
+    .field-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .field-readonly input { background: var(--surf); color: var(--text2); }
+    .field-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; font-family: var(--sans); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.38; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: #1d4ed8; }
+    .btn-ghost { background: var(--white); color: var(--text2); border: 1px solid var(--border); }
+    .btn-ghost:hover:not(:disabled) { border-color: var(--border2); color: var(--text); }
+    .btn-full { width: 100%; margin-top: 8px; padding: 12px; font-size: 14px; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    .msg-err { background: var(--red-l); border: 1px solid #fecaca; color: var(--red); border-radius: 6px; padding: 10px 13px; font-size: 13px; margin-bottom: 12px; display: none; }
+
+    .navbar { display:flex; align-items:center; justify-content:flex-end; gap:12px; padding:0 24px; height:44px; background:#1a1917; }
+    .navbar-links { display:flex; align-items:center; gap:12px; margin-left:auto; }
+    .navbar-link { font-family:var(--mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#a8a29e; text-decoration:none; padding:5px 13px; border-radius:5px; transition:background 0.15s,color 0.15s; }
+    .navbar-link:hover { background:rgba(255,255,255,0.08); color:#fff; }
+    .navbar-link.active { background: var(--accent); color:#fff; }
+
+    .header { display:flex; align-items:center; justify-content:space-between; padding:0 24px; min-height:72px; background:var(--white); border-bottom:1px solid var(--border); gap:12px; flex-wrap:wrap; }
+    .header-left { display:flex; align-items:baseline; gap:12px; }
+    .header-brand { font-family:var(--serif); font-size:22px; font-weight:500; }
+    .header-tag { font-family:var(--mono); font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--accent); background:rgba(37,99,235,0.10); padding:4px 10px; border-radius:6px; }
+    .header-user { font-size:12px; font-family:var(--mono); color:var(--muted); }
+
+    .toolbar { display:flex; flex-wrap:wrap; gap:12px; padding:16px 24px; background:var(--white); border-bottom:1px solid var(--border); align-items:end; }
+    .toolbar .field { margin-bottom: 0; min-width: 220px; }
+    .toolbar-actions { display:flex; gap:8px; flex-wrap:wrap; margin-left:auto; }
+
+    .layout { display:grid; grid-template-columns: 320px minmax(0, 1fr); gap:16px; padding:16px 24px 24px; }
+    .card { background:var(--white); border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+    .card-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:16px 18px; border-bottom:1px solid var(--border); }
+    .card-title { font-family:var(--serif); font-size:20px; font-weight:500; }
+    .card-sub { font-size:12px; color:var(--muted); font-family:var(--mono); }
+    .card-body { padding:18px; }
+
+    .type-list { display:flex; flex-direction:column; gap:8px; }
+    .type-item {
+      width:100%;
+      text-align:left;
+      border:1px solid var(--border);
+      background:var(--surf);
+      border-radius:8px;
+      padding:12px 14px;
+      cursor:pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .type-item:hover { border-color: var(--border2); }
+    .type-item.active { border-color: var(--accent); background: var(--accent-l); }
+    .type-name { font-weight: 600; }
+    .type-meta { margin-top: 5px; font-size: 12px; color: var(--text2); }
+    .badge-row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+    .badge { display:inline-flex; align-items:center; padding:3px 8px; border-radius:999px; font-size:11px; font-family:var(--mono); }
+    .badge.ok { background:var(--green-l); color:var(--green); }
+    .badge.warn { background:var(--yellow-l); color:var(--yellow); }
+    .badge.soft { background:var(--surf); color:var(--muted); border:1px solid var(--border); }
+
+    .section-title { font-family:var(--mono); font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); margin-bottom:14px; }
+    .stack { display:flex; flex-direction:column; gap:16px; }
+    .save-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .inline-check { display:flex; align-items:center; gap:8px; }
+    .inline-check input { width:15px; height:15px; accent-color:var(--accent); }
+    .info-box { background:var(--surf); border:1px solid var(--border); border-radius:8px; padding:12px 14px; font-size:12px; line-height:1.6; color:var(--text2); }
+    .vars-list { display:flex; flex-wrap:wrap; gap:8px; }
+    .vars-list code { background:var(--surf); border:1px solid var(--border); border-radius:999px; padding:4px 9px; font-size:11px; }
+    .preview-box { background:var(--surf); border:1px solid var(--border); border-radius:8px; padding:14px 16px; white-space:pre-wrap; line-height:1.65; }
+    .preview-subject { font-weight:600; margin-bottom:10px; }
+    .empty-note { padding:18px; color:var(--muted); }
+    .toast { position:fixed; bottom:20px; right:20px; background:var(--white); border:1px solid var(--border); border-radius:8px; padding:12px 18px; font-size:13px; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,0.1); max-width:320px; }
+    .toast-ok { border-left:3px solid var(--green); color:var(--green); }
+    .toast-err { border-left:3px solid var(--red); color:var(--red); }
+    .toast-info { border-left:3px solid var(--purple); color:var(--purple); }
+
+    @media (max-width: 960px) {
+      .layout { grid-template-columns: 1fr; padding:16px; }
+      .toolbar { padding:16px; }
+      .header { padding:12px 16px; }
+      .navbar { padding:0 16px; overflow:auto; justify-content:flex-start; }
+      .field-2, .field-3 { grid-template-columns: 1fr; }
+      .toolbar-actions { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+<div id="app"></div>
+<div id="_toast"></div>
+
+<script>
+const sb = window.sb;
+
+const CHANNELS = [
+  { value: 'all', label: 'Tutti i canali' },
+  { value: 'booking', label: 'Booking' },
+  { value: 'airbnb', label: 'Airbnb' },
+];
+
+const MESSAGE_TYPES = [
+  {
+    key: 'BOOKING_CONFIRMATION',
+    label: 'Booking confirmation',
+    timing: 'Subito',
+    subject: 'Prenotazione confermata',
+    body_it: `Ciao {{guest_name}},
+abbiamo ricevuto la tua prenotazione 😊
+Siamo felici di ospitarti a {{city}}.
+
+Una settimana prima dell’arrivo ti invieremo tutte le istruzioni per il check-in online: è un passaggio semplice e necessario per accedere all’appartamento.
+
+Ti consigliamo di completarlo appena lo ricevi, così eviti ritardi il giorno dell’arrivo.
+
+Una volta fatto, avrai subito tutte le informazioni per arrivare e per il self check-in.
+
+Per qualsiasi necessità puoi scrivermi su WhatsApp:
+📞 {{whatsapp}}
+
+A presto!
+Marco – Il Lupo Affitta`,
+  },
+  {
+    key: 'CHECKIN_REQUEST',
+    label: 'Check-in request',
+    timing: '7 giorni prima',
+    subject: 'Completa il check-in online',
+    body_it: `Ciao {{guest_name}},
+per accedere all’appartamento è obbligatorio completare il check-in online.
+
+👉 Fallo ora da qui:
+{{checkin_link}}
+
+Prima di iniziare, tieni pronti i documenti di tutti gli ospiti (bambini inclusi).
+
+La compilazione è richiesta dalla normativa italiana per la comunicazione alla Questura, quindi è un passaggio indispensabile prima dell’arrivo.
+
+Senza questo passaggio non è possibile accedere all’appartamento.
+
+Una volta completato, potrai accedere al tuo portale personale con tutte le istruzioni per il self check-in.
+
+Richiede solo pochi minuti: ti consigliamo di farlo subito per evitare ritardi all’arrivo.
+
+Se hai dubbi, scrivimi qui o su WhatsApp:
+📞 {{whatsapp}}
+
+A presto!
+Marco – Il Lupo Affitta`,
+  },
+  {
+    key: 'PORTAL_ACCESS',
+    label: 'Portal access',
+    timing: '1 giorno prima',
+    subject: 'Portale self check-in',
+    body_it: `Ciao {{guest_name}},
+ti stiamo aspettando 😊
+
+👉 Accedi qui al portale con tutte le istruzioni:
+{{portal_link}}
+
+Ti consiglio di aprirlo ora: trovi tutto quello che ti servirà all’arrivo.
+
+Troverai:
+• come arrivare
+• video per il self check-in
+• istruzioni di accesso
+
+Il check-in è dalle ore {{checkin_time}} (salvo accordi diversi).
+Prima di quell’orario l’appartamento potrebbe non essere ancora pronto.
+
+Se hai bisogno di assistenza, scrivici su WhatsApp:
+📞 {{whatsapp}}
+
+Buon viaggio!
+Marco – Il Lupo Affitta`,
+  },
+  {
+    key: 'AFTER_CHECKIN',
+    label: 'After check-in',
+    timing: 'Ore 18 del giorno di check-in',
+    subject: 'Tutto ok con l’appartamento?',
+    body_it: `Ciao {{guest_name}},
+tutto ok con l’appartamento? 😊
+
+Se c’è qualcosa che possiamo fare per migliorare la tua esperienza fammelo sapere, interveniamo rapidamente.
+
+Se invece non c’è nulla che possiamo migliorare, allora significa che va tutto bene e ne siamo felici.
+
+Per qualsiasi necessità urgente puoi chiamarmi o scrivermi su WhatsApp:
+📞 {{whatsapp}} (Marco)
+
+Ti chiediamo solo una cosa: trattare la casa con cura, come fosse tua 🙏
+
+Grazie
+Marco - Il Lupo Affitta`,
+  },
+  {
+    key: 'CHECKOUT_INFO',
+    label: 'Checkout info',
+    timing: '1 giorno prima della partenza',
+    subject: 'Promemoria check-out',
+    body_it: `Ciao {{guest_name}},
+ti ricordo che il check-out è entro le ore 9:00 di domani mattina.
+
+Prima di andare, ti chiediamo di:
+• lasciare le chiavi nella cassettina di sicurezza
+• chiuderla e impostare il codice su 0000
+• buttare la spazzatura differenziata negli appositi contenitori
+
+Se l’appartamento viene lasciato in ordine, ci aiuti a prepararlo al meglio per i prossimi ospiti 🙏
+
+Per qualsiasi dubbio su WhatsApp:
+📞 {{whatsapp}}
+
+Grazie per la collaborazione e buon rientro!
+Marco – Il Lupo Affitta
+
+PS: Se abbiamo preso accordi diversi, ignora questo messaggio 👍`,
+  },
+  {
+    key: 'REVIEW_REQUEST',
+    label: 'Review request',
+    timing: 'Ore 17 del giorno di partenza',
+    subject: 'Grazie per il soggiorno',
+    body_it: `Ciao {{guest_name}},
+grazie per aver soggiornato da noi 🙏
+
+Spero che ti sia trovato bene e che ti sia goduto al meglio {{city}}.
+
+Ti ho appena lasciato una recensione 😊
+
+Se anche per te è stata una buona esperienza, mi farebbe davvero piacere ricevere la tua: per noi è fondamentale.
+
+Se invece c’è qualcosa che possiamo migliorare, scrivimi pure qui.
+
+Buon rientro e a presto!
+Marco – Il Lupo Affitta
+
+PS: Se vorrai tornare scrivimi direttamente al {{whatsapp}}: ti riservo uno sconto dedicato 😉`,
+  },
+];
+
+const DEFAULTS = {
+  guest_name: 'NOME OSPITE',
+  city: 'CITTÀ',
+  whatsapp: '+39 351 3239927',
+  checkin_time: '16:00',
+};
+
+const S = {
+  session: null,
+  apartments: [],
+  templates: [],
+  selectedApt: '',
+  selectedChannel: 'all',
+  selectedType: MESSAGE_TYPES[0].key,
+  previewVars: { ...DEFAULTS },
+  draft: null,
+  toastTimer: null,
+};
+
+function esc(value) {
+  if (value == null) return '';
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function toast(message, tone = 'ok') {
+  const root = document.getElementById('_toast');
+  clearTimeout(S.toastTimer);
+  root.innerHTML = `<div class="toast toast-${tone}">${esc(message)}</div>`;
+  S.toastTimer = setTimeout(() => { root.innerHTML = ''; }, 2600);
+}
+
+function normalizeText(value) {
+  return String(value || '').replace(/\r\n/g, '\n');
+}
+
+function getSelectedApartment() {
+  return S.apartments.find((item) => String(item.id) === String(S.selectedApt)) || null;
+}
+
+function getTypeMeta(typeKey) {
+  return MESSAGE_TYPES.find((item) => item.key === typeKey) || MESSAGE_TYPES[0];
+}
+
+function buildCheckinLink(apartment) {
+  if (!apartment?.public_checkin_key) return '';
+  return `https://checkin.illupoaffitta.com/?apt=${encodeURIComponent(apartment.public_checkin_key)}`;
+}
+
+function buildPortalLink(apartment) {
+  if (!apartment?.public_checkin_key) return '';
+  return `https://checkin.illupoaffitta.com/portale.html?apt=${encodeURIComponent(apartment.public_checkin_key)}&mode=open`;
+}
+
+function getRenderVars() {
+  const apartment = getSelectedApartment();
+  return {
+    guest_name: S.previewVars.guest_name || DEFAULTS.guest_name,
+    city: S.previewVars.city || DEFAULTS.city,
+    whatsapp: S.previewVars.whatsapp || DEFAULTS.whatsapp,
+    checkin_time: S.previewVars.checkin_time || DEFAULTS.checkin_time,
+    checkin_link: buildCheckinLink(apartment) || '',
+    portal_link: buildPortalLink(apartment) || '',
+  };
+}
+
+function renderTemplateString(template, vars) {
+  return String(template || '').replace(/\{\{\s*([a-z_]+)\s*\}\}/gi, (_, rawKey) => {
+    const key = String(rawKey || '').toLowerCase();
+    return vars[key] != null ? String(vars[key]) : `{{${rawKey}}}`;
+  });
+}
+
+function getSavedTemplate(typeKey) {
+  return S.templates.find((item) =>
+    String(item.apartment_id) === String(S.selectedApt) &&
+    item.channel === S.selectedChannel &&
+    item.message_type === typeKey
+  ) || null;
+}
+
+function makeDraftFromType(typeKey) {
+  const meta = getTypeMeta(typeKey);
+  const saved = getSavedTemplate(typeKey);
+  return {
+    id: saved?.id || null,
+    apartment_id: S.selectedApt || null,
+    channel: S.selectedChannel,
+    message_type: typeKey,
+    subject: saved?.subject ?? meta.subject,
+    body_it: normalizeText(saved?.body_it ?? meta.body_it),
+    body_en: normalizeText(saved?.body_en ?? ''),
+    timing_note: saved?.timing_note ?? meta.timing,
+    enabled: saved?.enabled ?? true,
+    updated_at: saved?.updated_at || null,
+  };
+}
+
+function ensureDraft() {
+  S.draft = makeDraftFromType(S.selectedType);
+}
+
+function getRenderedPreview() {
+  const vars = getRenderVars();
+  return {
+    subject: renderTemplateString(S.draft?.subject || '', vars),
+    bodyIt: renderTemplateString(S.draft?.body_it || '', vars),
+    bodyEn: renderTemplateString(S.draft?.body_en || '', vars),
+  };
+}
+
+function refreshPreview() {
+  const rendered = getRenderedPreview();
+  const previewIt = document.getElementById('previewIt');
+  const previewEnWrap = document.getElementById('previewEnWrap');
+  const previewEn = document.getElementById('previewEn');
+  const btnCopyRenderedEn = document.getElementById('btnCopyRenderedEn');
+  if (previewIt) {
+    previewIt.innerHTML = `${rendered.subject ? `<div class="preview-subject">Oggetto: ${esc(rendered.subject)}</div>` : ''}${esc(rendered.bodyIt)}`;
+  }
+  if (previewEnWrap && previewEn) {
+    previewEn.textContent = rendered.bodyEn;
+    previewEnWrap.style.display = rendered.bodyEn ? '' : 'none';
+  }
+  if (btnCopyRenderedEn) {
+    btnCopyRenderedEn.disabled = !rendered.bodyEn;
+  }
+}
+
+async function copyText(text) {
+  await navigator.clipboard.writeText(String(text || ''));
+  toast('Copiato negli appunti');
+}
+
+async function loadApartments() {
+  const { data, error } = await sb
+    .from('apartments')
+    .select('id,nome_appartamento,struttura_nome,public_checkin_key,attivo')
+    .order('nome_appartamento');
+  if (error) throw error;
+  S.apartments = data || [];
+  if (!S.selectedApt && S.apartments.length) S.selectedApt = S.apartments[0].id;
+}
+
+async function loadTemplates() {
+  if (!S.selectedApt) {
+    S.templates = [];
+    ensureDraft();
+    return;
+  }
+  const { data, error } = await sb
+    .from('beds24_message_templates')
+    .select('*')
+    .eq('apartment_id', S.selectedApt)
+    .order('message_type');
+  if (error) throw error;
+  S.templates = data || [];
+  ensureDraft();
+}
+
+async function saveCurrentTemplate() {
+  if (!S.selectedApt) {
+    toast('Seleziona prima un appartamento', 'err');
+    return;
+  }
+  const payload = {
+    apartment_id: S.selectedApt,
+    channel: S.selectedChannel,
+    message_type: S.selectedType,
+    subject: normalizeText(S.draft.subject || '').trim() || null,
+    body_it: normalizeText(S.draft.body_it || ''),
+    body_en: normalizeText(S.draft.body_en || '').trim() || null,
+    timing_note: normalizeText(S.draft.timing_note || '').trim() || null,
+    enabled: !!S.draft.enabled,
+  };
+  const { error } = await sb
+    .from('beds24_message_templates')
+    .upsert(payload, { onConflict: 'apartment_id,channel,message_type' });
+  if (error) throw error;
+  await loadTemplates();
+  renderApp();
+  toast('Template salvato');
+}
+
+async function createStandardTemplates() {
+  if (!S.selectedApt) {
+    toast('Seleziona prima un appartamento', 'err');
+    return;
+  }
+  const apartment = getSelectedApartment();
+  const confirmed = window.confirm(`Creare o aggiornare i 6 template standard per ${apartment?.nome_appartamento || 'questo appartamento'} sul canale ${S.selectedChannel}?`);
+  if (!confirmed) return;
+  const rows = MESSAGE_TYPES.map((item) => ({
+    apartment_id: S.selectedApt,
+    channel: S.selectedChannel,
+    message_type: item.key,
+    subject: item.subject,
+    body_it: item.body_it,
+    body_en: null,
+    timing_note: item.timing,
+    enabled: true,
+  }));
+  const { error } = await sb
+    .from('beds24_message_templates')
+    .upsert(rows, { onConflict: 'apartment_id,channel,message_type' });
+  if (error) throw error;
+  await loadTemplates();
+  renderApp();
+  toast('Template standard creati');
+}
+
+function renderLogin() {
+  document.getElementById('app').innerHTML = `
+    <div class="login-wrap">
+      <div class="login-card">
+        <div class="login-logo">Impatto</div>
+        <div class="login-sub">Beds24 Messaggi</div>
+        <div class="msg-err" id="loginErr"></div>
+        <div class="field"><label>Email</label><input id="lem" type="email" autocomplete="username"/></div>
+        <div class="field"><label>Password</label><input id="lpw" type="password" autocomplete="current-password"/></div>
+        <button id="btnLogin" class="btn btn-primary btn-full">Accedi</button>
+      </div>
+    </div>`;
+
+  document.getElementById('btnLogin').addEventListener('click', async () => {
+    const box = document.getElementById('loginErr');
+    box.style.display = 'none';
+    const { error } = await sb.auth.signInWithPassword({
+      email: document.getElementById('lem').value,
+      password: document.getElementById('lpw').value,
+    });
+    if (error) {
+      box.textContent = error.message;
+      box.style.display = 'block';
+    }
+  });
+}
+
+function renderTypeList() {
+  return MESSAGE_TYPES.map((item) => {
+    const saved = getSavedTemplate(item.key);
+    return `
+      <button class="type-item ${S.selectedType === item.key ? 'active' : ''}" data-type="${item.key}">
+        <div class="type-name">${esc(item.label)}</div>
+        <div class="type-meta">${esc(item.key)} · ${esc(saved?.timing_note || item.timing)}</div>
+        <div class="badge-row">
+          <span class="badge ${saved ? 'ok' : 'soft'}">${saved ? 'Salvato' : 'Bozza standard'}</span>
+          <span class="badge ${saved?.enabled === false ? 'warn' : 'ok'}">${saved?.enabled === false ? 'Disattivo' : 'Attivo'}</span>
+        </div>
+      </button>`;
+  }).join('');
+}
+
+function renderEditor() {
+  ensureDraft();
+  const draft = S.draft;
+  const rendered = getRenderedPreview();
+  const vars = getRenderVars();
+  const apartment = getSelectedApartment();
+  const saved = getSavedTemplate(S.selectedType);
+
+  return `
+    <div class="stack">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">${esc(getTypeMeta(S.selectedType).label)}</div>
+            <div class="card-sub">${esc(S.selectedType)}${draft.updated_at ? ' · Aggiornato ' + esc(new Date(draft.updated_at).toLocaleString('it-IT')) : ''}</div>
+          </div>
+          <div class="inline-check">
+            <input id="enabled" type="checkbox" ${draft.enabled ? 'checked' : ''}/>
+            <label for="enabled">Abilitato</label>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="field-2">
+            <div class="field">
+              <label>Oggetto</label>
+              <input id="subject" value="${esc(draft.subject || '')}" placeholder="Oggetto del messaggio"/>
+            </div>
+            <div class="field">
+              <label>Timing note</label>
+              <input id="timing_note" value="${esc(draft.timing_note || '')}" placeholder="Es. 7 giorni prima"/>
+            </div>
+          </div>
+          <div class="field">
+            <label>Testo italiano</label>
+            <textarea id="body_it">${esc(draft.body_it || '')}</textarea>
+          </div>
+          <div class="field">
+            <label>Testo inglese</label>
+            <textarea id="body_en" placeholder="Opzionale">${esc(draft.body_en || '')}</textarea>
+          </div>
+          <div class="save-row">
+            <button id="btnSave" class="btn btn-primary">Salva template</button>
+            <button id="btnCopyTemplateIt" class="btn btn-ghost">Copia template IT</button>
+            <button id="btnCopyRenderedIt" class="btn btn-ghost">Copia preview IT</button>
+            <button id="btnCopyRenderedEn" class="btn btn-ghost" ${rendered.bodyEn ? '' : 'disabled'}>Copia preview EN</button>
+          </div>
+          <div class="field-hint">${saved ? 'Questo record viene letto e salvato in `beds24_message_templates`.' : 'Il template corrente e una bozza standard non ancora salvata per questa combinazione appartamento/canale/tipo.'}</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Variabili e preview</div>
+            <div class="card-sub">${apartment ? esc(apartment.nome_appartamento) : 'Nessun appartamento selezionato'}</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="section-title">Variabili supportate</div>
+          <div class="vars-list">
+            <code>{{guest_name}}</code>
+            <code>{{city}}</code>
+            <code>{{checkin_link}}</code>
+            <code>{{portal_link}}</code>
+            <code>{{whatsapp}}</code>
+            <code>{{checkin_time}}</code>
+          </div>
+
+          <div style="height:16px"></div>
+
+          <div class="field-2">
+            <div class="field"><label>Guest name</label><input id="var_guest_name" value="${esc(S.previewVars.guest_name)}"/></div>
+            <div class="field"><label>City</label><input id="var_city" value="${esc(S.previewVars.city)}"/></div>
+          </div>
+          <div class="field-2">
+            <div class="field"><label>WhatsApp</label><input id="var_whatsapp" value="${esc(S.previewVars.whatsapp)}"/></div>
+            <div class="field"><label>Check-in time</label><input id="var_checkin_time" value="${esc(S.previewVars.checkin_time)}"/></div>
+          </div>
+          <div class="field-2">
+            <div class="field field-readonly"><label>Check-in link</label><input value="${esc(vars.checkin_link || 'Public checkin key mancante')}" disabled/></div>
+            <div class="field field-readonly"><label>Portal link</label><input value="${esc(vars.portal_link || 'Public checkin key mancante')}" disabled/></div>
+          </div>
+
+          <div class="info-box">
+            Nessun invio automatico viene eseguito da questa pagina. Qui prepariamo solo i testi finali da copiare manualmente dentro Beds24.
+          </div>
+
+          <div style="height:16px"></div>
+
+          <div class="section-title">Preview renderizzata</div>
+          <div id="previewIt" class="preview-box">${rendered.subject ? `<div class="preview-subject">Oggetto: ${esc(rendered.subject)}</div>` : ''}${esc(rendered.bodyIt)}</div>
+          <div id="previewEnWrap" style="display:${rendered.bodyEn ? 'block' : 'none'}">
+            <div style="height:12px"></div>
+            <div id="previewEn" class="preview-box">${esc(rendered.bodyEn)}</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderApp() {
+  const apartmentOptions = S.apartments.map((item) => `
+    <option value="${item.id}" ${String(S.selectedApt) === String(item.id) ? 'selected' : ''}>
+      ${esc(item.nome_appartamento)}${item.attivo === false ? ' [DISATTIVO]' : ''}
+    </option>`).join('');
+
+  document.getElementById('app').innerHTML = `
+    <div class="navbar">
+      <div class="navbar-links">
+        <a href="/backoffice.html" class="navbar-link">Fatturazione</a>
+        <a href="/backoffice-documenti.html" class="navbar-link">Documenti</a>
+        <a href="/backoffice-portale.html" class="navbar-link">Portale Admin</a>
+        <a href="/backoffice-beds24-messaggi.html" class="navbar-link active">Beds24 Messaggi</a>
+        <a href="/backoffice-contabilita.html" class="navbar-link">Contabilita</a>
+      </div>
+    </div>
+
+    <div class="header">
+      <div class="header-left">
+        <div class="header-brand">Impatto</div>
+        <div class="header-tag">Beds24 Messaggi</div>
+      </div>
+      <div class="header-user">${esc(S.session?.user?.email || '')}</div>
+    </div>
+
+    <div class="toolbar">
+      <div class="field">
+        <label>Appartamento</label>
+        <select id="aptSelect">${apartmentOptions}</select>
+      </div>
+      <div class="field">
+        <label>Channel</label>
+        <select id="channelSelect">
+          ${CHANNELS.map((item) => `<option value="${item.value}" ${S.selectedChannel === item.value ? 'selected' : ''}>${esc(item.label)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="toolbar-actions">
+        <button id="btnCreateStandard" class="btn btn-primary">Crea template standard</button>
+        <button id="btnReload" class="btn btn-ghost">Ricarica</button>
+        <button id="btnLogout" class="btn btn-ghost">Esci</button>
+      </div>
+    </div>
+
+    <div class="layout">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Tipi messaggio</div>
+            <div class="card-sub">${esc(CHANNELS.find((item) => item.value === S.selectedChannel)?.label || '')}</div>
+          </div>
+        </div>
+        <div class="card-body ${S.selectedApt ? '' : 'empty-note'}">
+          ${S.selectedApt ? `<div class="type-list">${renderTypeList()}</div>` : 'Seleziona un appartamento per iniziare.'}
+        </div>
+      </div>
+
+      ${S.selectedApt ? renderEditor() : '<div class="card"><div class="card-body empty-note">Nessun appartamento disponibile.</div></div>'}
+    </div>`;
+
+  bindAppEvents();
+}
+
+function bindAppEvents() {
+  document.getElementById('aptSelect')?.addEventListener('change', async (event) => {
+    S.selectedApt = event.target.value;
+    await loadTemplates();
+    renderApp();
+  });
+
+  document.getElementById('channelSelect')?.addEventListener('change', async (event) => {
+    S.selectedChannel = event.target.value;
+    await loadTemplates();
+    renderApp();
+  });
+
+  document.getElementById('btnReload')?.addEventListener('click', async () => {
+    await loadTemplates();
+    renderApp();
+    toast('Dati aggiornati', 'info');
+  });
+
+  document.getElementById('btnCreateStandard')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btnCreateStandard');
+    btn.disabled = true;
+    btn.textContent = 'Creo…';
+    try {
+      await createStandardTemplates();
+    } catch (error) {
+      toast(error.message || 'Errore creazione template', 'err');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Crea template standard';
+    }
+  });
+
+  document.getElementById('btnLogout')?.addEventListener('click', () => sb.auth.signOut());
+
+  document.querySelectorAll('[data-type]').forEach((button) => {
+    button.addEventListener('click', () => {
+      S.selectedType = button.dataset.type;
+      ensureDraft();
+      renderApp();
+    });
+  });
+
+  ['subject', 'timing_note', 'body_it', 'body_en'].forEach((key) => {
+    const el = document.getElementById(key);
+    if (!el) return;
+    el.addEventListener('input', (event) => {
+      S.draft[key] = event.target.value;
+      refreshPreview();
+    });
+  });
+
+  const enabled = document.getElementById('enabled');
+  if (enabled) {
+    enabled.addEventListener('change', (event) => {
+      S.draft.enabled = !!event.target.checked;
+    });
+  }
+
+  ['guest_name', 'city', 'whatsapp', 'checkin_time'].forEach((key) => {
+    const el = document.getElementById(`var_${key}`);
+    if (!el) return;
+    el.addEventListener('input', (event) => {
+      S.previewVars[key] = event.target.value;
+      refreshPreview();
+    });
+  });
+
+  document.getElementById('btnSave')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btnSave');
+    btn.disabled = true;
+    btn.textContent = 'Salvo…';
+    try {
+      await saveCurrentTemplate();
+    } catch (error) {
+      toast(error.message || 'Errore salvataggio template', 'err');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Salva template';
+    }
+  });
+
+  document.getElementById('btnCopyTemplateIt')?.addEventListener('click', async () => {
+    await copyText(S.draft?.body_it || '');
+  });
+
+  document.getElementById('btnCopyRenderedIt')?.addEventListener('click', async () => {
+    await copyText(renderTemplateString(S.draft?.body_it || '', getRenderVars()));
+  });
+
+  document.getElementById('btnCopyRenderedEn')?.addEventListener('click', async () => {
+    await copyText(renderTemplateString(S.draft?.body_en || '', getRenderVars()));
+  });
+}
+
+async function init() {
+  if (!sb) {
+    document.getElementById('app').innerHTML = `
+      <div class="login-wrap">
+        <div class="login-card">
+          <div class="login-logo">Impatto</div>
+          <div class="login-sub">Beds24 Messaggi</div>
+          <div class="msg-err" style="display:block">Client Supabase non disponibile in pagina.</div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  if (!S.session) {
+    renderLogin();
+    return;
+  }
+
+  await loadApartments();
+  await loadTemplates();
+  renderApp();
+}
+
+if (sb) {
+  sb.auth.onAuthStateChange((event, session) => {
+    S.session = session;
+    if (event === 'SIGNED_IN') init();
+    if (event === 'SIGNED_OUT') renderLogin();
+  });
+
+  sb.auth.getSession().then(({ data: { session } }) => {
+    S.session = session;
+    init();
+  });
+} else {
+  init();
+}
+</script>
+</body>
+</html>
