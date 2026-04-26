@@ -394,6 +394,9 @@
       margin-top: auto;
     }
     .cal-day.today .calendar-booking-badge { background: rgba(29,158,117,.18); color: var(--accent-dk); }
+    .calendar-day-open { background: #eaf8ef; }
+    .calendar-day-closed { background: #fdeaea; }
+    .calendar-day-booked { outline: 2px solid var(--accent); outline-offset: -2px; }
     .booking-section { padding: 4px 16px 16px; }
     .booking-section-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; font-family: var(--mono); margin-bottom: 10px; padding-top: 8px; }
     .booking-card {
@@ -876,12 +879,12 @@ async function loadHome() {
   document.getElementById('statCheckout').textContent = '—';
   document.getElementById('statOcc').textContent = '—';
   document.getElementById('statRev').textContent = '—';
-  setHomeBriefing('', false);
+  setHomeBriefing('Carico dati...', false);
   homeError.style.display = 'none';
   homeError.textContent = '';
 
   try {
-    const _sbQueries = Promise.allSettled([
+    const [checkinsResult, revenueResult, missingResult, pendingResult, occupiedResult] = await Promise.allSettled([
       sb.from('ospiti_check_in')
         .select('nome,cognome,data_checkin,data_checkout,alloggiati_stato,apartments(nome_appartamento)')
         .or(`data_checkin.eq.${today},data_checkout.eq.${today}`)
@@ -907,10 +910,6 @@ async function loadHome() {
         .gt('data_checkout', today)
         .neq('stato', 'SCARTATA'),
     ]);
-    const _sbTimeout = new Promise(resolve =>
-      setTimeout(() => resolve(Array(5).fill({ status: 'rejected', reason: new Error('timeout rete') })), 8000)
-    );
-    const [checkinsResult, revenueResult, missingResult, pendingResult, occupiedResult] = await Promise.race([_sbQueries, _sbTimeout]);
 
     const sectionErrors = [];
     const pickData = (result, label) => {
