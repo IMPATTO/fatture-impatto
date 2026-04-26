@@ -306,11 +306,16 @@
     }
     .tl-days-header { display: flex; }
     .tl-day-hdr {
-      width: 32px; flex-shrink: 0; text-align: center; font-size: 10px; color: var(--text3);
-      padding: 6px 0; border-right: 1px solid var(--border); font-family: var(--mono);
+      width: 36px; flex-shrink: 0; text-align: center; font-size: 10px; color: var(--text2);
+      padding: 5px 0 4px; border-right: 1px solid rgba(0,0,0,0.06); font-family: var(--mono);
+      display: flex; flex-direction: column; align-items: center; gap: 1px;
     }
-    .tl-day-hdr.today { color: var(--accent); font-weight: 700; }
-    .tl-day-hdr.weekend { background: var(--bg); }
+    .tl-day-num { font-size: 11px; font-weight: 600; line-height: 1; }
+    .tl-day-dow { font-size: 8px; color: var(--text3); line-height: 1; }
+    .tl-day-hdr.today .tl-day-num { color: var(--accent); }
+    .tl-day-hdr.today .tl-day-dow { color: var(--accent); opacity: 0.7; }
+    .tl-day-hdr.weekend { background: #f9f8f5; }
+    @media (prefers-color-scheme: dark) { .tl-day-hdr.weekend { background: #1a1a18; } }
     .timeline-body { min-height: 100%; }
     .tl-apartment-block { display: flex; border-bottom: 1px solid var(--border); min-height: 44px; position: relative; }
     .tl-room-label {
@@ -330,27 +335,26 @@
       border-bottom: none;
     }
     .tl-cell {
-      width: 32px; flex-shrink: 0; border-right: 1px solid var(--border); height: 100%;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-      font-size: 9px; line-height: 1; color: var(--text2); position: relative;
-      text-align: center; padding: 0 2px;
+      width: 36px; flex-shrink: 0; border-right: 1px solid rgba(0,0,0,0.05); height: 100%;
+      cursor: pointer; position: relative; background: var(--surface);
     }
-    .tl-cell.weekend { background: var(--bg); }
-    .tl-cell.today { background: var(--accent-bg); }
-    .calendar-day-open { background: #eaf8ef; }
-    .calendar-day-closed { background: #fdeaea; }
-    .calendar-day-booked { outline: 1px solid rgba(0,0,0,.12); outline-offset: -1px; }
-    .tl-cell-content { position: relative; z-index: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-    .tl-cell-price { font-weight: 600; color: var(--text1); }
-    .tl-cell-minstay { font-weight: 600; color: var(--text2); }
-    .tl-cell-restriction { font-size: 8px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
-    .tl-cell-availability { font-weight: 600; }
-    .tl-booking-layer { position: absolute; inset: 0; pointer-events: none; }
+    .tl-cell.weekend { background: #f9f8f5; }
+    @media (prefers-color-scheme: dark) { .tl-cell.weekend { background: #1a1a18; } }
+    .tl-cell.today { background: rgba(29,158,117,0.07); }
+    .calendar-day-open { background: var(--surface); }
+    .calendar-day-closed {
+      background: repeating-linear-gradient(
+        -45deg,
+        rgba(120,40,40,0.07) 0px, rgba(120,40,40,0.07) 2px,
+        transparent 2px, transparent 9px
+      );
+    }
+    .tl-booking-layer { position: absolute; inset: 0; pointer-events: none; z-index: 4; }
     .tl-booking {
-      position: absolute; top: 6px; height: 32px; border-radius: 6px; cursor: pointer;
-      display: flex; align-items: center; padding: 0 8px; font-size: 11px; font-weight: 500;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: filter 0.1s; z-index: 2;
-      pointer-events: auto;
+      position: absolute; top: 5px; height: 34px; border-radius: 5px; cursor: pointer;
+      display: flex; align-items: center; padding: 0 8px; font-size: 11px; font-weight: 600;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: opacity 0.1s; z-index: 2;
+      pointer-events: auto; letter-spacing: 0.01em;
     }
     .tl-booking:active { filter: brightness(0.9); }
     .tl-booking.channel-booking { background: #003580; color: #fff; }
@@ -858,7 +862,7 @@ async function loadHome() {
   document.getElementById('statCheckout').textContent = '—';
   document.getElementById('statOcc').textContent = '—';
   document.getElementById('statRev').textContent = '—';
-  setHomeBriefing('Carico dati operativi...', true);
+  setHomeBriefing('', false);
   homeError.style.display = 'none';
   homeError.textContent = '';
 
@@ -1348,11 +1352,12 @@ function renderMultiTimeline() {
   const today = new Date().toISOString().slice(0, 10);
   const todayDay = today.startsWith(`${APP.calYear}-${String(APP.calMonth + 1).padStart(2, '0')}`) ? parseInt(today.slice(8, 10), 10) : -1;
 
-  let headerHtml = '<div class="tl-room-header">Appartamento</div><div class="tl-days-header">';
+  const DOW_IT = ['D','L','M','M','G','V','S'];
+  let headerHtml = '<div class="tl-room-header">Apt</div><div class="tl-days-header">';
   for (let day = 1; day <= daysInMonth; day += 1) {
     const date = new Date(APP.calYear, APP.calMonth, day);
     const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-    headerHtml += `<div class="tl-day-hdr${isWeekend ? ' weekend' : ''}${day === todayDay ? ' today' : ''}">${day}</div>`;
+    headerHtml += `<div class="tl-day-hdr${isWeekend ? ' weekend' : ''}${day === todayDay ? ' today' : ''}"><span class="tl-day-num">${day}</span><span class="tl-day-dow">${DOW_IT[date.getDay()]}</span></div>`;
   }
   headerHtml += '</div>';
   document.getElementById('timelineHeader').innerHTML = headerHtml;
@@ -1370,7 +1375,7 @@ function renderMultiTimeline() {
       <div class="tl-room-label" title="${apartment.name}">
         <div class="tl-room-name">${formatApartmentShortName(apartment.name)}</div>
       </div>
-      <div class="tl-cells" style="width:${32 * daysInMonth}px; position:relative">
+      <div class="tl-cells" style="width:${36 * daysInMonth}px; position:relative">
         ${renderTimelineAvailabilityRow(apartment, roomId, daysInMonth, todayDay)}
         <div class="tl-booking-layer">`;
 
@@ -1382,10 +1387,10 @@ function renderMultiTimeline() {
       const startDay = Math.max(1, checkIn <= monthStart ? 1 : checkIn.getDate());
       const endDay = Math.min(daysInMonth, checkOut >= monthEnd ? daysInMonth : checkOut.getDate() - 1);
       if (startDay > daysInMonth || endDay < 1) return;
-      const left = (startDay - 1) * 32;
-      const width = (endDay - startDay + 1) * 32 - 2;
+      const left = (startDay - 1) * 36;
+      const width = (endDay - startDay + 1) * 36 - 2;
       const encoded = encodeBookingPayload(booking);
-      rowHtml += `<div class="tl-booking channel-${detectChannel(booking.channel)}" style="left:${left}px;width:${Math.max(width, 30)}px" onclick="openBookingSheet('${encoded}')" title="${booking.guestName} · ${booking.checkIn} - ${booking.checkOut}">${booking.guestName || 'Ospite'}</div>`;
+      rowHtml += `<div class="tl-booking channel-${detectChannel(booking.channel)}" style="left:${left}px;width:${Math.max(width, 34)}px" onclick="openBookingSheet('${encoded}')" title="${booking.guestName} · ${booking.checkIn} - ${booking.checkOut}">${booking.guestName || 'Ospite'}</div>`;
     });
 
     rowHtml += '</div></div></div>';
@@ -1455,7 +1460,7 @@ function renderTimelineAvailabilityRow(apartment, roomId, daysInMonth, todayDay)
       dateFrom: dateStr,
       dateTo: dateStr,
     });
-    const stateClass = inventory ? (inventory.closed ? ' calendar-day-closed' : ' calendar-day-open') : '';
+    const stateClass = booking ? '' : (inventory ? (inventory.closed ? ' calendar-day-closed' : '') : '');
     html += `<div class="tl-cell${isWeekend ? ' weekend' : ''}${day === todayDay ? ' today' : ''}${stateClass}" onclick="openInventorySheet('${encodedDay}')" title="${buildInventoryTitle(dateStr, inventory, booking)}"></div>`;
   }
   html += '</div>';
