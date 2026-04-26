@@ -3,7 +3,7 @@
   command = "npm install"
 
 [build.environment]
-  SECRETS_SCAN_OMIT_KEYS = "SUPABASE_URL,EMAIL_FROM"
+  SECRETS_SCAN_OMIT_KEYS = "SUPABASE_URL,SUPABASE_ANON_KEY,SUPABASE_SERVICE_KEY,SUPABASE_SERVICE_ROLE_KEY,EMAIL_FROM,INTERNAL_API_KEY"
 
 [functions]
   directory = "netlify/functions"
