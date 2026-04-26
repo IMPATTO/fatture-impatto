@@ -814,6 +814,13 @@ function toast(msg, type = 'ok') {
   setTimeout(() => toastEl.remove(), 2800);
 }
 
+function sbQuery(promise, timeoutMs = 12000) {
+  const timer = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('timeout')), timeoutMs)
+  );
+  return Promise.race([promise, timer]);
+}
+
 function autoResizeTextarea(el) {
   el.style.height = 'auto';
   el.style.height = `${Math.min(el.scrollHeight, 100)}px`;
@@ -885,30 +892,30 @@ async function loadHome() {
 
   try {
     const [checkinsResult, revenueResult, missingResult, pendingResult, occupiedResult] = await Promise.allSettled([
-      sb.from('ospiti_check_in')
+      sbQuery(sb.from('ospiti_check_in')
         .select('nome,cognome,data_checkin,data_checkout,alloggiati_stato,apartments(nome_appartamento)')
         .or(`data_checkin.eq.${today},data_checkout.eq.${today}`)
-        .limit(20),
-      sb.from('ospiti_check_in')
+        .limit(20)),
+      sbQuery(sb.from('ospiti_check_in')
         .select('importo_lordo')
         .eq('stato', 'APPROVATA')
         .gte('data_checkin', `${today.slice(0, 7)}-01`)
-        .lte('data_checkin', today),
-      sb.from('ospiti_check_in')
+        .lte('data_checkin', today)),
+      sbQuery(sb.from('ospiti_check_in')
         .select('id,nome,cognome,data_checkin,apartments(nome_appartamento)')
         .neq('alloggiati_stato', 'INVIATA')
         .lte('data_checkin', today)
         .neq('stato', 'SCARTATA')
-        .limit(5),
-      sb.from('ospiti_check_in')
+        .limit(5)),
+      sbQuery(sb.from('ospiti_check_in')
         .select('id,nome,cognome,apartments(nome_appartamento)')
         .in('stato', ['CHECK_IN_COMPLETATO', 'DA_VERIFICARE'])
-        .limit(5),
-      sb.from('ospiti_check_in')
+        .limit(5)),
+      sbQuery(sb.from('ospiti_check_in')
         .select('id', { count: 'exact', head: true })
         .lte('data_checkin', today)
         .gt('data_checkout', today)
-        .neq('stato', 'SCARTATA'),
+        .neq('stato', 'SCARTATA')),
     ]);
 
     const sectionErrors = [];
@@ -1002,12 +1009,16 @@ async function loadHome() {
       homeError.style.display = 'block';
     }
   } catch (error) {
-    console.error('[home]', error);
-    homeError.textContent = 'Errore nel caricamento della dashboard. Riprova tra poco.';
+    console.error('[home] fatal', error);
+    homeError.textContent = `Errore dashboard: ${error.message || error}. Scorri giù per aggiornare.`;
     homeError.style.display = 'block';
+    document.getElementById('statCheckin').textContent = 'Err';
+    document.getElementById('statCheckout').textContent = 'Err';
+    document.getElementById('statOcc').textContent = 'Err';
+    document.getElementById('statRev').textContent = 'Err';
     document.getElementById('alertList').innerHTML = '<div style="padding:12px 0;color:var(--text3);font-size:13px">Nessuna segnalazione disponibile</div>';
     document.getElementById('movementList').innerHTML = '<div style="padding:10px 0;color:var(--text3);font-size:13px">Nessun movimento disponibile</div>';
-    setHomeBriefing('Briefing AI non disponibile, dati operativi caricati', false);
+    setHomeBriefing('Errore caricamento dati. Scorri giù per riprovare.', false);
   } finally {
     APP.homeLoading = false;
   }
@@ -1898,16 +1909,22 @@ function showLogin() {
   document.getElementById('loginScreen').style.display = 'flex';
 }
 
+let _appInitialized = false;
 sb.auth.onAuthStateChange((_event, session) => {
   APP.session = session;
-  if (session) showApp();
-  else showLogin();
+  if (session) {
+    if (!_appInitialized) { _appInitialized = true; showApp(); }
+    else if (_event === 'SIGNED_IN') showApp();
+  } else {
+    _appInitialized = false;
+    showLogin();
+  }
 });
 
 (async () => {
   const { data: { session } } = await sb.auth.getSession();
   APP.session = session;
-  if (session) showApp();
+  if (session) { _appInitialized = true; showApp(); }
   else showLogin();
 })();
 </script>
