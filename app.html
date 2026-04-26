@@ -294,73 +294,86 @@
       border-radius: 8px; padding: 7px 10px; font-size: 11px; line-height: 1.4;
       margin-bottom: 5px;
     }
+    /* ── CALENDARIO MULTI (stile Octorate) ── */
     #calMultiView { flex: 1; height: calc(100dvh - 160px); overflow: auto; }
     .timeline-header {
       display: flex; position: sticky; top: 0; z-index: 20;
-      background: var(--surface); border-bottom: 1px solid var(--border);
+      background: var(--surface); border-bottom: 2px solid var(--border);
     }
     .tl-room-header {
-      width: 120px; flex-shrink: 0; padding: 6px 8px; font-size: 9px; font-weight: 600;
-      color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em;
-      border-right: 1px solid var(--border); position: sticky; left: 0; background: var(--surface); z-index: 21;
+      width: 72px; flex-shrink: 0; padding: 4px 6px; font-size: 8px; font-weight: 700;
+      color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em;
+      border-right: 2px solid var(--border); position: sticky; left: 0; background: var(--surface); z-index: 21;
+      display: flex; align-items: center;
     }
     .tl-days-header { display: flex; }
     .tl-day-hdr {
-      width: 36px; flex-shrink: 0; text-align: center; font-size: 10px; color: var(--text2);
-      padding: 5px 0 4px; border-right: 1px solid rgba(0,0,0,0.06); font-family: var(--mono);
+      width: 40px; flex-shrink: 0; text-align: center;
+      padding: 4px 0 3px; border-right: 1px solid rgba(0,0,0,0.07); font-family: var(--mono);
       display: flex; flex-direction: column; align-items: center; gap: 1px;
     }
-    .tl-day-num { font-size: 11px; font-weight: 600; line-height: 1; }
-    .tl-day-dow { font-size: 8px; color: var(--text3); line-height: 1; }
-    .tl-day-hdr.today .tl-day-num { color: var(--accent); }
-    .tl-day-hdr.today .tl-day-dow { color: var(--accent); opacity: 0.7; }
-    .tl-day-hdr.weekend { background: #f9f8f5; }
-    @media (prefers-color-scheme: dark) { .tl-day-hdr.weekend { background: #1a1a18; } }
+    .tl-day-num { font-size: 11px; font-weight: 700; line-height: 1; color: var(--text1); }
+    .tl-day-dow { font-size: 8px; color: var(--text3); line-height: 1; text-transform: uppercase; }
+    .tl-day-hdr.tl-weekend { background: #f7f6f2; }
+    .tl-day-hdr.tl-today .tl-day-num { color: var(--accent); }
+    .tl-day-hdr.tl-today .tl-day-dow { color: var(--accent); opacity: 0.8; }
+    @media (prefers-color-scheme: dark) { .tl-day-hdr.tl-weekend { background: #1b1b19; } }
     .timeline-body { min-height: 100%; }
-    .tl-apartment-block { display: flex; border-bottom: 1px solid var(--border); min-height: 44px; position: relative; }
+    /* ogni apartment block */
+    .tl-apartment-block { display: flex; border-bottom: 2px solid var(--border); }
     .tl-room-label {
-      width: 120px; flex-shrink: 0; padding: 6px 8px; font-size: 11px; color: var(--text1); font-weight: 500;
-      border-right: 1px solid var(--border); position: sticky; left: 0; background: var(--surface); z-index: 5;
-      display: flex; flex-direction: column; justify-content: center; gap: 0;
+      width: 72px; flex-shrink: 0;
+      border-right: 2px solid var(--border); position: sticky; left: 0; background: var(--surface); z-index: 5;
+      display: flex; flex-direction: column;
     }
     .tl-room-name {
-      white-space: normal; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;
+      padding: 5px 5px 4px; font-size: 9px; font-weight: 700; color: var(--text1);
+      line-height: 1.2; overflow: hidden;
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-      font-size: 11px; font-weight: 600;
+      border-bottom: 1px solid var(--border); min-height: 28px;
     }
-    .tl-room-metrics { display: none; }
-    .tl-cells { display: block; flex: 1; position: relative; }
-    .tl-metric-row {
-      position: relative; display: flex; height: 44px;
-      border-bottom: none;
+    .tl-row-label {
+      height: 28px; display: flex; align-items: center; padding: 0 5px;
+      font-size: 8px; font-weight: 600; color: var(--text3); text-transform: uppercase;
+      letter-spacing: 0.04em; font-family: var(--mono);
+      border-bottom: 1px solid rgba(0,0,0,0.05);
     }
+    .tl-row-label:last-child { border-bottom: none; height: 36px; }
+    .tl-cells { display: block; position: relative; }
+    /* righe dati */
+    .tl-metric-row { display: flex; height: 28px; border-bottom: 1px solid rgba(0,0,0,0.05); }
+    .tl-booking-row { display: flex; height: 36px; position: relative; }
     .tl-cell {
-      width: 36px; flex-shrink: 0; border-right: 1px solid rgba(0,0,0,0.05); height: 100%;
-      cursor: pointer; position: relative; background: var(--surface);
+      width: 40px; flex-shrink: 0; height: 100%; cursor: pointer;
+      border-right: 1px solid rgba(0,0,0,0.06);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 600; color: var(--text2);
+      background: var(--surface); transition: filter 0.1s;
     }
-    .tl-cell.weekend { background: #f9f8f5; }
-    @media (prefers-color-scheme: dark) { .tl-cell.weekend { background: #1a1a18; } }
-    .tl-cell.today { background: rgba(29,158,117,0.07); }
-    .calendar-day-open { background: var(--surface); }
-    .calendar-day-closed {
-      background: repeating-linear-gradient(
-        -45deg,
-        rgba(120,40,40,0.07) 0px, rgba(120,40,40,0.07) 2px,
-        transparent 2px, transparent 9px
-      );
-    }
-    .tl-booking-layer { position: absolute; inset: 0; pointer-events: none; z-index: 4; }
+    .tl-cell:active { filter: brightness(0.95); }
+    .tl-cell.tl-weekend { background: #f7f6f2; }
+    .tl-cell.tl-today { outline: 1px solid rgba(29,158,117,0.4); outline-offset: -1px; }
+    @media (prefers-color-scheme: dark) { .tl-cell.tl-weekend { background: #1b1b19; } }
+    /* disponibilità Octorate-style */
+    .tl-avail-yes { background: #d4edda !important; color: #155724 !important; }
+    .tl-avail-no  { background: #f8d7da !important; color: #721c24 !important; }
+    /* dati neutrali */
+    .tl-data { color: var(--text2); font-size: 10px; }
+    .tl-price { color: var(--text1); font-weight: 700; font-size: 10px; }
+    /* booking bar nella riga dedicata */
+    .tl-booking-row { overflow: hidden; }
     .tl-booking {
-      position: absolute; top: 5px; height: 34px; border-radius: 5px; cursor: pointer;
-      display: flex; align-items: center; padding: 0 8px; font-size: 11px; font-weight: 600;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: opacity 0.1s; z-index: 2;
-      pointer-events: auto; letter-spacing: 0.01em;
+      position: absolute; top: 4px; height: 28px; border-radius: 4px; cursor: pointer;
+      display: flex; align-items: center; padding: 0 7px; font-size: 10px; font-weight: 600;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      transition: filter 0.1s; pointer-events: auto; letter-spacing: 0.01em;
     }
-    .tl-booking:active { filter: brightness(0.9); }
+    .tl-booking:active { filter: brightness(0.85); }
     .tl-booking.channel-booking { background: #003580; color: #fff; }
-    .tl-booking.channel-airbnb { background: #FF5A5F; color: #fff; }
-    .tl-booking.channel-direct { background: var(--accent); color: #fff; }
-    .tl-booking.channel-other { background: var(--text2); color: #fff; }
+    .tl-booking.channel-airbnb  { background: #e31c5f; color: #fff; }
+    .tl-booking.channel-direct  { background: var(--accent); color: #fff; }
+    .tl-booking.channel-other   { background: #6b6860; color: #fff; }
+    .tl-room-metrics { display: none; }
     .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); padding: 8px 12px; }
     .cal-days { display: contents; }
     .cal-dow { text-align: center; font-size: 10px; font-weight: 600; color: var(--text3); padding: 4px 0; font-family: var(--mono); letter-spacing: 0.04em; }
@@ -526,10 +539,11 @@
     .todo-extra-fields { display: grid; gap: 8px; }
 
     @media (max-width: 640px) {
-      .tl-room-header, .tl-room-label { width: 90px; }
-      .tl-room-header { font-size: 9px; }
-      .tl-room-label { font-size: 10px; line-height: 1.2; padding: 6px 6px; }
-      .tl-room-name { font-size: 10px; }
+      .tl-room-header, .tl-room-label { width: 68px; }
+      .tl-room-name { font-size: 8px; padding: 4px 4px 3px; }
+      .tl-row-label { font-size: 7px; padding: 0 3px; }
+      .tl-day-hdr { width: 36px; }
+      .tl-cell { width: 36px; }
       .cal-grid { padding: 8px 10px; gap: 4px 0; }
       .cal-day { min-height: 74px; padding: 6px 5px; }
       .calendar-price { font-size: 10px; }
@@ -1348,53 +1362,105 @@ function formatInventoryPrice(value) {
 }
 
 function renderMultiTimeline() {
+  const CW = window.innerWidth <= 640 ? 36 : 40; // cell width px
   const daysInMonth = new Date(APP.calYear, APP.calMonth + 1, 0).getDate();
   const today = new Date().toISOString().slice(0, 10);
   const todayDay = today.startsWith(`${APP.calYear}-${String(APP.calMonth + 1).padStart(2, '0')}`) ? parseInt(today.slice(8, 10), 10) : -1;
+  const DOW_IT = ['D', 'L', 'M', 'M', 'G', 'V', 'S'];
 
-  const DOW_IT = ['D','L','M','M','G','V','S'];
+  // ── Header giorni ──
   let headerHtml = '<div class="tl-room-header">Apt</div><div class="tl-days-header">';
   for (let day = 1; day <= daysInMonth; day += 1) {
     const date = new Date(APP.calYear, APP.calMonth, day);
-    const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-    headerHtml += `<div class="tl-day-hdr${isWeekend ? ' weekend' : ''}${day === todayDay ? ' today' : ''}"><span class="tl-day-num">${day}</span><span class="tl-day-dow">${DOW_IT[date.getDay()]}</span></div>`;
+    const isWknd = date.getDay() === 0 || date.getDay() === 6;
+    const isToday = day === todayDay;
+    headerHtml += `<div class="tl-day-hdr${isWknd ? ' tl-weekend' : ''}${isToday ? ' tl-today' : ''}" style="width:${CW}px">
+      <span class="tl-day-num">${day}</span><span class="tl-day-dow">${DOW_IT[date.getDay()]}</span>
+    </div>`;
   }
   headerHtml += '</div>';
   document.getElementById('timelineHeader').innerHTML = headerHtml;
 
   const bookingsByRoom = {};
-  APP.calBookings.forEach((booking) => {
-    if (!bookingsByRoom[booking.roomId]) bookingsByRoom[booking.roomId] = [];
-    bookingsByRoom[booking.roomId].push(booking);
+  APP.calBookings.forEach((b) => {
+    if (!bookingsByRoom[b.roomId]) bookingsByRoom[b.roomId] = [];
+    bookingsByRoom[b.roomId].push(b);
   });
 
   const bodyHtml = APP.calApartments.map((apartment) => {
     const roomId = String(apartment.beds24_room_id);
     const roomBookings = bookingsByRoom[roomId] || [];
-    let rowHtml = `<div class="tl-apartment-block">
-      <div class="tl-room-label" title="${apartment.name}">
-        <div class="tl-room-name">${formatApartmentShortName(apartment.name)}</div>
-      </div>
-      <div class="tl-cells" style="width:${36 * daysInMonth}px; position:relative">
-        ${renderTimelineAvailabilityRow(apartment, roomId, daysInMonth, todayDay)}
-        <div class="tl-booking-layer">`;
 
-    roomBookings.forEach((booking) => {
-      const checkIn = new Date(booking.checkIn);
-      const checkOut = new Date(booking.checkOut);
+    // pre-calcola dati per tutti i giorni
+    const dayData = [];
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      const date = new Date(APP.calYear, APP.calMonth, day);
+      const isWknd = date.getDay() === 0 || date.getDay() === 6;
+      const isToday = day === todayDay;
+      const dateStr = `${APP.calYear}-${String(APP.calMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const inv = getInventoryDay(roomId, dateStr);
+      const booking = getBookingForDate(roomId, dateStr);
+      const enc = encodeDayPayload({ apartmentId: apartment.id, propertyId: roomId, apartmentName: apartment.name, dateFrom: dateStr, dateTo: dateStr });
+      dayData.push({ day, isWknd, isToday, dateStr, inv, booking, enc });
+    }
+
+    const baseCell = (d, extra = '') => `tl-cell${d.isWknd ? ' tl-weekend' : ''}${d.isToday ? ' tl-today' : ''}${extra}`;
+
+    // riga Unità in vendita
+    const rowUnita = dayData.map((d) => {
+      const isClosed = d.booking ? true : (d.inv ? (d.inv.closed || d.inv.available === false) : false);
+      const hasInv = !!d.inv || !!d.booking;
+      const cls = baseCell(d, hasInv ? (isClosed ? ' tl-avail-no' : ' tl-avail-yes') : '');
+      const val = hasInv ? (isClosed ? '0' : '1') : '';
+      return `<div class="${cls}" style="width:${CW}px" onclick="openInventorySheet('${d.enc}')" title="${buildInventoryTitle(d.dateStr, d.inv, d.booking)}">${val}</div>`;
+    }).join('');
+
+    // riga Min stay
+    const rowMinStay = dayData.map((d) => {
+      const val = d.inv?.minStay ? `${d.inv.minStay}+` : '';
+      return `<div class="${baseCell(d, ' tl-data')}" style="width:${CW}px" onclick="openInventorySheet('${d.enc}')">${val}</div>`;
+    }).join('');
+
+    // riga Prezzo
+    const rowPrezzo = dayData.map((d) => {
+      const val = d.inv?.price ? Math.round(d.inv.price) : '';
+      return `<div class="${baseCell(d, ' tl-price')}" style="width:${CW}px" onclick="openInventorySheet('${d.enc}')">${val}</div>`;
+    }).join('');
+
+    // riga booking bars (riga dedicata, barre posizionate absolute)
+    let barsHtml = dayData.map((d) => `<div class="${baseCell(d)}" style="width:${CW}px;height:100%"></div>`).join('');
+    let overlaysHtml = '';
+    roomBookings.forEach((bk) => {
+      const checkIn = new Date(bk.checkIn);
+      const checkOut = new Date(bk.checkOut);
       const monthStart = new Date(APP.calYear, APP.calMonth, 1);
       const monthEnd = new Date(APP.calYear, APP.calMonth + 1, 0);
       const startDay = Math.max(1, checkIn <= monthStart ? 1 : checkIn.getDate());
-      const endDay = Math.min(daysInMonth, checkOut >= monthEnd ? daysInMonth : checkOut.getDate() - 1);
-      if (startDay > daysInMonth || endDay < 1) return;
-      const left = (startDay - 1) * 36;
-      const width = (endDay - startDay + 1) * 36 - 2;
-      const encoded = encodeBookingPayload(booking);
-      rowHtml += `<div class="tl-booking channel-${detectChannel(booking.channel)}" style="left:${left}px;width:${Math.max(width, 34)}px" onclick="openBookingSheet('${encoded}')" title="${booking.guestName} · ${booking.checkIn} - ${booking.checkOut}">${booking.guestName || 'Ospite'}</div>`;
+      const endDay = Math.min(daysInMonth, checkOut > monthEnd ? daysInMonth : checkOut.getDate() - 1);
+      if (startDay > daysInMonth || endDay < startDay) return;
+      const left = (startDay - 1) * CW + 2;
+      const width = (endDay - startDay + 1) * CW - 4;
+      const enc = encodeBookingPayload(bk);
+      overlaysHtml += `<div class="tl-booking channel-${detectChannel(bk.channel)}" style="left:${left}px;width:${Math.max(width, CW - 4)}px" onclick="openBookingSheet('${enc}')" title="${bk.guestName} · ${bk.checkIn}→${bk.checkOut}">${bk.guestName || 'Ospite'}</div>`;
     });
 
-    rowHtml += '</div></div></div>';
-    return rowHtml;
+    return `<div class="tl-apartment-block">
+      <div class="tl-room-label" title="${apartment.name}">
+        <div class="tl-room-name">${formatApartmentShortName(apartment.name)}</div>
+        <div class="tl-row-label">Unità</div>
+        <div class="tl-row-label">Min stay</div>
+        <div class="tl-row-label">Prezzo</div>
+        <div class="tl-row-label">Prenot.</div>
+      </div>
+      <div class="tl-cells" style="width:${CW * daysInMonth}px">
+        <div class="tl-metric-row">${rowUnita}</div>
+        <div class="tl-metric-row">${rowMinStay}</div>
+        <div class="tl-metric-row">${rowPrezzo}</div>
+        <div class="tl-booking-row" style="position:relative;width:${CW * daysInMonth}px">
+          ${barsHtml}${overlaysHtml}
+        </div>
+      </div>
+    </div>`;
   }).join('');
 
   document.getElementById('timelineBody').innerHTML = bodyHtml || '<div style="padding:24px;color:var(--text3);font-size:13px;text-align:center">Nessun appartamento collegato a Beds24</div>';
