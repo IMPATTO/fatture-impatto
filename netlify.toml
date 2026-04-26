@@ -2,6 +2,9 @@
   publish = "."
   command = "npm install"
 
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "SUPABASE_URL,EMAIL_FROM"
+
 [functions]
   directory = "netlify/functions"
   included_files = ["stati.csv"]
