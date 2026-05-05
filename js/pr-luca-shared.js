@@ -154,11 +154,16 @@
       .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))
       .map((row) => ({
         rowKey: `res:${row.id}`,
+        groupLabel: row.external ? 'Appartamenti Beds24 / Esterni residence' : 'Residence Margherita',
         scope: 'residence',
         apartmentRef: row.id,
         propertyId: null,
         label: row.name,
         detail: `${row.group_name}${row.external ? ' · esterno' : ''}`,
+        meta: `${row.floor} · ${row.capacity} pax`,
+        note: row.note || '',
+        external: Boolean(row.external),
+        blocked: Boolean(row.blocked),
         disabled: false,
       }));
   }
@@ -169,11 +174,16 @@
       const live = cfg.propertyId ? byPropertyId.get(String(cfg.propertyId)) : null;
       return {
         rowKey: cfg.propertyId ? `b24:${cfg.propertyId}` : `b24:missing:${cfg.alias}`,
+        groupLabel: 'Appartamenti Beds24',
         scope: 'beds24',
         apartmentRef: cfg.apartmentId,
         propertyId: cfg.propertyId,
         label: cfg.alias,
         detail: live?.name || cfg.detail,
+        meta: live?.name ? 'Beds24 collegato' : cfg.detail,
+        note: cfg.disabled ? 'Da collegare' : '',
+        external: false,
+        blocked: false,
         disabled: Boolean(cfg.disabled || !cfg.apartmentId || !cfg.propertyId),
       };
     });
@@ -287,60 +297,111 @@
 
   function bookingClass(item) {
     const parts = ['booking'];
-    parts.push(item.kind === 'request' ? 'is-request' : 'is-booking');
-    parts.push(item.tone || 'other');
     parts.push(item.status || 'confirmed');
+    if (item.tone === 'checco') {
+      parts.push('checco');
+    } else {
+      parts.push('non-checco');
+      if (item.tone === 'beds24') parts.push('beds24');
+      if (item.tone === 'luca') parts.push('luca');
+      if (item.kind === 'request') parts.push('is-request');
+    }
     return parts.join(' ');
+  }
+
+  function isWeekend(dateStr) {
+    const day = new Date(`${dateStr}T00:00:00`).getDay();
+    return day === 0 || day === 6;
+  }
+
+  function groupRows(rows) {
+    const groups = [];
+    const map = new Map();
+    rows.forEach((row) => {
+      const key = row.groupLabel || 'Calendario';
+      if (!map.has(key)) {
+        const entry = { label: key, externalGroup: key.toLowerCase().includes('beds24'), rows: [] };
+        map.set(key, entry);
+        groups.push(entry);
+      }
+      map.get(key).rows.push(row);
+    });
+    return groups;
   }
 
   function renderCalendar(grid, rows, bookings, dateFrom, dateToExclusive) {
     const days = eachDate(dateFrom, dateToExclusive);
     grid.innerHTML = '';
-    grid.style.gridTemplateColumns = `240px repeat(${days.length}, minmax(30px, 1fr))`;
+    grid.style.gridTemplateColumns = `220px repeat(${days.length}, minmax(36px, 1fr))`;
+    const today = todayIso();
 
     const corner = document.createElement('div');
-    corner.className = 'cal-corner';
+    corner.className = 'cal-header apt-col';
     corner.textContent = 'Appartamento';
     grid.appendChild(corner);
 
     days.forEach((date) => {
-      const head = document.createElement('div');
       const d = new Date(`${date}T00:00:00`);
-      head.className = `cal-head${date === todayIso() ? ' today' : ''}`;
-      head.innerHTML = `<span>${d.getDate()}</span><small>${d.toLocaleDateString('it-IT', { weekday: 'short' }).slice(0, 3)}</small>`;
+      const head = document.createElement('div');
+      head.className = `cal-header${isWeekend(date) ? ' weekend' : ''}${date === today ? ' today' : ''}`;
+      head.innerHTML = `<div class="cal-day-name">${d.toLocaleDateString('it-IT', { weekday: 'short' }).slice(0, 2)}</div><div class="cal-day-label">${d.getDate()}</div>`;
       grid.appendChild(head);
     });
 
-    rows.forEach((row, rowIndex) => {
-      const label = document.createElement('div');
-      label.className = `cal-label${row.disabled ? ' disabled' : ''}`;
-      label.innerHTML = `<strong>${esc(row.label)}</strong><small>${esc(row.detail || '')}</small>`;
-      label.style.gridRow = String(rowIndex + 2);
-      grid.appendChild(label);
+    for (const group of groupRows(rows)) {
+      const groupHeader = document.createElement('div');
+      groupHeader.className = `group-header${group.externalGroup ? ' external-group' : ''}`;
+      groupHeader.style.gridColumn = `1 / ${days.length + 2}`;
+      groupHeader.textContent = group.label;
+      grid.appendChild(groupHeader);
 
-      days.forEach((date) => {
-        const cell = document.createElement('div');
-        cell.className = `cal-cell${date === todayIso() ? ' today' : ''}`;
-        cell.style.gridRow = String(rowIndex + 2);
-        grid.appendChild(cell);
+      group.rows.forEach((row) => {
+        const label = document.createElement('div');
+        let cls = 'apt-name';
+        if (row.disabled || row.blocked) cls += ' blocked';
+        if (row.external) cls += ' external';
+        label.className = cls;
+        label.innerHTML = `<div class="a-title">${esc(row.label)}</div><div class="a-meta">${esc(row.meta || row.detail || '')}</div>${row.note ? `<div class="a-note">${esc(row.note)}</div>` : ''}`;
+        grid.appendChild(label);
+
+        days.forEach((date) => {
+          const cell = document.createElement('div');
+          let cellCls = 'apt-cell';
+          if (isWeekend(date)) cellCls += ' weekend';
+          if (date === today) cellCls += ' today';
+          if (row.disabled) cellCls += ' unavail';
+          cell.className = cellCls;
+          cell.dataset.rowKey = row.rowKey;
+          cell.dataset.date = date;
+          grid.appendChild(cell);
+        });
       });
-    });
+    }
 
     bookings.forEach((booking) => {
       const rowIndex = rows.findIndex((row) => row.rowKey === booking.rowKey);
       if (rowIndex < 0) return;
       const spanInfo = overlapSpan(dateFrom, dateToExclusive, booking.checkin, booking.checkout);
       if (!spanInfo) return;
+      const firstDate = days[spanInfo.startIndex];
+      const lastDate = days[spanInfo.startIndex + spanInfo.span - 1];
+      const firstCell = grid.querySelector(`.apt-cell[data-row-key="${booking.rowKey}"][data-date="${firstDate}"]`);
+      const lastCell = grid.querySelector(`.apt-cell[data-row-key="${booking.rowKey}"][data-date="${lastDate}"]`);
+      if (!firstCell || !lastCell) return;
 
-      const div = document.createElement('button');
-      div.type = 'button';
+      const div = document.createElement('div');
       div.className = bookingClass(booking);
-      div.style.gridRow = String(rowIndex + 2);
-      div.style.gridColumn = `${spanInfo.startIndex + 2} / span ${spanInfo.span}`;
-      div.innerHTML = `<span>${esc(booking.label)}</span><small>${esc(booking.sourceLabel || '')}</small>`;
+      div.style.position = 'absolute';
+      div.style.left = `${firstCell.offsetLeft + 2}px`;
+      div.style.top = `${firstCell.offsetTop + 4}px`;
+      div.style.width = `${(lastCell.offsetLeft + lastCell.offsetWidth) - firstCell.offsetLeft - 4}px`;
+      div.style.height = `${Math.max(firstCell.offsetHeight - 8, 28)}px`;
+      div.innerHTML = `${esc(booking.label)} · ${esc(booking.sourceLabel || '')}`;
       div.title = `${booking.label} · ${fmtDate(booking.checkin)} → ${fmtDate(booking.checkout)}${booking.notes ? `\n${booking.notes}` : ''}`;
       grid.appendChild(div);
     });
+
+    grid.style.position = 'relative';
   }
 
   window.prLucaShared = {
