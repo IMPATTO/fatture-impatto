@@ -162,7 +162,25 @@ ON CONFLICT DO NOTHING;
 -- ============================================================
 -- SEED PRENOTAZIONI (piano allocazione v6 completo)
 -- ============================================================
-INSERT INTO rm_bookings (apartment_id, group_id, segment, name, checkin, checkout, pax, status, source) VALUES
+INSERT INTO rm_bookings (id, apartment_id, group_id, segment, name, checkin, checkout, pax, status, source)
+SELECT
+  (
+    substr(md5(concat_ws('|', apartment_id, coalesce(group_id, ''), coalesce(segment, ''), name, checkin, checkout, pax::text, status, source)), 1, 8) || '-' ||
+    substr(md5(concat_ws('|', apartment_id, coalesce(group_id, ''), coalesce(segment, ''), name, checkin, checkout, pax::text, status, source)), 9, 4) || '-' ||
+    substr(md5(concat_ws('|', apartment_id, coalesce(group_id, ''), coalesce(segment, ''), name, checkin, checkout, pax::text, status, source)), 13, 4) || '-' ||
+    substr(md5(concat_ws('|', apartment_id, coalesce(group_id, ''), coalesce(segment, ''), name, checkin, checkout, pax::text, status, source)), 17, 4) || '-' ||
+    substr(md5(concat_ws('|', apartment_id, coalesce(group_id, ''), coalesce(segment, ''), name, checkin, checkout, pax::text, status, source)), 21, 12)
+  )::uuid,
+  apartment_id,
+  group_id,
+  segment,
+  name,
+  checkin::date,
+  checkout::date,
+  pax::int,
+  status,
+  source
+FROM (VALUES
   -- BLOCCHI STAGIONE
   ('T3C_FAMILY', NULL, NULL, 'Family Hotel — bloccato', '2026-05-20', '2026-09-20', 8, 'staff', 'system'),
   ('T3D_STAFF', NULL, NULL, 'Staff — bloccato', '2026-05-20', '2026-09-20', 4, 'staff', 'system'),
@@ -215,7 +233,17 @@ INSERT INTO rm_bookings (apartment_id, group_id, segment, name, checkin, checkou
   ('BD2', NULL, NULL, 'Tedesco', '2026-08-17', '2026-08-24', 4, 'confirmed', 'checco'),
   ('EXT_DANTE', NULL, NULL, 'Crescenzio (1/2)', '2026-08-25', '2026-08-31', 6, 'confirmed', 'checco'),
   ('BPT2', NULL, NULL, 'Crescenzio (2/2)', '2026-08-25', '2026-08-31', 6, 'confirmed', 'checco')
-ON CONFLICT DO NOTHING;
+) AS seed(apartment_id, group_id, segment, name, checkin, checkout, pax, status, source)
+ON CONFLICT (id) DO UPDATE SET
+  apartment_id = EXCLUDED.apartment_id,
+  group_id = EXCLUDED.group_id,
+  segment = EXCLUDED.segment,
+  name = EXCLUDED.name,
+  checkin = EXCLUDED.checkin,
+  checkout = EXCLUDED.checkout,
+  pax = EXCLUDED.pax,
+  status = EXCLUDED.status,
+  source = EXCLUDED.source;
 
 -- ============================================================
 -- VERIFICA SETUP
@@ -225,4 +253,4 @@ UNION ALL
 SELECT 'Unavailability', count(*) FROM rm_unavailability
 UNION ALL
 SELECT 'Bookings', count(*) FROM rm_bookings;
--- Atteso: 22 apartments, 7 unavailability, 49 bookings
+-- Atteso: 22 apartments, 7 unavailability, 50 bookings

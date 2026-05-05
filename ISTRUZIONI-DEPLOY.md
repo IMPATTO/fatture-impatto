@@ -19,7 +19,7 @@ git add -A && git commit -m "backup pre-residence-margherita"
    ```
    Apartments: 22 righe
    Unavailability: 7 righe
-   Bookings: 49 righe
+   Bookings: 50 righe
    ```
 6. Se vedi errori del tipo "table already exists" non è un problema (CREATE IF NOT EXISTS è idempotente)
 
@@ -83,7 +83,7 @@ Netlify rileva automaticamente il push e deploya. In ~30 secondi i 2 file sono o
 ### Test admin (tu):
 1. Apri https://checkinillupoaffitta.netlify.app/residence-backoffice.html
 2. Inserisci la password admin
-3. Vedi tutte le 49 prenotazioni precaricate
+3. Vedi tutte le 50 prenotazioni precaricate
 4. Filtra per "Pending" → deve mostrare 0 (sono tutte già confermate dal piano)
 5. Crea una prenotazione di test dalla vista Kekko (apri in incognito)
 6. Torna sul backoffice → vedi la nuova prenotazione apparire in tempo reale (real-time subscription)
@@ -160,7 +160,7 @@ poi rilancia il SQL di seed.
 |---|---|---|
 | `rm_apartments` | Master appartamenti (interni + esterni) | 22 |
 | `rm_unavailability` | Finestre indisponibilità esterni | 7 |
-| `rm_bookings` | Prenotazioni con stato + source | 49 |
+| `rm_bookings` | Prenotazioni con stato + source | 50 |
 | `rm_audit` | Log azioni admin | 0 |
 
 Tutte le tabelle hanno prefisso `rm_` per non interferire con il sistema check-in esistente.
