@@ -106,7 +106,7 @@
 const sb = window.sb;
 const SH = window.prLucaShared;
 const DEFAULT_VIEW_MONTH = '2026-07-01';
-const S = { session: null, viewMonth: DEFAULT_VIEW_MONTH, rows: [], requests: [] };
+const S = { session: null, viewMonth: DEFAULT_VIEW_MONTH, rows: [], requests: [], loading: false, refreshSeq: 0 };
 
 function showError(message) {
   const el = document.getElementById('loginErr');
@@ -120,6 +120,14 @@ function selectedRange() {
 
 function renderWarnings(warnings) {
   document.getElementById('warnings').innerHTML = (warnings || []).slice(0, 4).map((msg) => `<div class="warn">${SH.esc(msg)}</div>`).join('');
+}
+
+function setLoadingState(isLoading) {
+  S.loading = isLoading;
+  document.getElementById('refreshBtn').disabled = isLoading;
+  document.getElementById('prevMonthBtn').disabled = isLoading;
+  document.getElementById('nextMonthBtn').disabled = isLoading;
+  document.getElementById('refreshBtn').textContent = isLoading ? 'Aggiorno…' : 'Aggiorna';
 }
 
 function renderQueue() {
@@ -151,11 +159,12 @@ function renderQueue() {
 }
 
 async function refreshAll() {
-  document.getElementById('refreshBtn').disabled = true;
-  document.getElementById('refreshBtn').textContent = 'Aggiorno…';
+  const seq = ++S.refreshSeq;
+  setLoadingState(true);
   try {
     const { from, to } = selectedRange();
     const snapshot = await SH.fetchSnapshot(sb, from, to);
+    if (seq !== S.refreshSeq) return;
     S.rows = snapshot.rows;
     S.requests = snapshot.requests.filter((row) => row.partner === 'luca');
     SH.renderCalendar(document.getElementById('calendarGrid'), snapshot.rows, snapshot.bookings, from, to, snapshot.closedMap);
@@ -166,10 +175,10 @@ async function refreshAll() {
     renderWarnings(snapshot.beds24Warnings);
     renderQueue();
   } catch (error) {
+    if (seq !== S.refreshSeq) return;
     renderWarnings([error.message]);
   } finally {
-    document.getElementById('refreshBtn').disabled = false;
-    document.getElementById('refreshBtn').textContent = 'Aggiorna';
+    if (seq === S.refreshSeq) setLoadingState(false);
   }
 }
 
@@ -233,8 +242,16 @@ document.getElementById('loginBtn').addEventListener('click', doLogin);
 document.getElementById('lpw').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
 document.getElementById('refreshBtn').addEventListener('click', refreshAll);
 document.getElementById('logoutBtn').addEventListener('click', () => sb.auth.signOut());
-document.getElementById('prevMonthBtn').addEventListener('click', async () => { S.viewMonth = SH.shiftMonth(S.viewMonth, -1); await refreshAll(); });
-document.getElementById('nextMonthBtn').addEventListener('click', async () => { S.viewMonth = SH.shiftMonth(S.viewMonth, 1); await refreshAll(); });
+document.getElementById('prevMonthBtn').addEventListener('click', async () => {
+  if (S.loading) return;
+  S.viewMonth = SH.shiftMonth(S.viewMonth, -1);
+  await refreshAll();
+});
+document.getElementById('nextMonthBtn').addEventListener('click', async () => {
+  if (S.loading) return;
+  S.viewMonth = SH.shiftMonth(S.viewMonth, 1);
+  await refreshAll();
+});
 
 (async () => {
   const { data: { session } } = await sb.auth.getSession();

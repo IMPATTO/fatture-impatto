@@ -346,8 +346,36 @@
     return groups;
   }
 
+  function placeBookingOverlays(grid, rows, bookings, days, dateFrom, dateToExclusive) {
+    grid.querySelectorAll('.booking').forEach((node) => node.remove());
+    bookings.forEach((booking) => {
+      const rowIndex = rows.findIndex((row) => row.rowKey === booking.rowKey);
+      if (rowIndex < 0) return;
+      const spanInfo = overlapSpan(dateFrom, dateToExclusive, booking.checkin, booking.checkout);
+      if (!spanInfo) return;
+      const firstDate = days[spanInfo.startIndex];
+      const lastDate = days[spanInfo.startIndex + spanInfo.span - 1];
+      const firstCell = grid.querySelector(`.apt-cell[data-row-key="${booking.rowKey}"][data-date="${firstDate}"]`);
+      const lastCell = grid.querySelector(`.apt-cell[data-row-key="${booking.rowKey}"][data-date="${lastDate}"]`);
+      if (!firstCell || !lastCell) return;
+
+      const div = document.createElement('div');
+      div.className = bookingClass(booking);
+      div.style.position = 'absolute';
+      div.style.left = `${firstCell.offsetLeft + 2}px`;
+      div.style.top = `${firstCell.offsetTop + 4}px`;
+      div.style.width = `${(lastCell.offsetLeft + lastCell.offsetWidth) - firstCell.offsetLeft - 4}px`;
+      div.style.height = `${Math.max(firstCell.offsetHeight - 8, 28)}px`;
+      div.innerHTML = `${esc(booking.label)} · ${esc(booking.sourceLabel || '')}`;
+      div.title = `${booking.label} · ${fmtDate(booking.checkin)} → ${fmtDate(booking.checkout)}${booking.notes ? `\n${booking.notes}` : ''}`;
+      grid.appendChild(div);
+    });
+  }
+
   function renderCalendar(grid, rows, bookings, dateFrom, dateToExclusive, closedMap = new Map()) {
     const days = eachDate(dateFrom, dateToExclusive);
+    const renderToken = Symbol('render');
+    grid._renderToken = renderToken;
     grid.innerHTML = '';
     grid.style.gridTemplateColumns = `220px repeat(${days.length}, minmax(36px, 1fr))`;
     const today = todayIso();
@@ -405,30 +433,13 @@
       });
     }
 
-    bookings.forEach((booking) => {
-      const rowIndex = rows.findIndex((row) => row.rowKey === booking.rowKey);
-      if (rowIndex < 0) return;
-      const spanInfo = overlapSpan(dateFrom, dateToExclusive, booking.checkin, booking.checkout);
-      if (!spanInfo) return;
-      const firstDate = days[spanInfo.startIndex];
-      const lastDate = days[spanInfo.startIndex + spanInfo.span - 1];
-      const firstCell = grid.querySelector(`.apt-cell[data-row-key="${booking.rowKey}"][data-date="${firstDate}"]`);
-      const lastCell = grid.querySelector(`.apt-cell[data-row-key="${booking.rowKey}"][data-date="${lastDate}"]`);
-      if (!firstCell || !lastCell) return;
-
-      const div = document.createElement('div');
-      div.className = bookingClass(booking);
-      div.style.position = 'absolute';
-      div.style.left = `${firstCell.offsetLeft + 2}px`;
-      div.style.top = `${firstCell.offsetTop + 4}px`;
-      div.style.width = `${(lastCell.offsetLeft + lastCell.offsetWidth) - firstCell.offsetLeft - 4}px`;
-      div.style.height = `${Math.max(firstCell.offsetHeight - 8, 28)}px`;
-      div.innerHTML = `${esc(booking.label)} · ${esc(booking.sourceLabel || '')}`;
-      div.title = `${booking.label} · ${fmtDate(booking.checkin)} → ${fmtDate(booking.checkout)}${booking.notes ? `\n${booking.notes}` : ''}`;
-      grid.appendChild(div);
-    });
-
     grid.style.position = 'relative';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (grid._renderToken !== renderToken) return;
+        placeBookingOverlays(grid, rows, bookings, days, dateFrom, dateToExclusive);
+      });
+    });
   }
 
   window.prLucaShared = {

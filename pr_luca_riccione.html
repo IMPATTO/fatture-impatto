@@ -233,6 +233,7 @@ const S = {
   rows: [],
   requests: [],
   loading: false,
+  refreshSeq: 0,
 };
 
 function setAuth(on) {
@@ -281,14 +282,22 @@ function renderWarnings(warnings) {
   wrap.innerHTML = (warnings || []).slice(0, 4).map((msg) => `<div class="warn">${SH.esc(msg)}</div>`).join('');
 }
 
+function setLoadingState(isLoading) {
+  S.loading = isLoading;
+  document.getElementById('refreshBtn').disabled = isLoading;
+  document.getElementById('prevMonthBtn').disabled = isLoading;
+  document.getElementById('nextMonthBtn').disabled = isLoading;
+  document.getElementById('refreshBtn').textContent = isLoading ? 'Aggiorno…' : 'Aggiorna';
+}
+
 async function refreshAll() {
   if (!sb) throw new Error('Supabase client non caricato');
-  S.loading = true;
-  document.getElementById('refreshBtn').disabled = true;
-  document.getElementById('refreshBtn').textContent = 'Aggiorno…';
+  const seq = ++S.refreshSeq;
+  setLoadingState(true);
   try {
     const { from, to } = selectedRange();
     const snapshot = await SH.fetchSnapshot(sb, from, to);
+    if (seq !== S.refreshSeq) return;
     S.rows = snapshot.rows;
     S.requests = snapshot.requests.filter((row) => row.partner === 'luca');
     SH.renderCalendar(document.getElementById('calendarGrid'), snapshot.rows, snapshot.bookings, from, to, snapshot.closedMap);
@@ -303,11 +312,10 @@ async function refreshAll() {
     renderRequests();
     document.getElementById('reqApartment').innerHTML = catalogOptions();
   } catch (error) {
+    if (seq !== S.refreshSeq) return;
     renderWarnings([error.message]);
   } finally {
-    S.loading = false;
-    document.getElementById('refreshBtn').disabled = false;
-    document.getElementById('refreshBtn').textContent = 'Aggiorna';
+    if (seq === S.refreshSeq) setLoadingState(false);
   }
 }
 
@@ -377,8 +385,16 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
   sessionStorage.removeItem('pr_luca_auth');
   location.reload();
 });
-document.getElementById('prevMonthBtn').addEventListener('click', async () => { S.viewMonth = SH.shiftMonth(S.viewMonth, -1); await refreshAll(); });
-document.getElementById('nextMonthBtn').addEventListener('click', async () => { S.viewMonth = SH.shiftMonth(S.viewMonth, 1); await refreshAll(); });
+document.getElementById('prevMonthBtn').addEventListener('click', async () => {
+  if (S.loading) return;
+  S.viewMonth = SH.shiftMonth(S.viewMonth, -1);
+  await refreshAll();
+});
+document.getElementById('nextMonthBtn').addEventListener('click', async () => {
+  if (S.loading) return;
+  S.viewMonth = SH.shiftMonth(S.viewMonth, 1);
+  await refreshAll();
+});
 
 if (sessionStorage.getItem('pr_luca_auth') === 'ok') {
   setAuth(true);
