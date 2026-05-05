@@ -268,7 +268,7 @@ function checkAuth() {
   }
 }
 function doLogin() {
-  const pw = document.getElementById('login-password').value;
+  const pw = document.getElementById('login-password').value.trim();
   if (ADMIN_PASSWORDS.includes(pw)) {
     sessionStorage.setItem('rm_admin_auth', 'ok');
     document.getElementById('login-overlay').classList.add('hidden');

@@ -471,7 +471,7 @@ const SUPABASE_URL = 'https://tysxeikqbgebpfyblgeb.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5c3hlaWtxYmdlYnBmeWJsZ2ViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyODczODAsImV4cCI6MjA5MDg2MzM4MH0.yXmS2MFh47eRkCX2voemdBkK5m_tyJiKAFhfyp1YEbw';
 
 // Password Kekko (cambia questa)
-const KEKKO_PASSWORD = 'kekko2026';
+const KEKKO_PASSWORDS = ['kekko2026', 'kekko2026!'];
 
 const sb = window.sb;
 if (!sb) throw new Error('Supabase client non caricato: controlla js/supabase-client.js');
@@ -488,8 +488,8 @@ function checkAuth() {
 }
 
 function doLogin() {
-  const pw = document.getElementById('login-password').value;
-  if (pw === KEKKO_PASSWORD) {
+  const pw = document.getElementById('login-password').value.trim();
+  if (KEKKO_PASSWORDS.includes(pw)) {
     sessionStorage.setItem('rm_kekko_auth', 'ok');
     document.getElementById('login-overlay').classList.add('hidden');
     init();
