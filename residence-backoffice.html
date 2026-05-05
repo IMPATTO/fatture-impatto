@@ -249,7 +249,7 @@
 <script>
 const SUPABASE_URL = 'https://tysxeikqbgebpfyblgeb.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5c3hlaWtxYmdlYnBmeWJsZ2ViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyODczODAsImV4cCI6MjA5MDg2MzM4MH0.yXmS2MFh47eRkCX2voemdBkK5m_tyJiKAFhfyp1YEbw';
-const ADMIN_PASSWORD = 'Marco$Lupo2026!';
+const ADMIN_PASSWORDS = ['marco2026', 'Marco$Lupo2026!'];
 const ADMIN_NAME = 'admin';
 
 const sb = window.sb;
@@ -269,7 +269,7 @@ function checkAuth() {
 }
 function doLogin() {
   const pw = document.getElementById('login-password').value;
-  if (pw === ADMIN_PASSWORD) {
+  if (ADMIN_PASSWORDS.includes(pw)) {
     sessionStorage.setItem('rm_admin_auth', 'ok');
     document.getElementById('login-overlay').classList.add('hidden');
     init();
