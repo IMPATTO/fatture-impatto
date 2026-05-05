@@ -263,11 +263,11 @@
     const closedMap = new Map();
     (inventoryDays || []).forEach((row) => {
       if (!row?.propertyId || !row?.date) return;
-      if (row.hasBooking) return;
       if (!(row.closed === true || row.available === false)) return;
       const key = `b24:${String(row.propertyId)}:${row.date}`;
       closedMap.set(key, {
         closed: true,
+        hasBooking: Boolean(row.hasBooking),
         reason: row.available === false ? 'closed' : 'calendar',
       });
     });
@@ -414,9 +414,10 @@
           let cellCls = 'apt-cell';
           if (isWeekend(date)) cellCls += ' weekend';
           if (date === today) cellCls += ' today';
-          const isClosed = row.scope === 'beds24' && row.propertyId
-            ? closedMap.has(`b24:${String(row.propertyId)}:${date}`)
-            : false;
+          const closedState = row.scope === 'beds24' && row.propertyId
+            ? closedMap.get(`b24:${String(row.propertyId)}:${date}`)
+            : null;
+          const isClosed = Boolean(closedState?.closed);
           if (row.disabled || isClosed) cellCls += ' unavail';
           cell.className = cellCls;
           cell.dataset.rowKey = row.rowKey;
@@ -424,9 +425,9 @@
           if (isClosed) {
             const badge = document.createElement('div');
             badge.className = 'closed-badge';
-            badge.textContent = 'X';
+            badge.textContent = closedState?.hasBooking ? '•' : 'X';
             cell.appendChild(badge);
-            cell.title = 'Data chiusa su Beds24';
+            cell.title = closedState?.hasBooking ? 'Data occupata/chiusa su Beds24' : 'Data chiusa su Beds24';
           }
           grid.appendChild(cell);
         });
