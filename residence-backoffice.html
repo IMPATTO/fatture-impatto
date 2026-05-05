@@ -63,8 +63,9 @@
   .search-input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-pale);}
   .view-controls{margin-left:auto;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;}
   .month-nav{display:flex;align-items:center;gap:.5rem;}
-  .month-label{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);min-width:150px;text-align:center;}
-  .nav-btn{background:white;border:1px solid var(--sand-200);border-radius:999px;width:34px;height:34px;cursor:pointer;font-size:18px;color:var(--ink);}
+  .month-label{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;margin:0 1rem;min-width:200px;text-align:center;color:var(--ink);letter-spacing:-.3px;}
+  .month-label .year{color:var(--gold-dark);font-style:italic;}
+  .nav-btn{background:white;border:1px solid var(--sand-200);border-radius:var(--radius-md);width:40px;height:40px;cursor:pointer;font-size:18px;color:var(--ink);font-family:serif;}
   .nav-btn:hover{background:var(--sand-50);border-color:var(--gold);}
 
   .bookings-section{background:white;border:1px solid var(--sand-200);border-radius:var(--radius-lg);padding:1.5rem;box-shadow:var(--shadow-sm);}
@@ -73,28 +74,44 @@
   .section-title .count{font-size:12px;color:var(--slate);font-style:italic;}
   .view-panel{display:none;}
   .view-panel.active{display:block;}
-  .calendar-wrapper{overflow:auto;border:1px solid var(--sand-200);border-radius:14px;background:linear-gradient(180deg,#fff 0%,#fbfaf7 100%);}
+  .calendar-wrapper{background:white;border:1px solid var(--sand-200);border-radius:var(--radius-lg);padding:1.25rem;box-shadow:var(--shadow-md);overflow-x:auto;}
   .calendar-grid{display:grid;gap:0;min-width:1200px;position:relative;}
-  .cal-header-cell{padding:.45rem .25rem;text-align:center;border-bottom:1px solid var(--sand-200);border-right:1px solid var(--sand-100);background:var(--sand-50);position:sticky;top:0;z-index:2;}
-  .cal-header-cell.weekend{background:#f0f6f7;}
-  .cal-header-cell.apt-head{position:sticky;left:0;z-index:3;background:#fff;text-align:left;padding:.6rem .9rem;font-family:'Cormorant Garamond',serif;font-size:15px;}
-  .cal-day-name{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--slate);}
-  .cal-day-num{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:700;color:var(--ink);}
-  .apt-cell-head{position:sticky;left:0;z-index:1;background:#fff;border-right:2px solid var(--sand-200);border-bottom:1px solid var(--sand-100);padding:.55rem .9rem;min-height:50px;}
-  .apt-cell-head.external{background:linear-gradient(90deg,var(--external-bg),#fff);}
-  .apt-cell-head.blocked{background:linear-gradient(90deg,var(--staff-bg),#fff);}
-  .apt-title{font-size:13px;font-weight:700;color:var(--ink);line-height:1.1;}
-  .apt-meta{font-size:10px;color:var(--slate);margin-top:2px;}
-  .day-cell{min-height:50px;border-right:1px solid var(--sand-100);border-bottom:1px solid var(--sand-100);background:#fff;}
-  .day-cell.weekend{background:#fafdfd;}
-  .booking-bar{position:relative;align-self:center;height:36px;border-radius:8px;padding:5px 8px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11px;font-weight:600;color:#fff;box-shadow:0 4px 10px rgba(26,35,50,.10);border:none;cursor:pointer;}
-  .booking-bar.pending{background:var(--pending);}
-  .booking-bar.confirmed{background:var(--confirmed);}
-  .booking-bar.rejected{background:var(--conflict);}
-  .booking-bar.staff{background:var(--staff);}
-  .booking-bar.cancelled{background:var(--slate);}
-  .booking-bar.conflict{outline:2px solid var(--conflict-bg);}
-  .booking-bar .sub{font-size:9px;opacity:.82;margin-left:6px;}
+  .cal-header{background:var(--sand-50);padding:.5rem .25rem;text-align:center;border-bottom:2px solid var(--sand-200);border-right:1px solid var(--sand-100);position:sticky;top:0;z-index:2;}
+  .cal-header.weekend{background:#eef5f7;}
+  .cal-header.apt-col{text-align:left;padding:.625rem .875rem;background:white;z-index:3;position:sticky;left:0;font-family:'Cormorant Garamond',serif;font-size:14px;font-weight:600;color:var(--ink);letter-spacing:.5px;text-transform:uppercase;}
+  .cal-day-name{font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--slate);font-weight:500;}
+  .cal-header.weekend .cal-day-name{color:var(--sea-500, #2d6b7a);}
+  .cal-day-label{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:var(--ink);margin-top:1px;}
+  .cal-header.weekend .cal-day-label{color:var(--sea-700, #1a4a56);}
+  .cal-header.today{background:var(--gold-pale);}
+  .cal-header.today .cal-day-label{color:var(--gold-dark);}
+  .apt-name{background:white;padding:.5rem .875rem;border-bottom:1px solid var(--sand-100);border-right:2px solid var(--sand-200);position:sticky;left:0;z-index:1;display:flex;flex-direction:column;justify-content:center;gap:1px;min-height:48px;}
+  .apt-name .a-title{font-size:13px;font-weight:600;color:var(--ink);line-height:1.2;}
+  .apt-name .a-title .star{color:var(--gold);font-size:11px;}
+  .apt-name .a-meta{font-size:10px;color:var(--slate);font-weight:400;}
+  .apt-name .a-note{font-size:9px;color:var(--gold-dark);font-style:italic;margin-top:1px;}
+  .apt-name.blocked{background:linear-gradient(90deg,var(--staff-bg) 0%, white 100%);opacity:.85;}
+  .apt-name.external{background:linear-gradient(90deg,var(--external-bg) 0%, white 100%);border-left:3px solid var(--external);}
+  .apt-name.external .a-note{color:var(--external);}
+  .apt-cell{border-bottom:1px solid var(--sand-100);border-right:1px solid var(--sand-100);min-height:48px;position:relative;transition:background .1s;background:white;}
+  .apt-cell:hover{background:var(--sand-50);}
+  .apt-cell.weekend{background:rgba(238,245,247,.4);}
+  .apt-cell.weekend:hover{background:#eef5f7;}
+  .apt-cell.today{box-shadow:inset 0 0 0 1px var(--gold-light);}
+  .apt-cell.unavail{background:repeating-linear-gradient(45deg, #f0ebe0, #f0ebe0 4px, #e8dcc0 4px, #e8dcc0 8px);opacity:.5;}
+  .apt-cell.unavail:hover{background:repeating-linear-gradient(45deg, #f0ebe0, #f0ebe0 4px, #e8dcc0 4px, #e8dcc0 8px);}
+  .group-header{background:linear-gradient(90deg,var(--sand-100) 0%, var(--sand-50) 100%);padding:.5rem .875rem;font-family:'Cormorant Garamond',serif;font-size:12px;font-weight:700;color:var(--gold-dark);text-transform:uppercase;letter-spacing:2px;grid-column:1 / -1;border-top:1px solid var(--sand-200);border-bottom:1px solid var(--sand-200);}
+  .group-header.external-group{background:linear-gradient(90deg,var(--external-bg) 0%, var(--sand-50) 100%);color:var(--external);}
+  .booking{position:absolute;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:600;color:white;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer;z-index:1;display:flex;align-items:center;gap:4px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.12);border:none;}
+  .booking:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.18);z-index:5;}
+  .booking.confirmed{background:linear-gradient(135deg, #6a9d80 0%, #4a7d60 100%);}
+  .booking.pending{background:linear-gradient(135deg, #d4a062 0%, #b88040 100%);}
+  .booking.rejected{background:linear-gradient(135deg, #c87862 0%, #a05a48 100%);opacity:.7;text-decoration:line-through;}
+  .booking.staff{background:repeating-linear-gradient(45deg, #8a7ba8, #8a7ba8 4px, #6b5b8a 4px, #6b5b8a 8px);}
+  .booking.checco{box-shadow:inset 0 0 0 2px var(--gold-light), 0 1px 3px rgba(0,0,0,.12);}
+  .booking.checco:hover{box-shadow:inset 0 0 0 2px var(--gold), 0 4px 12px rgba(184,137,58,.3);}
+  .booking.conflict{outline:2px solid var(--conflict-bg);}
+  .booking .seg-icon{font-size:9px;opacity:.85;}
 
   .bookings-table{width:100%;border-collapse:collapse;font-size:13px;}
   .bookings-table th{text-align:left;padding:.75rem .5rem;border-bottom:2px solid var(--sand-200);font-size:11px;font-weight:600;color:var(--slate);text-transform:uppercase;letter-spacing:1px;}
@@ -393,11 +410,19 @@ function setFilter(key, val) {
 }
 
 function fmt(iso) { return new Date(iso + 'T00:00:00').toLocaleDateString('it-IT', { day:'numeric', month:'short' }); }
+function dateOnly(d) { return d.toISOString().slice(0,10); }
 function parseISO(iso) { return new Date(iso + 'T00:00:00'); }
 function daysInMonth(year, month) { return new Date(year, month + 1, 0).getDate(); }
-function monthLabel(year, month) {
-  return new Date(year, month, 1).toLocaleDateString('it-IT', { month:'long', year:'numeric' })
-    .replace(/^./, c => c.toUpperCase());
+const DAY_NAMES = ['DOM','LUN','MAR','MER','GIO','VEN','SAB'];
+const MONTH_NAMES = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+function isWeekend(dateStr) { const d = parseISO(dateStr).getDay(); return d === 0 || d === 6; }
+function isUnavailable(aptId, dateStr) {
+  for (const u of UNAVAILABLE) {
+    if (u.apartment_id !== aptId) continue;
+    const days = getDateRange(u.start_date, u.end_date);
+    if (days.includes(dateStr)) return true;
+  }
+  return false;
 }
 function filteredBookings() {
   const search = document.getElementById('search').value.toLowerCase().trim();
@@ -429,72 +454,100 @@ function changeMonth(delta) {
   if (currentMonth > 11) { currentMonth = 0; currentYear += 1; }
   render();
 }
-function calendarRows() {
-  return [...APARTMENTS].sort((a, b) => a.sort_order - b.sort_order);
-}
-function bookingDaysWithinMonth(booking) {
-  const monthStart = new Date(currentYear, currentMonth, 1);
-  const monthEnd = new Date(currentYear, currentMonth + 1, 1);
-  const start = parseISO(booking.checkin);
-  const end = parseISO(booking.checkout);
-  const clippedStart = start < monthStart ? monthStart : start;
-  const clippedEnd = end > monthEnd ? monthEnd : end;
-  if (clippedStart >= clippedEnd) return null;
-  const startDay = Math.floor((clippedStart - monthStart) / 86400000) + 1;
-  const spanDays = Math.floor((clippedEnd - clippedStart) / 86400000);
-  return { startDay, spanDays };
-}
 function renderCalendar(filtered) {
   const grid = document.getElementById('calendar-grid');
-  const rows = calendarRows();
-  const dim = daysInMonth(currentYear, currentMonth);
-  const totalCols = dim + 1;
+  const numDays = daysInMonth(currentYear, currentMonth);
   grid.innerHTML = '';
-  grid.style.gridTemplateColumns = `260px repeat(${dim}, minmax(28px, 1fr))`;
-  document.getElementById('month-label').textContent = monthLabel(currentYear, currentMonth);
+  document.getElementById('month-label').innerHTML = `${MONTH_NAMES[currentMonth]} <span class="year">${currentYear}</span>`;
+  grid.style.gridTemplateColumns = `200px repeat(${numDays}, minmax(36px, 1fr))`;
+  const todayStr = dateOnly(new Date());
 
-  const aptHead = document.createElement('div');
-  aptHead.className = 'cal-header-cell apt-head';
-  aptHead.textContent = 'Appartamento';
-  grid.appendChild(aptHead);
-  for (let day = 1; day <= dim; day += 1) {
-    const d = new Date(currentYear, currentMonth, day);
+  const headerApt = document.createElement('div');
+  headerApt.className = 'cal-header apt-col';
+  headerApt.textContent = 'Appartamento';
+  grid.appendChild(headerApt);
+  for (let day = 1; day <= numDays; day += 1) {
+    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const dayName = DAY_NAMES[parseISO(dateStr).getDay()];
     const cell = document.createElement('div');
-    cell.className = `cal-header-cell${[0,6].includes(d.getDay()) ? ' weekend' : ''}`;
-    cell.innerHTML = `<div class="cal-day-name">${d.toLocaleDateString('it-IT',{weekday:'short'})}</div><div class="cal-day-num">${day}</div>`;
+    cell.className = `cal-header${isWeekend(dateStr) ? ' weekend' : ''}${dateStr === todayStr ? ' today' : ''}`;
+    cell.innerHTML = `<div class="cal-day-name">${dayName}</div><div class="cal-day-label">${day}</div>`;
     grid.appendChild(cell);
   }
 
-  rows.forEach((apt, rowIndex) => {
-    const head = document.createElement('div');
-    head.className = `apt-cell-head${apt.external ? ' external' : ''}${apt.blocked ? ' blocked' : ''}`;
-    head.innerHTML = `<div class="apt-title">${apt.name}</div><div class="apt-meta">${apt.floor} · ${apt.capacity} pax${apt.external ? ' · esterno' : ''}${apt.blocked ? ' · bloccato' : ''}</div>`;
-    grid.appendChild(head);
-
-    for (let day = 1; day <= dim; day += 1) {
-      const d = new Date(currentYear, currentMonth, day);
-      const cell = document.createElement('div');
-      cell.className = `day-cell${[0,6].includes(d.getDay()) ? ' weekend' : ''}`;
-      grid.appendChild(cell);
-    }
-
-    const rowBookings = filtered.filter(b => b.apartment_id === apt.id && b.status !== 'cancelled');
-    rowBookings.forEach(b => {
-      const span = bookingDaysWithinMonth(b);
-      if (!span) return;
-      const conflicts = checkConflicts(b);
-      const bar = document.createElement('button');
-      bar.type = 'button';
-      bar.className = `booking-bar ${b.status}${conflicts.length ? ' conflict' : ''}`;
-      bar.style.gridColumn = `${span.startDay + 1} / span ${span.spanDays}`;
-      bar.style.gridRow = `${rowIndex + 2}`;
-      bar.style.margin = '7px 3px';
-      bar.title = `${b.name} · ${fmt(b.checkin)} → ${fmt(b.checkout)} · ${b.pax} pax`;
-      bar.innerHTML = `${b.name}<span class="sub">${b.pax}p · ${b.source}</span>`;
-      bar.onclick = () => openEdit(b.id);
-      grid.appendChild(bar);
-    });
+  const groups = {};
+  [...APARTMENTS].sort((a, b) => a.sort_order - b.sort_order).forEach(apt => {
+    const key = apt.group_name || 'Residence';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(apt);
   });
+
+  for (const groupName of Object.keys(groups)) {
+    const isExtGroup = groups[groupName][0].external;
+    const gh = document.createElement('div');
+    gh.className = `group-header${isExtGroup ? ' external-group' : ''}`;
+    gh.style.gridColumn = `1 / ${numDays + 2}`;
+    gh.textContent = groupName;
+    grid.appendChild(gh);
+
+    for (const apt of groups[groupName]) {
+      const aptCell = document.createElement('div');
+      let cls = 'apt-name';
+      if (apt.blocked) cls += ' blocked';
+      if (apt.external) cls += ' external';
+      const star = (apt.id === 'B202' || apt.id === 'T1') ? '<span class="star">★</span> ' : '';
+      const noteHtml = apt.note ? `<div class="a-note">${apt.note}</div>` : '';
+      aptCell.className = cls;
+      aptCell.innerHTML = `<div class="a-title">${star}${apt.name}</div><div class="a-meta">${apt.floor} · ${apt.capacity} pax</div>${noteHtml}`;
+      grid.appendChild(aptCell);
+
+      for (let day = 1; day <= numDays; day++) {
+        const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        const cell = document.createElement('div');
+        let cellCls = 'apt-cell';
+        if (isWeekend(dateStr)) cellCls += ' weekend';
+        if (dateStr === todayStr) cellCls += ' today';
+        if (isUnavailable(apt.id, dateStr)) cellCls += ' unavail';
+        cell.className = cellCls;
+        cell.dataset.aptId = apt.id;
+        cell.dataset.date = dateStr;
+        grid.appendChild(cell);
+      }
+    }
+  }
+
+  setTimeout(() => placeBookings(filtered, numDays), 0);
+}
+function placeBookings(filtered, numDays) {
+  document.querySelectorAll('.calendar-grid > .booking').forEach(b => b.remove());
+  const monthStart = new Date(currentYear, currentMonth, 1);
+  const monthEnd = new Date(currentYear, currentMonth, numDays);
+  for (const booking of filtered) {
+    const bIn = parseISO(booking.checkin);
+    const bOut = parseISO(booking.checkout);
+    if (bOut <= monthStart || bIn > monthEnd) continue;
+    if (!APARTMENTS.find(a => a.id === booking.apartment_id)) continue;
+    const startDay = bIn < monthStart ? 1 : bIn.getDate();
+    const endDay = bOut > monthEnd ? numDays : (bOut.getDate() - 1);
+    if (endDay < startDay) continue;
+    const firstCell = document.querySelector(`.apt-cell[data-apt-id="${booking.apartment_id}"][data-date="${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(startDay).padStart(2,'0')}"]`);
+    const lastCell = document.querySelector(`.apt-cell[data-apt-id="${booking.apartment_id}"][data-date="${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(endDay).padStart(2,'0')}"]`);
+    if (!firstCell || !lastCell) continue;
+    const conflicts = checkConflicts(booking);
+    const div = document.createElement('button');
+    div.type = 'button';
+    div.className = `booking ${booking.status}${booking.source === 'checco' ? ' checco' : ''}${conflicts.length ? ' conflict' : ''}`;
+    div.style.left = (firstCell.offsetLeft + 2) + 'px';
+    div.style.width = ((lastCell.offsetLeft + lastCell.offsetWidth) - firstCell.offsetLeft - 4) + 'px';
+    div.style.top = (firstCell.offsetTop + 4) + 'px';
+    div.style.height = (firstCell.offsetHeight - 8) + 'px';
+    const segLabel = booking.segment ? `<span class="seg-icon">⇄ ${booking.segment}</span>` : '';
+    div.innerHTML = `${segLabel}${booking.name} · ${booking.pax}p`;
+    div.title = `${booking.name}${booking.segment ? ' (segmento ' + booking.segment + ')' : ''}\n${fmt(booking.checkin)} → ${fmt(booking.checkout)}\n${booking.pax} persone`;
+    div.onclick = (e) => { e.stopPropagation(); openEdit(booking.id); };
+    grid.appendChild(div);
+  }
+  grid.style.position = 'relative';
 }
 
 function render() {
