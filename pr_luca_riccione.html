@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PR Luca Riccione · Il Lupo Affitta</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/supabase-client.js"></script>
+  <script src="/js/pr-luca-shared.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root{
+      --sand-50:#f8f4ed; --sand-100:#efe7da; --sand-200:#dfd0ba; --ink:#1c2736; --muted:#69768a;
+      --gold:#bb8d3a; --gold-soft:#f4ead3; --sea:#1f6c83; --sea-soft:#dceef4; --rose:#aa4d68; --rose-soft:#f8dfe6;
+      --slate:#51657b; --slate-soft:#dde5ee; --success:#1f7a59; --success-soft:#dbf3e7; --danger:#a53b3b; --danger-soft:#fae1e1;
+      --radius:18px; --shadow:0 18px 50px rgba(28,39,54,.10);
+    }
+    *{box-sizing:border-box} body{margin:0;font-family:'DM Sans',sans-serif;background:linear-gradient(180deg,#f7f1e7 0%,#fcfaf7 42%,#f0f5f8 100%);color:var(--ink)}
+    .login-wrap,.modal-backdrop{position:fixed;inset:0;background:rgba(24,32,43,.42);display:flex;align-items:center;justify-content:center;z-index:40;padding:20px}
+    .login-card,.modal{width:min(460px,100%);background:#fff;border-radius:24px;padding:28px;box-shadow:var(--shadow)}
+    .brand{font-family:'Cormorant Garamond',serif;font-size:40px;line-height:1;margin:0 0 8px}
+    .sub{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:18px}
+    .field{margin-bottom:14px}.field label{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;font-family:'DM Mono',monospace}
+    .field input,.field select,.field textarea{width:100%;padding:12px 14px;border:1px solid var(--sand-200);border-radius:14px;font:inherit}
+    .field textarea{min-height:90px;resize:vertical}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .btn{border:none;border-radius:999px;padding:12px 18px;font:600 14px 'DM Sans',sans-serif;cursor:pointer}
+    .btn-primary{background:linear-gradient(135deg,var(--gold) 0%,#d7a855 100%);color:#fff}
+    .btn-secondary{background:#fff;border:1px solid var(--sand-200);color:var(--ink)}
+    .btn-refresh{background:linear-gradient(135deg,var(--sea) 0%,#2f859d 100%);color:#fff}
+    .btn:disabled{opacity:.55;cursor:not-allowed}
+    .err{display:none;background:var(--danger-soft);color:var(--danger);padding:10px 12px;border-radius:14px;margin-bottom:12px}
+    .page{max-width:1520px;margin:0 auto;padding:24px}
+    .hero{background:linear-gradient(135deg,rgba(255,255,255,.94) 0%,rgba(252,248,241,.98) 100%);border:1px solid rgba(223,208,186,.8);border-radius:30px;padding:24px;box-shadow:var(--shadow);display:grid;grid-template-columns:1.4fr .8fr;gap:18px}
+    .hero h1{font-family:'Cormorant Garamond',serif;font-size:54px;line-height:.95;margin:0 0 10px}
+    .hero p{margin:0;color:var(--muted);line-height:1.6}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .stat{background:#fff;border:1px solid var(--sand-200);border-radius:22px;padding:16px}
+    .stat strong{display:block;font-size:30px;font-family:'Cormorant Garamond',serif}
+    .stat span{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;font-family:'DM Mono',monospace}
+    .content{display:grid;grid-template-columns:minmax(0,1.5fr) 380px;gap:18px;margin-top:18px}
+    .panel{background:#fff;border:1px solid rgba(223,208,186,.82);border-radius:28px;padding:20px;box-shadow:var(--shadow)}
+    .panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+    .panel-title{font-family:'Cormorant Garamond',serif;font-size:34px;margin:0}
+    .panel-sub{font-size:13px;color:var(--muted)}
+    .calendar-shell{overflow:auto;border:1px solid var(--sand-200);border-radius:22px;background:linear-gradient(180deg,#fff 0%,#faf8f2 100%)}
+    .calendar-grid{display:grid;min-width:1360px;gap:0;align-items:stretch}
+    .cal-corner,.cal-head,.cal-label,.cal-cell,.booking{min-height:56px}
+    .cal-corner,.cal-head{position:sticky;top:0;z-index:3;background:#fff8ee;border-bottom:1px solid var(--sand-200)}
+    .cal-corner{padding:14px 16px;font:600 11px 'DM Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);border-right:1px solid var(--sand-200)}
+    .cal-head{display:flex;flex-direction:column;align-items:center;justify-content:center;border-right:1px solid var(--sand-100);font-size:12px}
+    .cal-head small{font-size:10px;color:var(--muted);text-transform:uppercase}
+    .cal-head.today,.cal-cell.today{background:#f8fbfd}
+    .cal-label{padding:10px 14px;border-right:1px solid var(--sand-200);border-bottom:1px solid var(--sand-100);background:#fff;display:flex;flex-direction:column;justify-content:center}
+    .cal-label strong{font-size:14px}.cal-label small{font-size:12px;color:var(--muted);margin-top:3px}
+    .cal-label.disabled{opacity:.55}
+    .cal-cell{border-right:1px solid var(--sand-100);border-bottom:1px solid var(--sand-100);background:rgba(255,255,255,.72)}
+    .booking{z-index:2;align-self:center;justify-self:stretch;margin:6px 4px;border:none;border-radius:14px;padding:8px 10px;text-align:left;color:#fff;display:flex;flex-direction:column;justify-content:center;box-shadow:0 8px 18px rgba(28,39,54,.16);overflow:hidden}
+    .booking span{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .booking small{font-size:10px;letter-spacing:.08em;text-transform:uppercase;opacity:.9}
+    .booking.checco{background:linear-gradient(135deg,var(--gold) 0%,#dca752 100%)}
+    .booking.other{background:linear-gradient(135deg,var(--slate) 0%,#6a7f95 100%)}
+    .booking.beds24{background:linear-gradient(135deg,var(--sea) 0%,#2d88a3 100%)}
+    .booking.luca.is-request,.booking.pending.luca{background:linear-gradient(135deg,var(--rose) 0%,#d06684 100%)}
+    .booking.luca.is-booking,.booking.confirmed.luca{background:linear-gradient(135deg,#6d5aa8 0%,#8b74c2 100%)}
+    .list{display:grid;gap:10px}
+    .card{border:1px solid var(--sand-200);border-radius:18px;padding:14px 16px;background:linear-gradient(180deg,#fff 0%,#fbf9f3 100%)}
+    .card strong{display:block;font-size:14px}
+    .card small{display:block;color:var(--muted);margin-top:4px;line-height:1.45}
+    .badge{display:inline-flex;align-items:center;border-radius:999px;padding:5px 10px;font:500 10px 'DM Mono',monospace;letter-spacing:.1em;text-transform:uppercase}
+    .badge.pending{background:var(--rose-soft);color:var(--rose)} .badge.confirmed{background:var(--success-soft);color:var(--success)} .badge.rejected{background:var(--danger-soft);color:var(--danger)}
+    .helper{font-size:12px;color:var(--muted);line-height:1.5}
+    .warn{margin-top:10px;background:#fff7e8;color:#8a6217;border-radius:16px;padding:10px 12px;font-size:12px}
+    .hidden{display:none!important}
+    @media (max-width:1100px){.hero,.content{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}}
+    @media (max-width:720px){.page{padding:14px}.hero h1{font-size:42px}.row,.stats{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div id="login" class="login-wrap">
+  <div class="login-card">
+    <div class="brand">Luca × Il Lupo Affitta</div>
+    <div class="sub">Pannello Prenotazioni</div>
+    <div id="loginErr" class="err"></div>
+    <div class="field"><label>Password</label><input id="loginPwd" type="password" autocomplete="current-password"/></div>
+    <button id="loginBtn" class="btn btn-primary" style="width:100%">Entra</button>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <div class="page">
+    <section class="hero">
+      <div>
+        <div class="sub">PR Luca Riccione × Il Lupo Affitta</div>
+        <h1>Calendario unificato Residence + Beds24</h1>
+        <p>Qui vedi il Residence Margherita aggiornato con Kekko e gli appartamenti Beds24 selezionati per Luca. Il pulsante <strong>Aggiorna</strong> ricarica lo stato reale del calendario.</p>
+        <div class="actions">
+          <button id="refreshBtn" class="btn btn-refresh">Aggiorna</button>
+          <button id="newReqBtn" class="btn btn-primary">Nuova richiesta</button>
+          <button id="logoutBtn" class="btn btn-secondary">Esci</button>
+        </div>
+        <div id="warnings"></div>
+      </div>
+      <div class="stats">
+        <div class="stat"><span>Residence</span><strong id="statResidence">0</strong></div>
+        <div class="stat"><span>Beds24</span><strong id="statBeds24">0</strong></div>
+        <div class="stat"><span>In attesa</span><strong id="statPending">0</strong></div>
+      </div>
+    </section>
+
+    <section class="content">
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <h2 class="panel-title" id="calendarTitle">Calendario</h2>
+            <div class="panel-sub">Giallo = Residence Kekko, blu = Beds24, rosa = richieste Luca in attesa</div>
+          </div>
+          <div class="actions" style="margin-top:0">
+            <button id="prevMonthBtn" class="btn btn-secondary">←</button>
+            <button id="nextMonthBtn" class="btn btn-secondary">→</button>
+          </div>
+        </div>
+        <div class="calendar-shell">
+          <div id="calendarGrid" class="calendar-grid"></div>
+        </div>
+      </div>
+
+      <aside class="panel">
+        <div class="panel-head">
+          <div>
+            <h2 class="panel-title" style="font-size:30px">Le tue richieste</h2>
+            <div class="panel-sub">Le nuove richieste restano in attesa finché Marco non approva.</div>
+          </div>
+        </div>
+        <div id="requestList" class="list"></div>
+        <div class="warn">`Viale d'Annunzio` non è ancora collegato a Beds24 nel database principale, quindi per ora non è prenotabile da questo pannello.</div>
+      </aside>
+    </section>
+  </div>
+</div>
+
+<div id="modalWrap" class="modal-backdrop hidden">
+  <div class="modal">
+    <div class="brand" style="font-size:34px">Nuova richiesta Luca</div>
+    <div class="sub">Richiesta in attesa di approvazione</div>
+    <div id="modalErr" class="err"></div>
+    <div class="field"><label>Cliente</label><input id="reqName" type="text"/></div>
+    <div class="field"><label>Appartamento</label><select id="reqApartment"></select></div>
+    <div class="row">
+      <div class="field"><label>Check-in</label><input id="reqCheckin" type="date"/></div>
+      <div class="field"><label>Check-out</label><input id="reqCheckout" type="date"/></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Persone</label><input id="reqPax" type="number" min="1" value="2"/></div>
+      <div class="field"><label>Note</label><input id="reqNotes" type="text" placeholder="opzionale"/></div>
+    </div>
+    <div class="actions">
+      <button id="saveReqBtn" class="btn btn-primary">Invia richiesta</button>
+      <button id="closeModalBtn" class="btn btn-secondary">Chiudi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const sb = window.sb;
+const SH = window.prLucaShared;
+const LUCA_PASSWORDS = ['luca2026'];
+
+const S = {
+  viewMonth: SH.startOfMonth(SH.todayIso()),
+  rows: [],
+  requests: [],
+  loading: false,
+};
+
+function setAuth(on) {
+  document.getElementById('login').classList.toggle('hidden', on);
+  document.getElementById('app').classList.toggle('hidden', !on);
+}
+
+function showError(id, message) {
+  const el = document.getElementById(id);
+  el.textContent = message;
+  el.style.display = message ? 'block' : 'none';
+}
+
+function selectedRange() {
+  const from = S.viewMonth;
+  const to = SH.addDays(SH.endOfMonth(S.viewMonth), 1);
+  return { from, to };
+}
+
+function catalogOptions() {
+  return S.rows
+    .map((row) => `<option value="${SH.esc(row.rowKey)}" ${row.disabled ? 'disabled' : ''}>${SH.esc(row.label)}${row.disabled ? ' · da collegare' : ''}</option>`)
+    .join('');
+}
+
+function renderRequests() {
+  const list = document.getElementById('requestList');
+  if (!S.requests.length) {
+    list.innerHTML = `<div class="helper">Nessuna richiesta Luca ancora presente.</div>`;
+    return;
+  }
+  list.innerHTML = S.requests.slice(0, 18).map((row) => `
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <strong>${SH.esc(row.customer_name)}</strong>
+        <span class="badge ${SH.esc(row.status)}">${SH.esc(row.status)}</span>
+      </div>
+      <small>${SH.esc(row.apartment_label)} · ${SH.fmtDate(row.checkin)} → ${SH.fmtDate(row.checkout)} · ${SH.esc(row.pax)} pax</small>
+      ${row.notes ? `<small>${SH.esc(row.notes)}</small>` : ''}
+    </div>
+  `).join('');
+}
+
+function renderWarnings(warnings) {
+  const wrap = document.getElementById('warnings');
+  wrap.innerHTML = (warnings || []).slice(0, 4).map((msg) => `<div class="warn">${SH.esc(msg)}</div>`).join('');
+}
+
+async function refreshAll() {
+  if (!sb) throw new Error('Supabase client non caricato');
+  S.loading = true;
+  document.getElementById('refreshBtn').disabled = true;
+  document.getElementById('refreshBtn').textContent = 'Aggiorno…';
+  try {
+    const { from, to } = selectedRange();
+    const snapshot = await SH.fetchSnapshot(sb, from, to);
+    S.rows = snapshot.rows;
+    S.requests = snapshot.requests.filter((row) => row.partner === 'luca');
+    SH.renderCalendar(document.getElementById('calendarGrid'), snapshot.rows, snapshot.bookings, from, to);
+    document.getElementById('calendarTitle').textContent = `Calendario · ${SH.monthLabel(S.viewMonth)}`;
+    document.getElementById('statResidence').textContent = snapshot.residenceRows.length;
+    document.getElementById('statBeds24').textContent = snapshot.beds24Rows.filter((row) => !row.disabled).length;
+    document.getElementById('statPending').textContent = snapshot.requests.filter((row) => row.status === 'pending').length;
+    renderWarnings(snapshot.beds24Warnings);
+    renderRequests();
+    document.getElementById('reqApartment').innerHTML = catalogOptions();
+  } catch (error) {
+    renderWarnings([error.message]);
+  } finally {
+    S.loading = false;
+    document.getElementById('refreshBtn').disabled = false;
+    document.getElementById('refreshBtn').textContent = 'Aggiorna';
+  }
+}
+
+function openModal() {
+  document.getElementById('modalWrap').classList.remove('hidden');
+  showError('modalErr', '');
+  document.getElementById('reqCheckin').value = SH.todayIso();
+  document.getElementById('reqCheckout').value = SH.addDays(SH.todayIso(), 7);
+}
+
+function closeModal() {
+  document.getElementById('modalWrap').classList.add('hidden');
+}
+
+async function saveRequest() {
+  const rowKey = document.getElementById('reqApartment').value;
+  const row = S.rows.find((item) => item.rowKey === rowKey);
+  const customerName = document.getElementById('reqName').value.trim();
+  const checkin = document.getElementById('reqCheckin').value;
+  const checkout = document.getElementById('reqCheckout').value;
+  const pax = Number(document.getElementById('reqPax').value || 0);
+  const notes = document.getElementById('reqNotes').value.trim();
+
+  if (!row || row.disabled) return showError('modalErr', 'Appartamento non disponibile per richieste Luca');
+  if (!customerName || !checkin || !checkout || pax < 1) return showError('modalErr', 'Compila tutti i campi obbligatori');
+  if (checkout <= checkin) return showError('modalErr', 'Il checkout deve essere dopo il check-in');
+
+  const payload = {
+    partner: 'luca',
+    scope: row.scope,
+    apartment_ref: row.apartmentRef,
+    apartment_label: row.label,
+    beds24_room_id: row.propertyId || null,
+    customer_name: customerName,
+    checkin,
+    checkout,
+    pax,
+    notes: notes || null,
+    status: 'pending',
+    sync_status: 'pending',
+  };
+
+  const { error } = await sb.from('partner_booking_requests').insert(payload);
+  if (error) return showError('modalErr', error.message);
+  closeModal();
+  await refreshAll();
+}
+
+function doLogin() {
+  const value = document.getElementById('loginPwd').value.trim();
+  if (!LUCA_PASSWORDS.includes(value)) {
+    showError('loginErr', 'Password errata');
+    return;
+  }
+  sessionStorage.setItem('pr_luca_auth', 'ok');
+  setAuth(true);
+  refreshAll();
+}
+
+document.getElementById('loginBtn').addEventListener('click', doLogin);
+document.getElementById('loginPwd').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('refreshBtn').addEventListener('click', refreshAll);
+document.getElementById('newReqBtn').addEventListener('click', openModal);
+document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+document.getElementById('saveReqBtn').addEventListener('click', saveRequest);
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  sessionStorage.removeItem('pr_luca_auth');
+  location.reload();
+});
+document.getElementById('prevMonthBtn').addEventListener('click', async () => { S.viewMonth = SH.shiftMonth(S.viewMonth, -1); await refreshAll(); });
+document.getElementById('nextMonthBtn').addEventListener('click', async () => { S.viewMonth = SH.shiftMonth(S.viewMonth, 1); await refreshAll(); });
+
+if (sessionStorage.getItem('pr_luca_auth') === 'ok') {
+  setAuth(true);
+  refreshAll();
+}
+</script>
+</body>
+</html>
