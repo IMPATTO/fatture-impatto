@@ -85,6 +85,7 @@
     .apt-cell.weekend{background:rgba(220,238,244,.35)}
     .apt-cell.today{box-shadow:inset 0 0 0 1px rgba(187,141,58,.45)}
     .apt-cell.unavail{background:repeating-linear-gradient(45deg,#f0ebe0,#f0ebe0 4px,#e8dcc0 4px,#e8dcc0 8px);opacity:.55}
+    .closed-badge{position:absolute;right:4px;top:4px;width:16px;height:16px;border-radius:50%;background:rgba(165,59,59,.92);color:#fff;font:700 10px/16px 'DM Mono',monospace;text-align:center}
     .group-header{background:linear-gradient(90deg,var(--sand-100) 0%,var(--sand-50) 100%);padding:.5rem .875rem;font-family:'Cormorant Garamond',serif;font-size:12px;font-weight:700;color:#8a6429;text-transform:uppercase;letter-spacing:2px;border-top:1px solid var(--sand-200);border-bottom:1px solid var(--sand-200)}
     .group-header.external-group{background:linear-gradient(90deg,var(--sea-soft) 0%,var(--sand-50) 100%);color:var(--sea)}
     .booking{position:absolute;border-radius:12px;padding:4px 8px;font-size:11px;font-weight:600;color:#fff;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;z-index:1;display:flex;align-items:center;gap:4px;box-shadow:0 1px 3px rgba(0,0,0,.12)}
@@ -290,7 +291,7 @@ async function refreshAll() {
     const snapshot = await SH.fetchSnapshot(sb, from, to);
     S.rows = snapshot.rows;
     S.requests = snapshot.requests.filter((row) => row.partner === 'luca');
-    SH.renderCalendar(document.getElementById('calendarGrid'), snapshot.rows, snapshot.bookings, from, to);
+    SH.renderCalendar(document.getElementById('calendarGrid'), snapshot.rows, snapshot.bookings, from, to, snapshot.closedMap);
     document.getElementById('calendarTitle').textContent = `Calendario · ${SH.monthLabel(S.viewMonth)}`;
     document.getElementById('statResidence').textContent = snapshot.residenceRows.length;
     document.getElementById('statBeds24').textContent = snapshot.beds24Rows.filter((row) => !row.disabled).length;

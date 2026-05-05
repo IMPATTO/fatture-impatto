@@ -259,6 +259,21 @@
       .filter((row) => row.rowKey);
   }
 
+  function buildClosedMap(inventoryDays) {
+    const closedMap = new Map();
+    (inventoryDays || []).forEach((row) => {
+      if (!row?.propertyId || !row?.date) return;
+      if (row.hasBooking) return;
+      if (!(row.closed === true || row.available === false)) return;
+      const key = `b24:${String(row.propertyId)}:${row.date}`;
+      closedMap.set(key, {
+        closed: true,
+        reason: row.available === false ? 'closed' : 'calendar',
+      });
+    });
+    return closedMap;
+  }
+
   async function fetchSnapshot(sb, dateFrom, dateToExclusive) {
     const calendarUrl = `/.netlify/functions/get-calendar?dateFrom=${encodeURIComponent(dateFrom)}&dateTo=${encodeURIComponent(dateToExclusive)}`;
     const [residenceRowsRes, residenceBookingsRes, requestsRes, beds24Res] = await Promise.all([
@@ -278,6 +293,7 @@
 
     const residenceRows = normalizeResidenceRows(residenceRowsRes.data || []);
     const beds24Rows = normalizeBeds24Rows(beds24Res.apartments || []);
+    const closedMap = buildClosedMap(beds24Res.inventoryDays || []);
     const rows = [...residenceRows, ...beds24Rows];
     const bookings = [
       ...normalizeResidenceBookings(residenceBookingsRes.data || []),
@@ -291,6 +307,7 @@
       requests: requestsRes.data || [],
       residenceRows,
       beds24Rows,
+      closedMap,
       beds24Warnings: Array.isArray(beds24Res.warnings) ? beds24Res.warnings : [],
     };
   }
@@ -329,7 +346,7 @@
     return groups;
   }
 
-  function renderCalendar(grid, rows, bookings, dateFrom, dateToExclusive) {
+  function renderCalendar(grid, rows, bookings, dateFrom, dateToExclusive, closedMap = new Map()) {
     const days = eachDate(dateFrom, dateToExclusive);
     grid.innerHTML = '';
     grid.style.gridTemplateColumns = `220px repeat(${days.length}, minmax(36px, 1fr))`;
@@ -369,10 +386,20 @@
           let cellCls = 'apt-cell';
           if (isWeekend(date)) cellCls += ' weekend';
           if (date === today) cellCls += ' today';
-          if (row.disabled) cellCls += ' unavail';
+          const isClosed = row.scope === 'beds24' && row.propertyId
+            ? closedMap.has(`b24:${String(row.propertyId)}:${date}`)
+            : false;
+          if (row.disabled || isClosed) cellCls += ' unavail';
           cell.className = cellCls;
           cell.dataset.rowKey = row.rowKey;
           cell.dataset.date = date;
+          if (isClosed) {
+            const badge = document.createElement('div');
+            badge.className = 'closed-badge';
+            badge.textContent = 'X';
+            cell.appendChild(badge);
+            cell.title = 'Data chiusa su Beds24';
+          }
           grid.appendChild(cell);
         });
       });
