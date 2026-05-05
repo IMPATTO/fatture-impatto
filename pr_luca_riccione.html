@@ -61,7 +61,8 @@
     .legend{display:flex;gap:1rem;flex-wrap:wrap;font-size:11px;color:var(--muted);font-weight:500}
     .legend-item{display:flex;align-items:center;gap:.4rem}
     .legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
-    .content{display:grid;grid-template-columns:minmax(0,1.5fr) 380px;gap:18px}
+    .content{display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
+    .requests-section{margin-top:18px}
     .panel{background:#fff;border:1px solid rgba(223,208,186,.82);border-radius:28px;padding:20px;box-shadow:var(--shadow)}
     .panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:16px}
     .panel-title{font-family:'Cormorant Garamond',serif;font-size:34px;margin:0}
@@ -184,17 +185,16 @@
           <div id="calendarGrid" class="calendar-grid"></div>
         </div>
       </div>
-
-      <aside class="panel">
-        <div class="panel-head">
-          <div>
-            <h2 class="panel-title" style="font-size:30px">Le tue richieste</h2>
-            <div class="panel-sub">Le nuove richieste restano in attesa finché Marco non approva.</div>
-          </div>
+    </section>
+    <section class="panel requests-section">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title" style="font-size:30px">Richieste inviate</h2>
+          <div class="panel-sub">Le nuove richieste restano in attesa finché Marco non approva.</div>
         </div>
-        <div id="requestList" class="list"></div>
-        <div class="warn">`Viale d'Annunzio` non è ancora collegato a Beds24 nel database principale, quindi per ora non è prenotabile da questo pannello.</div>
-      </aside>
+      </div>
+      <div id="requestList" class="list"></div>
+      <div class="warn">`Viale d'Annunzio` non è ancora collegato a Beds24 nel database principale, quindi per ora non è prenotabile da questo pannello.</div>
     </section>
   </div>
 </div>
