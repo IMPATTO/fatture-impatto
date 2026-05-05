@@ -530,6 +530,7 @@ function renderCalendar(filtered) {
   setTimeout(() => placeBookings(filtered, numDays), 0);
 }
 function placeBookings(filtered, numDays) {
+  const grid = document.getElementById('calendar-grid');
   document.querySelectorAll('.calendar-grid > .booking').forEach(b => b.remove());
   const monthStart = new Date(currentYear, currentMonth, 1);
   const monthEnd = new Date(currentYear, currentMonth, numDays);
