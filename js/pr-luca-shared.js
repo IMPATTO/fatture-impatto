@@ -358,15 +358,24 @@
       const firstCell = grid.querySelector(`.apt-cell[data-row-key="${booking.rowKey}"][data-date="${firstDate}"]`);
       const lastCell = grid.querySelector(`.apt-cell[data-row-key="${booking.rowKey}"][data-date="${lastDate}"]`);
       if (!firstCell || !lastCell) return;
+      const spanDates = days.slice(spanInfo.startIndex, spanInfo.startIndex + spanInfo.span);
+      const closedInSpan = spanDates.filter((date) => {
+        const row = rows.find((item) => item.rowKey === booking.rowKey);
+        if (!row?.propertyId) return false;
+        return grid._closedMap?.has(`b24:${String(row.propertyId)}:${date}`);
+      }).length;
 
       const div = document.createElement('div');
       div.className = bookingClass(booking);
+      if (closedInSpan > 0) div.classList.add('closed-span');
+      if (closedInSpan === spanInfo.span && spanInfo.span > 0) div.classList.add('fully-closed');
       div.style.position = 'absolute';
       div.style.left = `${firstCell.offsetLeft + 2}px`;
-      div.style.top = `${firstCell.offsetTop + 4}px`;
+      div.style.top = `${firstCell.offsetTop + Math.max(Math.round((firstCell.offsetHeight - 24) / 2), 4)}px`;
       div.style.width = `${(lastCell.offsetLeft + lastCell.offsetWidth) - firstCell.offsetLeft - 4}px`;
-      div.style.height = `${Math.max(firstCell.offsetHeight - 8, 28)}px`;
-      div.innerHTML = `${esc(booking.label)} · ${esc(booking.sourceLabel || '')}`;
+      div.style.height = '24px';
+      const marker = closedInSpan > 0 ? '• ' : '';
+      div.innerHTML = `${marker}${esc(booking.label)} · ${esc(booking.sourceLabel || '')}`;
       div.title = `${booking.label} · ${fmtDate(booking.checkin)} → ${fmtDate(booking.checkout)}${booking.notes ? `\n${booking.notes}` : ''}`;
       grid.appendChild(div);
     });
@@ -376,6 +385,7 @@
     const days = eachDate(dateFrom, dateToExclusive);
     const renderToken = Symbol('render');
     grid._renderToken = renderToken;
+    grid._closedMap = closedMap;
     grid.innerHTML = '';
     grid.style.gridTemplateColumns = `220px repeat(${days.length}, minmax(36px, 1fr))`;
     const today = todayIso();
