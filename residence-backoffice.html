@@ -110,6 +110,8 @@
   .booking.staff{background:repeating-linear-gradient(45deg, #8a7ba8, #8a7ba8 4px, #6b5b8a 4px, #6b5b8a 8px);}
   .booking.checco{box-shadow:inset 0 0 0 2px var(--gold-light), 0 1px 3px rgba(0,0,0,.12);}
   .booking.checco:hover{box-shadow:inset 0 0 0 2px var(--gold), 0 4px 12px rgba(184,137,58,.3);}
+  .booking.confirmed.non-checco{background:linear-gradient(135deg, #607d98 0%, #456079 100%);}
+  .booking.pending.non-checco{background:linear-gradient(135deg, #8d6aa9 0%, #6b4f86 100%);}
   .booking.non-checco{box-shadow:inset 0 0 0 2px rgba(255,255,255,.72), 0 1px 3px rgba(0,0,0,.12);filter:saturate(.88);}
   .booking.non-checco:hover{box-shadow:inset 0 0 0 2px var(--ink), 0 4px 12px rgba(26,35,50,.2);}
   .booking.conflict{outline:2px solid var(--conflict-bg);}
@@ -240,6 +242,7 @@
         <div class="month-label" id="month-label">Luglio 2026</div>
         <button class="nav-btn" onclick="changeMonth(1)">›</button>
       </div>
+      <button class="btn-primary" onclick="openNewBooking()">+ Nuova prenotazione</button>
       <button class="btn-secondary" onclick="exportCSV()">⬇ Esporta CSV</button>
     </div>
   </div>
@@ -709,13 +712,36 @@ function openEdit(id) {
   document.getElementById('edit-modal').classList.add('active');
 }
 
+function openNewBooking() {
+  editingBookingId = null;
+  document.getElementById('modal-title').textContent = 'Nuova prenotazione';
+  document.getElementById('m-name').value = '';
+  const start = new Date(currentYear, currentMonth, 1);
+  const end = new Date(currentYear, currentMonth, 8);
+  document.getElementById('m-checkin').value = dateOnly(start);
+  document.getElementById('m-checkout').value = dateOnly(end);
+  document.getElementById('m-pax').value = 2;
+  document.getElementById('m-status').value = 'pending';
+  document.getElementById('m-notes').value = '';
+  const sel = document.getElementById('m-apt');
+  sel.innerHTML = '';
+  APARTMENTS.forEach(a => {
+    const o = document.createElement('option');
+    o.value = a.id;
+    o.textContent = `${a.name} (${a.floor}, ${a.capacity}p)${a.external?' [esterno]':''}${a.blocked?' [bloccato]':''}`;
+    sel.appendChild(o);
+  });
+  if (APARTMENTS[0]) sel.value = APARTMENTS[0].id;
+  document.getElementById('modal-alerts').innerHTML = '<div class="alert alert-info"><strong>Nuova prenotazione admin</strong>Questa prenotazione viene creata direttamente dal backoffice.</div>';
+  document.getElementById('edit-modal').classList.add('active');
+}
+
 function closeModal() {
   document.getElementById('edit-modal').classList.remove('active');
   editingBookingId = null;
 }
 
 async function saveEdit() {
-  if (!editingBookingId) return;
   const data = {
     name: document.getElementById('m-name').value.trim(),
     checkin: document.getElementById('m-checkin').value,
@@ -731,10 +757,14 @@ async function saveEdit() {
   }
   showLoading(true);
   try {
-    const { error } = await sb.from('rm_bookings').update(data).eq('id', editingBookingId);
+    const payload = editingBookingId ? data : { ...data, source: 'system' };
+    const query = editingBookingId
+      ? sb.from('rm_bookings').update(payload).eq('id', editingBookingId)
+      : sb.from('rm_bookings').insert(payload);
+    const { error } = await query;
     if (error) throw error;
-    await sb.from('rm_audit').insert({ action: 'modify', booking_id: editingBookingId, actor: ADMIN_NAME, details: data });
-    showToast('Salvato', 'success');
+    await sb.from('rm_audit').insert({ action: editingBookingId ? 'modify' : 'create', booking_id: editingBookingId, actor: ADMIN_NAME, details: payload });
+    showToast(editingBookingId ? 'Salvato' : 'Creata', 'success');
     closeModal();
     await loadAll(); render();
   } catch (e) { showToast('Errore: ' + e.message, 'error'); } finally { showLoading(false); }
