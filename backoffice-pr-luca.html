@@ -104,7 +104,8 @@
 <script>
 const sb = window.sb;
 const SH = window.prLucaShared;
-const S = { session: null, viewMonth: SH.startOfMonth(SH.todayIso()), rows: [], requests: [] };
+const DEFAULT_VIEW_MONTH = '2026-07-01';
+const S = { session: null, viewMonth: DEFAULT_VIEW_MONTH, rows: [], requests: [] };
 
 function showError(message) {
   const el = document.getElementById('loginErr');

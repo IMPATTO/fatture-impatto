@@ -31,16 +31,37 @@
     .btn-refresh{background:linear-gradient(135deg,var(--sea) 0%,#2f859d 100%);color:#fff}
     .btn:disabled{opacity:.55;cursor:not-allowed}
     .err{display:none;background:var(--danger-soft);color:var(--danger);padding:10px 12px;border-radius:14px;margin-bottom:12px}
-    .page{max-width:1520px;margin:0 auto;padding:24px}
-    .hero{background:linear-gradient(135deg,rgba(255,255,255,.94) 0%,rgba(252,248,241,.98) 100%);border:1px solid rgba(223,208,186,.8);border-radius:30px;padding:24px;box-shadow:var(--shadow);display:grid;grid-template-columns:1.4fr .8fr;gap:18px}
+    .hero{background:linear-gradient(135deg,#0f4f62 0%,#1f6c83 50%,#56a0b5 100%);color:#fff;position:relative;overflow:hidden;padding:2.5rem 2rem 3rem}
+    .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 80% 20%, rgba(232,197,116,.15) 0%, transparent 40%),radial-gradient(circle at 20% 80%, rgba(255,255,255,.05) 0%, transparent 50%);pointer-events:none}
+    .hero::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:40px;background:linear-gradient(180deg,transparent,#fcfaf7);pointer-events:none}
+    .hero-inner{max-width:1400px;margin:0 auto;position:relative;z-index:2}
+    .hero-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2rem;flex-wrap:wrap;gap:1rem}
     .hero h1{font-family:'Cormorant Garamond',serif;font-size:54px;line-height:.95;margin:0 0 10px}
-    .hero p{margin:0;color:var(--muted);line-height:1.6}
+    .hero p{margin:0;color:rgba(255,255,255,.82);line-height:1.6;max-width:760px}
     .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
-    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-    .stat{background:#fff;border:1px solid var(--sand-200);border-radius:22px;padding:16px}
-    .stat strong{display:block;font-size:30px;font-family:'Cormorant Garamond',serif}
-    .stat span{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;font-family:'DM Mono',monospace}
-    .content{display:grid;grid-template-columns:minmax(0,1.5fr) 380px;gap:18px;margin-top:18px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-top:1.5rem}
+    .stat{background:rgba(255,255,255,.06);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:.875rem 1.125rem}
+    .stat strong{display:block;font-size:30px;font-family:'Cormorant Garamond',serif;color:#f3ddb0}
+    .stat span{font-size:11px;color:rgba(255,255,255,.72);text-transform:uppercase;letter-spacing:.14em;font-family:'DM Mono',monospace}
+    .page{max-width:1400px;margin:-1.5rem auto 0;padding:0 2rem 3rem;position:relative;z-index:3}
+    .user-strip{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid var(--sand-200);border-radius:24px;padding:1rem 1.5rem;margin-bottom:1.25rem;box-shadow:var(--shadow);flex-wrap:wrap;gap:1rem}
+    .user-greeting{display:flex;align-items:center;gap:1rem}
+    .user-avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--gold),#8a6429);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;border:2px solid #fff}
+    .user-greeting .greet{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--ink);line-height:1.2}
+    .user-greeting .role{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-top:2px}
+    .quick-stats{display:flex;gap:1.25rem;align-items:center;flex-wrap:wrap}
+    .quick-stat{text-align:center;padding:0 .75rem;border-right:1px solid var(--sand-200)}
+    .quick-stat:last-child{border-right:none;padding-right:0}
+    .quick-stat .num{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;color:var(--ink);line-height:1}
+    .quick-stat .lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-top:.25rem}
+    .toolbar{background:#fff;border:1px solid var(--sand-200);border-radius:24px;padding:1rem 1.25rem;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;box-shadow:0 8px 24px rgba(28,39,54,.08)}
+    .month-nav{display:flex;align-items:center;gap:.5rem}
+    .month-label{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;margin:0 1rem;min-width:200px;text-align:center;color:var(--ink);letter-spacing:-.3px}
+    .month-label .year{color:#8a6429;font-style:italic}
+    .legend{display:flex;gap:1rem;flex-wrap:wrap;font-size:11px;color:var(--muted);font-weight:500}
+    .legend-item{display:flex;align-items:center;gap:.4rem}
+    .legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+    .content{display:grid;grid-template-columns:minmax(0,1.5fr) 380px;gap:18px}
     .panel{background:#fff;border:1px solid rgba(223,208,186,.82);border-radius:28px;padding:20px;box-shadow:var(--shadow)}
     .panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:16px}
     .panel-title{font-family:'Cormorant Garamond',serif;font-size:34px;margin:0}
@@ -85,8 +106,8 @@
     .helper{font-size:12px;color:var(--muted);line-height:1.5}
     .warn{margin-top:10px;background:#fff7e8;color:#8a6217;border-radius:16px;padding:10px 12px;font-size:12px}
     .hidden{display:none!important}
-    @media (max-width:1100px){.hero,.content{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}}
-    @media (max-width:720px){.page{padding:14px}.hero h1{font-size:42px}.row,.stats{grid-template-columns:1fr}}
+    @media (max-width:1100px){.content{grid-template-columns:1fr}}
+    @media (max-width:720px){.page{padding:0 1rem 2rem}.hero{padding:2rem 1.25rem 2.5rem}.hero h1{font-size:42px}.row,.stats{grid-template-columns:1fr}.toolbar{flex-direction:column;align-items:stretch}.month-label{min-width:auto}.user-strip{padding:1rem}}
   </style>
 </head>
 <body>
@@ -101,36 +122,62 @@
 </div>
 
 <div id="app" class="hidden">
-  <div class="page">
-    <section class="hero">
-      <div>
-        <div class="sub">PR Luca Riccione × Il Lupo Affitta</div>
-        <h1>Calendario unificato Residence + Beds24</h1>
-        <p>Qui vedi il Residence Margherita aggiornato con Kekko e gli appartamenti Beds24 selezionati per Luca. Il pulsante <strong>Aggiorna</strong> ricarica lo stato reale del calendario.</p>
-        <div class="actions">
-          <button id="refreshBtn" class="btn btn-refresh">Aggiorna</button>
-          <button id="newReqBtn" class="btn btn-primary">Nuova richiesta</button>
-          <button id="logoutBtn" class="btn btn-secondary">Esci</button>
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-top">
+        <div>
+          <div class="sub" style="color:rgba(255,255,255,.72);margin-bottom:10px">PR Luca Riccione × Il Lupo Affitta</div>
+          <h1>Calendario unificato Residence + Beds24</h1>
+          <p>Qui vedi il Residence Margherita aggiornato con Kekko e gli appartamenti Beds24 selezionati per Luca. Il pulsante <strong>Aggiorna</strong> ricarica lo stato reale del calendario.</p>
+          <div class="actions">
+            <button id="refreshBtn" class="btn btn-refresh">Aggiorna</button>
+            <button id="newReqBtn" class="btn btn-primary">Nuova richiesta</button>
+            <button id="logoutBtn" class="btn btn-secondary">Esci</button>
+          </div>
         </div>
-        <div id="warnings"></div>
       </div>
       <div class="stats">
         <div class="stat"><span>Residence</span><strong id="statResidence">0</strong></div>
         <div class="stat"><span>Beds24</span><strong id="statBeds24">0</strong></div>
         <div class="stat"><span>In attesa</span><strong id="statPending">0</strong></div>
       </div>
-    </section>
+    </div>
+  </header>
 
+  <div class="page">
+    <div class="user-strip">
+      <div class="user-greeting">
+        <div class="user-avatar">LU</div>
+        <div>
+          <div class="greet">Benvenuto, <em>Luca</em></div>
+          <div class="role">Residence Margherita + Beds24 selezionati</div>
+        </div>
+      </div>
+      <div class="quick-stats">
+        <div class="quick-stat"><div class="num" id="qsResidence">0</div><div class="lbl">Residence</div></div>
+        <div class="quick-stat"><div class="num" id="qsBeds24">0</div><div class="lbl">Beds24</div></div>
+        <div class="quick-stat"><div class="num" id="qsPending">0</div><div class="lbl">In attesa</div></div>
+      </div>
+    </div>
+    <div id="warnings"></div>
+    <div class="toolbar">
+      <div class="month-nav">
+        <button id="prevMonthBtn" class="btn btn-secondary">←</button>
+        <div class="month-label" id="calendarTitle">Calendario</div>
+        <button id="nextMonthBtn" class="btn btn-secondary">→</button>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#6a9d80,#4a7d60)"></div>Residence</div>
+        <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#1f6c83,#2d88a3)"></div>Beds24</div>
+        <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#8d6aa9,#6b4f86)"></div>Richiesta Luca</div>
+      </div>
+    </div>
     <section class="content">
       <div class="panel">
         <div class="panel-head">
           <div>
-            <h2 class="panel-title" id="calendarTitle">Calendario</h2>
-            <div class="panel-sub">Giallo = Residence Kekko, blu = Beds24, rosa = richieste Luca in attesa</div>
-          </div>
-          <div class="actions" style="margin-top:0">
-            <button id="prevMonthBtn" class="btn btn-secondary">←</button>
-            <button id="nextMonthBtn" class="btn btn-secondary">→</button>
+            <h2 class="panel-title">Calendario</h2>
+            <div class="panel-sub">Residence in verde/oro, Beds24 in blu, richieste Luca in viola.</div>
           </div>
         </div>
         <div class="calendar-shell">
@@ -178,9 +225,10 @@
 const sb = window.sb;
 const SH = window.prLucaShared;
 const LUCA_PASSWORDS = ['luca2026'];
+const DEFAULT_VIEW_MONTH = '2026-07-01';
 
 const S = {
-  viewMonth: SH.startOfMonth(SH.todayIso()),
+  viewMonth: DEFAULT_VIEW_MONTH,
   rows: [],
   requests: [],
   loading: false,
@@ -247,6 +295,9 @@ async function refreshAll() {
     document.getElementById('statResidence').textContent = snapshot.residenceRows.length;
     document.getElementById('statBeds24').textContent = snapshot.beds24Rows.filter((row) => !row.disabled).length;
     document.getElementById('statPending').textContent = snapshot.requests.filter((row) => row.status === 'pending').length;
+    document.getElementById('qsResidence').textContent = snapshot.residenceRows.length;
+    document.getElementById('qsBeds24').textContent = snapshot.beds24Rows.filter((row) => !row.disabled).length;
+    document.getElementById('qsPending').textContent = snapshot.requests.filter((row) => row.status === 'pending').length;
     renderWarnings(snapshot.beds24Warnings);
     renderRequests();
     document.getElementById('reqApartment').innerHTML = catalogOptions();
