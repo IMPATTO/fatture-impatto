@@ -55,12 +55,16 @@ CREATE TABLE IF NOT EXISTS rm_bookings (
   source text NOT NULL
     CHECK (source IN ('checco','pr-serena','pr-luca','esterno','system')),
   notes text,
+  deposit_amount numeric(10,2),
+  balance_due_at_checkin numeric(10,2),
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now(),
   approved_at timestamptz,
   approved_by text,
   CHECK (checkout > checkin)
 );
+ALTER TABLE rm_bookings ADD COLUMN IF NOT EXISTS deposit_amount numeric(10,2);
+ALTER TABLE rm_bookings ADD COLUMN IF NOT EXISTS balance_due_at_checkin numeric(10,2);
 CREATE INDEX IF NOT EXISTS idx_rm_bookings_apt ON rm_bookings(apartment_id);
 CREATE INDEX IF NOT EXISTS idx_rm_bookings_dates ON rm_bookings(checkin, checkout);
 CREATE INDEX IF NOT EXISTS idx_rm_bookings_status ON rm_bookings(status);
@@ -254,3 +258,10 @@ SELECT 'Unavailability', count(*) FROM rm_unavailability
 UNION ALL
 SELECT 'Bookings', count(*) FROM rm_bookings;
 -- Atteso: 22 apartments, 7 unavailability, 50 bookings
+
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_schema = 'public'
+  AND table_name = 'rm_bookings'
+  AND column_name IN ('deposit_amount', 'balance_due_at_checkin')
+ORDER BY column_name;

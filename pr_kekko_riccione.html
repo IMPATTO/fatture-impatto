@@ -167,6 +167,7 @@
   .booking-card .b-name .split-badge { display: inline-block; padding: 1px 6px; background: var(--external-bg); color: var(--external); border-radius: 8px; font-size: 9px; font-weight: 700; margin-left: 4px; vertical-align: middle; letter-spacing: .5px; }
   .booking-card .b-meta { font-size: 12px; color: var(--slate); margin-bottom: 6px; }
   .booking-card .b-apt { font-size: 11px; color: var(--gold-dark); font-weight: 500; margin-bottom: 8px; }
+  .booking-card .b-finance { font-size: 11px; color: var(--ink-soft); margin-bottom: 8px; }
   .pill { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; }
   .pill.confirmed { background: var(--confirmed-bg); color: var(--confirmed); }
   .pill.pending { background: var(--pending-bg); color: var(--pending); }
@@ -449,6 +450,16 @@
         <label>Note</label>
         <textarea id="f-notes" rows="2" placeholder="Richieste particolari, orario di arrivo..."></textarea>
       </div>
+      <div class="form-row-grid">
+        <div class="form-row">
+          <label>Caparra versata (€)</label>
+          <input type="number" id="f-deposit" min="0" step="0.01" placeholder="0.00">
+        </div>
+        <div class="form-row">
+          <label>Saldo all'arrivo (€)</label>
+          <input type="number" id="f-balance" min="0" step="0.01" placeholder="0.00">
+        </div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn-danger" id="btn-delete" onclick="deleteBooking()" style="display:none; margin-right: auto;">Elimina</button>
@@ -544,11 +555,16 @@ async function loadAll() {
       id: a.id, name: a.name, type: a.type, floor: a.floor, capacity: a.capacity,
       group: a.group_name, note: a.note, blocked: a.blocked, external: a.external
     }));
-    BOOKINGS = bRes.data.map(b => ({
-      id: b.id, apartmentId: b.apartment_id, groupId: b.group_id, segment: b.segment,
-      name: b.name, checkin: b.checkin, checkout: b.checkout, pax: b.pax,
-      status: b.status, source: b.source, notes: b.notes
-    }));
+    BOOKINGS = bRes.data.map(b => {
+      const payment = extractPaymentData(b.notes);
+      return {
+        id: b.id, apartmentId: b.apartment_id, groupId: b.group_id, segment: b.segment,
+        name: b.name, checkin: b.checkin, checkout: b.checkout, pax: b.pax,
+        status: b.status, source: b.source, notes: payment.cleanNotes,
+        depositAmount: b.deposit_amount ?? payment.depositAmount,
+        balanceDueAtCheckin: b.balance_due_at_checkin ?? payment.balanceDueAtCheckin
+      };
+    });
     UNAVAILABLE = uRes.data.map(u => ({
       apartmentId: u.apartment_id, start: u.start_date, end: u.end_date, label: u.label
     }));
@@ -584,6 +600,32 @@ async function init() {
 function dateOnly(d) { return d.toISOString().slice(0,10); }
 function parseISO(s) { return new Date(s + 'T00:00:00'); }
 function daysInMonth(year, month) { return new Date(year, month+1, 0).getDate(); }
+function parseMoneyInput(value) {
+  if (value === '' || value == null) return null;
+  const parsed = Number(String(value).replace(',', '.'));
+  return Number.isFinite(parsed) ? Number(parsed.toFixed(2)) : null;
+}
+function formatMoney(value) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return '—';
+  return amount.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });
+}
+function extractPaymentData(notes) {
+  const raw = String(notes || '');
+  const match = raw.match(/\[\[PAYMENT:deposit=([^;\]]*);balance=([^\]]*)\]\]/);
+  const cleanNotes = raw.replace(/\[\[PAYMENT:[^\]]*\]\]\s*/g, '').trim();
+  if (!match) return { cleanNotes, depositAmount: null, balanceDueAtCheckin: null };
+  const depositAmount = parseMoneyInput(match[1]);
+  const balanceDueAtCheckin = parseMoneyInput(match[2]);
+  return { cleanNotes, depositAmount, balanceDueAtCheckin };
+}
+function buildNotesWithPayment(notes, depositAmount, balanceDueAtCheckin) {
+  const cleanNotes = String(notes || '').replace(/\[\[PAYMENT:[^\]]*\]\]\s*/g, '').trim();
+  const hasPayment = depositAmount != null || balanceDueAtCheckin != null;
+  if (!hasPayment) return cleanNotes;
+  const tag = `[[PAYMENT:deposit=${depositAmount ?? ''};balance=${balanceDueAtCheckin ?? ''}]]`;
+  return cleanNotes ? `${tag}\n${cleanNotes}` : tag;
+}
 function getDateRange(checkin, checkout) {
   const start = parseISO(checkin); const end = parseISO(checkout);
   const days = [];
@@ -791,7 +833,7 @@ function placeBookings(numDays) {
     div.style.height = (firstCell.offsetHeight - 8) + 'px';
     const segLabel = booking.segment ? `<span class="seg-icon">⇄ ${booking.segment}</span> ` : '';
     div.innerHTML = `${segLabel}${booking.name} · ${booking.pax}p`;
-    div.title = `${booking.name}${booking.segment ? ' (segmento ' + booking.segment + ')' : ''}\n${formatDateIT(booking.checkin)} → ${formatDateIT(booking.checkout)}\n${booking.pax} persone`;
+    div.title = `${booking.name}${booking.segment ? ' (segmento ' + booking.segment + ')' : ''}\n${formatDateIT(booking.checkin)} → ${formatDateIT(booking.checkout)}\n${booking.pax} persone\nCaparra: ${formatMoney(booking.depositAmount)}\nSaldo all'arrivo: ${formatMoney(booking.balanceDueAtCheckin)}`;
     div.onclick = (e) => { e.stopPropagation(); onBookingClick(booking.id); };
     document.querySelector('.calendar-grid').appendChild(div);
   }
@@ -815,6 +857,7 @@ function renderMyBookings() {
       name: segs[0].name, pax: segs[0].pax,
       checkin: segs[0].checkin, checkout: segs[segs.length-1].checkout,
       status: segs.some(s => s.status === 'pending') ? 'pending' : 'confirmed',
+      depositAmount: segs[0].depositAmount, balanceDueAtCheckin: segs[0].balanceDueAtCheckin,
       segments: segs, isSplit: segs.length > 1, ids: segs.map(s => s.id)
     };
   }).sort((a,b) => a.checkin.localeCompare(b.checkin));
@@ -841,10 +884,14 @@ function renderMyBookings() {
       aptInfo = apt ? `${apt.name} · ${apt.floor}` : '—';
     }
     const splitBadge = g.isSplit ? '<span class="split-badge">SPLIT</span>' : '';
+    const financeInfo = (g.depositAmount != null || g.balanceDueAtCheckin != null)
+      ? `<div class="b-finance">Caparra ${formatMoney(g.depositAmount)} · Saldo ${formatMoney(g.balanceDueAtCheckin)}</div>`
+      : '';
     card.innerHTML = `
       <div class="b-name">${g.name}${splitBadge}</div>
       <div class="b-meta">${formatDateIT(g.checkin)} → ${formatDateIT(g.checkout)} · ${g.pax} pax</div>
       <div class="b-apt">${aptInfo}</div>
+      ${financeInfo}
       <span class="pill ${g.status}">${g.status === 'confirmed' ? '✓ Confermata' : '⏱ In attesa'}</span>
     `;
     list.appendChild(card);
@@ -866,6 +913,8 @@ function onCellClick(aptId, date) {
   document.getElementById('f-pax').value = 2;
   document.getElementById('f-type').value = 'auto';
   document.getElementById('f-notes').value = '';
+  document.getElementById('f-deposit').value = '';
+  document.getElementById('f-balance').value = '';
   populateAptDropdown(aptId);
   document.getElementById('f-apt').value = aptId;
   document.getElementById('suggestion-area').innerHTML = '';
@@ -886,6 +935,8 @@ function openNewBooking() {
   document.getElementById('f-pax').value = 2;
   document.getElementById('f-type').value = 'auto';
   document.getElementById('f-notes').value = '';
+  document.getElementById('f-deposit').value = '';
+  document.getElementById('f-balance').value = '';
   populateAptDropdown();
   document.getElementById('suggestion-area').innerHTML = '';
   document.getElementById('booking-modal').classList.add('active');
@@ -897,7 +948,7 @@ function onBookingClick(bookingId) {
   if (!b) return;
   if (b.source !== CHECCO_SOURCE) {
     const apt = APARTMENTS.find(a => a.id === b.apartmentId);
-    alert(`📌 ${b.name}\n\n📅 ${formatDateIT(b.checkin)} → ${formatDateIT(b.checkout)}\n👥 ${b.pax} persone\n🏠 ${apt ? apt.name : '—'}\n\n⚠️ Questa prenotazione non è modificabile.\nContatta Marco per modifiche.`);
+    alert(`📌 ${b.name}\n\n📅 ${formatDateIT(b.checkin)} → ${formatDateIT(b.checkout)}\n👥 ${b.pax} persone\n🏠 ${apt ? apt.name : '—'}\n💶 Caparra: ${formatMoney(b.depositAmount)}\n💶 Saldo all'arrivo: ${formatMoney(b.balanceDueAtCheckin)}\n\n⚠️ Questa prenotazione non è modificabile.\nContatta Marco per modifiche.`);
     return;
   }
   editingBookingId = bookingId;
@@ -910,6 +961,8 @@ function onBookingClick(bookingId) {
   document.getElementById('f-pax').value = b.pax;
   document.getElementById('f-type').value = 'auto';
   document.getElementById('f-notes').value = b.notes || '';
+  document.getElementById('f-deposit').value = b.depositAmount ?? '';
+  document.getElementById('f-balance').value = b.balanceDueAtCheckin ?? '';
   populateAptDropdown(b.apartmentId);
   document.getElementById('f-apt').value = b.apartmentId;
   document.getElementById('suggestion-area').innerHTML = b.status === 'confirmed'
@@ -965,7 +1018,13 @@ async function applySplit(idx) {
   const split = lastFormState.splits[idx];
   const name = document.getElementById('f-name').value.trim();
   const pax = parseInt(document.getElementById('f-pax').value);
-  const notes = document.getElementById('f-notes').value;
+  const depositAmount = parseMoneyInput(document.getElementById('f-deposit').value);
+  const balanceDueAtCheckin = parseMoneyInput(document.getElementById('f-balance').value);
+  const notes = buildNotesWithPayment(
+    document.getElementById('f-notes').value,
+    depositAmount,
+    balanceDueAtCheckin
+  );
   if (!name) { alert('Inserisci il nome del cliente prima di applicare lo split.'); return; }
   showLoading(true);
   const groupId = 'g_' + Date.now();
@@ -991,7 +1050,9 @@ async function saveBooking() {
   const pax = parseInt(document.getElementById('f-pax').value);
   const type = document.getElementById('f-type').value;
   const aptId = document.getElementById('f-apt').value;
-  const notes = document.getElementById('f-notes').value;
+  const depositAmount = parseMoneyInput(document.getElementById('f-deposit').value);
+  const balanceDueAtCheckin = parseMoneyInput(document.getElementById('f-balance').value);
+  const notes = buildNotesWithPayment(document.getElementById('f-notes').value, depositAmount, balanceDueAtCheckin);
   if (!name || !checkin || !checkout || !pax) {
     document.getElementById('suggestion-area').innerHTML = `<div class="alert-box alert-danger"><strong>Campi mancanti</strong>Compila nome, date e persone.</div>`; return;
   }
