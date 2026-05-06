@@ -346,6 +346,28 @@
     return groups;
   }
 
+  function placeClosedOverlays(grid, rows, days) {
+    grid.querySelectorAll('.closed-cell-overlay').forEach((node) => node.remove());
+    rows.forEach((row) => {
+      if (row.scope !== 'beds24' || !row.propertyId) return;
+      days.forEach((date) => {
+        const closedState = grid._closedMap?.get(`b24:${String(row.propertyId)}:${date}`);
+        if (!closedState?.closed) return;
+        const cell = grid.querySelector(`.apt-cell[data-row-key="${row.rowKey}"][data-date="${date}"]`);
+        if (!cell) return;
+        const overlay = document.createElement('div');
+        overlay.className = `closed-cell-overlay${closedState.hasBooking ? ' with-booking' : ''}`;
+        overlay.style.position = 'absolute';
+        overlay.style.left = `${cell.offsetLeft + 1}px`;
+        overlay.style.top = `${cell.offsetTop + 1}px`;
+        overlay.style.width = `${Math.max(cell.offsetWidth - 2, 8)}px`;
+        overlay.style.height = `${Math.max(cell.offsetHeight - 2, 8)}px`;
+        overlay.title = closedState.hasBooking ? 'Data occupata/chiusa su Beds24' : 'Data chiusa su Beds24';
+        grid.appendChild(overlay);
+      });
+    });
+  }
+
   function placeBookingOverlays(grid, rows, bookings, days, dateFrom, dateToExclusive) {
     grid.querySelectorAll('.booking').forEach((node) => node.remove());
     bookings.forEach((booking) => {
@@ -448,6 +470,7 @@
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         if (grid._renderToken !== renderToken) return;
+        placeClosedOverlays(grid, rows, days);
         placeBookingOverlays(grid, rows, bookings, days, dateFrom, dateToExclusive);
       });
     });

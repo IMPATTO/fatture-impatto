@@ -85,6 +85,10 @@
     .apt-cell.weekend{background:rgba(220,238,244,.35)}
     .apt-cell.today{box-shadow:inset 0 0 0 1px rgba(187,141,58,.45)}
     .apt-cell.unavail{background:repeating-linear-gradient(45deg,#f0ebe0,#f0ebe0 4px,#e8dcc0 4px,#e8dcc0 8px);opacity:.55}
+    .closed-cell-overlay{pointer-events:none;z-index:2;border-top:7px solid rgba(165,59,59,.92);border-bottom:4px solid rgba(165,59,59,.22);background:linear-gradient(180deg,rgba(165,59,59,.12) 0%,rgba(165,59,59,0) 60%)}
+    .closed-cell-overlay::after{content:'X';position:absolute;top:-7px;right:3px;color:#fff;font:700 10px/1 'DM Mono',monospace}
+    .closed-cell-overlay.with-booking{border-top-color:rgba(165,59,59,.88);background:linear-gradient(180deg,rgba(165,59,59,.16) 0%,rgba(165,59,59,.04) 60%,rgba(165,59,59,0) 100%)}
+    .closed-cell-overlay.with-booking::after{content:'•'}
     .closed-badge{position:absolute;right:4px;top:4px;width:16px;height:16px;border-radius:50%;background:rgba(165,59,59,.92);color:#fff;font:700 10px/16px 'DM Mono',monospace;text-align:center}
     .group-header{background:linear-gradient(90deg,var(--sand-100) 0%,var(--sand-50) 100%);padding:.5rem .875rem;font-family:'Cormorant Garamond',serif;font-size:12px;font-weight:700;color:#8a6429;text-transform:uppercase;letter-spacing:2px;border-top:1px solid var(--sand-200);border-bottom:1px solid var(--sand-200)}
     .group-header.external-group{background:linear-gradient(90deg,var(--sea-soft) 0%,var(--sand-50) 100%);color:var(--sea)}
