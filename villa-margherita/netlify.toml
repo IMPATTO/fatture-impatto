@@ -1,0 +1,40 @@
+[build]
+  publish = "."
+
+[[redirects]]
+  from = "http://villamargheritarimini.it/*"
+  to = "https://www.residencevillamargherita.com/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "https://villamargheritarimini.it/*"
+  to = "https://www.residencevillamargherita.com/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "http://www.villamargheritarimini.it/*"
+  to = "https://www.residencevillamargherita.com/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "http://residencevillamargherita.com/*"
+  to = "https://www.residencevillamargherita.com/:splat"
+  status = 301
+  force = true
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
