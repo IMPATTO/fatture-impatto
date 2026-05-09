@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Backoffice Calendario · Impatto</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/supabase-client.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/calendario.css" />
+</head>
+<body>
+  <div id="loginOverlay" class="login-overlay hidden" aria-hidden="true">
+    <div class="login-card">
+      <div class="login-kicker">Backoffice</div>
+      <h1>Calendario</h1>
+      <p class="login-copy">Accedi con il tuo account operativo per consultare il calendario PMS centrale.</p>
+      <form id="loginForm" class="login-form">
+        <label>
+          <span>Email</span>
+          <input id="loginEmail" type="email" autocomplete="username" required />
+        </label>
+        <label>
+          <span>Password</span>
+          <input id="loginPassword" type="password" autocomplete="current-password" required />
+        </label>
+        <button id="loginSubmit" type="submit" class="btn btn-primary btn-block">Entra</button>
+        <p id="loginError" class="login-error" role="alert"></p>
+      </form>
+    </div>
+  </div>
+
+  <nav class="navbar" id="mainNavbar">
+    <a href="/backoffice.html" class="navbar-brand">Impatto</a>
+    <button class="navbar-toggle" id="navbarToggle" aria-label="Apri menu" aria-expanded="false" aria-controls="navbarMenu">☰</button>
+    <div class="navbar-menu" id="navbarMenu">
+      <a href="/backoffice.html" class="navbar-link">Fatturazione</a>
+      <a href="/backoffice-documenti.html" class="navbar-link">Documenti</a>
+      <a href="/backoffice-portale.html" class="navbar-link">Portale</a>
+      <a href="/backoffice-richieste.html" class="navbar-link">Richieste</a>
+      <a href="/backoffice-operativita.html" class="navbar-link">Operativita</a>
+      <a href="/backoffice-beds24-messaggi.html" class="navbar-link">Beds24 Messaggi</a>
+      <a href="/backoffice-contabilita.html" class="navbar-link">Contabilita</a>
+      <a href="/backoffice-calendario.html" class="navbar-link active">Calendario</a>
+      <span class="navbar-user" id="navUser">—</span>
+      <button id="logoutBtn" class="navbar-link navbar-link-button" type="button">Esci</button>
+    </div>
+  </nav>
+
+  <div id="app" class="page-shell hidden">
+    <header class="page-header">
+      <div class="page-headline">
+        <p class="page-kicker">PMS centrale</p>
+        <h1>Calendario</h1>
+        <p id="rangeInfo" class="page-range">Dal — al —</p>
+      </div>
+
+      <div class="page-controls">
+        <div class="view-toggle" role="group" aria-label="Modalita vista">
+          <button type="button" class="btn btn-ghost btn-small" disabled title="Disponibile in una fase successiva">Tabella</button>
+          <button type="button" class="btn btn-primary btn-small" aria-pressed="true">Calendario</button>
+        </div>
+
+        <div class="month-nav" aria-label="Navigazione mese">
+          <button id="prevMonthBtn" type="button" class="icon-btn" aria-label="Mese precedente">‹</button>
+          <button id="monthPickerBtn" type="button" class="month-label" aria-label="Scegli mese"></button>
+          <button id="nextMonthBtn" type="button" class="icon-btn" aria-label="Mese successivo">›</button>
+          <input id="monthPickerInput" type="month" class="month-picker-input" />
+        </div>
+
+        <div class="action-row">
+          <button type="button" class="btn btn-ghost" disabled title="Disponibile in Fase 3">+ Nuova prenotazione</button>
+          <button id="refreshBtn" type="button" class="btn btn-primary">Aggiorna da Beds24</button>
+          <button id="exportBtn" type="button" class="btn btn-ghost">Esporta CSV</button>
+        </div>
+
+        <div class="sync-meta">
+          <span class="sync-label">Ultimo aggiornamento:</span>
+          <strong id="lastSyncLabel">—</strong>
+        </div>
+      </div>
+    </header>
+
+    <section id="orphanBanner" class="orphan-banner hidden" role="button" tabindex="0" aria-controls="orphanModal" aria-expanded="false"></section>
+
+    <main class="page-body">
+      <aside class="sidebar">
+        <section class="filter-card">
+          <h2>Citta</h2>
+          <p class="filter-copy">Filtra le strutture per area operativa. Massimo 5 selezioni attive.</p>
+          <div id="cityFilters" class="check-stack"></div>
+        </section>
+
+        <section class="filter-card">
+          <h2>Canale</h2>
+          <p class="filter-copy">Canali presenti nel mese visibile.</p>
+          <div id="channelFilters" class="check-stack"></div>
+        </section>
+
+        <section class="filter-card">
+          <h2>Stato</h2>
+          <p class="filter-copy">Mostra solo i booking che contano per l'occupazione.</p>
+          <div id="statusFilters" class="check-stack"></div>
+        </section>
+      </aside>
+
+      <section class="calendar-panel">
+        <div id="errorState" class="state-card hidden"></div>
+        <div id="loadingState" class="state-card hidden">
+          <div class="spinner"></div>
+          <p>Caricamento calendario in corso…</p>
+        </div>
+        <div id="emptyState" class="state-card hidden">
+          <h2>Nessuna prenotazione nel mese selezionato</h2>
+          <p>Prova a cambiare mese o ad allargare i filtri per visualizzare altre strutture.</p>
+        </div>
+
+        <div class="timeline-shell" id="timelineShell">
+          <div class="timeline-scroll" id="timelineScroll">
+            <div id="timelineHeader" class="timeline-header"></div>
+            <div id="timelineBody" class="timeline-body"></div>
+          </div>
+        </div>
+
+        <div id="mobileList" class="mobile-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <aside id="bookingDrawer" class="booking-drawer" aria-hidden="true">
+    <div class="drawer-head">
+      <div>
+        <p class="drawer-kicker">Dettagli prenotazione</p>
+        <h2 id="drawerTitle">—</h2>
+      </div>
+      <button id="drawerCloseBtn" type="button" class="icon-btn" aria-label="Chiudi pannello">×</button>
+    </div>
+    <div id="drawerBody" class="drawer-body"></div>
+    <div class="drawer-foot">
+      <button type="button" class="btn btn-ghost" disabled title="Disponibile in Fase 3">Modifica</button>
+      <button type="button" class="btn btn-ghost" disabled title="Disponibile in Fase 3">Cancella</button>
+      <button id="drawerCloseBtnFooter" type="button" class="btn btn-primary">Chiudi</button>
+    </div>
+  </aside>
+
+  <div id="drawerBackdrop" class="drawer-backdrop hidden" aria-hidden="true"></div>
+
+  <div id="orphanModal" class="modal-backdrop hidden" aria-hidden="true">
+    <div class="modal-panel">
+      <div class="modal-head">
+        <div>
+          <p class="drawer-kicker">Prenotazioni in conflitto</p>
+          <h2 id="orphanModalTitle">—</h2>
+        </div>
+        <button id="orphanModalClose" type="button" class="icon-btn" aria-label="Chiudi modale">×</button>
+      </div>
+      <div id="orphanModalBody" class="modal-body"></div>
+      <div class="modal-foot">
+        <button id="orphanModalCloseFooter" type="button" class="btn btn-primary">Chiudi</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="tooltip" class="floating-tooltip hidden" role="tooltip"></div>
+
+  <script src="/js/calendario.js"></script>
+</body>
+</html>
