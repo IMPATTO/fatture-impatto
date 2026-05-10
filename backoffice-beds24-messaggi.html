@@ -358,7 +358,7 @@ function getTypeMeta(typeKey) {
 
 function buildCheckinLink(apartment) {
   if (!apartment?.public_checkin_key) return '';
-  return `https://checkin.illupoaffitta.com/?apt=${encodeURIComponent(apartment.public_checkin_key)}`;
+  return `https://checkin.illupoaffitta.com/?apt=${encodeURIComponent(apartment.public_checkin_key)}&mode=checkin`;
 }
 
 function buildPortalLink(apartment) {

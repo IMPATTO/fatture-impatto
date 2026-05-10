@@ -181,7 +181,7 @@
 
     function buildCheckinUrl(row) {
       return row.public_checkin_key
-        ? `https://checkin.illupoaffitta.com/?apt=${encodeURIComponent(row.public_checkin_key)}`
+        ? `https://checkin.illupoaffitta.com/?apt=${encodeURIComponent(row.public_checkin_key)}&mode=checkin`
         : '';
     }
 

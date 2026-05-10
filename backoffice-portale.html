@@ -465,7 +465,7 @@ function getFilteredPortalRows() {
 
 function buildPublicCheckinUrl(apartment) {
   if (!apartment?.public_checkin_key) return '';
-  return `${getPortalBaseUrl()}/?apt=${encodeURIComponent(apartment.public_checkin_key)}`;
+  return `${getPortalBaseUrl()}/?apt=${encodeURIComponent(apartment.public_checkin_key)}&mode=checkin`;
 }
 
 function buildOpenApartmentPortalUrl(apartment) {

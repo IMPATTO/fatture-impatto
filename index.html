@@ -608,10 +608,12 @@ function getFirstQueryParam(params,keys){
   return '';
 }
 var legacyPortalToken=getFirstQueryParam(initialParams,['token','portale_token']);
+var legacyAptRef=getFirstQueryParam(initialParams,['apt','aptId','apartment_ref','apartment_id','key']);
 var legacyPortalMode=(initialParams.get('mode')||'').trim().toLowerCase();
-if(legacyPortalToken||(legacyPortalMode==='open'&&getFirstQueryParam(initialParams,['apt','aptId','apartment_ref','apartment_id','key']))){
+if(legacyPortalToken||(legacyAptRef&&legacyPortalMode!=='checkin')){
   var legacyPortalUrl=new URL('/portale.html',window.location.origin);
   initialParams.forEach(function(value,key){ legacyPortalUrl.searchParams.set(key,value); });
+  if(legacyAptRef&&!legacyPortalToken&&!legacyPortalMode)legacyPortalUrl.searchParams.set('mode','open');
   window.location.replace(legacyPortalUrl.toString());
 }
 var aptRef=getFirstQueryParam(initialParams,['apt','aptId','apartment_ref','apartment_id','key']);
