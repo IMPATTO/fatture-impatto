@@ -274,37 +274,44 @@
     return closedMap;
   }
 
-  async function fetchSnapshot(sb, dateFrom, dateToExclusive) {
+  async function resolveAuthToken(sb, options = {}) {
+    if (options.authToken) return String(options.authToken || '').trim();
+    if (!sb?.auth?.getSession) return '';
+    const { data: { session } = {} } = await sb.auth.getSession();
+    return session?.access_token || '';
+  }
+
+  async function fetchSnapshot(sb, dateFrom, dateToExclusive, options = {}) {
+    const authToken = await resolveAuthToken(sb, options);
+    const headers = authToken ? { Authorization: `Bearer ${authToken}` } : {};
     const calendarUrl = `/.netlify/functions/get-calendar?dateFrom=${encodeURIComponent(dateFrom)}&dateTo=${encodeURIComponent(dateToExclusive)}`;
-    const [residenceRowsRes, residenceBookingsRes, requestsRes, beds24Res] = await Promise.all([
-      sb.from('rm_apartments').select('*').order('sort_order'),
-      sb.from('rm_bookings').select('*').neq('status', 'rejected').neq('status', 'cancelled').order('checkin'),
-      sb.from('partner_booking_requests').select('*').eq('partner', 'luca').neq('status', 'cancelled').order('created_at', { ascending: false }),
-      fetch(calendarUrl).then(async (res) => {
+    const [secureRes, beds24Res] = await Promise.all([
+      fetch('/.netlify/functions/pr-luca-data', { headers }).then(async (res) => {
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(payload.error || 'Errore caricamento dati Residence / Luca');
+        return payload;
+      }),
+      fetch(calendarUrl, { headers }).then(async (res) => {
         const payload = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(payload.error || 'Errore caricamento calendario Beds24');
         return payload;
       }),
     ]);
 
-    if (residenceRowsRes.error) throw residenceRowsRes.error;
-    if (residenceBookingsRes.error) throw residenceBookingsRes.error;
-    if (requestsRes.error) throw requestsRes.error;
-
-    const residenceRows = normalizeResidenceRows(residenceRowsRes.data || []);
+    const residenceRows = normalizeResidenceRows(secureRes.apartments || []);
     const beds24Rows = normalizeBeds24Rows(beds24Res.apartments || []);
     const closedMap = buildClosedMap(beds24Res.inventoryDays || []);
     const rows = [...residenceRows, ...beds24Rows];
     const bookings = [
-      ...normalizeResidenceBookings(residenceBookingsRes.data || []),
+      ...normalizeResidenceBookings(secureRes.bookings || []),
       ...normalizeBeds24Bookings(beds24Res.bookings || []),
-      ...normalizePendingRequests(requestsRes.data || []),
+      ...normalizePendingRequests(secureRes.requests || []),
     ];
 
     return {
       rows,
       bookings,
-      requests: requestsRes.data || [],
+      requests: secureRes.requests || [],
       residenceRows,
       beds24Rows,
       closedMap,
