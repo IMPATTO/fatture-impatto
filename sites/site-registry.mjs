@@ -96,7 +96,6 @@ export const siteRegistry = {
       'create-contract-registration-accounting',
       'create-fattura-fic',
       'create-owner-payment-accounting',
-      'get-accounting-file-url',
       'inbound-bollette-email',
       'inbound-bollette-telegram',
       'inbound-contabilita-email',

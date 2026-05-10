@@ -14,9 +14,45 @@ const INTERNAL_ALLOWED_EMAILS = new Set([
   'ramirezgonzalezv44@gmail.com',
 ]);
 
+function normalizeSupabaseUrl(value, fallback = DEFAULT_SUPABASE_URL) {
+  const rawValue = String(value || '').trim();
+  const fallbackValue = String(fallback || DEFAULT_SUPABASE_URL).trim() || DEFAULT_SUPABASE_URL;
+
+  if (!rawValue) {
+    return fallbackValue;
+  }
+
+  const sanitizedValue = rawValue.replace(/^["']|["']$/g, '');
+  if (!sanitizedValue) {
+    return fallbackValue;
+  }
+
+  if (/^https?:\/\//i.test(sanitizedValue)) {
+    return sanitizedValue.replace(/\/+$/g, '');
+  }
+
+  const withoutMaskedPrefix = sanitizedValue.replace(/^[*.]+/, '');
+  if (!withoutMaskedPrefix) {
+    return fallbackValue;
+  }
+
+  const candidate = `https://${withoutMaskedPrefix.replace(/\/+$/g, '')}`;
+
+  try {
+    const parsed = new URL(candidate);
+    const hostname = String(parsed.hostname || '').toLowerCase();
+    if (!hostname.includes('supabase.co') && !hostname.includes('supabase.in')) {
+      return fallbackValue;
+    }
+    return parsed.origin;
+  } catch (_error) {
+    return fallbackValue;
+  }
+}
+
 function getSupabaseRuntimeConfig() {
   return {
-    url: process.env.SUPABASE_URL || DEFAULT_SUPABASE_URL,
+    url: normalizeSupabaseUrl(process.env.SUPABASE_RUNTIME_URL || process.env.SUPABASE_URL),
     anonKey:
       process.env.SUPABASE_ANON_KEY ||
       process.env.SUPABASE_PUBLISHABLE_KEY ||
@@ -196,6 +232,7 @@ module.exports = {
   getSharedSessionSecret,
   getSupabaseRuntimeConfig,
   getSupabaseUserFromToken,
+  normalizeSupabaseUrl,
   parsePasswordList,
   signSharedSession,
   verifySharedSession,

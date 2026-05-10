@@ -1,3 +1,5 @@
+const { normalizeSupabaseUrl } = require('./_lib/shared-auth');
+
 const BEDS24_URL = 'https://api.beds24.com/v2';
 const CACHE = new Map();
 const CACHE_TTL = {
@@ -31,7 +33,10 @@ exports.handler = async (event) => {
   const diagnostics = createDiagnostics();
 
   const env = {
-    SUPABASE_URL: process.env.SUPABASE_URL || 'https://tysxeikqbgebpfyblgeb.supabase.co',
+    SUPABASE_URL: normalizeSupabaseUrl(
+      process.env.SUPABASE_RUNTIME_URL || process.env.SUPABASE_URL,
+      'https://tysxeikqbgebpfyblgeb.supabase.co',
+    ),
     SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY,
     BEDS24_API_KEY: process.env.BEDS24_API_KEY,
   };
