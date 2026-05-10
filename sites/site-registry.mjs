@@ -47,6 +47,9 @@ export const siteRegistry = {
   portale: {
     label: 'Portale',
     envVar: 'SITE_URL_PORTALE',
+    includeSites: [
+      'residence-pr',
+    ],
     pages: [
       'backoffice-portale.html',
       'backoffice-calendario.html',

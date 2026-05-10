@@ -37,6 +37,47 @@ function ensureDir(dirPath) {
   fs.mkdirSync(dirPath, { recursive: true });
 }
 
+function unique(items) {
+  return [...new Set(items.filter(Boolean))];
+}
+
+function resolveSiteBundle(siteKey, seen = new Set()) {
+  if (seen.has(siteKey)) {
+    return { siteKeys: [], pages: [], assets: [], functions: [], includedFiles: [] };
+  }
+  seen.add(siteKey);
+
+  const currentSite = siteRegistry[siteKey];
+  const nestedSiteKeys = unique(currentSite.includeSites || []);
+  const bundle = {
+    siteKeys: [siteKey],
+    pages: [...(currentSite.pages || [])],
+    assets: [...(currentSite.assets || [])],
+    functions: [...(currentSite.functions || [])],
+    includedFiles: [...(currentSite.includedFiles || [])],
+  };
+
+  for (const nestedSiteKey of nestedSiteKeys) {
+    if (!siteRegistry[nestedSiteKey]) {
+      throw new Error(`Unknown included site "${nestedSiteKey}" referenced by "${siteKey}"`);
+    }
+    const nestedBundle = resolveSiteBundle(nestedSiteKey, seen);
+    bundle.siteKeys.push(...nestedBundle.siteKeys);
+    bundle.pages.push(...nestedBundle.pages);
+    bundle.assets.push(...nestedBundle.assets);
+    bundle.functions.push(...nestedBundle.functions);
+    bundle.includedFiles.push(...nestedBundle.includedFiles);
+  }
+
+  return {
+    siteKeys: unique(bundle.siteKeys),
+    pages: unique(bundle.pages),
+    assets: unique(bundle.assets),
+    functions: unique(bundle.functions),
+    includedFiles: unique(bundle.includedFiles),
+  };
+}
+
 function copyFile(relativePath) {
   ensureTracked(relativePath);
   const source = path.join(repoRoot, relativePath);
@@ -101,13 +142,15 @@ function writeRedirectPage(route, ownerSiteKey) {
 }
 
 function writeSiteSummary() {
+  const buildBundle = resolveSiteBundle(targetSiteKey);
   const summary = {
     siteKey: targetSiteKey,
     label: site.label,
     envVar: site.envVar,
-    pages: site.pages || [],
-    assets: site.assets || [],
-    functions: site.functions || [],
+    includedSites: buildBundle.siteKeys.filter((siteKey) => siteKey !== targetSiteKey),
+    pages: buildBundle.pages,
+    assets: buildBundle.assets,
+    functions: buildBundle.functions,
   };
   fs.writeFileSync(path.join(outputRoot, '_site-build.json'), `${JSON.stringify(summary, null, 2)}\n`, 'utf8');
 }
@@ -116,15 +159,19 @@ fs.rmSync(outputRoot, { recursive: true, force: true });
 ensureDir(outputRoot);
 ensureDir(outputFunctionsRoot);
 
-for (const relativePath of site.pages || []) copyFile(relativePath);
-for (const relativePath of site.assets || []) copyFile(relativePath);
-for (const relativePath of site.includedFiles || []) copyFile(relativePath);
-for (const functionName of site.functions || []) {
+const buildBundle = resolveSiteBundle(targetSiteKey);
+const includedPages = new Set(buildBundle.pages);
+
+for (const relativePath of buildBundle.pages) copyFile(relativePath);
+for (const relativePath of buildBundle.assets) copyFile(relativePath);
+for (const relativePath of buildBundle.includedFiles) copyFile(relativePath);
+for (const functionName of buildBundle.functions) {
   copyFunctionFile(path.join('netlify', 'functions', `${functionName}.js`));
 }
 
 for (const [route, ownerSiteKey] of allPageOwners.entries()) {
   if (ownerSiteKey === targetSiteKey) continue;
+  if (includedPages.has(route)) continue;
   writeRedirectPage(route, ownerSiteKey);
 }
 
