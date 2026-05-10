@@ -607,6 +607,13 @@ function getFirstQueryParam(params,keys){
   }
   return '';
 }
+var legacyPortalToken=getFirstQueryParam(initialParams,['token','portale_token']);
+var legacyPortalMode=(initialParams.get('mode')||'').trim().toLowerCase();
+if(legacyPortalToken||(legacyPortalMode==='open'&&getFirstQueryParam(initialParams,['apt','aptId','apartment_ref','apartment_id','key']))){
+  var legacyPortalUrl=new URL('/portale.html',window.location.origin);
+  initialParams.forEach(function(value,key){ legacyPortalUrl.searchParams.set(key,value); });
+  window.location.replace(legacyPortalUrl.toString());
+}
 var aptRef=getFirstQueryParam(initialParams,['apt','aptId','apartment_ref','apartment_id','key']);
 function t(k){return(T[lang]&&T[lang][k]!==undefined)?T[lang][k]:(T.it[k]||k);}
 function msg(k){return(MESSAGES[lang]&&MESSAGES[lang][k]!==undefined)?MESSAGES[lang][k]:(MESSAGES.it[k]||k);}

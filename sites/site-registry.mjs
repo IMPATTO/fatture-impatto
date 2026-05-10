@@ -2,6 +2,7 @@ export const siteRegistry = {
   'fatt-docs': {
     label: 'Fatturazione + Documenti',
     envVar: 'SITE_URL_FATT_DOCS',
+    entryPage: 'backoffice.html',
     pages: [
       'backoffice.html',
       'backoffice-documenti.html',
@@ -29,6 +30,7 @@ export const siteRegistry = {
   operativita: {
     label: 'Operativita',
     envVar: 'SITE_URL_OPERATIVITA',
+    entryPage: 'backoffice-operativita.html',
     pages: [
       'backoffice-operativita.html',
       'backoffice-richieste.html',
@@ -46,6 +48,10 @@ export const siteRegistry = {
   portale: {
     label: 'Portale',
     envVar: 'SITE_URL_PORTALE',
+    entryPage: 'index.html',
+    includeSites: [
+      'residence-pr',
+    ],
     pages: [
       'backoffice-portale.html',
       'backoffice-calendario.html',
@@ -63,7 +69,6 @@ export const siteRegistry = {
       'audit-apartment-links',
       'beds24-sync-bookings',
       'get-calendar',
-      'get-public-apartment-links',
       'get-public-portal-data',
       'populate-pms-mappings-and-units',
       'save-istat-config',
@@ -79,6 +84,7 @@ export const siteRegistry = {
   contabilita: {
     label: 'Contabilita',
     envVar: 'SITE_URL_CONTABILITA',
+    entryPage: 'backoffice-contabilita.html',
     pages: [
       'backoffice-contabilita.html',
       'backoffice-amministrazione-appartamenti.html',
@@ -90,6 +96,7 @@ export const siteRegistry = {
       'create-contract-registration-accounting',
       'create-fattura-fic',
       'create-owner-payment-accounting',
+      'get-accounting-file-url',
       'inbound-bollette-email',
       'inbound-bollette-telegram',
       'inbound-contabilita-email',
@@ -100,6 +107,7 @@ export const siteRegistry = {
   calendario: {
     label: 'Calendario',
     envVar: 'SITE_URL_CALENDARIO',
+    entryPage: 'backoffice-calendario.html',
     pages: [
       'backoffice-calendario.html',
     ],
@@ -114,8 +122,31 @@ export const siteRegistry = {
       'beds24-sync-bookings',
       'get-calendar',
       'populate-pms-mappings-and-units',
-      'sync-beds24-links',
       'update-calendar-inventory',
+    ],
+  },
+  'residence-pr': {
+    label: 'Residence + PR',
+    envVar: 'SITE_URL_RESIDENCE_PR',
+    entryPage: 'residence-backoffice.html',
+    pages: [
+      'residence-kekko.html',
+      'residence-backoffice.html',
+      'pr_kekko_riccione.html',
+      'pr_luca_riccione.html',
+      'backoffice-pr-luca.html',
+    ],
+    assets: [
+      'js/supabase-client.js',
+      'js/shared-app-auth.js',
+      'js/pr-luca-shared.js',
+    ],
+    functions: [
+      'approve-partner-booking',
+      'get-calendar',
+      'pr-luca-data',
+      'residence-api',
+      'shared-app-login',
     ],
   },
 };
