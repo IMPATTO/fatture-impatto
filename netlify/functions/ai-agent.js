@@ -1,3 +1,5 @@
+const { getInternalSupabaseUserFromHeaders } = require('./_lib/shared-auth');
+
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 const BEDS24_URL = 'https://api.beds24.com/v2';
 let beds24TokenCache = null;
@@ -290,6 +292,7 @@ async function executeTool(name, input, env) {
       if (!baseUrl) return { error: 'URL Netlify non disponibile per chiamare send-alloggiati' };
 
       const headers = { 'Content-Type': 'application/json' };
+      if (env.AUTH_HEADER?.startsWith('Bearer ')) headers.Authorization = env.AUTH_HEADER;
       if (env.INTERNAL_KEY) headers['x-internal-key'] = env.INTERNAL_KEY;
 
       const res = await fetch(`${baseUrl}/.netlify/functions/send-alloggiati`, {
@@ -600,6 +603,15 @@ exports.handler = async (event) => {
     return { statusCode: 405, headers: CORS, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
+  const internalUser = await getInternalSupabaseUserFromHeaders(event.headers);
+  if (!internalUser) {
+    return {
+      statusCode: 401,
+      headers: CORS,
+      body: JSON.stringify({ error: 'Autenticazione interna richiesta' }),
+    };
+  }
+
   const env = {
     SUPABASE_URL: process.env.SUPABASE_URL || 'https://tysxeikqbgebpfyblgeb.supabase.co',
     SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -610,6 +622,7 @@ exports.handler = async (event) => {
     DEPLOY_URL: process.env.DEPLOY_URL || '',
     DEPLOY_PRIME_URL: process.env.DEPLOY_PRIME_URL || '',
     AUTH_HEADER: event.headers.authorization || event.headers.Authorization || '',
+    ACTOR_EMAIL: internalUser.email,
   };
 
   if (!env.ANTHROPIC_API_KEY) {

@@ -118,6 +118,24 @@ create trigger trg_apartment_owner_payments_updated_at
 before update on public.apartment_owner_payments
 for each row execute function public.set_updated_at_timestamp();
 
+create or replace function public.is_internal_staff()
+returns boolean
+language sql
+stable
+as $$
+  select lower(coalesce(auth.jwt() ->> 'email', '')) = any (array[
+    'fatturazione@illupoaffitta.com',
+    'contabilita@illupoaffitta.com',
+    'info@marcovenzon.com',
+    'veronica.dieta@gmail.com',
+    'jessica.appartamenticaldari@gmail.com',
+    'cerulliserena@gmail.com',
+    'ramirezgonzalezv44@gmail.com'
+  ]);
+$$;
+
+grant execute on function public.is_internal_staff() to authenticated, anon, service_role;
+
 alter table public.owners enable row level security;
 alter table public.apartment_owner_links enable row level security;
 alter table public.apartment_contracts enable row level security;
@@ -129,33 +147,37 @@ grant select, insert, update, delete on public.apartment_contracts to authentica
 grant select, insert, update, delete on public.apartment_owner_payments to authenticated;
 
 drop policy if exists owners_authenticated_all on public.owners;
-create policy owners_authenticated_all
+drop policy if exists owners_internal_staff_all on public.owners;
+create policy owners_internal_staff_all
 on public.owners
 for all
 to authenticated
-using (true)
-with check (true);
+using (public.is_internal_staff())
+with check (public.is_internal_staff());
 
 drop policy if exists apartment_owner_links_authenticated_all on public.apartment_owner_links;
-create policy apartment_owner_links_authenticated_all
+drop policy if exists apartment_owner_links_internal_staff_all on public.apartment_owner_links;
+create policy apartment_owner_links_internal_staff_all
 on public.apartment_owner_links
 for all
 to authenticated
-using (true)
-with check (true);
+using (public.is_internal_staff())
+with check (public.is_internal_staff());
 
 drop policy if exists apartment_contracts_authenticated_all on public.apartment_contracts;
-create policy apartment_contracts_authenticated_all
+drop policy if exists apartment_contracts_internal_staff_all on public.apartment_contracts;
+create policy apartment_contracts_internal_staff_all
 on public.apartment_contracts
 for all
 to authenticated
-using (true)
-with check (true);
+using (public.is_internal_staff())
+with check (public.is_internal_staff());
 
 drop policy if exists apartment_owner_payments_authenticated_all on public.apartment_owner_payments;
-create policy apartment_owner_payments_authenticated_all
+drop policy if exists apartment_owner_payments_internal_staff_all on public.apartment_owner_payments;
+create policy apartment_owner_payments_internal_staff_all
 on public.apartment_owner_payments
 for all
 to authenticated
-using (true)
-with check (true);
+using (public.is_internal_staff())
+with check (public.is_internal_staff());

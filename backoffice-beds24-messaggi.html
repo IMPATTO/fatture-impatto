@@ -224,10 +224,10 @@ Marco – Il Lupo Affitta`,
     body_it: `Ciao {{guest_name}},
 ti stiamo aspettando 😊
 
-👉 Accedi qui al portale con tutte le istruzioni:
-{{portal_link}}
+👉 Se non hai ancora il link personale del portale, riapri il check-in da qui:
+{{checkin_link}}
 
-Ti consiglio di aprirlo ora: trovi tutto quello che ti servirà all’arrivo.
+Dopo il check-in online ricevi e apri subito il tuo portale personale con tutte le istruzioni.
 
 Troverai:
 • come arrivare
@@ -362,8 +362,7 @@ function buildCheckinLink(apartment) {
 }
 
 function buildPortalLink(apartment) {
-  if (!apartment?.public_checkin_key) return '';
-  return `https://checkin.illupoaffitta.com/portale.html?apt=${encodeURIComponent(apartment.public_checkin_key)}&mode=open`;
+  return '';
 }
 
 function getRenderVars() {
@@ -645,7 +644,7 @@ function renderEditor() {
           </div>
           <div class="field-2">
             <div class="field field-readonly"><label>Check-in link</label><input value="${esc(vars.checkin_link || 'Public checkin key mancante')}" disabled/></div>
-            <div class="field field-readonly"><label>Portal link</label><input value="${esc(vars.portal_link || 'Public checkin key mancante')}" disabled/></div>
+            <div class="field field-readonly"><label>Portal link</label><input value="${esc(vars.portal_link || 'Disponibile solo con link personale ospite')}" disabled/></div>
           </div>
 
           <div class="info-box">

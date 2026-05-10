@@ -1,3 +1,5 @@
+const { getInternalSupabaseUserFromHeaders, normalizeSupabaseUrl } = require('./_lib/shared-auth');
+
 const BEDS24_URL = 'https://api.beds24.com/v2';
 const CACHE = new Map();
 const CACHE_TTL = {
@@ -31,7 +33,7 @@ exports.handler = async (event) => {
   const diagnostics = createDiagnostics();
 
   const env = {
-    SUPABASE_URL: process.env.SUPABASE_URL || 'https://tysxeikqbgebpfyblgeb.supabase.co',
+    SUPABASE_URL: normalizeSupabaseUrl(process.env.SUPABASE_RUNTIME_URL || process.env.SUPABASE_URL),
     SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY,
     BEDS24_API_KEY: process.env.BEDS24_API_KEY,
   };
@@ -40,6 +42,8 @@ exports.handler = async (event) => {
   if (!env.SUPABASE_SERVICE_KEY) return respond(500, { error: 'SUPABASE_SERVICE_KEY mancante' });
 
   try {
+    const internalAuth = await getInternalSupabaseUserFromHeaders(event.headers);
+    const canViewGuestDetails = Boolean(internalAuth);
     const warnings = [];
     const allApartments = await loadApartments(env, diagnostics);
     const apartments = roomId
@@ -64,7 +68,7 @@ exports.handler = async (event) => {
 
     const normalizedBookings = bookings.map((booking) => {
       const propertyKey = String(booking.propertyId || booking.roomId || '');
-      const guestName = [booking.firstName, booking.lastName].filter(Boolean).join(' ')
+      const resolvedGuestName = [booking.firstName, booking.lastName].filter(Boolean).join(' ')
         || [booking.guestFirstName, booking.guestName].filter(Boolean).join(' ')
         || booking.firstName
         || booking.guestFirstName
@@ -78,13 +82,13 @@ exports.handler = async (event) => {
         propertyId: propertyKey,
         unitId: String(booking.roomId || ''),
         roomName: roomMap[propertyKey] || `Property ${propertyKey || booking.roomId || 'N/D'}`,
-        guestName,
+        guestName: canViewGuestDetails ? resolvedGuestName : 'Occupato',
         checkIn: booking.arrival || booking.checkIn || '',
         checkOut: booking.departure || booking.checkOut || '',
         nights: booking.numNights || booking.nights || null,
-        channel: booking.referer || booking.channel || '',
+        channel: canViewGuestDetails ? (booking.referer || booking.channel || '') : '',
         status: booking.status || '',
-        price: booking.price || booking.totalPrice || null,
+        price: canViewGuestDetails ? (booking.price || booking.totalPrice || null) : null,
       };
     });
 
@@ -100,6 +104,9 @@ exports.handler = async (event) => {
       inventoryDays: inventory.inventoryDays,
       warnings: [...warnings, ...inventory.warnings],
       diagnostics,
+      meta: {
+        guest_details_included: canViewGuestDetails,
+      },
     });
   } catch (error) {
     return respond(500, { error: error.message });

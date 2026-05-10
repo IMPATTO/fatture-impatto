@@ -468,11 +468,6 @@ function buildPublicCheckinUrl(apartment) {
   return `${getPortalBaseUrl()}/?apt=${encodeURIComponent(apartment.public_checkin_key)}`;
 }
 
-function buildOpenApartmentPortalUrl(apartment) {
-  if (!apartment?.public_checkin_key) return '';
-  return `${getPortalBaseUrl()}/portale.html?apt=${encodeURIComponent(apartment.public_checkin_key)}&mode=open`;
-}
-
 function syncBadgeClass(status) {
   if (['PRESENT', 'PRESENTE', 'CONNECTED', 'OK', 'CANDIDATE_HIGH'].includes(status)) return 'ok';
   if (['AMBIGUOUS', 'AMBIGUO', 'CANDIDATE_MEDIUM'].includes(status)) return 'warn';
@@ -768,7 +763,7 @@ function renderApartmentLinksSection() {
       <div class="links-head">
         <div>
           <div class="links-title">Link check-in appartamenti</div>
-          <div class="links-sub">Solo appartamenti attivi di default · link costruito dinamicamente da <code>public_checkin_key</code></div>
+          <div class="links-sub">Solo appartamenti attivi di default · il portale ospite ora è disponibile solo con link personale tokenizzato</div>
         </div>
         <div class="field links-search" style="margin-bottom:0">
           <label>Cerca</label>
@@ -785,7 +780,6 @@ function renderApartmentLinksSection() {
               <th>Struttura</th>
               <th>Public checkin key</th>
               <th>Link check-in finale</th>
-              <th>Link portale aperto</th>
               <th>Stato collegamenti</th>
               <th>Azioni</th>
             </tr>
@@ -793,7 +787,6 @@ function renderApartmentLinksSection() {
           <tbody>
             ${rows.map(a => {
               const link = buildPublicCheckinUrl(a);
-              const openPortalLink = buildOpenApartmentPortalUrl(a);
               const status = getPublicCheckinStatus(a);
               const conn = getConnectivityStatus(a);
               return `
@@ -812,12 +805,6 @@ function renderApartmentLinksSection() {
                   }
                 </td>
                 <td>
-                  ${openPortalLink
-                    ? `<a class="link-out" href="${esc(openPortalLink)}" target="_blank" rel="noopener noreferrer">${esc(openPortalLink)}</a>`
-                    : `<span class="status-inline">${status === 'MISSING_PUBLIC_KEY' ? 'Chiave pubblica mancante' : 'Appartamento disattivo'}</span>`
-                  }
-                </td>
-                <td>
                   <div class="status-stack">
                     <span class="mini-badge ${conn.ok ? 'ok' : 'err'}">${conn.ok ? 'OK' : 'Da completare'}</span>
                     ${conn.warnings.map(item => `<span class="mini-badge warn">${esc(item)}</span>`).join('')}
@@ -826,7 +813,6 @@ function renderApartmentLinksSection() {
                 </td>
                 <td class="actions-cell">
                   <button class="btn btn-ghost btn-sm" data-copy-link="${a.id}" ${link ? '' : 'disabled'}>Copia link</button>
-                  <button class="btn btn-ghost btn-sm" data-copy-open-portal="${a.id}" ${openPortalLink ? '' : 'disabled'}>Copia portale</button>
                   <button class="btn btn-ghost btn-sm" data-select-apt="${a.id}">Apri scheda</button>
                 </td>
               </tr>`;
@@ -1574,13 +1560,6 @@ function renderDashboard() {
     btn.addEventListener('click', async () => {
       const apartment = S.apartments.find(item => String(item.id) === String(btn.dataset.copyLink));
       await copyText(buildPublicCheckinUrl(apartment));
-    });
-  });
-
-  document.querySelectorAll('[data-copy-open-portal]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const apartment = S.apartments.find(item => String(item.id) === String(btn.dataset.copyOpenPortal));
-      await copyText(buildOpenApartmentPortalUrl(apartment));
     });
   });
 

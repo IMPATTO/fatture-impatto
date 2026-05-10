@@ -6,6 +6,7 @@
   <title>PR Luca Riccione · Il Lupo Affitta</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/supabase-client.js"></script>
+  <script src="/js/shared-app-auth.js"></script>
   <script src="/js/pr-luca-shared.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
@@ -230,9 +231,9 @@
 </div>
 
 <script>
-const sb = window.sb;
 const SH = window.prLucaShared;
-const LUCA_PASSWORDS = ['luca2026'];
+const AUTH = window.sharedAppAuth;
+const AUTH_APP = 'pr_luca';
 const DEFAULT_VIEW_MONTH = '2026-07-01';
 
 const S = {
@@ -298,12 +299,13 @@ function setLoadingState(isLoading) {
 }
 
 async function refreshAll() {
-  if (!sb) throw new Error('Supabase client non caricato');
+  const authToken = AUTH.getToken(AUTH_APP);
+  if (!authToken) throw new Error('Sessione non valida');
   const seq = ++S.refreshSeq;
   setLoadingState(true);
   try {
     const { from, to } = selectedRange();
-    const snapshot = await SH.fetchSnapshot(sb, from, to);
+    const snapshot = await SH.fetchSnapshot(null, from, to, { authToken });
     if (seq !== S.refreshSeq) return;
     S.rows = snapshot.rows;
     S.requests = snapshot.requests.filter((row) => row.partner === 'luca');
@@ -351,7 +353,6 @@ async function saveRequest() {
   if (checkout <= checkin) return showError('modalErr', 'Il checkout deve essere dopo il check-in');
 
   const payload = {
-    partner: 'luca',
     scope: row.scope,
     apartment_ref: row.apartmentRef,
     apartment_label: row.label,
@@ -361,25 +362,36 @@ async function saveRequest() {
     checkout,
     pax,
     notes: notes || null,
-    status: 'pending',
-    sync_status: 'pending',
   };
 
-  const { error } = await sb.from('partner_booking_requests').insert(payload);
-  if (error) return showError('modalErr', error.message);
-  closeModal();
-  await refreshAll();
+  try {
+    await AUTH.fetchJson('/.netlify/functions/pr-luca-data', {
+      app: AUTH_APP,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    closeModal();
+    await refreshAll();
+  } catch (error) {
+    return showError('modalErr', error.message);
+  }
 }
 
-function doLogin() {
+async function doLogin() {
+  showError('loginErr', '');
   const value = document.getElementById('loginPwd').value.trim();
-  if (!LUCA_PASSWORDS.includes(value)) {
-    showError('loginErr', 'Password errata');
+  if (!value) {
+    showError('loginErr', 'Inserisci la password');
     return;
   }
-  sessionStorage.setItem('pr_luca_auth', 'ok');
-  setAuth(true);
-  refreshAll();
+  try {
+    await AUTH.login(AUTH_APP, value);
+    setAuth(true);
+    await refreshAll();
+  } catch (error) {
+    showError('loginErr', error.message);
+  }
 }
 
 document.getElementById('loginBtn').addEventListener('click', doLogin);
@@ -389,7 +401,7 @@ document.getElementById('newReqBtn').addEventListener('click', openModal);
 document.getElementById('closeModalBtn').addEventListener('click', closeModal);
 document.getElementById('saveReqBtn').addEventListener('click', saveRequest);
 document.getElementById('logoutBtn').addEventListener('click', () => {
-  sessionStorage.removeItem('pr_luca_auth');
+  AUTH.clearSession(AUTH_APP);
   location.reload();
 });
 document.getElementById('prevMonthBtn').addEventListener('click', async () => {
@@ -403,7 +415,7 @@ document.getElementById('nextMonthBtn').addEventListener('click', async () => {
   await refreshAll();
 });
 
-if (sessionStorage.getItem('pr_luca_auth') === 'ok') {
+if (AUTH.loadSession(AUTH_APP)) {
   setAuth(true);
   refreshAll();
 }

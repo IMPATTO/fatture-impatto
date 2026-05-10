@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "build:site": "node scripts/build-site.mjs",
+    "extract:residence-pr": "node scripts/extract-residence-pr-repo.mjs",
     "verify:integrity": "node scripts/verify-site-integrity.mjs"
   },
   "dependencies": {

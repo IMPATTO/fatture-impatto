@@ -1,8 +1,9 @@
 const { createClient } = require('@supabase/supabase-js');
+const { getInternalSupabaseUserFromHeaders } = require('./_lib/shared-auth');
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
   'Content-Type': 'application/json',
 };
@@ -16,13 +17,19 @@ exports.handler = async (event) => {
     return respond(405, { error: 'Method not allowed' });
   }
 
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  const auth = await getInternalSupabaseUserFromHeaders(event.headers);
+  if (!auth) {
+    return respond(401, { error: 'Autenticazione interna richiesta' });
+  }
+
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+  if (!process.env.SUPABASE_URL || !serviceRoleKey) {
     return respond(500, { error: 'Configurazione Supabase mancante' });
   }
 
   const supabase = createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    serviceRoleKey
   );
 
   const { data, error } = await supabase

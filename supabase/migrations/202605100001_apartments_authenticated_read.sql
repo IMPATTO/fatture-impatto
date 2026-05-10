@@ -16,6 +16,8 @@
 --   DROP POLICY "authenticated_read_apartments" ON public.apartments;
 -- ============================================================
 
+DROP POLICY IF EXISTS "authenticated_read_apartments" ON public.apartments;
+
 CREATE POLICY "authenticated_read_apartments"
   ON public.apartments
   FOR SELECT

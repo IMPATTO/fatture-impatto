@@ -97,14 +97,24 @@ CREATE TABLE IF NOT EXISTS rm_audit (
 );
 
 -- ============================================================
--- RLS — DISABILITATA per queste tabelle (auth via password lato app)
--- L'anon key di Supabase può leggere/scrivere tutto.
--- Sicurezza garantita dalla password condivisa nel frontend.
+-- RLS — ABILITATA
+-- Accesso browser rimosso: queste tabelle vanno usate tramite Netlify
+-- Functions con service role e sessioni applicative firmate.
 -- ============================================================
-ALTER TABLE rm_apartments DISABLE ROW LEVEL SECURITY;
-ALTER TABLE rm_unavailability DISABLE ROW LEVEL SECURITY;
-ALTER TABLE rm_bookings DISABLE ROW LEVEL SECURITY;
-ALTER TABLE rm_audit DISABLE ROW LEVEL SECURITY;
+ALTER TABLE rm_apartments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE rm_unavailability ENABLE ROW LEVEL SECURITY;
+ALTER TABLE rm_bookings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE rm_audit ENABLE ROW LEVEL SECURITY;
+
+REVOKE ALL ON TABLE rm_apartments FROM anon, authenticated;
+REVOKE ALL ON TABLE rm_unavailability FROM anon, authenticated;
+REVOKE ALL ON TABLE rm_bookings FROM anon, authenticated;
+REVOKE ALL ON TABLE rm_audit FROM anon, authenticated;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE rm_apartments TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE rm_unavailability TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE rm_bookings TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE rm_audit TO service_role;
 
 -- ============================================================
 -- SEED DATI: 19 APPARTAMENTI + 3 ESTERNI

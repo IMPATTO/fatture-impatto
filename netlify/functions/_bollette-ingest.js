@@ -1,10 +1,11 @@
 const { createClient } = require('@supabase/supabase-js');
 const crypto = require('crypto');
+const { normalizeSupabaseUrl } = require('./_lib/shared-auth');
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_URL = normalizeSupabaseUrl(process.env.SUPABASE_RUNTIME_URL || process.env.SUPABASE_URL);
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-const STORAGE_BUCKET = process.env.CONTABILITA_STORAGE_BUCKET || 'contabilita-media';
+const STORAGE_BUCKET = process.env.CONTABILITA_PRIVATE_STORAGE_BUCKET || 'contabilita-private-media';
 
 function getSupabaseService() {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
@@ -93,22 +94,30 @@ async function persistFile(supabase, source, metadata, file, index) {
     upsert: true,
   });
   if (error) throw error;
-  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
   return {
     ...file,
+    storage_bucket: STORAGE_BUCKET,
     storage_path: path,
-    url: file.url || data?.publicUrl || '',
-    preview_url: file.preview_url || data?.publicUrl || '',
+    url: file.url || '',
+    preview_url: file.preview_url || '',
   };
 }
 
 async function ensureStorageBucket(supabase) {
   const { data: buckets, error: listError } = await supabase.storage.listBuckets();
   if (listError) throw listError;
-  if (Array.isArray(buckets) && buckets.some((bucket) => bucket.name === STORAGE_BUCKET)) return;
+  const existingBucket = Array.isArray(buckets)
+    ? buckets.find((bucket) => bucket.name === STORAGE_BUCKET)
+    : null;
+  if (existingBucket) {
+    if (existingBucket.public) {
+      throw new Error(`Il bucket ${STORAGE_BUCKET} esiste ma è pubblico: impostalo privato prima di usarlo`);
+    }
+    return;
+  }
 
   const { error: createError } = await supabase.storage.createBucket(STORAGE_BUCKET, {
-    public: true,
+    public: false,
     fileSizeLimit: '20MB',
     allowedMimeTypes: [
       'application/pdf',
@@ -279,6 +288,7 @@ function buildDocumentPayload({ source, provider, metadata, storedFile, extracti
     file: {
       filename: storedFile.filename,
       url: storedFile.url || '',
+      storage_bucket: storedFile.storage_bucket || '',
       storage_path: storedFile.storage_path || '',
       mime_type: storedFile.mime_type || '',
       size_bytes: storedFile.size_bytes || null,
@@ -301,13 +311,14 @@ function buildDocumentPayload({ source, provider, metadata, storedFile, extracti
     attachments: [{
       filename: storedFile.filename,
       url: storedFile.url || null,
+      storage_bucket: storedFile.storage_bucket || null,
       storage_path: storedFile.storage_path || null,
       preview_url: storedFile.preview_url || storedFile.url || null,
       content_type: storedFile.mime_type || null,
       size_bytes: storedFile.size_bytes || null,
     }],
     file_name: storedFile.filename,
-    file_url: storedFile.url || null,
+    file_url: storedFile.storage_path || storedFile.url || null,
     mime_type: storedFile.mime_type || null,
     extracted_text: extraction.raw_text || null,
     ocr_payload: { provider: extraction.provider || null, source },

@@ -1,4 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
+const { getInternalSupabaseUserFromHeaders, normalizeSupabaseUrl } = require('./_lib/shared-auth');
 
 const BEDS24_URL = 'https://api.beds24.com/v2';
 
@@ -21,7 +22,7 @@ exports.handler = async (event) => {
   }
 
   const env = {
-    SUPABASE_URL: process.env.SUPABASE_URL,
+    SUPABASE_URL: normalizeSupabaseUrl(process.env.SUPABASE_RUNTIME_URL || process.env.SUPABASE_URL),
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY,
     BEDS24_API_KEY: process.env.BEDS24_API_KEY,
   };
@@ -30,17 +31,13 @@ exports.handler = async (event) => {
     return respond(500, { error: 'Configurazione Supabase mancante' });
   }
 
-  const authHeader = event.headers.authorization || event.headers.Authorization;
-  if (!authHeader?.startsWith('Bearer ')) {
-    return respond(401, { error: 'Unauthorized' });
+  const auth = await getInternalSupabaseUserFromHeaders(event.headers);
+  if (!auth) {
+    return respond(401, { error: 'Autenticazione interna richiesta' });
   }
+  const approverEmail = auth.email;
 
   const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
-  const token = authHeader.replace('Bearer ', '').trim();
-  const { data: authData, error: authError } = await supabase.auth.getUser(token);
-  if (authError || !authData?.user) {
-    return respond(401, { error: 'Unauthorized' });
-  }
 
   let body;
   try {
@@ -89,7 +86,7 @@ exports.handler = async (event) => {
           status: 'rejected',
           sync_status: request.scope === 'residence' ? 'not_required' : 'not_required',
           approved_at: new Date().toISOString(),
-          approved_by: authData.user.email,
+          approved_by: approverEmail,
           sync_error: rejectionReason,
         })
         .eq('id', requestId)
@@ -101,7 +98,7 @@ exports.handler = async (event) => {
       }
 
       await safeAuditLog(supabase, {
-        user_email: authData.user.email,
+        user_email: approverEmail,
         action: 'REJECT_PARTNER_BOOKING_REQUEST',
         table_name: 'partner_booking_requests',
         record_id: requestId,
@@ -117,7 +114,7 @@ exports.handler = async (event) => {
     }
 
     if (request.scope === 'residence') {
-      const result = await approveResidenceRequest(supabase, request, authData.user.email);
+      const result = await approveResidenceRequest(supabase, request, approverEmail);
       return respond(200, { success: true, request: result });
     }
 
@@ -125,7 +122,7 @@ exports.handler = async (event) => {
       return respond(500, { error: 'BEDS24_API_KEY mancante' });
     }
 
-    const result = await approveBeds24Request(supabase, env, request, authData.user.email);
+    const result = await approveBeds24Request(supabase, env, request, approverEmail);
     return respond(200, { success: true, request: result });
   } catch (error) {
     console.error('[approve-partner-booking] error', error);

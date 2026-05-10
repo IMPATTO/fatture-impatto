@@ -1,12 +1,13 @@
 # Siti separati
 
-Questo repo ora puo produrre 5 pacchetti di deploy distinti:
+Questo repo ora puo produrre 6 pacchetti di deploy distinti:
 
 - `fatt-docs`: fatturazione + documenti
 - `operativita`
 - `portale`
 - `contabilita`
 - `calendario`
+- `residence-pr`
 
 Ogni sito viene costruito con:
 
@@ -31,5 +32,6 @@ Ogni sito dovrebbe conoscere gli URL degli altri tramite env vars:
 - `SITE_URL_PORTALE`
 - `SITE_URL_CONTABILITA`
 - `SITE_URL_CALENDARIO`
+- `SITE_URL_RESIDENCE_PR`
 
 Se una env var manca, il redirect usa il path relativo. Va bene solo finche i siti restano sullo stesso dominio.

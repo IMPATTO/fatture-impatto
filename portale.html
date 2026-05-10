@@ -1636,33 +1636,29 @@
       const params = new URLSearchParams(window.location.search);
       const token = getFirstQueryParam(params, ['token', 'portale_token']);
       const aptKey = getFirstQueryParam(params, ['apt', 'aptId', 'apartment_ref', 'apartment_id', 'key']);
-      const mode = (params.get('mode') || '').trim().toLowerCase();
       const langParam = (params.get('lang') || 'IT').toUpperCase();
-      const isOpenMode = mode === 'open' || (!!aptKey && !token);
 
       logPortalDebug({
         token_present: !!token,
         apt_present: !!aptKey,
-        mode: mode || 'default',
+        mode: 'token-only',
       });
 
-      if (!token && !(aptKey && isOpenMode)) { return showInvalidPortalError(); }
+      if (!token) { return showInvalidPortalError(); }
 
       try {
-        if (token) {
         // Il read pubblico passa lato Netlify per mantenere il token flow senza esporre la tabella ospiti in anon.
         const payload = await fetchPublicPortalContext({ token, apt: aptKey, lang: langParam });
         logPortalDebug({
           token_present: !!token,
           apt_present: !!aptKey,
-          mode: mode || 'default',
+          mode: 'token-only',
           guest_found: !!payload?.guest,
           apartment_found: !!payload?.apartment,
         });
         const guest = payload.guest;
         const apt   = payload.apartment;
         if (!guest || !apt) {
-          if (apt) return renderOpenPortal(payload, langParam);
           return showInvalidPortalError();
         }
         initNavbar('');
@@ -1683,30 +1679,12 @@
         document.getElementById('checkout-pill').style.display = '';
         renderPortalCards(apt, creds, info);
         return showPortalApp();
-        }
-
-        if (aptKey && isOpenMode) {
-          const payload = await fetchPublicPortalContext({ apt: aptKey, lang: langParam });
-          logPortalDebug({
-            token_present: false,
-            apt_present: !!aptKey,
-            mode: mode || 'default',
-            guest_found: !!payload?.guest,
-            apartment_found: !!payload?.apartment,
-          });
-          if (!payload?.apartment) {
-            return showInvalidPortalError();
-          }
-          return renderOpenPortal(payload, langParam);
-        }
-
-        return showInvalidPortalError();
       } catch (err) {
         console.error('Portale error:', err);
         logPortalDebug({
           token_present: !!token,
           apt_present: !!aptKey,
-          mode: mode || 'default',
+          mode: 'token-only',
           guest_found: !!err?.payload?.meta?.guest_found,
           apartment_found: !!err?.payload?.meta?.apartment_found,
         });

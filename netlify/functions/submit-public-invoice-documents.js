@@ -1,11 +1,24 @@
 const Busboy = require('busboy');
 const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
+const { normalizeSupabaseUrl } = require('./_lib/shared-auth');
 
-const DEFAULT_SUPABASE_URL = 'https://tysxeikqbgebpfyblgeb.supabase.co';
-const SUPABASE_URL = process.env.SUPABASE_URL || DEFAULT_SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const STORAGE_BUCKET = process.env.CONTABILITA_STORAGE_BUCKET || 'contabilita-media';
+const SUPABASE_URL = normalizeSupabaseUrl(process.env.SUPABASE_RUNTIME_URL || process.env.SUPABASE_URL);
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+const STORAGE_BUCKET = process.env.CONTABILITA_PRIVATE_STORAGE_BUCKET || 'contabilita-private-media';
+const MAX_FILES = 6;
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+const MAX_TOTAL_SIZE_BYTES = 25 * 1024 * 1024;
+const ALLOWED_MIME_TYPES = new Set([
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+]);
+const UPLOAD_ATTEMPTS = new Map();
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const RATE_LIMIT_MAX_REQUESTS = 8;
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -28,12 +41,18 @@ exports.handler = async (event) => {
   }
 
   try {
+    const clientIp = getClientIp(event.headers);
+    if (isRateLimited(clientIp)) {
+      return respond(429, { error: 'Troppi invii ravvicinati. Riprova più tardi.' });
+    }
+
     const parsed = await parseMultipart(event);
     const form = normalizeFields(parsed.fields || {});
     const validationErrors = validateForm(form, parsed.files || []);
     if (validationErrors.length) {
       return respond(400, { error: 'Validation failed', fields: validationErrors });
     }
+    recordAttempt(clientIp);
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const storedFiles = await persistAttachments(supabase, parsed.files || [], form);
@@ -141,6 +160,21 @@ function validateForm(form, files) {
   if (Array.isArray(files) && files.some((file) => !file.filename || !file.buffer?.length)) {
     errors.push(fieldError('files', 'Uno o più file non sono validi'));
   }
+  if (Array.isArray(files) && files.length > MAX_FILES) {
+    errors.push(fieldError('files', `Puoi caricare massimo ${MAX_FILES} file`));
+  }
+  const totalSize = Array.isArray(files)
+    ? files.reduce((sum, file) => sum + Number(file.size_bytes || file.buffer?.length || 0), 0)
+    : 0;
+  if (totalSize > MAX_TOTAL_SIZE_BYTES) {
+    errors.push(fieldError('files', 'Dimensione totale allegati troppo alta'));
+  }
+  if (Array.isArray(files) && files.some((file) => Number(file.size_bytes || file.buffer?.length || 0) > MAX_FILE_SIZE_BYTES)) {
+    errors.push(fieldError('files', 'Uno o più file superano la dimensione massima consentita'));
+  }
+  if (Array.isArray(files) && files.some((file) => !ALLOWED_MIME_TYPES.has(String(file.mime_type || '').toLowerCase()))) {
+    errors.push(fieldError('files', 'Sono consentiti solo PDF o immagini JPG/PNG/WebP/GIF'));
+  }
   if (!form.privacy_accepted) errors.push(fieldError('privacy', 'Accetta l informativa privacy per continuare'));
   return errors;
 }
@@ -178,12 +212,12 @@ async function persistAttachments(supabase, files, form) {
       upsert: true,
     });
     if (error) throw error;
-    const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(storagePath);
     attachments.push({
       filename: file.filename,
+      storage_bucket: STORAGE_BUCKET,
       storage_path: storagePath,
-      url: data?.publicUrl || '',
-      preview_url: data?.publicUrl || '',
+      url: '',
+      preview_url: '',
       content_type: file.mime_type || 'application/octet-stream',
       size_bytes: Number(file.size_bytes || file.buffer.length || 0),
     });
@@ -195,18 +229,20 @@ async function persistAttachments(supabase, files, form) {
 async function ensureStorageBucket(supabase) {
   const { data: buckets, error: listError } = await supabase.storage.listBuckets();
   if (listError) throw listError;
-  if (Array.isArray(buckets) && buckets.some((bucket) => bucket.name === STORAGE_BUCKET)) return;
+  const existingBucket = Array.isArray(buckets)
+    ? buckets.find((bucket) => bucket.name === STORAGE_BUCKET)
+    : null;
+  if (existingBucket) {
+    if (existingBucket.public) {
+      throw new Error(`Il bucket ${STORAGE_BUCKET} esiste ma è pubblico: impostalo privato prima di usarlo`);
+    }
+    return;
+  }
 
   const { error: createError } = await supabase.storage.createBucket(STORAGE_BUCKET, {
-    public: true,
+    public: false,
     fileSizeLimit: '25MB',
-    allowedMimeTypes: [
-      'application/pdf',
-      'image/jpeg',
-      'image/png',
-      'image/webp',
-      'image/gif',
-    ],
+    allowedMimeTypes: [...ALLOWED_MIME_TYPES],
   });
 
   if (createError && !String(createError.message || '').toLowerCase().includes('already exists')) {
@@ -350,7 +386,7 @@ async function createAccountingDocument(supabase, form, attachments, guestResult
   if (columnSupport.source) payload.source = 'public_invoice_upload';
   if (columnSupport.source_ref) payload.source_ref = messageId;
   if (columnSupport.file_name) payload.file_name = firstAttachment?.filename || null;
-  if (columnSupport.file_url) payload.file_url = firstAttachment?.url || null;
+  if (columnSupport.file_url) payload.file_url = firstAttachment?.storage_path || null;
   if (columnSupport.mime_type) payload.mime_type = firstAttachment?.content_type || null;
   if (columnSupport.document_kind) payload.document_kind = 'altro';
   if (columnSupport.counterparty) payload.counterparty = form.ragione_sociale;
@@ -402,4 +438,31 @@ function sanitizeStorageKeyPart(value) {
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
     .slice(0, 80) || 'item';
+}
+
+function getClientIp(headers = {}) {
+  const forwarded = String(headers['x-forwarded-for'] || headers['X-Forwarded-For'] || '').trim();
+  if (forwarded) return forwarded.split(',')[0].trim();
+  return String(headers['client-ip'] || headers['Client-Ip'] || 'unknown').trim() || 'unknown';
+}
+
+function isRateLimited(clientIp) {
+  pruneAttempts();
+  return (UPLOAD_ATTEMPTS.get(clientIp) || []).length >= RATE_LIMIT_MAX_REQUESTS;
+}
+
+function recordAttempt(clientIp) {
+  pruneAttempts();
+  const attempts = UPLOAD_ATTEMPTS.get(clientIp) || [];
+  attempts.push(Date.now());
+  UPLOAD_ATTEMPTS.set(clientIp, attempts);
+}
+
+function pruneAttempts() {
+  const cutoff = Date.now() - RATE_LIMIT_WINDOW_MS;
+  for (const [clientIp, attempts] of UPLOAD_ATTEMPTS.entries()) {
+    const filtered = attempts.filter((timestamp) => timestamp >= cutoff);
+    if (filtered.length) UPLOAD_ATTEMPTS.set(clientIp, filtered);
+    else UPLOAD_ATTEMPTS.delete(clientIp);
+  }
 }

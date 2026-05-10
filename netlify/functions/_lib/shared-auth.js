@@ -14,9 +14,15 @@ const INTERNAL_ALLOWED_EMAILS = new Set([
   'ramirezgonzalezv44@gmail.com',
 ]);
 
+function normalizeSupabaseUrl(rawValue, fallback = DEFAULT_SUPABASE_URL) {
+  const trimmed = String(rawValue || '').trim();
+  if (/^https?:\/\/\S+$/i.test(trimmed)) return trimmed;
+  return fallback;
+}
+
 function getSupabaseRuntimeConfig() {
   return {
-    url: process.env.SUPABASE_URL || DEFAULT_SUPABASE_URL,
+    url: normalizeSupabaseUrl(process.env.SUPABASE_RUNTIME_URL || process.env.SUPABASE_URL),
     anonKey:
       process.env.SUPABASE_ANON_KEY ||
       process.env.SUPABASE_PUBLISHABLE_KEY ||
@@ -196,6 +202,7 @@ module.exports = {
   getSharedSessionSecret,
   getSupabaseRuntimeConfig,
   getSupabaseUserFromToken,
+  normalizeSupabaseUrl,
   parsePasswordList,
   signSharedSession,
   verifySharedSession,

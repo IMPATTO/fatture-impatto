@@ -9,5 +9,9 @@ dist
 # Supabase local cache
 supabase/.temp
 
+# Sensitive local security reports
+reports/security/
+extracted-repos/
+
 # macOS noise
 .DS_Store

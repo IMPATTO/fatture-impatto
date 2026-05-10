@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Elenco Link Appartamenti</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-client.js"></script>
   <style>
     :root {
       --bg: #f5f4f1;
@@ -149,7 +150,7 @@
       <div class="head">
         <div>
           <h1>Link Appartamenti</h1>
-          <div class="sub">Primo link: check-in pubblico · Secondo link: portale aperto per appartamento</div>
+          <div class="sub">Accesso riservato interno · link pubblico solo per il check-in</div>
         </div>
         <div class="search">
           <input id="search" type="text" placeholder="Cerca per nome, codice, struttura, chiave pubblica"/>
@@ -161,10 +162,7 @@
   </div>
 
   <script>
-    const sb = supabase.createClient(
-      'https://tysxeikqbgebpfyblgeb.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5c3hlaWtxYmdlYnBmeWJsZ2ViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyODczODAsImV4cCI6MjA5MDg2MzM4MH0.yXmS2MFh47eRkCX2voemdBkK5m_tyJiKAFhfyp1YEbw'
-    );
+    const sb = window.sb;
 
     const state = {
       apartments: [],
@@ -182,12 +180,6 @@
     function buildCheckinUrl(row) {
       return row.public_checkin_key
         ? `https://checkin.illupoaffitta.com/?apt=${encodeURIComponent(row.public_checkin_key)}`
-        : '';
-    }
-
-    function buildOpenPortalUrl(row) {
-      return row.public_checkin_key
-        ? `https://checkin.illupoaffitta.com/portale.html?apt=${encodeURIComponent(row.public_checkin_key)}&mode=open`
         : '';
     }
 
@@ -223,14 +215,12 @@
               <th>Struttura</th>
               <th>Public checkin key</th>
               <th>Primo link</th>
-              <th>Secondo link aperto</th>
               <th>Azioni</th>
             </tr>
           </thead>
           <tbody>
             ${rows.map(row => {
               const checkinUrl = buildCheckinUrl(row);
-              const openPortalUrl = buildOpenPortalUrl(row);
               return `
                 <tr>
                   <td>${esc(row.nome_appartamento || '—')}</td>
@@ -238,13 +228,10 @@
                   <td>${esc(row.struttura_nome || '—')}</td>
                   <td class="mono">${esc(row.public_checkin_key || '—')}</td>
                   <td>${checkinUrl ? `<a class="link" href="${esc(checkinUrl)}" target="_blank" rel="noopener">${esc(checkinUrl)}</a>` : `<span class="missing">Chiave mancante</span>`}</td>
-                  <td>${openPortalUrl ? `<a class="link" href="${esc(openPortalUrl)}" target="_blank" rel="noopener">${esc(openPortalUrl)}</a>` : `<span class="missing">Chiave mancante</span>`}</td>
                   <td>
                     <div class="actions">
                       <button data-copy="${esc(checkinUrl)}" ${checkinUrl ? '' : 'disabled'}>Copia primo</button>
-                      <button data-copy="${esc(openPortalUrl)}" ${openPortalUrl ? '' : 'disabled'}>Copia secondo</button>
                       <a class="btn-link" href="${esc(checkinUrl || '#')}" target="_blank" rel="noopener" ${checkinUrl ? '' : 'style="pointer-events:none;opacity:.4"'}>Apri primo</a>
-                      <a class="btn-link" href="${esc(openPortalUrl || '#')}" target="_blank" rel="noopener" ${openPortalUrl ? '' : 'style="pointer-events:none;opacity:.4"'}>Apri secondo</a>
                     </div>
                   </td>
                 </tr>`;
@@ -264,12 +251,15 @@
     }
 
     async function loadApartments() {
-      const res = await fetch('/.netlify/functions/get-public-apartment-links');
+      const { data: { session } = {} } = sb?.auth?.getSession ? await sb.auth.getSession() : { data: { session: null } };
+      const res = await fetch('/.netlify/functions/get-public-apartment-links', {
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+      });
       const payload = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        document.getElementById('meta').textContent = 'Errore caricamento';
-        document.getElementById('content').innerHTML = `<div class="empty">${esc(payload.error || 'Errore caricamento')}</div>`;
+        document.getElementById('meta').textContent = res.status === 401 ? 'Accesso riservato' : 'Errore caricamento';
+        document.getElementById('content').innerHTML = `<div class="empty">${esc(payload.error || 'Apri questa pagina da una sessione interna autenticata oppure usa il backoffice portale.')}</div>`;
         return;
       }
 

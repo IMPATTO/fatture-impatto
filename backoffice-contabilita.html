@@ -571,6 +571,49 @@ function extractionStatusCls(v){ return { pending:'b-bozza', partial:'b-fisc-da-
 function duplicateStatusLbl(v){ return { normal:'Normale', duplicate_exact:'Doppione tecnico', possible_duplicate:'Possibile doppione' }[v] || 'Normale'; }
 function duplicateStatusCls(v){ return { normal:'b-bozza', duplicate_exact:'b-acc-scartato', possible_duplicate:'b-fisc-da-fatturare' }[v] || 'b-bozza'; }
 function numberVal(v){ const n = Number(String(v ?? '').replace(',', '.')); return Number.isFinite(n) ? n : null; }
+function isHttpUrl(value){ return /^https?:\/\//i.test(String(value || '').trim()); }
+function hasStoredAttachment(file){ return !!(file?.url || file?.preview_url || file?.storage_path || file?.file_url); }
+function renderAttachmentActions(file, idx){
+  const actions = [];
+  if (hasStoredAttachment(file)) actions.push(`<div style="margin-top:6px"><a href="#" data-open-attachment="${idx}">Apri allegato</a></div>`);
+  if (file?.preview_url && isHttpUrl(file.preview_url)) actions.push(`<div><a href="${esc(file.preview_url)}" target="_blank" rel="noopener">Anteprima</a></div>`);
+  return actions.join('');
+}
+async function resolveAccountingAttachmentUrl(file){
+  if (!file) return '';
+  if (file.url && isHttpUrl(file.url)) return file.url;
+  if (file.preview_url && isHttpUrl(file.preview_url)) return file.preview_url;
+  const storagePath = String(file.storage_path || file.file_url || '').trim();
+  if (!storagePath) return '';
+  const bucket = String(file.storage_bucket || 'contabilita-private-media').trim();
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session?.access_token) throw new Error('Sessione scaduta');
+  const res = await fetch('/.netlify/functions/get-accounting-file-url', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({
+      file: {
+        bucket,
+        storage_path: storagePath,
+      },
+    }),
+  });
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(payload.error || 'Errore apertura allegato');
+  return payload.files?.[0]?.signed_url || '';
+}
+async function openAccountingAttachment(file){
+  try{
+    const url = await resolveAccountingAttachmentUrl(file);
+    if (!url) throw new Error('Allegato non disponibile');
+    window.open(url, '_blank', 'noopener');
+  }catch(error){
+    toast(error.message || 'Errore apertura allegato', 'err');
+  }
+}
 function getChildRows(parentId){ return S.rows.filter(r=>String(r.capogruppo_id||'')===String(parentId||'')); }
 function getParentRow(row){ return row?.capogruppo_id ? (S.rows.find(r=>String(r.id)===String(row.capogruppo_id))||null) : null; }
 function getStoredAdditionalGuests(row){
@@ -3563,7 +3606,7 @@ function partialDrawer() {
         </div>
         <div class="field"><label>Note</label><textarea class="df-bill" data-k="notes" placeholder="Note operative sulla bolletta o sul rimborso">${esc(f.notes)}</textarea></div>
         <div class="bill-note-box">${esc(f.notes || 'Nessuna nota inserita')}</div>
-        ${doc.file_url ? `<div class="drawer-sec">Allegato</div><div class="doc-item"><a href="${esc(doc.file_url)}" target="_blank" rel="noopener">Apri documento allegato</a></div>` : ''}
+        ${doc.file_url ? `<div class="drawer-sec">Allegato</div><div class="doc-item">${isHttpUrl(doc.file_url) ? `<a href="${esc(doc.file_url)}" target="_blank" rel="noopener">Apri documento allegato</a>` : `<a href="#" data-open-bill-file="1">Apri documento allegato</a>`}</div>` : ''}
         ${f.payment_status === 'pagata' ? `<div style="margin-top:12px"><span class="cash-badge green">Pagata · registrata in contabilità</span></div>` : `<div style="margin-top:12px"><span class="cash-badge amber">Non pagata · fuori dalla contabilità</span></div>`}
       </div>
       <div class="drawer-footer">
@@ -3575,6 +3618,16 @@ function partialDrawer() {
       document.getElementById('dSaveBill').addEventListener('click', saveBillForm);
       document.getElementById('dRejectBill').addEventListener('click', ()=>setBillDocumentStatus('scartato'));
       document.getElementById('dApproveBill').addEventListener('click', ()=>setBillDocumentStatus('approvato'));
+      d.querySelectorAll('[data-open-bill-file]').forEach((el) => {
+        el.addEventListener('click', async (event) => {
+          event.preventDefault();
+          await openAccountingAttachment({
+            storage_path: doc.file_url,
+            file_url: doc.file_url,
+            storage_bucket: doc.storage_bucket || 'contabilita-private-media',
+          });
+        });
+      });
       document.getElementById('billGeneral')?.addEventListener('change', e => {
         S.billForm.is_general = e.target.checked;
         if (!e.target.checked) S.billForm.allocation_apartment_ids = S.billForm.apartment_id ? [String(S.billForm.apartment_id)] : [];
@@ -3677,8 +3730,7 @@ function partialDrawer() {
         <div class="doc-item">
           <div><strong>${esc(file.filename || `Allegato ${idx + 1}`)}</strong></div>
           <div class="mono-sm">${esc(file.content_type || 'file')} ${file.size_bytes ? `· ${esc(String(file.size_bytes))} bytes` : ''}</div>
-          ${file.url ? `<div style="margin-top:6px"><a href="${esc(file.url)}" target="_blank" rel="noopener">Apri allegato</a></div>` : ''}
-          ${file.preview_url ? `<div><a href="${esc(file.preview_url)}" target="_blank" rel="noopener">Anteprima</a></div>` : ''}
+          ${renderAttachmentActions(file, idx)}
         </div>`).join('')}</div>` : `<div class="mono-sm">Nessun allegato registrato.</div>`}
       <div class="drawer-sec">Note revisione</div>
       <div class="field"><textarea class="df-acc" data-k="notes" placeholder="Correzioni, note interne, tag appartamento…">${esc(f.notes)}</textarea></div>
@@ -3699,6 +3751,13 @@ function partialDrawer() {
     document.getElementById('dFixAcc').addEventListener('click', ()=>setAccountingStatus('corretto'));
     document.getElementById('dRejectAcc').addEventListener('click', ()=>setAccountingStatus('scartato'));
     document.getElementById('dApproveAcc').addEventListener('click', ()=>setAccountingStatus('approvato'));
+    d.querySelectorAll('[data-open-attachment]').forEach((el) => {
+      el.addEventListener('click', async (event) => {
+        event.preventDefault();
+        const file = attachments[Number(el.dataset.openAttachment)];
+        await openAccountingAttachment(file);
+      });
+    });
     d.querySelectorAll('.df-acc').forEach(el=>{
       el.addEventListener('input', e=>{ S.accountingForm[e.target.dataset.k]=e.target.value; });
       el.addEventListener('change', e=>{

@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase-client.js"></script>
+<script src="js/shared-app-auth.js"></script>
 <style>
   :root {
     --sand-50:#faf6ee;--sand-100:#f4ecd9;--sand-200:#e8dcc0;
@@ -322,11 +323,10 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const ADMIN_PASSWORDS = ['marco2026', 'Marco$Lupo2026!'];
+const AUTH = window.sharedAppAuth;
+const AUTH_APP = 'rm_admin';
 const ADMIN_NAME = 'admin';
-
-const sb = window.sb;
-if (!sb) throw new Error('Supabase client non caricato: controlla js/supabase-client.js');
+let refreshTimer = null;
 
 let APARTMENTS = [];
 let BOOKINGS = [];
@@ -338,22 +338,27 @@ let currentMonth = 6;
 let currentYear = 2026;
 
 function checkAuth() {
-  if (sessionStorage.getItem('rm_admin_auth') === 'ok') {
+  if (AUTH.loadSession(AUTH_APP)) {
     document.getElementById('login-overlay').classList.add('hidden');
     init();
   }
 }
-function doLogin() {
+async function doLogin() {
   const pw = document.getElementById('login-password').value.trim();
-  if (ADMIN_PASSWORDS.includes(pw)) {
-    sessionStorage.setItem('rm_admin_auth', 'ok');
+  document.getElementById('login-err').textContent = '';
+  if (!pw) {
+    document.getElementById('login-err').textContent = 'Inserisci la password';
+    return;
+  }
+  try {
+    await AUTH.login(AUTH_APP, pw);
     document.getElementById('login-overlay').classList.add('hidden');
-    init();
-  } else {
-    document.getElementById('login-err').textContent = 'Password errata';
+    await init();
+  } catch (error) {
+    document.getElementById('login-err').textContent = error.message;
   }
 }
-function doLogout() { sessionStorage.removeItem('rm_admin_auth'); location.reload(); }
+function doLogout() { AUTH.clearSession(AUTH_APP); location.reload(); }
 document.getElementById('login-password').addEventListener('keypress', e => { if (e.key === 'Enter') doLogin(); });
 
 function showLoading(on=true) { document.getElementById('loading-overlay').classList.toggle('active', on); }
@@ -366,16 +371,11 @@ function showToast(msg, type='') {
 async function loadAll() {
   showLoading(true);
   try {
-    const [aRes, bRes, uRes] = await Promise.all([
-      sb.from('rm_apartments').select('*').order('sort_order'),
-      sb.from('rm_bookings').select('*').order('checkin'),
-      sb.from('rm_unavailability').select('*'),
-    ]);
-    if (aRes.error) throw aRes.error;
-    if (bRes.error) throw bRes.error;
-    if (uRes.error) throw uRes.error;
-    APARTMENTS = aRes.data;
-    BOOKINGS = bRes.data.map((b) => {
+    const payload = await AUTH.fetchJson('/.netlify/functions/residence-api', {
+      app: AUTH_APP,
+    });
+    APARTMENTS = payload.apartments || [];
+    BOOKINGS = (payload.bookings || []).map((b) => {
       const payment = extractPaymentData(b.notes);
       return {
         ...b,
@@ -384,7 +384,7 @@ async function loadAll() {
         balance_due_at_checkin: b.balance_due_at_checkin ?? payment.balanceDueAtCheckin
       };
     });
-    UNAVAILABLE = uRes.data;
+    UNAVAILABLE = payload.unavailability || [];
   } catch (e) {
     console.error(e);
     showToast('Errore caricamento: ' + e.message, 'error');
@@ -394,13 +394,15 @@ async function loadAll() {
 async function init() {
   await loadAll();
   render();
-  sb.channel('rm_admin_changes')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'rm_bookings' }, async () => {
-      await loadAll(); render();
-      showToast('Aggiornamento dal DB', 'success');
-    }).subscribe((status) => {
-      console.log('subscribed', status);
-    });
+  if (refreshTimer) clearInterval(refreshTimer);
+  refreshTimer = setInterval(async () => {
+    try {
+      await loadAll();
+      render();
+    } catch (_error) {
+      // Evita toast ripetitivi in background.
+    }
+  }, 45000);
 }
 
 function getDateRange(checkin, checkout) {
@@ -685,11 +687,12 @@ async function approveBooking(id) {
   const ids = b.group_id ? BOOKINGS.filter(x => x.group_id === b.group_id).map(x=>x.id) : [id];
   showLoading(true);
   try {
-    const { error } = await sb.from('rm_bookings').update({
-      status: 'confirmed', approved_at: new Date().toISOString(), approved_by: ADMIN_NAME
-    }).in('id', ids);
-    if (error) throw error;
-    await sb.from('rm_audit').insert({ action: 'approve', booking_id: id, actor: ADMIN_NAME, details: { name: b.name, ids } });
+    await AUTH.fetchJson('/.netlify/functions/residence-api', {
+      app: AUTH_APP,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'approve', id }),
+    });
     showToast(`Approvato${ids.length>1?' (split: '+ids.length+' segmenti)':''}`, 'success');
     await loadAll(); render();
   } catch (e) { showToast('Errore: ' + e.message, 'error'); } finally { showLoading(false); }
@@ -700,14 +703,14 @@ async function rejectBooking(id) {
   if (!b) return;
   const reason = prompt(`Motivo del rifiuto per "${b.name}" (opzionale):`);
   if (reason === null) return;
-  const ids = b.group_id ? BOOKINGS.filter(x => x.group_id === b.group_id).map(x=>x.id) : [id];
   showLoading(true);
   try {
-    const { error } = await sb.from('rm_bookings').update({
-      status: 'rejected', notes: reason ? `[Rifiutata: ${reason}] ${b.notes||''}` : b.notes
-    }).in('id', ids);
-    if (error) throw error;
-    await sb.from('rm_audit').insert({ action: 'reject', booking_id: id, actor: ADMIN_NAME, details: { name: b.name, reason, ids } });
+    await AUTH.fetchJson('/.netlify/functions/residence-api', {
+      app: AUTH_APP,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'reject', id, reason }),
+    });
     showToast('Rifiutata', 'success');
     await loadAll(); render();
   } catch (e) { showToast('Errore: ' + e.message, 'error'); } finally { showLoading(false); }
@@ -720,9 +723,12 @@ async function deleteBooking(id) {
   const ids = b.group_id ? BOOKINGS.filter(x => x.group_id === b.group_id).map(x=>x.id) : [id];
   showLoading(true);
   try {
-    const { error } = await sb.from('rm_bookings').delete().in('id', ids);
-    if (error) throw error;
-    await sb.from('rm_audit').insert({ action: 'delete', booking_id: id, actor: ADMIN_NAME, details: { name: b.name } });
+    await AUTH.fetchJson('/.netlify/functions/residence-api', {
+      app: AUTH_APP,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', ids }),
+    });
     showToast('Eliminata', 'success');
     await loadAll(); render();
   } catch (e) { showToast('Errore: ' + e.message, 'error'); } finally { showLoading(false); }
@@ -811,7 +817,9 @@ async function saveEdit() {
     pax: parseInt(document.getElementById('m-pax').value),
     status: document.getElementById('m-status').value,
     apartment_id: document.getElementById('m-apt').value,
-    notes: buildNotesWithPayment(document.getElementById('m-notes').value, depositAmount, balanceDueAtCheckin)
+    notes: buildNotesWithPayment(document.getElementById('m-notes').value, depositAmount, balanceDueAtCheckin),
+    deposit_amount: depositAmount,
+    balance_due_at_checkin: balanceDueAtCheckin,
   };
   if (data.status === 'confirmed') {
     data.approved_at = new Date().toISOString();
@@ -819,13 +827,28 @@ async function saveEdit() {
   }
   showLoading(true);
   try {
-    const payload = editingBookingId ? data : { ...data, source: 'system' };
-    const query = editingBookingId
-      ? sb.from('rm_bookings').update(payload).eq('id', editingBookingId)
-      : sb.from('rm_bookings').insert(payload);
-    const { error } = await query;
-    if (error) throw error;
-    await sb.from('rm_audit').insert({ action: editingBookingId ? 'modify' : 'create', booking_id: editingBookingId, actor: ADMIN_NAME, details: payload });
+    if (editingBookingId) {
+      await AUTH.fetchJson('/.netlify/functions/residence-api', {
+        app: AUTH_APP,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update',
+          id: editingBookingId,
+          booking: data,
+        }),
+      });
+    } else {
+      await AUTH.fetchJson('/.netlify/functions/residence-api', {
+        app: AUTH_APP,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create',
+          booking: { ...data, source: 'system' },
+        }),
+      });
+    }
     showToast(editingBookingId ? 'Salvato' : 'Creata', 'success');
     closeModal();
     await loadAll(); render();

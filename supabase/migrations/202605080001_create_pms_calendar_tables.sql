@@ -10,7 +10,7 @@
 
 create extension if not exists pgcrypto;
 
-create table public.apartment_units (
+create table if not exists public.apartment_units (
   id uuid primary key default gen_random_uuid(),
   apartment_id uuid not null references public.apartments(id) on delete restrict,
   unit_label text not null,
@@ -25,18 +25,18 @@ create table public.apartment_units (
   unique (apartment_id, unit_label)
 );
 
-create index idx_apartment_units_apartment_id
+create index if not exists idx_apartment_units_apartment_id
   on public.apartment_units (apartment_id);
 
-create index idx_apartment_units_beds24_room_unit
+create index if not exists idx_apartment_units_beds24_room_unit
   on public.apartment_units (beds24_room_id, beds24_unit_index)
   where beds24_room_id is not null;
 
-create index idx_apartment_units_active
+create index if not exists idx_apartment_units_active
   on public.apartment_units (active)
   where active = true;
 
-create table public.channel_property_mappings (
+create table if not exists public.channel_property_mappings (
   id uuid primary key default gen_random_uuid(),
   apartment_id uuid not null references public.apartments(id) on delete restrict,
   channel text not null,
@@ -52,10 +52,10 @@ create table public.channel_property_mappings (
   unique (channel, external_property_id, external_room_id)
 );
 
-create index idx_channel_property_mappings_apartment_id
+create index if not exists idx_channel_property_mappings_apartment_id
   on public.channel_property_mappings (apartment_id);
 
-create table public.bookings (
+create table if not exists public.bookings (
   id uuid primary key default gen_random_uuid(),
   beds24_booking_id text not null unique,
   beds24_property_id text not null,
@@ -85,25 +85,25 @@ create table public.bookings (
   check (check_out > check_in)
 );
 
-create index idx_bookings_apartment_unit_dates
+create index if not exists idx_bookings_apartment_unit_dates
   on public.bookings (apartment_unit_id, check_in, check_out);
 
-create index idx_bookings_apartment_dates
+create index if not exists idx_bookings_apartment_dates
   on public.bookings (apartment_id, check_in, check_out);
 
-create index idx_bookings_dates
+create index if not exists idx_bookings_dates
   on public.bookings (check_in, check_out);
 
-create index idx_bookings_status
+create index if not exists idx_bookings_status
   on public.bookings (status);
 
-create index idx_bookings_beds24_room_unit
+create index if not exists idx_bookings_beds24_room_unit
   on public.bookings (beds24_property_id, beds24_room_id, beds24_unit_id);
 
-create index idx_bookings_source_updated_at
+create index if not exists idx_bookings_source_updated_at
   on public.bookings (source_updated_at);
 
-create table public.sync_jobs (
+create table if not exists public.sync_jobs (
   id uuid primary key default gen_random_uuid(),
   scope text not null,
   trigger text not null,
@@ -121,13 +121,13 @@ create table public.sync_jobs (
   finished_at timestamptz
 );
 
-create index idx_sync_jobs_status_started_at
+create index if not exists idx_sync_jobs_status_started_at
   on public.sync_jobs (status, started_at desc);
 
-create index idx_sync_jobs_scope_started_at
+create index if not exists idx_sync_jobs_scope_started_at
   on public.sync_jobs (scope, started_at desc);
 
-create table public.sync_state (
+create table if not exists public.sync_state (
   apartment_id uuid not null references public.apartments(id) on delete restrict,
   scope text not null,
   last_full_sync_at timestamptz,

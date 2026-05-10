@@ -1,6 +1,7 @@
 const { createClient } = require('@supabase/supabase-js');
-const DEFAULT_SUPABASE_URL = 'https://tysxeikqbgebpfyblgeb.supabase.co';
+const { normalizeSupabaseUrl } = require('./_lib/shared-auth');
 
+const DEFAULT_SUPABASE_URL = 'https://tysxeikqbgebpfyblgeb.supabase.co';
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'Content-Type',
@@ -33,9 +34,8 @@ exports.handler = async (event) => {
     return respond(405, { error: 'Method not allowed' });
   }
 
-  const supabaseUrl = process.env.SUPABASE_URL || DEFAULT_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
+  const supabaseUrl = normalizeSupabaseUrl(process.env.SUPABASE_RUNTIME_URL || process.env.SUPABASE_URL, DEFAULT_SUPABASE_URL);
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
   if (!supabaseUrl || !serviceRoleKey) {
     return respond(500, { error: 'Configurazione Supabase mancante' });
   }
@@ -45,159 +45,82 @@ exports.handler = async (event) => {
   const aptKey = String(params.get('apt') || '').trim();
   const preferredLang = String(params.get('lang') || 'IT').trim().toUpperCase() || 'IT';
 
-  if (!token && !aptKey) {
-    return respond(400, { error: 'token oppure apt richiesto' });
+  if (!token) {
+    return respond(400, {
+      error: 'token richiesto',
+      meta: buildMeta({ tokenPresent: false, aptPresent: !!aptKey }),
+    });
   }
 
-  const supabase = createClient(
-    supabaseUrl,
-    serviceRoleKey
-  );
+  if (!UUID_RE.test(token)) {
+    return respond(404, {
+      error: 'Link non valido',
+      meta: buildMeta({ tokenPresent: true, aptPresent: !!aptKey }),
+    });
+  }
+
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   try {
-    if (token) {
-      if (!UUID_RE.test(token)) {
-        if (aptKey) {
-          const apartmentPayload = await loadApartmentFallbackPayload(supabase, aptKey, preferredLang);
-          if (apartmentPayload) {
-            return respond(200, {
-              guest: null,
-              apartment: apartmentPayload.apartment,
-              creds: apartmentPayload.creds,
-              info: apartmentPayload.info,
-              meta: {
-                token_present: true,
-                apt_present: !!aptKey,
-                guest_found: false,
-                apartment_found: true,
-                used_fallback_open: true,
-              },
-            });
-          }
-        }
-        return respond(404, {
-          error: 'Link non valido',
-          meta: {
-            token_present: true,
-            apt_present: !!aptKey,
-            guest_found: false,
-            apartment_found: false,
-            used_fallback_open: false,
-          },
-        });
-      }
-
-      const { data: guest, error } = await supabase
-        .from('ospiti_check_in')
-        .select(`
+    const { data: guest, error } = await supabase
+      .from('ospiti_check_in')
+      .select(`
+        id,
+        nome,
+        cognome,
+        lingua,
+        data_checkin,
+        data_checkout,
+        apartment_id,
+        stato,
+        apartments (
           id,
-          nome,
-          cognome,
-          lingua,
-          data_checkin,
-          data_checkout,
-          apartment_id,
-          stato,
-          apartments (
-            id,
-            nome_appartamento,
-            indirizzo_completo,
-            latitudine,
-            longitudine,
-            maps_url_override
-          )
-        `)
-        .eq('portale_token', token)
-        .neq('stato', 'SCARTATA')
-        .limit(1)
-        .maybeSingle();
+          nome_appartamento,
+          indirizzo_completo,
+          latitudine,
+          longitudine,
+          maps_url_override
+        )
+      `)
+      .eq('portale_token', token)
+      .neq('stato', 'SCARTATA')
+      .limit(1)
+      .maybeSingle();
 
-      if (error) {
-        return respond(500, { error: 'Errore lettura ospite', detail: error.message });
-      }
-      if (!guest?.apartment_id) {
-        const apartmentPayload = aptKey
-          ? await loadApartmentFallbackPayload(supabase, aptKey, preferredLang)
-          : null;
-        if (apartmentPayload) {
-          return respond(200, {
-            guest: null,
-            apartment: apartmentPayload.apartment,
-            creds: apartmentPayload.creds,
-            info: apartmentPayload.info,
-            meta: {
-              token_present: true,
-              apt_present: !!aptKey,
-              guest_found: false,
-              apartment_found: true,
-              used_fallback_open: true,
-            },
-          });
-        }
-        return respond(404, {
-          error: 'Link non valido',
-          meta: {
-            token_present: true,
-            apt_present: !!aptKey,
-            guest_found: false,
-            apartment_found: false,
-            used_fallback_open: false,
-          },
-        });
-      }
-
-      const lang = String(guest.lingua || preferredLang || 'IT').toUpperCase();
-      const portalData = await loadApartmentPortalData(supabase, guest.apartment_id, lang);
-      return respond(200, {
-        guest: {
-          id: guest.id,
-          nome: guest.nome,
-          cognome: guest.cognome,
-          lingua: guest.lingua,
-          data_checkin: guest.data_checkin,
-          data_checkout: guest.data_checkout,
-          apartment_id: guest.apartment_id,
-          stato: guest.stato,
-        },
-        apartment: guest.apartments || null,
-        creds: portalData.creds,
-        info: portalData.info,
-        meta: {
-          token_present: true,
-          apt_present: !!aptKey,
-          guest_found: true,
-          apartment_found: !!guest.apartments,
-          used_fallback_open: false,
-        },
-      });
+    if (error) {
+      return respond(500, { error: 'Errore lettura ospite', detail: error.message });
     }
 
-    const apartmentPayload = await loadApartmentFallbackPayload(supabase, aptKey, preferredLang);
-    if (!apartmentPayload) {
+    if (!guest?.apartment_id) {
       return respond(404, {
-        error: 'Appartamento non trovato',
-        meta: {
-          token_present: false,
-          apt_present: !!aptKey,
-          guest_found: false,
-          apartment_found: false,
-          used_fallback_open: false,
-        },
+        error: 'Link non valido',
+        meta: buildMeta({ tokenPresent: true, aptPresent: !!aptKey }),
       });
     }
+
+    const lang = String(guest.lingua || preferredLang || 'IT').toUpperCase();
+    const portalData = await loadApartmentPortalData(supabase, guest.apartment_id, lang);
 
     return respond(200, {
-      guest: null,
-      apartment: apartmentPayload.apartment,
-      creds: apartmentPayload.creds,
-      info: apartmentPayload.info,
-      meta: {
-        token_present: false,
-        apt_present: !!aptKey,
-        guest_found: false,
-        apartment_found: true,
-        used_fallback_open: true,
+      guest: {
+        id: guest.id,
+        nome: guest.nome,
+        cognome: guest.cognome,
+        lingua: guest.lingua,
+        data_checkin: guest.data_checkin,
+        data_checkout: guest.data_checkout,
+        apartment_id: guest.apartment_id,
+        stato: guest.stato,
       },
+      apartment: guest.apartments || null,
+      creds: portalData.creds,
+      info: portalData.info,
+      meta: buildMeta({
+        tokenPresent: true,
+        aptPresent: !!aptKey,
+        guestFound: true,
+        apartmentFound: !!guest.apartments,
+      }),
     });
   } catch (error) {
     console.error('[get-public-portal-data] error:', error);
@@ -226,52 +149,6 @@ async function loadApartmentPortalData(supabase, apartmentId, preferredLang) {
     creds: creds || null,
     info: info || null,
   };
-}
-
-async function loadApartmentFallbackPayload(supabase, aptKey, preferredLang) {
-  const apartment = await loadApartmentByPublicKey(supabase, aptKey);
-  if (!apartment?.id) return null;
-  const portalData = await loadApartmentPortalData(supabase, apartment.id, preferredLang);
-  return {
-    apartment,
-    creds: portalData.creds,
-    info: portalData.info,
-  };
-}
-
-async function loadApartmentByPublicKey(supabase, aptKey) {
-  const { data: apartmentByKey, error: keyError } = await supabase
-    .from('apartments')
-    .select('id, nome_appartamento, indirizzo_completo, latitudine, longitudine, maps_url_override, public_checkin_key, attivo')
-    .eq('public_checkin_key', aptKey)
-    .eq('attivo', true)
-    .limit(1)
-    .maybeSingle();
-
-  if (keyError) {
-    throw new Error(`Errore lettura appartamento: ${keyError.message}`);
-  }
-  if (apartmentByKey?.id) {
-    return apartmentByKey;
-  }
-
-  if (!UUID_RE.test(aptKey)) {
-    return null;
-  }
-
-  const { data: apartmentById, error: idError } = await supabase
-    .from('apartments')
-    .select('id, nome_appartamento, indirizzo_completo, latitudine, longitudine, maps_url_override, public_checkin_key, attivo')
-    .eq('id', aptKey)
-    .eq('attivo', true)
-    .limit(1)
-    .maybeSingle();
-
-  if (idError) {
-    throw new Error(`Errore lettura appartamento: ${idError.message}`);
-  }
-
-  return apartmentById || null;
 }
 
 async function loadApartmentInfoWithFallback(supabase, apartmentId, lang) {
@@ -311,6 +188,21 @@ function getMissingColumnName(message) {
 
   const schemaCacheMatch = normalized.match(/Could not find the '([a-z_]+)' column of 'apartment_info' in the schema cache/i);
   return schemaCacheMatch ? schemaCacheMatch[1] : '';
+}
+
+function buildMeta({
+  tokenPresent = false,
+  aptPresent = false,
+  guestFound = false,
+  apartmentFound = false,
+}) {
+  return {
+    token_present: tokenPresent,
+    apt_present: aptPresent,
+    guest_found: guestFound,
+    apartment_found: apartmentFound,
+    used_fallback_open: false,
+  };
 }
 
 function respond(statusCode, payload) {

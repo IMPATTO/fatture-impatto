@@ -18,6 +18,7 @@
 
 ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "authenticated_read_bookings" ON public.bookings;
 CREATE POLICY "authenticated_read_bookings"
   ON public.bookings
   FOR SELECT
@@ -26,6 +27,7 @@ CREATE POLICY "authenticated_read_bookings"
 
 ALTER TABLE public.apartment_units ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "authenticated_read_apartment_units" ON public.apartment_units;
 CREATE POLICY "authenticated_read_apartment_units"
   ON public.apartment_units
   FOR SELECT
@@ -34,6 +36,7 @@ CREATE POLICY "authenticated_read_apartment_units"
 
 ALTER TABLE public.channel_property_mappings ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "authenticated_read_channel_property_mappings" ON public.channel_property_mappings;
 CREATE POLICY "authenticated_read_channel_property_mappings"
   ON public.channel_property_mappings
   FOR SELECT
@@ -42,6 +45,7 @@ CREATE POLICY "authenticated_read_channel_property_mappings"
 
 ALTER TABLE public.sync_jobs ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "authenticated_read_sync_jobs" ON public.sync_jobs;
 CREATE POLICY "authenticated_read_sync_jobs"
   ON public.sync_jobs
   FOR SELECT
@@ -50,6 +54,7 @@ CREATE POLICY "authenticated_read_sync_jobs"
 
 ALTER TABLE public.sync_state ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "authenticated_read_sync_state" ON public.sync_state;
 CREATE POLICY "authenticated_read_sync_state"
   ON public.sync_state
   FOR SELECT
