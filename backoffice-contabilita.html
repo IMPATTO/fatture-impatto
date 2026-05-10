@@ -270,6 +270,37 @@
     .doc-item a { color:var(--accent); text-decoration:none; }
     .doc-item a:hover { text-decoration:underline; }
     .text-preview { white-space:pre-wrap; font-size:12px; line-height:1.55; color:var(--text2); background:var(--surf); border:1px solid var(--border); border-radius:8px; padding:12px 14px; max-height:220px; overflow:auto; }
+    .admin-shell { padding: 18px 24px 28px; }
+    .admin-page-title { font-family: var(--serif); font-size: 24px; font-weight: 500; margin-bottom: 4px; }
+    .admin-page-subtitle { font-size: 12px; color: var(--muted); font-family: var(--mono); margin-bottom: 18px; }
+    .card-section { background:var(--white); border:1px solid var(--border); border-radius:10px; padding:20px 24px; margin-bottom:16px; }
+    .card-section-title { font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:16px; padding-bottom:10px; border-bottom:1px solid var(--border); }
+    .field-hint { font-size:11px; color:var(--muted); margin-top:4px; }
+    .save-row { display:flex; align-items:center; gap:12px; margin-top:20px; padding-top:16px; border-top:1px solid var(--border); flex-wrap:wrap; }
+    .hint-box { background:var(--surf); border:1px solid var(--border); border-radius:8px; padding:12px 14px; font-size:12px; color:var(--text2); }
+    .empty-state { padding: 24px; }
+    .empty-card { background:var(--surf); border:1px dashed var(--border2); border-radius:10px; padding:24px; }
+    .empty-title { font-family:var(--serif); font-size:20px; margin-bottom:6px; }
+    .ops-dashboard { padding: 16px 24px 0; background: var(--bg); }
+    .ops-dashboard-head { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
+    .ops-dashboard-title { font-family: var(--serif); font-size: 28px; font-weight: 500; }
+    .ops-dashboard-copy { font-size: 13px; color: var(--text2); max-width: 760px; line-height: 1.5; }
+    .ops-grid { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:12px; }
+    .ops-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display:grid; gap:10px; min-height: 170px; }
+    .ops-card-wide { grid-column: 1 / -1; min-height: auto; }
+    .ops-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+    .ops-value { font-family: var(--serif); font-size: 34px; line-height: 1; }
+    .ops-meta { font-size: 13px; color: var(--text2); line-height: 1.45; min-height: 38px; }
+    .ops-actions { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:auto; }
+    .ops-chip { display:inline-flex; align-items:center; padding:4px 10px; border-radius:999px; background:var(--surf); border:1px solid var(--border); font-size:11px; color:var(--text2); font-family:var(--mono); }
+    .ops-list { display:grid; gap:10px; }
+    .ops-item { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:12px 14px; border:1px solid var(--border); border-radius:10px; background:var(--surf); }
+    .ops-item.clickable { cursor:pointer; transition:border-color .15s, background .15s, transform .15s; }
+    .ops-item.clickable:hover { border-color: var(--accent); background: var(--accent-l); }
+    .ops-item-main { min-width:0; }
+    .ops-item-title { font-weight:600; color:var(--text); }
+    .ops-item-sub { font-size:12px; color:var(--text2); margin-top:3px; line-height:1.45; }
+    .ops-item-side { flex-shrink:0; display:grid; justify-items:end; gap:6px; }
 
     @media (max-width: 768px) {
       .navbar {
@@ -351,6 +382,22 @@
       .field-3 {
         grid-template-columns: 1fr;
       }
+      .ops-dashboard {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+      .ops-grid {
+        grid-template-columns: 1fr;
+      }
+      .ops-card-wide {
+        grid-column: auto;
+      }
+      .ops-item {
+        display:grid;
+      }
+      .ops-item-side {
+        justify-items:start;
+      }
       .filters {
         gap: 8px;
       }
@@ -396,7 +443,9 @@
   <div class="navbar-menu" id="navbarMenu">
     <a href="/backoffice.html" class="navbar-link">Fatturazione</a>
     <a href="/backoffice-documenti.html" class="navbar-link">Documenti</a>
-    <a href="/backoffice-portale.html" class="navbar-link">Portale Admin</a>
+    <a href="/backoffice-portale.html" class="navbar-link">Portale</a>
+    <a href="/backoffice-richieste.html" class="navbar-link">Richieste</a>
+    <a href="/backoffice-operativita.html" class="navbar-link">Operativita</a>
     <a href="/backoffice-beds24-messaggi.html" class="navbar-link">Beds24 Messaggi</a>
     <a href="/backoffice-contabilita.html" class="navbar-link active">Contabilita</a>
   </div>
@@ -428,6 +477,8 @@ const BILL_UTILITY_TYPES = ['luce', 'acqua', 'gas', 'tari', 'internet', 'altro']
 const BILL_PAYMENT_STATUSES = ['non_pagata', 'pagata'];
 const BILL_ACCOUNTING_STATUSES = ['da_registrare', 'registrata'];
 const BILL_REVIEW_OPTIONS = ['da_revisionare', 'approvato', 'scartato'];
+const ADMIN_GENERAL_OPTION = '__generali__';
+const MANUAL_MOVEMENT_TYPES = ['entrata', 'uscita'];
 
 const S = {
   session: null, rows: [], apartments: [],
@@ -439,9 +490,25 @@ const S = {
   accountingSelected: null,
   accountingForm: {},
   accountingView: 'documenti',
+  manualEntry: null,
+  manualSaving: false,
+  adminSelectedApt: '',
+  showInactiveApartments: false,
+  adminDataAvailable: true,
+  adminDataError: '',
+  maintenanceDataAvailable: true,
+  maintenanceDataError: '',
+  ownerRows: [],
+  contractRows: [],
+  paymentRows: [],
+  maintenanceRows: [],
   accountingEnabled: true,
   accountingLoading: true,
   accountingSaving: false,
+  dashboardPaymentRows: [],
+  dashboardMaintenanceRows: [],
+  dashboardPaymentsAvailable: true,
+  dashboardMaintenanceAvailable: true,
   billsEnabled: true,
   billRows: [],
   billSelected: null,
@@ -472,6 +539,7 @@ const S = {
 function fmt(d) { if(!d)return'—'; return new Date(d).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'}); }
 function fmtTs(d) { if(!d)return'—'; return new Date(d).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
 function esc(s) { if(s==null)return''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function cleanVal(v) { return String(v || '').trim(); }
 function badgeCls(s){ return{CHECK_IN_COMPLETATO:'b-check',DA_VERIFICARE:'b-daverif',APPROVATA:'b-approv',BOZZA_CREATA:'b-bozza',CREDENZIALI_INVIATE:'b-cred',SCARTATA:'b-scart'}[s]||'b-daverif'; }
 function badgeLbl(s){ return{CHECK_IN_COMPLETATO:'Check-in',DA_VERIFICARE:'Da verificare',APPROVATA:'Approvata',BOZZA_CREATA:'Bozza creata',CREDENZIALI_INVIATE:'Cred. inviate',SCARTATA:'Scartata'}[s]||s; }
 function accountingBadgeCls(s){ return{DA_APPROVARE:'b-acc-da-approvare',DA_CORREGGERE:'b-acc-da-correggere',APPROVATO:'b-acc-approvato',SCARTATO:'b-acc-scartato'}[s]||'b-acc-da-approvare'; }
@@ -828,6 +896,86 @@ function formatAccountingCurrency(value, currency = 'EUR') {
   return new Intl.NumberFormat('it-IT', { style: 'currency', currency: currency || 'EUR' }).format(num);
 }
 
+function getDefaultManualEntry() {
+  return {
+    document_date: new Date().toISOString().slice(0, 10),
+    description: '',
+    total_amount: '',
+    movement_type: 'uscita',
+    payment_method: 'contanti',
+    apartment_choice: '',
+    category: '',
+    subcategory: '',
+    counterparty: '',
+    notes: '',
+    approval_status: 'da_revisionare',
+  };
+}
+
+function toIsoDateOnly(value) {
+  const raw = cleanVal(value);
+  if (!raw) return '';
+  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? '' : parsed.toISOString().slice(0, 10);
+}
+
+function addDaysIso(isoDate, days) {
+  if (!isoDate) return '';
+  const base = new Date(`${isoDate}T00:00:00`);
+  if (Number.isNaN(base.getTime())) return '';
+  base.setDate(base.getDate() + Number(days || 0));
+  return base.toISOString().slice(0, 10);
+}
+
+function nullableDateInput(value) {
+  const normalized = toIsoDateOnly(value);
+  return normalized || null;
+}
+
+function nullableText(value) {
+  const cleaned = cleanVal(value);
+  return cleaned || null;
+}
+
+async function loadDashboardAdminRows() {
+  try {
+    const [paymentsRes, maintenanceRes] = await Promise.all([
+      sb.from('apartment_owner_payments')
+        .select('id,apartment_id,status,payment_date,amount,needs_accounting,accounting_sync_status,contabilita_documento_id,created_at,updated_at')
+        .order('payment_date', { ascending: false, nullsFirst: false })
+        .order('created_at', { ascending: false }),
+      sb.from('apartment_maintenance_tasks')
+        .select('id,apartment_id,title,status,priority,due_date,completed_at,created_at,updated_at')
+        .order('status', { ascending: true })
+        .order('due_date', { ascending: true, nullsFirst: false })
+        .order('created_at', { ascending: false }),
+    ]);
+    if (paymentsRes.error) {
+      S.dashboardPaymentsAvailable = false;
+      S.dashboardPaymentRows = [];
+      console.warn('dashboard payments load error:', paymentsRes.error);
+    } else {
+      S.dashboardPaymentsAvailable = true;
+      S.dashboardPaymentRows = paymentsRes.data || [];
+    }
+    if (maintenanceRes.error) {
+      S.dashboardMaintenanceAvailable = false;
+      S.dashboardMaintenanceRows = [];
+      console.warn('dashboard maintenance load error:', maintenanceRes.error);
+    } else {
+      S.dashboardMaintenanceAvailable = true;
+      S.dashboardMaintenanceRows = maintenanceRes.data || [];
+    }
+  } catch (err) {
+    S.dashboardPaymentsAvailable = false;
+    S.dashboardMaintenanceAvailable = false;
+    S.dashboardPaymentRows = [];
+    S.dashboardMaintenanceRows = [];
+    console.warn('dashboard admin rows load failed:', err);
+  }
+}
+
 function isAllowedAccountingEmail(email) {
   return ACCOUNTING_ALLOWED_EMAILS.includes(String(email || '').trim().toLowerCase());
 }
@@ -958,6 +1106,16 @@ function stats() {
         reimbursed: S.billRows.filter(r => r.doc.approval_status === 'scartato').length,
       };
     }
+    if (S.accountingView === 'appartamenti') {
+      return {
+        tot: getVisibleAdminApartments().length,
+        review: S.ownerRows.length,
+        approved: S.contractRows.length,
+        discarded: S.paymentRows.length,
+        cashDone: S.maintenanceRows.filter(r => r.status !== 'fatto' && r.status !== 'annullato').length,
+        cashTodo: S.paymentRows.filter(r => r.needs_accounting && !r.contabilita_documento_id).length,
+      };
+    }
     return {
       tot: S.accountingRows.length,
       review: S.accountingRows.filter(r => r.approval_status === 'da_revisionare').length,
@@ -974,6 +1132,187 @@ function stats() {
     segn:  rows.filter(r=>r.segnalazione_jessica).length,
     oggi:  rows.filter(r=>r.stato==='APPROVATA'&&(r.updated_at||r.created_at||'').slice(0,10)===today).length,
   };
+}
+
+function getDashboardMetrics() {
+  const today = new Date().toISOString().slice(0, 10);
+  const nextWeek = addDaysIso(today, 7);
+  const overdueBillRows = S.billRows.filter(row => {
+    const dueDate = toIsoDateOnly(row.due_date || row.doc?.due_date);
+    return !!dueDate && dueDate < today && row.payment_status !== 'pagata' && row.doc?.approval_status !== 'scartato';
+  });
+  const dueSoonBillRows = S.billRows.filter(row => {
+    const dueDate = toIsoDateOnly(row.due_date || row.doc?.due_date);
+    return !!dueDate && dueDate >= today && dueDate <= nextWeek && row.payment_status !== 'pagata' && row.doc?.approval_status !== 'scartato';
+  });
+  const ownerPaymentsTodo = S.dashboardPaymentsAvailable
+    ? S.dashboardPaymentRows.filter(row => {
+        const status = cleanVal(row.status).toLowerCase();
+        const syncStatus = cleanVal(row.accounting_sync_status).toLowerCase();
+        return status !== 'pagato' || !!row.needs_accounting || syncStatus === 'da_contabilizzare' || syncStatus === 'errore_sync';
+      }).length
+    : null;
+  const openMaintenance = S.dashboardMaintenanceAvailable
+    ? S.dashboardMaintenanceRows.filter(row => {
+        const status = cleanVal(row.status).toLowerCase();
+        return status !== 'fatto' && status !== 'annullato';
+      }).length
+    : null;
+  const untaggedExpenses = S.accountingEnabled
+    ? S.accountingRows.filter(row => !cleanVal(row.apartment_id) && !cleanVal(row.category) && !row.contabilita_bolletta?.is_general && row.approval_status !== 'scartato').length
+    : null;
+  const latestDocuments = [...S.accountingRows]
+    .sort((a, b) => new Date(b.received_at || b.created_at || 0).getTime() - new Date(a.received_at || a.created_at || 0).getTime())
+    .slice(0, 6);
+  const overdueAmount = overdueBillRows.reduce((sum, row) => {
+    const value = Number(row.amount_total);
+    return Number.isFinite(value) ? sum + value : sum;
+  }, 0);
+  return {
+    reviewDocs: S.accountingRows.filter(row => row.approval_status === 'da_revisionare').length,
+    overdueBillsCount: overdueBillRows.length,
+    overdueBillsAmount: overdueAmount,
+    dueSoonBillsCount: dueSoonBillRows.length,
+    ownerPaymentsTodo,
+    openMaintenance,
+    untaggedExpenses,
+    latestDocuments,
+  };
+}
+
+function renderDashboardLatestDocs(items) {
+  if (!items.length) {
+    return `<div class="ops-item"><div class="ops-item-main"><div class="ops-item-title">Nessun documento caricato</div><div class="ops-item-sub">Quando arrivano nuovi documenti, li trovi qui in ordine di ricezione.</div></div></div>`;
+  }
+  return items.map(row => {
+    const title = row.counterparty || row.source_email || 'Documento contabile';
+    const subtitle = [row.source_subject || row.description || 'Senza oggetto', row.nome_appartamento || (row.apartment_id ? 'Appartamento collegato' : 'Senza appartamento')].filter(Boolean).join(' · ');
+    return `
+      <div class="ops-item clickable" data-dashboard-open-doc="${esc(row.id)}">
+        <div class="ops-item-main">
+          <div class="ops-item-title">${esc(title)}</div>
+          <div class="ops-item-sub">${esc(subtitle)}</div>
+        </div>
+        <div class="ops-item-side">
+          <span class="badge ${approvalBadgeCls(row.approval_status)}">${esc(approvalBadgeLbl(row.approval_status))}</span>
+          <span class="mono-sm">${esc(fmtTs(row.received_at || row.created_at))}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderOperationalDashboard() {
+  const data = getDashboardMetrics();
+  return `
+    <section class="ops-dashboard">
+      <div class="ops-dashboard-head">
+        <div>
+          <div class="ops-dashboard-title">Dashboard operativa</div>
+          <div class="ops-dashboard-copy">Vista pratica di quello che richiede attenzione oggi. I blocchi aprono la sezione piu utile senza introdurre nuove tabelle o nuova architettura contabile.</div>
+        </div>
+      </div>
+      <div class="ops-grid">
+        <div class="ops-card">
+          <div class="ops-label">Documenti da revisionare</div>
+          <div class="ops-value" id="opsDocsCount">${esc(String(data.reviewDocs))}</div>
+          <div class="ops-meta" id="opsDocsMeta">Documenti in attesa di controllo manuale prima dell'approvazione.</div>
+          <div class="ops-actions"><span class="ops-chip">contabilita_documenti</span><button class="btn btn-ghost" data-dashboard-go="documenti">Apri</button></div>
+        </div>
+        <div class="ops-card">
+          <div class="ops-label">Bollette scadute</div>
+          <div class="ops-value" id="opsBillsOverdueCount">${esc(String(data.overdueBillsCount))}</div>
+          <div class="ops-meta" id="opsBillsOverdueMeta">${data.overdueBillsCount ? `Importo aperto ${esc(formatAccountingCurrency(data.overdueBillsAmount))}` : 'Nessuna bolletta scaduta non pagata.'}</div>
+          <div class="ops-actions"><span class="ops-chip">contabilita_bollette</span><button class="btn btn-ghost" data-dashboard-go="bollette">Apri</button></div>
+        </div>
+        <div class="ops-card">
+          <div class="ops-label">Bollette in scadenza</div>
+          <div class="ops-value" id="opsBillsSoonCount">${esc(String(data.dueSoonBillsCount))}</div>
+          <div class="ops-meta" id="opsBillsSoonMeta">Scadenza entro i prossimi 7 giorni.</div>
+          <div class="ops-actions"><span class="ops-chip">prossimi 7 giorni</span><button class="btn btn-ghost" data-dashboard-go="bollette">Apri</button></div>
+        </div>
+        <div class="ops-card">
+          <div class="ops-label">Pagamenti proprietari da gestire</div>
+          <div class="ops-value" id="opsOwnerPaymentsCount">${data.ownerPaymentsTodo == null ? '—' : esc(String(data.ownerPaymentsTodo))}</div>
+          <div class="ops-meta" id="opsOwnerPaymentsMeta">${data.ownerPaymentsTodo == null ? 'Non disponibile con il database attuale.' : 'Pagamenti non chiusi o ancora da contabilizzare.'}</div>
+          <div class="ops-actions"><span class="ops-chip">apartment_owner_payments</span><button class="btn btn-ghost" data-dashboard-go="appartamenti">Apri</button></div>
+        </div>
+        <div class="ops-card">
+          <div class="ops-label">Manutenzioni aperte</div>
+          <div class="ops-value" id="opsMaintenanceCount">${data.openMaintenance == null ? '—' : esc(String(data.openMaintenance))}</div>
+          <div class="ops-meta" id="opsMaintenanceMeta">${data.openMaintenance == null ? 'Non disponibile con il database attuale.' : 'Task non marcati come fatti o annullati.'}</div>
+          <div class="ops-actions"><span class="ops-chip">apartment_maintenance_tasks</span><button class="btn btn-ghost" data-dashboard-go="appartamenti">Apri</button></div>
+        </div>
+        <div class="ops-card">
+          <div class="ops-label">Spese non taggate</div>
+          <div class="ops-value" id="opsUntaggedCount">${data.untaggedExpenses == null ? '—' : esc(String(data.untaggedExpenses))}</div>
+          <div class="ops-meta" id="opsUntaggedMeta">${data.untaggedExpenses == null ? 'Non disponibile: manca il dataset documenti.' : 'Documenti senza appartamento, senza categoria e non marcati come spesa generale.'}</div>
+          <div class="ops-actions"><span class="ops-chip">verifica manuale</span><button class="btn btn-ghost" data-dashboard-go="documenti">Apri</button></div>
+        </div>
+        <div class="ops-card ops-card-wide">
+          <div class="ops-actions" style="margin-top:0">
+            <div>
+              <div class="ops-label">Ultimi documenti arrivati</div>
+              <div class="ops-meta">Ultimi record ricevuti in contabilita_documenti.</div>
+            </div>
+            <button class="btn btn-ghost" data-dashboard-go="documenti">Apri documenti</button>
+          </div>
+          <div class="ops-list" id="opsLatestDocs">${renderDashboardLatestDocs(data.latestDocuments)}</div>
+        </div>
+      </div>
+    </section>`;
+}
+
+async function openDashboardView(target) {
+  if (target === 'bollette') {
+    S.accountingView = 'bollette';
+    S.accountingSelected = null;
+    S.accountingForm = {};
+    renderDashboard();
+    document.getElementById('tablePanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  if (target === 'appartamenti') {
+    S.accountingView = 'appartamenti';
+    S.accountingSelected = null;
+    S.accountingForm = {};
+    S.billSelected = null;
+    S.billForm = {};
+    S.adminSelectedApt = getPreferredAdminApartmentId(S.adminSelectedApt);
+    await loadApartmentAdminData(S.adminSelectedApt);
+    renderDashboard();
+    document.getElementById('tablePanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  S.accountingView = 'documenti';
+  S.billSelected = null;
+  S.billForm = {};
+  renderDashboard();
+  document.getElementById('tablePanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function openDashboardDocument(docId) {
+  const row = S.accountingRows.find(item => String(item.id) === String(docId));
+  if (!row) {
+    toast('Documento non trovato', 'err');
+    return;
+  }
+  S.accountingView = 'documenti';
+  S.billSelected = null;
+  S.billForm = {};
+  selectAccountingRow(row);
+  renderDashboard();
+  partialDrawer();
+  highlightSelected();
+  document.getElementById('drawer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function bindOperationalDashboard() {
+  document.querySelectorAll('[data-dashboard-go]').forEach(btn => {
+    btn.addEventListener('click', async () => { await openDashboardView(btn.dataset.dashboardGo); });
+  });
+  document.querySelectorAll('[data-dashboard-open-doc]').forEach(item => {
+    item.addEventListener('click', () => { openDashboardDocument(item.dataset.dashboardOpenDoc); });
+  });
 }
 
 async function restoreSelected() {
@@ -1043,9 +1382,10 @@ async function loadData() {
   try {
     const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('Timeout')), 120000));
     const query = Promise.all([
-      sb.from('apartments').select('id,nome_appartamento').order('nome_appartamento'),
+      sb.from('apartments').select('id,nome_appartamento,struttura_nome,attivo').order('struttura_nome', { ascending: true, nullsFirst: false }).order('nome_appartamento'),
       sb.from('contabilita_documenti').select('*, apartments(nome_appartamento,struttura_nome), contabilita_bollette(*)').order('created_at',{ascending:false}),
       sb.from('contabilita_bollette').select('*, contabilita_documenti(*), apartments(nome_appartamento,struttura_nome), contabilita_bollette_allocazioni(apartment_id, apartments(nome_appartamento,struttura_nome))').order('created_at',{ascending:false}),
+      loadDashboardAdminRows(),
     ]);
     const [a,c,b] = await Promise.race([query, timeout]);
     S.apartments = a.data||[];
@@ -1139,8 +1479,9 @@ async function saveAccountingForm() {
   const reviewedJson = {
     total_amount: numberVal(S.accountingForm.total_amount),
     document_kind: S.accountingForm.document_kind || null,
-    document_date: S.accountingForm.document_date || null,
-    competence_date: S.accountingForm.competence_date || null,
+    document_date: nullableDateInput(S.accountingForm.document_date),
+    due_date: nullableDateInput(S.accountingForm.due_date),
+    competence_date: nullableDateInput(S.accountingForm.competence_date),
     counterparty: S.accountingForm.counterparty || null,
     payment_method: S.accountingForm.payment_method || null,
     fiscal_status: S.accountingForm.fiscal_status || null,
@@ -1148,15 +1489,20 @@ async function saveAccountingForm() {
     category: S.accountingForm.category || null,
     subcategory: S.accountingForm.subcategory || null,
     apartment_id: S.accountingForm.apartment_id || null,
+    property_id: nullableText(S.accountingForm.property_id),
+    residence_id: nullableText(S.accountingForm.residence_id),
     notes: S.accountingForm.notes || null,
   };
   const payload = {
     ...S.accountingForm,
     apartment_id: S.accountingForm.apartment_id || null,
+    property_id: nullableText(S.accountingForm.property_id),
+    residence_id: nullableText(S.accountingForm.residence_id),
     total_amount: numberVal(S.accountingForm.total_amount),
     document_kind: S.accountingForm.document_kind || null,
-    document_date: S.accountingForm.document_date || null,
-    competence_date: S.accountingForm.competence_date || null,
+    document_date: nullableDateInput(S.accountingForm.document_date),
+    due_date: nullableDateInput(S.accountingForm.due_date),
+    competence_date: nullableDateInput(S.accountingForm.competence_date),
     counterparty: S.accountingForm.counterparty || null,
     notes: S.accountingForm.notes || null,
     reviewed_json: reviewedJson,
@@ -1192,8 +1538,9 @@ async function setAccountingStatus(stato) {
   const reviewedJson = {
     total_amount: numberVal(S.accountingForm.total_amount),
     document_kind: S.accountingForm.document_kind || null,
-    document_date: S.accountingForm.document_date || null,
-    competence_date: S.accountingForm.competence_date || null,
+    document_date: nullableDateInput(S.accountingForm.document_date),
+    due_date: nullableDateInput(S.accountingForm.due_date),
+    competence_date: nullableDateInput(S.accountingForm.competence_date),
     counterparty: S.accountingForm.counterparty || null,
     payment_method: S.accountingForm.payment_method || null,
     fiscal_status: S.accountingForm.fiscal_status || null,
@@ -1201,6 +1548,8 @@ async function setAccountingStatus(stato) {
     category: S.accountingForm.category || null,
     subcategory: S.accountingForm.subcategory || null,
     apartment_id: S.accountingForm.apartment_id || null,
+    property_id: nullableText(S.accountingForm.property_id),
+    residence_id: nullableText(S.accountingForm.residence_id),
     notes: S.accountingForm.notes || null,
   };
   const payload = {
@@ -1213,10 +1562,13 @@ async function setAccountingStatus(stato) {
       scartato: 'SCARTATO',
     })[stato] || 'DA_APPROVARE',
     apartment_id: S.accountingForm.apartment_id || null,
+    property_id: nullableText(S.accountingForm.property_id),
+    residence_id: nullableText(S.accountingForm.residence_id),
     total_amount: numberVal(S.accountingForm.total_amount),
     document_kind: S.accountingForm.document_kind || null,
-    document_date: S.accountingForm.document_date || null,
-    competence_date: S.accountingForm.competence_date || null,
+    document_date: nullableDateInput(S.accountingForm.document_date),
+    due_date: nullableDateInput(S.accountingForm.due_date),
+    competence_date: nullableDateInput(S.accountingForm.competence_date),
     counterparty: S.accountingForm.counterparty || null,
     notes: S.accountingForm.notes || null,
     reviewed_json: reviewedJson,
@@ -1233,6 +1585,33 @@ async function setAccountingStatus(stato) {
   if (i >= 0) S.accountingRows[i] = { ...S.accountingRows[i], ...payload, nome_appartamento: S.apartments.find(a => String(a.id) === String(payload.apartment_id))?.nome_appartamento || '' };
   S.accountingSelected = S.accountingRows[i] || S.accountingSelected;
   toast(stato === 'approvato' ? '✓ Documento approvato' : stato === 'scartato' ? '✗ Documento scartato' : '⚑ Documento corretto', stato === 'scartato' ? 'err' : stato === 'approvato' ? 'ok' : 'info');
+  partialTable(); partialStats(); partialDrawer();
+}
+
+async function deleteDiscardedAccountingDocument() {
+  if (!S.accountingSelected) return;
+  const row = S.accountingSelected;
+  if (row.approval_status !== 'scartato' && S.accountingForm?.approval_status !== 'scartato') {
+    toast('Puoi eliminare solo documenti già scartati', 'err');
+    return;
+  }
+  const label = row.counterparty || row.source_email || row.file_name || 'questo documento';
+  if (!confirm(`Confermi l'eliminazione definitiva di ${label}?\n\nQuesta azione non è reversibile.`)) return;
+  S.accountingSaving = true;
+  updateFooter();
+  const { error } = await sb.from('contabilita_documenti').delete().eq('id', row.id);
+  S.accountingSaving = false;
+  if (error) {
+    toast('Errore: ' + error.message, 'err');
+    updateFooter();
+    return;
+  }
+  await audit('DELETE', 'contabilita_documenti', row.id);
+  S.accountingRows = S.accountingRows.filter(item => String(item.id) !== String(row.id));
+  S.billRows = S.billRows.filter(item => String(item.contabilita_documento_id) !== String(row.id));
+  S.accountingSelected = null;
+  S.accountingForm = {};
+  toast('✓ Documento scartato eliminato', 'ok');
   partialTable(); partialStats(); partialDrawer();
 }
 
@@ -1483,6 +1862,1100 @@ async function creaFattura() {
   }
 }
 
+function getSelectedAdminApartment() {
+  return S.apartments.find(row => String(row.id) === String(S.adminSelectedApt)) || null;
+}
+
+function getVisibleAdminApartments() {
+  return S.apartments.filter(item => S.showInactiveApartments || item.attivo !== false);
+}
+
+function getPreferredAdminApartmentId(preferredId = '') {
+  if (preferredId === ADMIN_GENERAL_OPTION) return ADMIN_GENERAL_OPTION;
+  const normalizedPreferred = String(preferredId || '').trim();
+  if (normalizedPreferred && S.apartments.some(item => String(item.id) === normalizedPreferred)) return normalizedPreferred;
+  const normalizedCurrent = String(S.adminSelectedApt || '').trim();
+  if (normalizedCurrent && S.apartments.some(item => String(item.id) === normalizedCurrent)) return normalizedCurrent;
+  const firstVisible = getVisibleAdminApartments()[0];
+  return firstVisible ? String(firstVisible.id) : '';
+}
+
+function addOwnerRow() {
+  S.ownerRows.push({ link_id:'', owner_id:'', nome_visualizzato:'', nome:'', cognome:'', email:'', telefono:'', codice_fiscale:'', iban:'', ruolo:'proprietario', quota_percentuale:'', is_primary:false, note:'' });
+}
+
+function addContractRow() {
+  S.contractRows.push({
+    id:'', owner_id:'', titolo:'Contratto gestione', contract_type:'gestione', status:'bozza', decorrenza:'', scadenza:'', rinnovo_automatico:false,
+    canone_fisso:'', percentuale_gestione:'', deposito_cauzionale:'', documento_url:'', note:'',
+    registration_document_url:'', registration_payment_date:'', registration_paid_amount:'', registration_payment_method:'bonifico',
+    registration_note:'', registration_needs_accounting:false, registration_contabilita_documento_id:'', registration_accounting_sync_status:'solo_gestionale', registration_accounting_sync_error:''
+  });
+}
+
+function addPaymentRow() {
+  S.paymentRows.push(buildAdminPaymentRowDraft({ id:'', owner_id:'', contract_id:'', payment_date:'', competence_month:'', amount:'', payment_type:'bonifico_proprietario', status:'da_pagare', reference:'', document_url:'', note:'' }));
+}
+
+function buildAdminPaymentRowDraft(row = {}) {
+  const draft = {
+    id: row.id || '',
+    owner_id: row.owner_id || '',
+    contract_id: row.contract_id || '',
+    payment_date: row.payment_date || '',
+    competence_month: row.competence_month || '',
+    amount: row.amount ?? '',
+    payment_type: row.payment_type || 'bonifico_proprietario',
+    status: row.status || 'da_pagare',
+    reference: row.reference || '',
+    document_url: row.document_url || '',
+    note: row.note || '',
+    needs_accounting: row.needs_accounting === true,
+    accounting_sync_status: row.accounting_sync_status || 'solo_gestionale',
+    accounting_payment_method: row.accounting_payment_method || '',
+    accounting_fiscal_status: row.accounting_fiscal_status || '',
+    contabilita_documento_id: row.contabilita_documento_id || '',
+    accounting_sync_error: row.accounting_sync_error || '',
+  };
+  return applyAdminPaymentTypeDefaults(draft, { preserveManualChoices: true });
+}
+
+function applyAdminPaymentTypeDefaults(row, options = {}) {
+  const preserveManualChoices = options.preserveManualChoices !== false;
+  const next = { ...row };
+  if (next.payment_type === 'contante_da_fatturare') {
+    next.needs_accounting = true;
+    next.accounting_payment_method = 'contanti';
+    next.accounting_fiscal_status = 'da_fatturare';
+    if (!next.contabilita_documento_id) next.accounting_sync_status = 'da_contabilizzare';
+    return next;
+  }
+  if (next.payment_type === 'contante') {
+    if (!preserveManualChoices || !next.accounting_payment_method) next.accounting_payment_method = 'contanti';
+    if (!preserveManualChoices || !next.accounting_fiscal_status) next.accounting_fiscal_status = 'non_soggetto';
+    if (!next.needs_accounting && !next.contabilita_documento_id) next.accounting_sync_status = 'solo_gestionale';
+    return next;
+  }
+  if (next.payment_type === 'bonifico_proprietario') {
+    if (!preserveManualChoices || !next.accounting_payment_method) next.accounting_payment_method = 'bonifico';
+    if (!next.needs_accounting && !next.contabilita_documento_id) next.accounting_sync_status = 'solo_gestionale';
+  }
+  if (!next.needs_accounting && !next.contabilita_documento_id) next.accounting_sync_status = 'solo_gestionale';
+  return next;
+}
+
+function accountingSyncLabel(value) {
+  return {
+    solo_gestionale:'Solo gestionale',
+    da_contabilizzare:'Da contabilizzare',
+    contabilizzato:'Contabilizzato',
+    fatturato:'Fatturato',
+    errore_sync:'Errore sync',
+  }[value] || '—';
+}
+
+function ownerPaymentTypeLabel(value) {
+  return {
+    bonifico_proprietario:'Bonifico proprietario',
+    contante:'Contante',
+    contante_da_fatturare:'Contante da fatturare',
+    rimborso_spese:'Rimborso spese',
+    canone:'Canone',
+    anticipo:'Anticipo',
+    altro:'Altro',
+  }[value] || value || '—';
+}
+
+function normalizeMaintenanceErrorMessage(message) {
+  const raw = cleanVal(message);
+  if (!raw) return 'La sezione manutenzioni non e ancora attiva su questo database.';
+  const lower = raw.toLowerCase();
+  if (lower.includes('apartment_maintenance_tasks') || lower.includes('schema cache') || lower.includes('could not find the table')) {
+    return 'La sezione manutenzioni non e ancora attiva su questo database. Applica prima la migration dedicata e poi ricarica la pagina.';
+  }
+  return `La sezione manutenzioni non e disponibile al momento. ${raw}`;
+}
+
+function addMaintenanceRow() {
+  S.maintenanceRows.push({
+    id: '',
+    title: '',
+    description: '',
+    status: 'da_fare',
+    priority: 'media',
+    assigned_to: '',
+    due_date: '',
+    completed_at: '',
+  });
+}
+
+async function loadApartmentAdminData(aptId) {
+  if (!aptId || aptId === ADMIN_GENERAL_OPTION) {
+    S.adminDataAvailable = true;
+    S.adminDataError = '';
+    S.maintenanceDataAvailable = true;
+    S.maintenanceDataError = '';
+    S.ownerRows = [];
+    S.contractRows = [];
+    S.paymentRows = [];
+    S.maintenanceRows = [];
+    return;
+  }
+  const [ownersRes, contractsRes, paymentsRes, maintenanceRes] = await Promise.all([
+    sb.from('apartment_owner_links')
+      .select('id,owner_id,ruolo,quota_percentuale,is_primary,sort_order,note,owners(id,nome_visualizzato,nome,cognome,email,telefono,codice_fiscale,iban,note,attivo)')
+      .eq('apartment_id', aptId)
+      .order('sort_order', { ascending: true }),
+    sb.from('apartment_contracts')
+      .select('*')
+      .eq('apartment_id', aptId)
+      .order('decorrenza', { ascending: false, nullsFirst: false }),
+    sb.from('apartment_owner_payments')
+      .select('*')
+      .eq('apartment_id', aptId)
+      .order('payment_date', { ascending: false, nullsFirst: false })
+      .order('created_at', { ascending: false }),
+    sb.from('apartment_maintenance_tasks')
+      .select('*')
+      .eq('apartment_id', aptId)
+      .order('status', { ascending: true })
+      .order('priority', { ascending: false, nullsFirst: false })
+      .order('due_date', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: false }),
+  ]);
+  const firstError = ownersRes.error || contractsRes.error || paymentsRes.error;
+  if (firstError) {
+    S.adminDataAvailable = false;
+    S.adminDataError = firstError.message || 'Tabelle amministrative non disponibili';
+    S.ownerRows = [];
+    S.contractRows = [];
+    S.paymentRows = [];
+    return;
+  }
+  S.adminDataAvailable = true;
+  S.adminDataError = '';
+  S.ownerRows = (ownersRes.data || []).map(row => ({
+    link_id: row.id || '',
+    owner_id: row.owner_id || '',
+    nome_visualizzato: row.owners?.nome_visualizzato || '',
+    nome: row.owners?.nome || '',
+    cognome: row.owners?.cognome || '',
+    email: row.owners?.email || '',
+    telefono: row.owners?.telefono || '',
+    codice_fiscale: row.owners?.codice_fiscale || '',
+    iban: row.owners?.iban || '',
+    ruolo: row.ruolo || 'proprietario',
+    quota_percentuale: row.quota_percentuale ?? '',
+    is_primary: !!row.is_primary,
+    note: row.note || row.owners?.note || '',
+  }));
+  S.contractRows = (contractsRes.data || []).map(row => ({
+    id: row.id || '',
+    owner_id: row.owner_id || '',
+    titolo: row.titolo || '',
+    contract_type: row.contract_type || 'gestione',
+    status: row.status || 'bozza',
+    decorrenza: row.decorrenza || '',
+    scadenza: row.scadenza || '',
+    rinnovo_automatico: !!row.rinnovo_automatico,
+    canone_fisso: row.canone_fisso ?? '',
+    percentuale_gestione: row.percentuale_gestione ?? '',
+    deposito_cauzionale: row.deposito_cauzionale ?? '',
+    documento_url: row.documento_url || '',
+    note: row.note || '',
+    registration_document_url: row.registration_document_url || '',
+    registration_payment_date: row.registration_payment_date || '',
+    registration_paid_amount: row.registration_paid_amount ?? '',
+    registration_payment_method: row.registration_payment_method || 'bonifico',
+    registration_note: row.registration_note || '',
+    registration_needs_accounting: row.registration_needs_accounting === true,
+    registration_contabilita_documento_id: row.registration_contabilita_documento_id || '',
+    registration_accounting_sync_status: row.registration_accounting_sync_status || 'solo_gestionale',
+    registration_accounting_sync_error: row.registration_accounting_sync_error || '',
+  }));
+  S.paymentRows = (paymentsRes.data || []).map(row => buildAdminPaymentRowDraft(row));
+  if (maintenanceRes.error) {
+    S.maintenanceDataAvailable = false;
+    S.maintenanceDataError = normalizeMaintenanceErrorMessage(maintenanceRes.error.message);
+    S.maintenanceRows = [];
+  } else {
+    S.maintenanceDataAvailable = true;
+    S.maintenanceDataError = '';
+    S.maintenanceRows = (maintenanceRes.data || []).map(row => ({
+      id: row.id || '',
+      title: row.title || '',
+      description: row.description || '',
+      status: row.status || 'da_fare',
+      priority: row.priority || 'media',
+      assigned_to: row.assigned_to || '',
+      due_date: row.due_date || '',
+      completed_at: row.completed_at || '',
+    }));
+  }
+}
+
+async function saveApartmentOwners(aptId) {
+  const rows = S.ownerRows.filter(row => cleanVal(row.nome_visualizzato) || cleanVal(row.nome) || cleanVal(row.cognome) || cleanVal(row.email));
+  for (const row of rows) {
+    const ownerPayload = {
+      nome_visualizzato: cleanVal(row.nome_visualizzato) || cleanVal(`${row.nome || ''} ${row.cognome || ''}`) || cleanVal(row.email) || 'Proprietario',
+      nome: cleanVal(row.nome) || null,
+      cognome: cleanVal(row.cognome) || null,
+      email: cleanVal(row.email) || null,
+      telefono: cleanVal(row.telefono) || null,
+      codice_fiscale: cleanVal(row.codice_fiscale) || null,
+      iban: cleanVal(row.iban) || null,
+      note: cleanVal(row.note) || null,
+      attivo: true,
+    };
+    let ownerId = row.owner_id || '';
+    if (ownerId) {
+      const { error } = await sb.from('owners').update(ownerPayload).eq('id', ownerId);
+      if (error) throw new Error(error.message);
+    } else {
+      const { data, error } = await sb.from('owners').insert(ownerPayload).select('id').single();
+      if (error) throw new Error(error.message);
+      row.owner_id = data.id;
+    }
+  }
+  const { error: deleteLinksError } = await sb.from('apartment_owner_links').delete().eq('apartment_id', aptId);
+  if (deleteLinksError) throw new Error(deleteLinksError.message);
+  const linkRows = rows.map((row, index) => ({
+    apartment_id: aptId,
+    owner_id: row.owner_id,
+    ruolo: cleanVal(row.ruolo) || 'proprietario',
+    quota_percentuale: cleanVal(row.quota_percentuale) === '' ? null : Number(row.quota_percentuale),
+    is_primary: !!row.is_primary,
+    sort_order: index,
+    note: cleanVal(row.note) || null,
+  }));
+  if (linkRows.length) {
+    const { error } = await sb.from('apartment_owner_links').insert(linkRows);
+    if (error) throw new Error(error.message);
+  }
+  await loadApartmentAdminData(aptId);
+}
+
+async function saveApartmentContracts(aptId) {
+  const rows = S.contractRows.filter(row =>
+    cleanVal(row.titolo) || cleanVal(row.decorrenza) || cleanVal(row.scadenza) || cleanVal(row.note) ||
+    cleanVal(row.registration_document_url) || cleanVal(row.registration_payment_date) || cleanVal(row.registration_paid_amount) || cleanVal(row.registration_note)
+  );
+  const keepIds = rows.map(row => row.id).filter(Boolean);
+  if (keepIds.length) {
+    const { error } = await sb.from('apartment_contracts').delete().eq('apartment_id', aptId).not('id', 'in', `(${keepIds.map(id => `"${id}"`).join(',')})`);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await sb.from('apartment_contracts').delete().eq('apartment_id', aptId);
+    if (error) throw new Error(error.message);
+  }
+  for (const row of rows) {
+    const payload = {
+      apartment_id: aptId,
+      owner_id: cleanVal(row.owner_id) || null,
+      titolo: cleanVal(row.titolo) || 'Contratto gestione',
+      contract_type: cleanVal(row.contract_type) || 'gestione',
+      status: cleanVal(row.status) || 'bozza',
+      decorrenza: cleanVal(row.decorrenza) || null,
+      scadenza: cleanVal(row.scadenza) || null,
+      rinnovo_automatico: !!row.rinnovo_automatico,
+      canone_fisso: cleanVal(row.canone_fisso) === '' ? null : Number(row.canone_fisso),
+      percentuale_gestione: cleanVal(row.percentuale_gestione) === '' ? null : Number(row.percentuale_gestione),
+      deposito_cauzionale: cleanVal(row.deposito_cauzionale) === '' ? null : Number(row.deposito_cauzionale),
+      documento_url: cleanVal(row.documento_url) || null,
+      note: cleanVal(row.note) || null,
+      registration_document_url: cleanVal(row.registration_document_url) || null,
+      registration_payment_date: cleanVal(row.registration_payment_date) || null,
+      registration_paid_amount: cleanVal(row.registration_paid_amount) === '' ? null : Number(row.registration_paid_amount),
+      registration_payment_method: cleanVal(row.registration_payment_method) || null,
+      registration_note: cleanVal(row.registration_note) || null,
+      registration_needs_accounting: !!row.registration_needs_accounting,
+      registration_accounting_sync_status: cleanVal(row.registration_accounting_sync_status) || (row.registration_needs_accounting ? 'da_contabilizzare' : 'solo_gestionale'),
+      registration_contabilita_documento_id: cleanVal(row.registration_contabilita_documento_id) || null,
+      registration_accounting_sync_error: cleanVal(row.registration_accounting_sync_error) || null,
+    };
+    if (row.id) {
+      const { error } = await sb.from('apartment_contracts').update(payload).eq('id', row.id);
+      if (error) throw new Error(error.message);
+    } else {
+      const { data, error } = await sb.from('apartment_contracts').insert(payload).select('id').single();
+      if (error) throw new Error(error.message);
+      row.id = data.id;
+    }
+  }
+  await loadApartmentAdminData(aptId);
+}
+
+async function createAccountingFromContractRegistration(row) {
+  const session = await sb.auth.getSession();
+  const accessToken = session?.data?.session?.access_token;
+  if (!accessToken) throw new Error('Sessione non disponibile per creare il documento contabile');
+  if (!row?.id) throw new Error('Salva prima il contratto');
+  const res = await fetch('/.netlify/functions/create-contract-registration-accounting', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+    body: JSON.stringify({ contract_id: row.id }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.success) throw new Error(data.error || 'Creazione documento contabile registrazione non riuscita');
+  await loadApartmentAdminData(S.adminSelectedApt);
+  await loadData();
+  return data;
+}
+
+async function saveApartmentPayments(aptId) {
+  const rows = S.paymentRows
+    .map(row => applyAdminPaymentTypeDefaults({ ...row }, { preserveManualChoices: true }))
+    .filter(row => cleanVal(row.payment_date) || cleanVal(row.amount) || cleanVal(row.reference) || cleanVal(row.note));
+  const keepIds = rows.map(row => row.id).filter(Boolean);
+  if (keepIds.length) {
+    const { error } = await sb.from('apartment_owner_payments').delete().eq('apartment_id', aptId).not('id', 'in', `(${keepIds.map(id => `"${id}"`).join(',')})`);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await sb.from('apartment_owner_payments').delete().eq('apartment_id', aptId);
+    if (error) throw new Error(error.message);
+  }
+  for (const row of rows) {
+    const payload = {
+      apartment_id: aptId,
+      owner_id: cleanVal(row.owner_id) || null,
+      contract_id: cleanVal(row.contract_id) || null,
+      payment_date: cleanVal(row.payment_date) || null,
+      competence_month: cleanVal(row.competence_month) || null,
+      amount: cleanVal(row.amount) === '' ? 0 : Number(row.amount),
+      payment_type: cleanVal(row.payment_type) || 'bonifico_proprietario',
+      status: cleanVal(row.status) || 'da_pagare',
+      reference: cleanVal(row.reference) || null,
+      document_url: cleanVal(row.document_url) || null,
+      note: cleanVal(row.note) || null,
+      needs_accounting: !!row.needs_accounting,
+      accounting_sync_status: cleanVal(row.accounting_sync_status) || (row.needs_accounting ? 'da_contabilizzare' : 'solo_gestionale'),
+      accounting_payment_method: cleanVal(row.accounting_payment_method) || null,
+      accounting_fiscal_status: cleanVal(row.accounting_fiscal_status) || null,
+      contabilita_documento_id: cleanVal(row.contabilita_documento_id) || null,
+      accounting_sync_error: cleanVal(row.accounting_sync_error) || null,
+    };
+    if (row.id) {
+      const { error } = await sb.from('apartment_owner_payments').update(payload).eq('id', row.id);
+      if (error) throw new Error(error.message);
+    } else {
+      const { data, error } = await sb.from('apartment_owner_payments').insert(payload).select('id').single();
+      if (error) throw new Error(error.message);
+      row.id = data.id;
+    }
+  }
+  await loadApartmentAdminData(aptId);
+  await loadDashboardAdminRows();
+}
+
+async function saveApartmentMaintenanceTasks(aptId) {
+  const rows = S.maintenanceRows.filter(row =>
+    cleanVal(row.title) ||
+    cleanVal(row.description) ||
+    cleanVal(row.assigned_to) ||
+    cleanVal(row.due_date)
+  );
+  const keepIds = rows.map(row => row.id).filter(Boolean);
+  if (keepIds.length) {
+    const { error } = await sb.from('apartment_maintenance_tasks').delete().eq('apartment_id', aptId).not('id', 'in', `(${keepIds.map(id => `"${id}"`).join(',')})`);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await sb.from('apartment_maintenance_tasks').delete().eq('apartment_id', aptId);
+    if (error) throw new Error(error.message);
+  }
+  for (const row of rows) {
+    const isDone = cleanVal(row.status) === 'fatto';
+    const payload = {
+      apartment_id: aptId,
+      title: cleanVal(row.title) || 'Manutenzione',
+      description: cleanVal(row.description) || null,
+      status: cleanVal(row.status) || 'da_fare',
+      priority: cleanVal(row.priority) || null,
+      assigned_to: cleanVal(row.assigned_to) || null,
+      due_date: cleanVal(row.due_date) || null,
+      completed_at: isDone ? (row.completed_at || new Date().toISOString()) : null,
+      updated_at: new Date().toISOString(),
+    };
+    if (row.id) {
+      const { error } = await sb.from('apartment_maintenance_tasks').update(payload).eq('id', row.id);
+      if (error) throw new Error(error.message);
+    } else {
+      const { data, error } = await sb.from('apartment_maintenance_tasks').insert(payload).select('id,completed_at').single();
+      if (error) throw new Error(error.message);
+      row.id = data.id;
+      row.completed_at = data.completed_at || payload.completed_at || '';
+    }
+  }
+  await loadApartmentAdminData(aptId);
+  await loadDashboardAdminRows();
+}
+
+async function createAccountingFromOwnerPayment(row) {
+  const session = await sb.auth.getSession();
+  const accessToken = session?.data?.session?.access_token;
+  if (!accessToken) throw new Error('Sessione non disponibile per creare il documento contabile');
+  if (!row?.id) throw new Error('Salva prima il pagamento');
+  const res = await fetch('/.netlify/functions/create-owner-payment-accounting', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+    body: JSON.stringify({ payment_id: row.id }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.success) throw new Error(data.error || 'Creazione documento contabile non riuscita');
+  await loadApartmentAdminData(S.adminSelectedApt);
+  await loadDashboardAdminRows();
+  return data;
+}
+
+function renderManualEntrySection() {
+  const form = S.manualEntry || getDefaultManualEntry();
+  return `
+    <div class="admin-shell">
+      <div class="admin-page-title">Inserimento manuale</div>
+      <div class="admin-page-subtitle">Registra una spesa o un movimento semplice dentro il contenitore documenti attuale, senza creare ancora una tabella movimenti separata.</div>
+
+      <div class="card-section" style="background:var(--blue-l);border-color:#bfdbfe">
+        <div class="card-section-title" style="color:var(--accent);border-bottom-color:#bfdbfe">Come viene salvato</div>
+        <div class="field-hint" style="font-size:12px;color:var(--text2);margin-top:0">
+          Il record viene creato in <span class="mono-sm">contabilita_documenti</span> come inserimento manuale di backoffice, così compare subito in Documenti e aggiorna la dashboard operativa.
+        </div>
+      </div>
+
+      <div class="card-section">
+        <div class="card-section-title">Movimento manuale</div>
+        <div class="field-3">
+          <div class="field"><label>Data</label><input id="manualDate" type="date" value="${esc(form.document_date)}"/></div>
+          <div class="field"><label>Importo</label><input id="manualAmount" type="number" step="0.01" min="0" value="${esc(form.total_amount)}" placeholder="40.00"/></div>
+          <div class="field"><label>Tipo</label><select id="manualType">${MANUAL_MOVEMENT_TYPES.map(v => `<option value="${v}" ${form.movement_type===v?'selected':''}>${esc(v === 'entrata' ? 'Entrata' : 'Uscita')}</option>`).join('')}</select></div>
+        </div>
+        <div class="field"><label>Descrizione / causale</label><input id="manualDescription" value="${esc(form.description)}" placeholder="Ferramenta, benzina, pulizie, rimborso, incasso manuale..."/></div>
+        <div class="field-3">
+          <div class="field"><label>Metodo pagamento</label><select id="manualPaymentMethod">
+            ${ACCOUNTING_PAYMENT_METHODS.map(v=>`<option value="${v}" ${form.payment_method===v?'selected':''}>${esc(paymentMethodLbl(v))}</option>`).join('')}
+          </select></div>
+          <div class="field"><label>Appartamento</label><select id="manualApartmentChoice">
+            <option value="">Non assegnato</option>
+            <option value="${ADMIN_GENERAL_OPTION}" ${form.apartment_choice===ADMIN_GENERAL_OPTION?'selected':''}>Generali</option>
+            ${S.apartments.map(a=>`<option value="${a.id}" ${form.apartment_choice===String(a.id)?'selected':''}>${esc(a.nome_appartamento)}${a.struttura_nome ? ' · ' + esc(a.struttura_nome) : ''}</option>`).join('')}
+          </select></div>
+          <div class="field"><label>Stato</label><select id="manualApprovalStatus">
+            <option value="da_revisionare" ${form.approval_status==='da_revisionare'?'selected':''}>Da verificare</option>
+            <option value="approvato" ${form.approval_status==='approvato'?'selected':''}>Verificato</option>
+          </select></div>
+        </div>
+        <div class="field-2">
+          <div class="field"><label>Categoria</label><input id="manualCategory" value="${esc(form.category)}" placeholder="manutenzione, pulizie, carburante, rimborso..."/></div>
+          <div class="field"><label>Sottocategoria opzionale</label><input id="manualSubcategory" value="${esc(form.subcategory)}" placeholder="serrature, prodotti, benzina..."/></div>
+        </div>
+        <div class="field"><label>Controparte / fornitore</label><input id="manualCounterparty" value="${esc(form.counterparty)}" placeholder="Ferramenta Rossi, Q8, collaboratore..."/></div>
+        <div class="field"><label>Note</label><textarea id="manualNotes" placeholder="Dettagli utili, riferimento scontrino, motivo rimborso, note interne...">${esc(form.notes)}</textarea></div>
+        <div class="save-row">
+          <button id="btnSaveManualEntry" class="btn btn-primary" ${S.manualSaving ? 'disabled' : ''}>${S.manualSaving ? 'Salvo…' : 'Salva movimento manuale'}</button>
+          <button id="btnResetManualEntry" class="btn btn-ghost" ${S.manualSaving ? 'disabled' : ''}>Pulisci</button>
+          <span class="mono-sm">Fonte salvataggio: <strong>manuale_backoffice</strong></span>
+        </div>
+      </div>
+    </div>`;
+}
+
+function bindManualEntryEvents() {
+  const ensure = () => { if (!S.manualEntry) S.manualEntry = getDefaultManualEntry(); };
+  const bindInput = (id, key) => {
+    document.getElementById(id)?.addEventListener('input', (e) => { ensure(); S.manualEntry[key] = e.target.value; });
+    document.getElementById(id)?.addEventListener('change', (e) => { ensure(); S.manualEntry[key] = e.target.value; });
+  };
+  bindInput('manualDate', 'document_date');
+  bindInput('manualAmount', 'total_amount');
+  bindInput('manualType', 'movement_type');
+  bindInput('manualDescription', 'description');
+  bindInput('manualPaymentMethod', 'payment_method');
+  bindInput('manualApartmentChoice', 'apartment_choice');
+  bindInput('manualApprovalStatus', 'approval_status');
+  bindInput('manualCategory', 'category');
+  bindInput('manualSubcategory', 'subcategory');
+  bindInput('manualCounterparty', 'counterparty');
+  bindInput('manualNotes', 'notes');
+  document.getElementById('btnResetManualEntry')?.addEventListener('click', () => {
+    S.manualEntry = getDefaultManualEntry();
+    partialTable();
+  });
+  document.getElementById('btnSaveManualEntry')?.addEventListener('click', saveManualAccountingEntry);
+}
+
+async function saveManualAccountingEntry() {
+  const form = { ...(S.manualEntry || getDefaultManualEntry()) };
+  if (!cleanVal(form.document_date)) {
+    toast('Inserisci la data del movimento', 'err');
+    return;
+  }
+  if (!cleanVal(form.description)) {
+    toast('Inserisci una descrizione o causale', 'err');
+    return;
+  }
+  const amount = numberVal(form.total_amount);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    toast('Inserisci un importo valido maggiore di zero', 'err');
+    return;
+  }
+  S.manualSaving = true;
+  partialTable();
+  const isGeneral = form.apartment_choice === ADMIN_GENERAL_OPTION;
+  const approvalStatus = form.approval_status === 'approvato' ? 'approvato' : 'da_revisionare';
+  const accountingState = approvalStatus === 'approvato' ? 'APPROVATO' : 'DA_APPROVARE';
+  const category = cleanVal(form.category) || (isGeneral ? 'generale' : null);
+  const payload = {
+    source_channel: 'manuale_backoffice',
+    source: 'manuale_backoffice',
+    source_subject: `Inserimento manuale · ${form.movement_type === 'entrata' ? 'Entrata' : 'Uscita'}`,
+    file_name: `Movimento manuale · ${form.movement_type === 'entrata' ? 'Entrata' : 'Uscita'}`,
+    document_type: 'altro',
+    document_kind: 'altro',
+    stato: accountingState,
+    approval_status: approvalStatus,
+    apartment_id: isGeneral ? null : (cleanVal(form.apartment_choice) || null),
+    attachment_count: 0,
+    attachments: [],
+    supplier_name: cleanVal(form.counterparty) || null,
+    counterparty: cleanVal(form.counterparty) || null,
+    description: cleanVal(form.description),
+    amount_total: amount,
+    total_amount: amount,
+    currency: 'EUR',
+    issue_date: form.document_date,
+    document_date: form.document_date,
+    payment_method: cleanVal(form.payment_method) || null,
+    category,
+    subcategory: cleanVal(form.subcategory) || null,
+    notes: cleanVal(form.notes) || null,
+    approval_notes: cleanVal(form.notes) || null,
+    tags: ['manuale_backoffice', form.movement_type, isGeneral ? 'generale' : 'assegnabile'].filter(Boolean),
+    raw_payload: {
+      manual_entry: true,
+      movement_type: form.movement_type,
+      inserted_from: 'backoffice_contabilita',
+    },
+    extracted_json: {
+      manual_entry: true,
+      movement_type: form.movement_type,
+      apartment_scope: isGeneral ? 'generale' : (cleanVal(form.apartment_choice) ? 'appartamento' : 'non_assegnato'),
+    },
+    reviewed_json: {
+      manual_entry: true,
+      movement_type: form.movement_type,
+      total_amount: amount,
+      document_date: form.document_date,
+      payment_method: cleanVal(form.payment_method) || null,
+      category,
+      subcategory: cleanVal(form.subcategory) || null,
+      apartment_id: isGeneral ? null : (cleanVal(form.apartment_choice) || null),
+      notes: cleanVal(form.notes) || null,
+    },
+    reviewed_by: approvalStatus === 'approvato' ? (S.session?.user?.email || null) : null,
+    approved_by: approvalStatus === 'approvato' ? (S.session?.user?.email || null) : null,
+    approved_at: approvalStatus === 'approvato' ? new Date().toISOString() : null,
+    received_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+  const { error } = await sb.from('contabilita_documenti').insert(payload);
+  S.manualSaving = false;
+  if (error) {
+    toast('Errore salvataggio: ' + error.message, 'err');
+    partialTable();
+    return;
+  }
+  toast('✓ Movimento manuale salvato', 'ok');
+  S.manualEntry = getDefaultManualEntry();
+  await loadData();
+  partialTable();
+  partialStats();
+}
+
+async function openAdminApartmentSheet(aptId) {
+  S.adminSelectedApt = getPreferredAdminApartmentId(aptId);
+  S.accountingSelected = null;
+  S.accountingForm = {};
+  S.billSelected = null;
+  S.billForm = {};
+  await loadApartmentAdminData(S.adminSelectedApt);
+  renderDashboard();
+}
+
+function renderAdminApartmentSection() {
+  if (S.adminSelectedApt === ADMIN_GENERAL_OPTION) {
+    return `
+      <div class="admin-shell">
+        <div class="admin-page-title">Generali</div>
+        <div class="admin-page-subtitle">Placeholder privato per spese non attribuite a un singolo appartamento</div>
+        <div class="card-section" style="background:var(--yellow-l);border-color:#fde68a">
+          <div class="card-section-title" style="color:var(--yellow);border-bottom-color:#fde68a">Voce virtuale</div>
+          <div class="field-hint" style="font-size:12px;color:var(--text2);margin-top:0">
+            Questa voce e solo un filtro visivo preparatorio. In questo step non crea nuove tabelle, non crea movimenti e non modifica il database.
+          </div>
+        </div>
+      </div>`;
+  }
+  const apt = getSelectedAdminApartment();
+  if (!apt) {
+    return `
+      <div class="empty-state">
+        <div class="empty-card">
+          <div class="empty-title">Seleziona un appartamento</div>
+          <div class="admin-page-subtitle" style="margin:0">La scheda amministrativa resta privata e separata dal portale ospite.</div>
+        </div>
+      </div>`;
+  }
+  const paymentContractOptions = S.contractRows.filter(row => row.id).map(row => ({ value: row.id, label: cleanVal(row.titolo) || 'Contratto' }));
+  return `
+  <div class="admin-shell">
+    <div class="admin-page-title">Scheda amministrativa privata</div>
+    <div class="admin-page-subtitle">${esc(apt.nome_appartamento || '—')}${apt.struttura_nome ? ' · ' + esc(apt.struttura_nome) : ''}${apt.attivo === false ? ' · DISATTIVO' : ''}</div>
+
+    <div class="card-section" style="background:var(--yellow-l);border-color:#fde68a">
+      <div class="card-section-title" style="color:var(--yellow);border-bottom-color:#fde68a">Privacy interna</div>
+      <div class="field-hint" style="font-size:12px;color:var(--text2);margin-top:0">
+        Questa sezione e queste note sono solo backoffice. Non vengono mostrate nel link ospite e non devono mai essere copiate dentro <span class="mono-sm">apartment_info</span> o <span class="mono-sm">apartment_credentials</span>.
+      </div>
+    </div>
+
+    ${S.adminDataAvailable ? '' : `<div class="card-section"><div class="hint-box">Sezione non ancora disponibile nel database. Applica prima la migration <span class="mono-sm">202605060002_create_apartment_admin_tables.sql</span>. Dettaglio: ${esc(S.adminDataError || 'tabelle mancanti')}</div></div>`}
+
+    <div class="card-section">
+      <div class="card-section-title">Proprietari</div>
+      <div class="field-hint">Anagrafica del proprietario collegata all'appartamento con ruolo, quota e referente principale.</div>
+      <div style="display:grid;gap:12px">
+        ${S.ownerRows.length ? S.ownerRows.map((row, index) => `
+          <div class="card-section" style="margin:0;background:var(--surf)">
+            <div class="field-2">
+              <div class="field"><label>Nome visualizzato</label><input data-owner-field="nome_visualizzato" data-owner-index="${index}" value="${esc(row.nome_visualizzato)}" placeholder="Mario Rossi"/></div>
+              <div class="field"><label>Ruolo</label><select data-owner-field="ruolo" data-owner-index="${index}">
+                <option value="proprietario" ${row.ruolo === 'proprietario' ? 'selected' : ''}>Proprietario</option>
+                <option value="co_proprietario" ${row.ruolo === 'co_proprietario' ? 'selected' : ''}>Co-proprietario</option>
+                <option value="referente" ${row.ruolo === 'referente' ? 'selected' : ''}>Referente</option>
+                <option value="amministratore" ${row.ruolo === 'amministratore' ? 'selected' : ''}>Amministratore</option>
+              </select></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Nome</label><input data-owner-field="nome" data-owner-index="${index}" value="${esc(row.nome)}"/></div>
+              <div class="field"><label>Cognome</label><input data-owner-field="cognome" data-owner-index="${index}" value="${esc(row.cognome)}"/></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Email</label><input data-owner-field="email" data-owner-index="${index}" value="${esc(row.email)}"/></div>
+              <div class="field"><label>Telefono</label><input data-owner-field="telefono" data-owner-index="${index}" value="${esc(row.telefono)}"/></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Codice fiscale</label><input data-owner-field="codice_fiscale" data-owner-index="${index}" value="${esc(row.codice_fiscale)}"/></div>
+              <div class="field"><label>IBAN</label><input data-owner-field="iban" data-owner-index="${index}" value="${esc(row.iban)}"/></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Quota %</label><input type="number" step="0.01" data-owner-field="quota_percentuale" data-owner-index="${index}" value="${esc(row.quota_percentuale)}"/></div>
+              <div class="field"><label style="display:inline-flex;align-items:center;gap:8px;font-size:12px;letter-spacing:normal;text-transform:none;color:var(--text2);margin-top:24px"><input type="checkbox" data-owner-check="is_primary" data-owner-index="${index}" ${row.is_primary ? 'checked' : ''}/> Referente principale</label></div>
+            </div>
+            <div class="field"><label>Note private interne</label><textarea data-owner-field="note" data-owner-index="${index}" placeholder="Mai visibili agli ospiti">${esc(row.note)}</textarea></div>
+            <div class="save-row"><button class="btn btn-ghost" data-owner-remove="${index}">Rimuovi proprietario</button></div>
+          </div>`).join('') : `<div class="hint-box">Nessun proprietario inserito.</div>`}
+      </div>
+      <div class="save-row">
+        <button id="btnAddOwner" class="btn btn-ghost">+ Aggiungi proprietario</button>
+        <button id="btnSaveOwners" class="btn btn-primary" ${S.adminDataAvailable ? '' : 'disabled'}>Salva proprietari</button>
+      </div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-title">Contratti</div>
+      <div class="field-hint">Salva qui i dati del rapporto contrattuale. I documenti restano come URL o link file.</div>
+      <div style="display:grid;gap:12px">
+        ${S.contractRows.length ? S.contractRows.map((row, index) => `
+          <div class="card-section" style="margin:0;background:var(--surf)">
+            <div class="field-2">
+              <div class="field"><label>Titolo</label><input data-contract-field="titolo" data-contract-index="${index}" value="${esc(row.titolo)}"/></div>
+              <div class="field"><label>Proprietario</label><select data-contract-field="owner_id" data-contract-index="${index}">
+                <option value="">— Nessuno —</option>
+                ${S.ownerRows.map(owner => `<option value="${esc(owner.owner_id)}" ${String(row.owner_id) === String(owner.owner_id) ? 'selected' : ''}>${esc(owner.nome_visualizzato || `${owner.nome || ''} ${owner.cognome || ''}`.trim() || 'Proprietario')}</option>`).join('')}
+              </select></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Tipo contratto</label><select data-contract-field="contract_type" data-contract-index="${index}">
+                <option value="gestione" ${row.contract_type === 'gestione' ? 'selected' : ''}>Gestione</option>
+                <option value="locazione" ${row.contract_type === 'locazione' ? 'selected' : ''}>Locazione</option>
+                <option value="comodato" ${row.contract_type === 'comodato' ? 'selected' : ''}>Comodato</option>
+                <option value="mandato" ${row.contract_type === 'mandato' ? 'selected' : ''}>Mandato</option>
+                <option value="altro" ${row.contract_type === 'altro' ? 'selected' : ''}>Altro</option>
+              </select></div>
+              <div class="field"><label>Stato</label><select data-contract-field="status" data-contract-index="${index}">
+                <option value="bozza" ${row.status === 'bozza' ? 'selected' : ''}>Bozza</option>
+                <option value="attivo" ${row.status === 'attivo' ? 'selected' : ''}>Attivo</option>
+                <option value="scaduto" ${row.status === 'scaduto' ? 'selected' : ''}>Scaduto</option>
+                <option value="cessato" ${row.status === 'cessato' ? 'selected' : ''}>Cessato</option>
+              </select></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Decorrenza</label><input type="date" data-contract-field="decorrenza" data-contract-index="${index}" value="${esc(row.decorrenza)}"/></div>
+              <div class="field"><label>Scadenza</label><input type="date" data-contract-field="scadenza" data-contract-index="${index}" value="${esc(row.scadenza)}"/></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Canone fisso</label><input type="number" step="0.01" data-contract-field="canone_fisso" data-contract-index="${index}" value="${esc(row.canone_fisso)}"/></div>
+              <div class="field"><label>% gestione</label><input type="number" step="0.01" data-contract-field="percentuale_gestione" data-contract-index="${index}" value="${esc(row.percentuale_gestione)}"/></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Deposito cauzionale</label><input type="number" step="0.01" data-contract-field="deposito_cauzionale" data-contract-index="${index}" value="${esc(row.deposito_cauzionale)}"/></div>
+              <div class="field"><label>Documento URL</label><input data-contract-field="documento_url" data-contract-index="${index}" value="${esc(row.documento_url)}" placeholder="https://..."/></div>
+            </div>
+            <div class="field"><label style="display:inline-flex;align-items:center;gap:8px;font-size:12px;letter-spacing:normal;text-transform:none;color:var(--text2)"><input type="checkbox" data-contract-check="rinnovo_automatico" data-contract-index="${index}" ${row.rinnovo_automatico ? 'checked' : ''}/> Rinnovo automatico</label></div>
+            <div class="field"><label>Note private contratto</label><textarea data-contract-field="note" data-contract-index="${index}" placeholder="Mai visibili agli ospiti">${esc(row.note)}</textarea></div>
+            <div class="card-section" style="margin:0;background:#f8fafc;border-color:#dbeafe">
+              <div class="card-section-title" style="color:#1d4ed8;border-bottom-color:#dbeafe">Registrazione contratto</div>
+              <div class="field-hint" style="margin-bottom:8px">
+                Sync contabilità: <strong>${esc(accountingSyncLabel(row.registration_accounting_sync_status))}</strong>${row.registration_contabilita_documento_id ? ` · Doc: <span class="mono-sm">${esc(row.registration_contabilita_documento_id)}</span>` : ''}${row.registration_accounting_sync_error ? ` · Errore: ${esc(row.registration_accounting_sync_error)}` : ''}
+              </div>
+              <div class="field-2">
+                <div class="field"><label>Documento registrazione URL</label><input data-contract-field="registration_document_url" data-contract-index="${index}" value="${esc(row.registration_document_url)}" placeholder="https://..."/></div>
+                <div class="field"><label>Data pagamento registrazione</label><input type="date" data-contract-field="registration_payment_date" data-contract-index="${index}" value="${esc(row.registration_payment_date)}"/></div>
+              </div>
+              <div class="field-2">
+                <div class="field"><label>Quanto ho pagato</label><input type="number" step="0.01" data-contract-field="registration_paid_amount" data-contract-index="${index}" value="${esc(row.registration_paid_amount)}" placeholder="0.00"/></div>
+                <div class="field"><label>Metodo pagamento</label><select data-contract-field="registration_payment_method" data-contract-index="${index}">
+                  <option value="">Non impostato</option>
+                  ${ACCOUNTING_PAYMENT_METHODS.map(v=>`<option value="${v}" ${row.registration_payment_method===v?'selected':''}>${esc(paymentMethodLbl(v))}</option>`).join('')}
+                </select></div>
+              </div>
+              <div class="field"><label>Note registrazione contratto</label><textarea data-contract-field="registration_note" data-contract-index="${index}" placeholder="Costi, estremi registrazione, note operative interne">${esc(row.registration_note)}</textarea></div>
+              <div class="field"><label style="display:inline-flex;align-items:center;gap:8px;font-size:12px;letter-spacing:normal;text-transform:none;color:var(--text2)"><input type="checkbox" data-contract-check="registration_needs_accounting" data-contract-index="${index}" ${row.registration_needs_accounting ? 'checked' : ''}/> Contabilizza questa registrazione nei conti</label></div>
+              <div class="save-row">
+                <button class="btn btn-primary" data-contract-accounting="${index}" ${(S.adminDataAvailable && row.id && row.registration_needs_accounting && numberVal(row.registration_paid_amount) > 0) ? '' : 'disabled'}>${row.registration_contabilita_documento_id ? 'Aggiorna contabilità registrazione' : 'Crea in contabilità registrazione'}</button>
+              </div>
+            </div>
+            <div class="save-row"><button class="btn btn-ghost" data-contract-remove="${index}">Rimuovi contratto</button></div>
+          </div>`).join('') : `<div class="hint-box">Nessun contratto inserito.</div>`}
+      </div>
+      <div class="save-row">
+        <button id="btnAddContract" class="btn btn-ghost">+ Aggiungi contratto</button>
+        <button id="btnSaveContracts" class="btn btn-primary" ${S.adminDataAvailable ? '' : 'disabled'}>Salva contratti</button>
+      </div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-title">Pagamenti proprietario</div>
+      <div class="field-hint">Qui tieni traccia di bonifici, canoni, contanti e rimborsi verso il proprietario. Le voci segnate come da contabilizzare possono creare un documento contabile collegato.</div>
+      <div style="display:grid;gap:12px">
+        ${S.paymentRows.length ? S.paymentRows.map((row, index) => `
+          <div class="card-section" style="margin:0;background:var(--surf)">
+            <div class="field-hint" style="margin-bottom:8px">
+              Tipo: <strong>${esc(ownerPaymentTypeLabel(row.payment_type))}</strong> · Sync contabilità: <strong>${esc(accountingSyncLabel(row.accounting_sync_status))}</strong>${row.contabilita_documento_id ? ` · Doc: <span class="mono-sm">${esc(row.contabilita_documento_id)}</span>` : ''}${row.accounting_sync_error ? ` · Errore: ${esc(row.accounting_sync_error)}` : ''}
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Data pagamento</label><input type="date" data-payment-field="payment_date" data-payment-index="${index}" value="${esc(row.payment_date)}"/></div>
+              <div class="field"><label>Mese competenza</label><input type="date" data-payment-field="competence_month" data-payment-index="${index}" value="${esc(row.competence_month)}"/></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Importo</label><input type="number" step="0.01" data-payment-field="amount" data-payment-index="${index}" value="${esc(row.amount)}"/></div>
+              <div class="field"><label>Stato</label><select data-payment-field="status" data-payment-index="${index}">
+                <option value="da_pagare" ${row.status === 'da_pagare' ? 'selected' : ''}>Da pagare</option>
+                <option value="pagato" ${row.status === 'pagato' ? 'selected' : ''}>Pagato</option>
+                <option value="annullato" ${row.status === 'annullato' ? 'selected' : ''}>Annullato</option>
+              </select></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Tipo pagamento</label><select data-payment-field="payment_type" data-payment-index="${index}">
+                <option value="bonifico_proprietario" ${row.payment_type === 'bonifico_proprietario' ? 'selected' : ''}>Bonifico proprietario</option>
+                <option value="contante" ${row.payment_type === 'contante' ? 'selected' : ''}>Contante</option>
+                <option value="contante_da_fatturare" ${row.payment_type === 'contante_da_fatturare' ? 'selected' : ''}>Contante da fatturare</option>
+                <option value="rimborso_spese" ${row.payment_type === 'rimborso_spese' ? 'selected' : ''}>Rimborso spese</option>
+                <option value="canone" ${row.payment_type === 'canone' ? 'selected' : ''}>Canone</option>
+                <option value="anticipo" ${row.payment_type === 'anticipo' ? 'selected' : ''}>Anticipo</option>
+                <option value="altro" ${row.payment_type === 'altro' ? 'selected' : ''}>Altro</option>
+              </select></div>
+              <div class="field"><label>Proprietario</label><select data-payment-field="owner_id" data-payment-index="${index}">
+                <option value="">— Nessuno —</option>
+                ${S.ownerRows.map(owner => `<option value="${esc(owner.owner_id)}" ${String(row.owner_id) === String(owner.owner_id) ? 'selected' : ''}>${esc(owner.nome_visualizzato || `${owner.nome || ''} ${owner.cognome || ''}`.trim() || 'Proprietario')}</option>`).join('')}
+              </select></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Contratto</label><select data-payment-field="contract_id" data-payment-index="${index}">
+                <option value="">— Nessuno —</option>
+                ${paymentContractOptions.map(opt => `<option value="${esc(opt.value)}" ${String(row.contract_id) === String(opt.value) ? 'selected' : ''}>${esc(opt.label)}</option>`).join('')}
+              </select></div>
+              <div class="field"><label>Riferimento</label><input data-payment-field="reference" data-payment-index="${index}" value="${esc(row.reference)}" placeholder="Bonifico 05/2026"/></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label style="display:inline-flex;align-items:center;gap:8px;font-size:12px;letter-spacing:normal;text-transform:none;color:var(--text2);margin-top:24px"><input type="checkbox" data-payment-check="needs_accounting" data-payment-index="${index}" ${row.needs_accounting ? 'checked' : ''}/> Invia / collega in contabilità</label></div>
+              <div class="field"><label>Stato sync</label><select data-payment-field="accounting_sync_status" data-payment-index="${index}">
+                <option value="solo_gestionale" ${row.accounting_sync_status === 'solo_gestionale' ? 'selected' : ''}>Solo gestionale</option>
+                <option value="da_contabilizzare" ${row.accounting_sync_status === 'da_contabilizzare' ? 'selected' : ''}>Da contabilizzare</option>
+                <option value="contabilizzato" ${row.accounting_sync_status === 'contabilizzato' ? 'selected' : ''}>Contabilizzato</option>
+                <option value="fatturato" ${row.accounting_sync_status === 'fatturato' ? 'selected' : ''}>Fatturato</option>
+                <option value="errore_sync" ${row.accounting_sync_status === 'errore_sync' ? 'selected' : ''}>Errore sync</option>
+              </select></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Metodo contabile</label><select data-payment-field="accounting_payment_method" data-payment-index="${index}">
+                <option value="">— Nessuno —</option>
+                <option value="contanti" ${row.accounting_payment_method === 'contanti' ? 'selected' : ''}>Contanti</option>
+                <option value="bonifico" ${row.accounting_payment_method === 'bonifico' ? 'selected' : ''}>Bonifico</option>
+                <option value="carta" ${row.accounting_payment_method === 'carta' ? 'selected' : ''}>Carta</option>
+                <option value="pos" ${row.accounting_payment_method === 'pos' ? 'selected' : ''}>POS</option>
+                <option value="addebito" ${row.accounting_payment_method === 'addebito' ? 'selected' : ''}>Addebito</option>
+                <option value="altro" ${row.accounting_payment_method === 'altro' ? 'selected' : ''}>Altro</option>
+              </select></div>
+              <div class="field"><label>Stato fiscale</label><select data-payment-field="accounting_fiscal_status" data-payment-index="${index}">
+                <option value="">— Nessuno —</option>
+                <option value="da_fatturare" ${row.accounting_fiscal_status === 'da_fatturare' ? 'selected' : ''}>Da fatturare</option>
+                <option value="fatturato" ${row.accounting_fiscal_status === 'fatturato' ? 'selected' : ''}>Fatturato</option>
+                <option value="non_soggetto" ${row.accounting_fiscal_status === 'non_soggetto' ? 'selected' : ''}>Non soggetto</option>
+                <option value="annullato" ${row.accounting_fiscal_status === 'annullato' ? 'selected' : ''}>Annullato</option>
+              </select></div>
+            </div>
+            <div class="field"><label>Documento URL</label><input data-payment-field="document_url" data-payment-index="${index}" value="${esc(row.document_url)}" placeholder="https://..."/></div>
+            <div class="field"><label>Note private pagamento</label><textarea data-payment-field="note" data-payment-index="${index}" placeholder="Mai visibili agli ospiti">${esc(row.note)}</textarea></div>
+            <div class="save-row">
+              <button class="btn btn-primary" data-payment-accounting="${index}" ${S.adminDataAvailable && row.id && row.needs_accounting ? '' : 'disabled'}>${row.contabilita_documento_id ? 'Aggiorna contabilità' : 'Crea in contabilità'}</button>
+              <button class="btn btn-ghost" data-payment-remove="${index}">Rimuovi pagamento</button>
+            </div>
+          </div>`).join('') : `<div class="hint-box">Nessun pagamento proprietario inserito.</div>`}
+      </div>
+      <div class="save-row">
+        <button id="btnAddPayment" class="btn btn-ghost">+ Aggiungi pagamento</button>
+        <button id="btnSavePayments" class="btn btn-primary" ${S.adminDataAvailable ? '' : 'disabled'}>Salva pagamenti</button>
+      </div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-title">Manutenzioni</div>
+      <div class="field-hint">Lista privata backoffice per attività tecniche, riparazioni e controlli interni dell'appartamento.</div>
+      ${S.maintenanceDataAvailable ? '' : `<div class="hint-box" style="margin-top:12px">${esc(S.maintenanceDataError || 'La sezione manutenzioni non e disponibile al momento.')}</div>`}
+      <div style="display:grid;gap:12px;margin-top:12px">
+        ${S.maintenanceDataAvailable ? (S.maintenanceRows.length ? S.maintenanceRows.map((row, index) => `
+          <div class="card-section" style="margin:0;background:var(--surf)">
+            <div class="field-2">
+              <div class="field"><label>Titolo</label><input data-maintenance-field="title" data-maintenance-index="${index}" value="${esc(row.title)}" placeholder="Cambiare serratura"/></div>
+              <div class="field"><label>Assegnato a</label><input data-maintenance-field="assigned_to" data-maintenance-index="${index}" value="${esc(row.assigned_to)}" placeholder="Idraulico / Marco"/></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Stato</label><select data-maintenance-field="status" data-maintenance-index="${index}">
+                <option value="da_fare" ${row.status === 'da_fare' ? 'selected' : ''}>Da fare</option>
+                <option value="in_corso" ${row.status === 'in_corso' ? 'selected' : ''}>In corso</option>
+                <option value="fatto" ${row.status === 'fatto' ? 'selected' : ''}>Fatto</option>
+                <option value="annullato" ${row.status === 'annullato' ? 'selected' : ''}>Annullato</option>
+              </select></div>
+              <div class="field"><label>Priorita</label><select data-maintenance-field="priority" data-maintenance-index="${index}">
+                <option value="">— Nessuna —</option>
+                <option value="bassa" ${row.priority === 'bassa' ? 'selected' : ''}>Bassa</option>
+                <option value="media" ${row.priority === 'media' ? 'selected' : ''}>Media</option>
+                <option value="alta" ${row.priority === 'alta' ? 'selected' : ''}>Alta</option>
+                <option value="urgente" ${row.priority === 'urgente' ? 'selected' : ''}>Urgente</option>
+              </select></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Scadenza</label><input type="date" data-maintenance-field="due_date" data-maintenance-index="${index}" value="${esc(row.due_date)}"/></div>
+              <div class="field"><label>Completata il</label><input value="${esc(row.completed_at ? new Date(row.completed_at).toLocaleString('it-IT') : '')}" disabled/></div>
+            </div>
+            <div class="field"><label>Descrizione / note operative</label><textarea data-maintenance-field="description" data-maintenance-index="${index}" placeholder="Dettagli lavoro, materiali, accesso, note interne">${esc(row.description)}</textarea></div>
+            <div class="save-row">
+              <button class="btn btn-ghost" data-maintenance-done="${index}" ${row.status === 'fatto' ? 'disabled' : ''}>Segna come fatta</button>
+              <button class="btn btn-ghost" data-maintenance-remove="${index}">Rimuovi</button>
+            </div>
+          </div>`).join('') : `<div class="hint-box">Nessuna manutenzione inserita.</div>`) : ''}
+      </div>
+      <div class="save-row">
+        <button id="btnAddMaintenance" class="btn btn-ghost" ${S.maintenanceDataAvailable ? '' : 'disabled'}>+ Aggiungi manutenzione</button>
+        <button id="btnSaveMaintenance" class="btn btn-primary" ${S.maintenanceDataAvailable ? '' : 'disabled'}>Salva manutenzioni</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function bindAdminApartmentEvents() {
+  document.querySelectorAll('[data-owner-field]').forEach(input => {
+    input.addEventListener('input', e => { S.ownerRows[Number(e.target.dataset.ownerIndex)][e.target.dataset.ownerField] = e.target.value; });
+    input.addEventListener('change', e => { S.ownerRows[Number(e.target.dataset.ownerIndex)][e.target.dataset.ownerField] = e.target.value; });
+  });
+  document.querySelectorAll('[data-owner-check]').forEach(input => {
+    input.addEventListener('change', e => {
+      const idx = Number(e.target.dataset.ownerIndex);
+      S.ownerRows.forEach((row, rowIndex) => { row.is_primary = rowIndex === idx ? !!e.target.checked : false; });
+      partialTable();
+    });
+  });
+  document.querySelectorAll('[data-owner-remove]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const removed = S.ownerRows.splice(Number(btn.dataset.ownerRemove), 1)[0];
+      if (removed?.owner_id) {
+        S.contractRows = S.contractRows.map(row => String(row.owner_id) === String(removed.owner_id) ? { ...row, owner_id: '' } : row);
+        S.paymentRows = S.paymentRows.map(row => String(row.owner_id) === String(removed.owner_id) ? { ...row, owner_id: '' } : row);
+      }
+      partialTable();
+    });
+  });
+  document.querySelectorAll('[data-contract-field]').forEach(input => {
+    input.addEventListener('input', e => { S.contractRows[Number(e.target.dataset.contractIndex)][e.target.dataset.contractField] = e.target.value; });
+    input.addEventListener('change', e => { S.contractRows[Number(e.target.dataset.contractIndex)][e.target.dataset.contractField] = e.target.value; });
+  });
+  document.querySelectorAll('[data-contract-check]').forEach(input => {
+    input.addEventListener('change', e => {
+      const idx = Number(e.target.dataset.contractIndex);
+      const key = e.target.dataset.contractCheck;
+      S.contractRows[idx][key] = !!e.target.checked;
+      if (key === 'registration_needs_accounting' && !S.contractRows[idx].registration_contabilita_documento_id) {
+        S.contractRows[idx].registration_accounting_sync_status = S.contractRows[idx].registration_needs_accounting ? 'da_contabilizzare' : 'solo_gestionale';
+      }
+      partialTable();
+    });
+  });
+  document.querySelectorAll('[data-contract-remove]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const removed = S.contractRows.splice(Number(btn.dataset.contractRemove), 1)[0];
+      if (removed?.id) S.paymentRows = S.paymentRows.map(row => String(row.contract_id) === String(removed.id) ? { ...row, contract_id: '' } : row);
+      partialTable();
+    });
+  });
+  document.querySelectorAll('[data-contract-accounting]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const idx = Number(btn.dataset.contractAccounting);
+      btn.disabled = true;
+      btn.textContent = 'Sync…';
+      try {
+        await saveApartmentContracts(S.adminSelectedApt);
+        await createAccountingFromContractRegistration(S.contractRows[idx]);
+        toast('✓ Registrazione contratto collegata alla contabilità', 'ok');
+        partialTable();
+        partialStats();
+      } catch (err) {
+        toast('Errore registrazione contratto: ' + (err.message || err), 'err');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = S.contractRows[idx]?.registration_contabilita_documento_id ? 'Aggiorna contabilità registrazione' : 'Crea in contabilità registrazione';
+      }
+    });
+  });
+  document.querySelectorAll('[data-payment-field]').forEach(input => {
+    input.addEventListener('input', e => { S.paymentRows[Number(e.target.dataset.paymentIndex)][e.target.dataset.paymentField] = e.target.value; });
+    input.addEventListener('change', e => {
+      const idx = Number(e.target.dataset.paymentIndex);
+      const key = e.target.dataset.paymentField;
+      S.paymentRows[idx][key] = e.target.value;
+      S.paymentRows[idx] = applyAdminPaymentTypeDefaults(S.paymentRows[idx], { preserveManualChoices: key !== 'payment_type' });
+      if (key === 'payment_type') partialTable();
+    });
+  });
+  document.querySelectorAll('[data-payment-check]').forEach(input => {
+    input.addEventListener('change', e => {
+      const idx = Number(e.target.dataset.paymentIndex);
+      S.paymentRows[idx][e.target.dataset.paymentCheck] = !!e.target.checked;
+      if (!S.paymentRows[idx].needs_accounting && !S.paymentRows[idx].contabilita_documento_id) S.paymentRows[idx].accounting_sync_status = 'solo_gestionale';
+      if (S.paymentRows[idx].needs_accounting && !S.paymentRows[idx].contabilita_documento_id) S.paymentRows[idx].accounting_sync_status = 'da_contabilizzare';
+      partialTable();
+    });
+  });
+  document.querySelectorAll('[data-payment-remove]').forEach(btn => {
+    btn.addEventListener('click', () => { S.paymentRows.splice(Number(btn.dataset.paymentRemove), 1); partialTable(); });
+  });
+  document.querySelectorAll('[data-payment-accounting]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const idx = Number(btn.dataset.paymentAccounting);
+      btn.disabled = true;
+      btn.textContent = 'Sync…';
+      try {
+        await saveApartmentPayments(S.adminSelectedApt);
+        await createAccountingFromOwnerPayment(S.paymentRows[idx]);
+        toast('✓ Documento contabile collegato', 'ok');
+        partialTable();
+        partialStats();
+      } catch (err) {
+        toast('Errore contabilità: ' + (err.message || err), 'err');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = S.paymentRows[idx]?.contabilita_documento_id ? 'Aggiorna contabilità' : 'Crea in contabilità';
+      }
+    });
+  });
+  document.querySelectorAll('[data-maintenance-field]').forEach(input => {
+    input.addEventListener('input', e => { S.maintenanceRows[Number(e.target.dataset.maintenanceIndex)][e.target.dataset.maintenanceField] = e.target.value; });
+    input.addEventListener('change', e => { S.maintenanceRows[Number(e.target.dataset.maintenanceIndex)][e.target.dataset.maintenanceField] = e.target.value; });
+  });
+  document.querySelectorAll('[data-maintenance-done]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = Number(btn.dataset.maintenanceDone);
+      S.maintenanceRows[idx].status = 'fatto';
+      S.maintenanceRows[idx].completed_at = new Date().toISOString();
+      partialTable();
+      partialStats();
+    });
+  });
+  document.querySelectorAll('[data-maintenance-remove]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      S.maintenanceRows.splice(Number(btn.dataset.maintenanceRemove), 1);
+      partialTable();
+      partialStats();
+    });
+  });
+
+  document.getElementById('btnAddOwner')?.addEventListener('click', () => { addOwnerRow(); partialTable(); });
+  document.getElementById('btnAddContract')?.addEventListener('click', () => { addContractRow(); partialTable(); });
+  document.getElementById('btnAddPayment')?.addEventListener('click', () => { addPaymentRow(); partialTable(); partialStats(); });
+  document.getElementById('btnAddMaintenance')?.addEventListener('click', () => { addMaintenanceRow(); partialTable(); partialStats(); });
+
+  document.getElementById('btnSaveOwners')?.addEventListener('click', async (e) => {
+    e.target.disabled = true;
+    e.target.textContent = 'Salvo…';
+    try {
+      await saveApartmentOwners(S.adminSelectedApt);
+      toast('✓ Proprietari salvati', 'ok');
+      partialTable();
+      partialStats();
+    } catch (err) {
+      toast('Errore proprietari: ' + (err.message || err), 'err');
+    } finally {
+      e.target.disabled = !S.adminDataAvailable;
+      e.target.textContent = 'Salva proprietari';
+    }
+  });
+  document.getElementById('btnSaveContracts')?.addEventListener('click', async (e) => {
+    e.target.disabled = true;
+    e.target.textContent = 'Salvo…';
+    try {
+      await saveApartmentContracts(S.adminSelectedApt);
+      toast('✓ Contratti salvati', 'ok');
+      partialTable();
+      partialStats();
+    } catch (err) {
+      toast('Errore contratti: ' + (err.message || err), 'err');
+    } finally {
+      e.target.disabled = !S.adminDataAvailable;
+      e.target.textContent = 'Salva contratti';
+    }
+  });
+  document.getElementById('btnSavePayments')?.addEventListener('click', async (e) => {
+    e.target.disabled = true;
+    e.target.textContent = 'Salvo…';
+    try {
+      await saveApartmentPayments(S.adminSelectedApt);
+      toast('✓ Pagamenti salvati', 'ok');
+      partialTable();
+      partialStats();
+    } catch (err) {
+      toast('Errore pagamenti: ' + (err.message || err), 'err');
+    } finally {
+      e.target.disabled = !S.adminDataAvailable;
+      e.target.textContent = 'Salva pagamenti';
+    }
+  });
+  document.getElementById('btnSaveMaintenance')?.addEventListener('click', async (e) => {
+    e.target.disabled = true;
+    e.target.textContent = 'Salvo…';
+    try {
+      await saveApartmentMaintenanceTasks(S.adminSelectedApt);
+      toast('✓ Manutenzioni salvate', 'ok');
+      partialTable();
+      partialStats();
+    } catch (err) {
+      toast('Errore manutenzioni: ' + (err.message || err), 'err');
+    } finally {
+      e.target.disabled = !S.maintenanceDataAvailable;
+      e.target.textContent = 'Salva manutenzioni';
+    }
+  });
+}
+
 function renderLogin() {
   document.getElementById('app').innerHTML = `
   <div class="login-wrap">
@@ -1526,6 +2999,9 @@ function renderDashboard() {
   const st=stats(), pct=(S.timeLeft/TIMEOUT_MS)*100;
   const displayEmail = 'contabilita@illupoaffitta.com';
   const barClr = pct<20?'#dc2626':pct<50?'#d97706':'#2563eb';
+  const adminApartmentOptions = S.showInactiveApartments
+    ? S.apartments
+    : S.apartments.filter(item => item.attivo !== false || String(item.id) === String(S.adminSelectedApt));
   const cards = S.accountingView === 'bollette'
     ? [
         ['Bollette', st.tot],
@@ -1534,7 +3010,24 @@ function renderDashboard() {
         ['Pagate', st.ownerPaid],
         ['Approvate non pagate', st.toRefund],
         ['Scartate', st.reimbursed],
-        ['Generali', S.billRows.filter(r => r.is_general).length],
+      ]
+    : S.accountingView === 'appartamenti'
+    ? [
+        ['Appartamenti', st.tot],
+        ['Proprietari', st.review],
+        ['Contratti', st.approved],
+        ['Pagamenti', st.discarded],
+        ['Da contabilizzare', st.cashTodo],
+        ['Manutenzioni aperte', st.cashDone],
+      ]
+    : S.accountingView === 'manuale'
+    ? [
+        ['Documenti ricevuti', st.tot],
+        ['Da revisionare', st.review],
+        ['Approvati', st.approved],
+        ['Scartati', st.discarded],
+        ['Contanti fatturati', st.cashDone],
+        ['Contanti da fatturare', st.cashTodo],
       ]
     : [
         ['Documenti ricevuti', st.tot],
@@ -1559,6 +3052,8 @@ function renderDashboard() {
   <div class="tabs">
     <div id="viewDocs" class="tab ${S.accountingView==='documenti'?'active':''}">Documenti</div>
     <div id="viewBills" class="tab ${S.accountingView==='bollette'?'active':''}">Bollette</div>
+    <div id="viewManualEntry" class="tab ${S.accountingView==='manuale'?'active':''}">Inserimento manuale</div>
+    <div id="viewAdminApartments" class="tab ${S.accountingView==='appartamenti'?'active':''}">Appartamenti</div>
   </div>
   ${S.accountingView === 'bollette' ? `
     <div class="subtabs">
@@ -1570,8 +3065,18 @@ function renderDashboard() {
   <div class="stats-row">
     ${cards.map((card, index) => `<div class="stat-card"><div class="stat-label">${esc(card[0])}</div><div class="stat-val" id="st${index}">${esc(String(card[1] ?? 0))}</div></div>`).join('')}
   </div>
+  ${S.accountingView === 'documenti' ? renderOperationalDashboard() : ''}
   <div class="filters">
-    <input id="fAccSearch" type="text" placeholder="Cerca fornitore, oggetto email, appartamento…" value="${esc(S.fAccSearch)}"/>
+    ${S.accountingView === 'appartamenti' ? `
+      <select id="adminAptSelect">
+        <option value="">— Seleziona appartamento —</option>
+        <option value="${ADMIN_GENERAL_OPTION}" ${S.adminSelectedApt===ADMIN_GENERAL_OPTION?'selected':''}>Generali</option>
+        ${adminApartmentOptions.map(a=>`<option value="${a.id}" ${S.adminSelectedApt===String(a.id)?'selected':''}>${esc(a.nome_appartamento)}${a.struttura_nome ? ' · ' + esc(a.struttura_nome) : ''}${a.attivo === false ? ' · DISATTIVO' : ''}</option>`).join('')}
+      </select>
+      <label style="display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)"><input id="toggleInactiveApartments" type="checkbox" ${S.showInactiveApartments ? 'checked' : ''}/> Mostra disattivi</label>
+    ` : S.accountingView === 'manuale' ? `
+      <div class="hint-box" style="margin:0;width:100%">Inserimento rapido su <span class="mono-sm">contabilita_documenti</span>. Usa questa sezione per spese e movimenti semplici, poi ritrovi tutto in Documenti.</div>
+    ` : `<input id="fAccSearch" type="text" placeholder="Cerca fornitore, oggetto email, appartamento…" value="${esc(S.fAccSearch)}"/>`}
     ${S.accountingView === 'bollette' ? `
       <select id="fBillStato">
         <option value="">Tutti gli stati revisione</option>
@@ -1594,7 +3099,7 @@ function renderDashboard() {
         <option value="generale" ${S.fBillGeneral==='generale'?'selected':''}>Generali</option>
         <option value="appartamento" ${S.fBillGeneral==='appartamento'?'selected':''}>Assegnate</option>
       </select>
-    ` : `
+    ` : S.accountingView === 'documenti' ? `
       <select id="fAccStato">
         <option value="">Tutti gli stati</option>
         ${ACCOUNTING_APPROVAL_STATI.map(s=>`<option value="${s}" ${S.fAccStato===s?'selected':''}>${approvalBadgeLbl(s)}</option>`).join('')}
@@ -1615,7 +3120,7 @@ function renderDashboard() {
         <option value="">Tutte le categorie</option>
         ${[...new Set(S.accountingRows.map(r => r.category).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'it')).map(v=>`<option value="${esc(v)}" ${S.fAccCategory===v?'selected':''}>${esc(v)}</option>`).join('')}
       </select>
-    `}
+    ` : ''}
     <button id="btnRefresh" class="btn btn-ghost" style="padding:8px 14px;font-size:12px">↻ Aggiorna</button>
   </div>
   ${S.accountingView === 'bollette' ? `
@@ -1641,18 +3146,20 @@ function renderDashboard() {
   ` : ''}
   <div class="body-wrap">
     <div class="table-panel" id="tablePanel"></div>
-    <div class="drawer ${S.selected?'open':''}" id="drawer"></div>
+    <div class="drawer ${(S.accountingView==='documenti' && S.accountingSelected) || (S.accountingView==='bollette' && S.billSelected) || (S.panelMode!=='contabilita' && S.selected) ? 'open' : ''}" id="drawer"></div>
   </div>`;
 
   document.getElementById('btnLogout').addEventListener('click', ()=>sb.auth.signOut());
   initNavbar('');
   document.getElementById('viewDocs').addEventListener('click', ()=>{ S.accountingView='documenti'; S.billSelected=null; S.billForm={}; renderDashboard(); });
   document.getElementById('viewBills').addEventListener('click', ()=>{ S.accountingView='bollette'; S.accountingSelected=null; S.accountingForm={}; renderDashboard(); });
+  document.getElementById('viewManualEntry').addEventListener('click', ()=>{ S.accountingView='manuale'; S.accountingSelected=null; S.accountingForm={}; S.billSelected=null; S.billForm={}; S.manualEntry = S.manualEntry || getDefaultManualEntry(); renderDashboard(); });
+  document.getElementById('viewAdminApartments').addEventListener('click', async ()=>{ S.accountingView='appartamenti'; S.accountingSelected=null; S.accountingForm={}; S.billSelected=null; S.billForm={}; S.adminSelectedApt = getPreferredAdminApartmentId(S.adminSelectedApt); await loadApartmentAdminData(S.adminSelectedApt); renderDashboard(); });
   document.getElementById('billViewInbox')?.addEventListener('click', ()=>{ S.billViewMode='inbox'; S.billSelection={}; renderDashboard(); });
   document.getElementById('billViewApt')?.addEventListener('click', ()=>{ S.billViewMode='apartment'; S.billSelection={}; renderDashboard(); });
   document.getElementById('billViewArchive')?.addEventListener('click', ()=>{ S.billViewMode='archive'; S.billSelection={}; renderDashboard(); });
   document.getElementById('btnRefresh').addEventListener('click', loadData);
-  document.getElementById('fAccSearch').addEventListener('input', e=>{ S.fAccSearch=e.target.value; partialTable(); });
+  document.getElementById('fAccSearch')?.addEventListener('input', e=>{ S.fAccSearch=e.target.value; partialTable(); });
   document.getElementById('fAccStato')?.addEventListener('change', e=>{ S.fAccStato=e.target.value; partialTable(); });
   document.getElementById('fAccFiscal')?.addEventListener('change', e=>{ S.fAccFiscal=e.target.value; partialTable(); });
   document.getElementById('fAccPayment')?.addEventListener('change', e=>{ S.fAccPayment=e.target.value; partialTable(); });
@@ -1667,6 +3174,13 @@ function renderDashboard() {
   document.getElementById('billUploadNote')?.addEventListener('input', e=>{ S.billUploadNote = e.target.value; });
   document.getElementById('btnUploadBills')?.addEventListener('click', uploadBillsFromPortal);
   document.getElementById('btnUploadReset')?.addEventListener('click', resetBillUpload);
+  document.getElementById('adminAptSelect')?.addEventListener('change', async e => { await openAdminApartmentSheet(e.target.value); });
+  document.getElementById('toggleInactiveApartments')?.addEventListener('change', () => {
+    S.showInactiveApartments = !S.showInactiveApartments;
+    S.adminSelectedApt = getPreferredAdminApartmentId(S.adminSelectedApt);
+    renderDashboard();
+  });
+  bindOperationalDashboard();
   partialTable(); partialDrawer();
 }
 
@@ -1695,6 +3209,16 @@ function initNavbar(email = '') {
 function partialTable() {
   const panel = document.getElementById('tablePanel'); if(!panel) return;
   if (S.panelMode === 'contabilita') {
+    if (S.accountingView === 'manuale') {
+      panel.innerHTML = renderManualEntrySection();
+      bindManualEntryEvents();
+      return;
+    }
+    if (S.accountingView === 'appartamenti') {
+      panel.innerHTML = renderAdminApartmentSection();
+      bindAdminApartmentEvents();
+      return;
+    }
     if (S.accountingView === 'bollette') {
       const rows = filteredBills();
       if (!S.billsEnabled) {
@@ -1836,7 +3360,7 @@ function partialTable() {
 function highlightSelected() {
   document.querySelectorAll('.row-item').forEach(tr=>{
     const currentId = S.panelMode === 'contabilita'
-      ? (S.accountingView === 'bollette' ? S.billSelected?.id : S.accountingSelected?.id)
+      ? (S.accountingView === 'bollette' ? S.billSelected?.id : S.accountingView === 'documenti' ? S.accountingSelected?.id : null)
       : S.selected?.id;
     tr.classList.toggle('selected', String(tr.dataset.id)===String(currentId));
   });
@@ -1847,8 +3371,32 @@ function partialStats() {
   const ids = ['st0','st1','st2','st3','st4','st5'];
   const values = S.accountingView === 'bollette'
     ? [st.tot, st.review, st.approved, st.ownerPaid, st.toRefund, S.billRows.filter(r => r.is_general).length]
+    : S.accountingView === 'appartamenti'
+    ? [st.tot, st.review, st.approved, st.discarded, st.cashTodo, st.cashDone]
     : [st.tot, st.review, st.approved, st.discarded, st.cashDone, st.cashTodo];
   ids.forEach((id, index) => { const el = document.getElementById(id); if (el) el.textContent = values[index] ?? '0'; });
+  const dashboard = getDashboardMetrics();
+  const setText = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  };
+  setText('opsDocsCount', String(dashboard.reviewDocs));
+  setText('opsBillsOverdueCount', String(dashboard.overdueBillsCount));
+  setText('opsBillsSoonCount', String(dashboard.dueSoonBillsCount));
+  setText('opsOwnerPaymentsCount', dashboard.ownerPaymentsTodo == null ? '—' : String(dashboard.ownerPaymentsTodo));
+  setText('opsMaintenanceCount', dashboard.openMaintenance == null ? '—' : String(dashboard.openMaintenance));
+  setText('opsUntaggedCount', dashboard.untaggedExpenses == null ? '—' : String(dashboard.untaggedExpenses));
+  setText('opsDocsMeta', 'Documenti in attesa di controllo manuale prima dell\'approvazione.');
+  setText('opsBillsOverdueMeta', dashboard.overdueBillsCount ? `Importo aperto ${formatAccountingCurrency(dashboard.overdueBillsAmount)}` : 'Nessuna bolletta scaduta non pagata.');
+  setText('opsBillsSoonMeta', 'Scadenza entro i prossimi 7 giorni.');
+  setText('opsOwnerPaymentsMeta', dashboard.ownerPaymentsTodo == null ? 'Non disponibile con il database attuale.' : 'Pagamenti non chiusi o ancora da contabilizzare.');
+  setText('opsMaintenanceMeta', dashboard.openMaintenance == null ? 'Non disponibile con il database attuale.' : 'Task non marcati come fatti o annullati.');
+  setText('opsUntaggedMeta', dashboard.untaggedExpenses == null ? 'Non disponibile: manca il dataset documenti.' : 'Documenti senza appartamento, senza categoria e non marcati come spesa generale.');
+  const latestDocs = document.getElementById('opsLatestDocs');
+  if (latestDocs) {
+    latestDocs.innerHTML = renderDashboardLatestDocs(dashboard.latestDocuments);
+    bindOperationalDashboard();
+  }
 }
 
 function handleBillFilesPicked(fileList) {
@@ -1911,6 +3459,8 @@ async function uploadBillsFromPortal() {
 function partialDrawer() {
   const d = document.getElementById('drawer'); if(!d) return;
   if (S.panelMode === 'contabilita') {
+    if (S.accountingView === 'manuale') { d.classList.remove('open'); d.innerHTML=''; return; }
+    if (S.accountingView === 'appartamenti') { d.classList.remove('open'); d.innerHTML=''; return; }
     if (S.accountingView === 'bollette') {
       if (!S.billSelected) { d.classList.remove('open'); d.innerHTML=''; return; }
       const r = S.billSelected;
@@ -2138,12 +3688,14 @@ function partialDrawer() {
     </div>
     <div class="drawer-footer">
       <button id="dSaveAcc" class="btn btn-ghost" style="margin-right:auto">${S.accountingSaving?'<span class="spin"></span>':'💾'} Salva</button>
+      ${(r.approval_status === 'scartato' || f.approval_status === 'scartato') ? `<button id="dDeleteAcc" class="btn btn-red" ${S.accountingSaving?'disabled':''}>Elimina</button>` : ''}
       <button id="dFixAcc" class="btn btn-yellow" ${S.accountingSaving?'disabled':''}>⚑ Corretto</button>
       <button id="dRejectAcc" class="btn btn-red" ${S.accountingSaving?'disabled':''}>✗ Scarta</button>
       <button id="dApproveAcc" class="btn btn-green" ${S.accountingSaving?'disabled':''}>✓ Approva</button>
     </div>`;
     document.getElementById('dClose').addEventListener('click', ()=>{ S.accountingSelected=null; S.accountingForm={}; partialDrawer(); highlightSelected(); });
     document.getElementById('dSaveAcc').addEventListener('click', saveAccountingForm);
+    document.getElementById('dDeleteAcc')?.addEventListener('click', deleteDiscardedAccountingDocument);
     document.getElementById('dFixAcc').addEventListener('click', ()=>setAccountingStatus('corretto'));
     document.getElementById('dRejectAcc').addEventListener('click', ()=>setAccountingStatus('scartato'));
     document.getElementById('dApproveAcc').addEventListener('click', ()=>setAccountingStatus('approvato'));
@@ -2362,7 +3914,34 @@ function startInactivity() {
   }, 1000);
 }
 
-(async()=>{
+function withUiGuard(fn, context) {
+  return async (...args) => {
+    try {
+      return await fn(...args);
+    } catch (error) {
+      console.error(`[backoffice-contabilita] ${context}:`, error);
+      const message = error?.message || String(error || 'Errore inatteso');
+      toast(`Errore ${context}: ${message}`, 'err');
+      const app = document.getElementById('app');
+      if (app && !app.innerHTML.trim()) {
+        app.innerHTML = `<div class="login-wrap"><div class="login-card"><div class="login-logo">Impatto</div><div class="login-sub">Backoffice · Contabilita</div><div class="msg-err" style="display:block">Errore bloccante: ${esc(message)}</div></div></div>`;
+      }
+      return null;
+    }
+  };
+}
+
+window.addEventListener('error', (event) => {
+  console.error('[backoffice-contabilita] window error:', event.error || event.message);
+  toast('Errore pagina: ' + (event.error?.message || event.message || 'Errore sconosciuto'), 'err');
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('[backoffice-contabilita] unhandled rejection:', event.reason);
+  toast('Errore async: ' + (event.reason?.message || String(event.reason || 'Promise rifiutata')), 'err');
+});
+
+(withUiGuard(async()=>{
   const {data:{session}} = await sb.auth.getSession();
   if (session && isAllowedAccountingEmail(session.user?.email)) {
     S.session=session;
@@ -2373,7 +3952,7 @@ function startInactivity() {
     if (session) await sb.auth.signOut();
     renderLogin();
   }
-})();
+}, 'init'))();
 
 sb.auth.onAuthStateChange(async (_,session)=>{
   if (!session && S.session) {

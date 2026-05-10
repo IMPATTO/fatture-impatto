@@ -312,7 +312,9 @@
   <div class="navbar-links">
     <a href="/backoffice.html" class="navbar-link active active-fatture">Fatturazione</a>
     <a href="/backoffice-documenti.html" class="navbar-link">Documenti</a>
-    <a href="/backoffice-portale.html" class="navbar-link">Portale Admin</a>
+    <a href="/backoffice-portale.html" class="navbar-link">Portale</a>
+    <a href="/backoffice-richieste.html" class="navbar-link">Richieste</a>
+    <a href="/backoffice-operativita.html" class="navbar-link">Operativita</a>
     <a href="/backoffice-beds24-messaggi.html" class="navbar-link">Beds24 Messaggi</a>
     <a href="/backoffice-contabilita.html" class="navbar-link">Contabilita</a>
   </div>
@@ -337,6 +339,9 @@ const ARCHIVE_STATI = ['SCARTATA','BOZZA_CREATA','CREDENZIALI_INVIATE'];
 const CONTABILITA_STATI = ['DA_APPROVARE', 'DA_CORREGGERE', 'APPROVATO', 'SCARTATO'];
 const CONTABILITA_DOC_TYPES = ['bolletta', 'fattura_fornitore', 'ricevuta', 'contratto', 'altro'];
 const FREE_INVOICE_CUSTOMER_FIELDS = ['tipo_cliente','nome_visualizzato','ragione_sociale','nome','cognome','localita','piva','codice_fiscale','email','privato_csv','pec','codice_destinatario','indirizzo','cap','citta','provincia','paese','note'];
+const BILLING_LIST_SELECT = 'id,created_at,updated_at,apartment_id,nome_appartamento,nome,cognome,email,telefono,paese_residenza,indirizzo_residenza,codice_fiscale,codice_fiscale_verificato,iva_percentuale,tipo_cliente,ragione_sociale,piva_cliente,indirizzo_fatturazione,importo_lordo,data_checkin,data_checkout,segnalazione_jessica,payment_status,stato,capogruppo_id,tipo_alloggiato,additional_guests';
+const ACCOUNTING_LIST_SELECT = 'id,source_email,source_subject,supplier_name,document_type,stato,apartment_id,amount_total,currency,received_at,created_at,updated_at';
+const ACCOUNTING_DETAIL_SELECT = '*, apartments(nome_appartamento)';
 
 const S = {
   session: null, rows: [], apartments: [],
@@ -349,6 +354,7 @@ const S = {
   accountingForm: {},
   accountingEnabled: true,
   accountingLoading: true,
+  accountingDetailLoading: false,
   accountingSaving: false,
   fAccSearch: '',
   fAccStato: '',
@@ -419,6 +425,7 @@ const voiceRec = {
 };
 
 let freeInvoiceClientSearchTimer = null;
+let billingSearchTimer = null;
 
 function setFreeInvoiceRawText(value) {
   S.freeInvoice.rawText = String(value || '').trim();
@@ -623,6 +630,37 @@ function selectAccountingRow(row) {
     competence_month: row.competence_month || '',
     approval_notes: row.approval_notes || '',
   };
+}
+
+async function loadAccountingDetail(rowId) {
+  if (!rowId) return;
+  S.accountingDetailLoading = true;
+  partialDrawer();
+  try {
+    const { data, error } = await sb
+      .from('contabilita_documenti')
+      .select(ACCOUNTING_DETAIL_SELECT)
+      .eq('id', rowId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return;
+    const detailedRow = {
+      ...data,
+      nome_appartamento: data.apartments?.nome_appartamento || S.apartments.find(a => String(a.id) === String(data.apartment_id))?.nome_appartamento || '',
+    };
+    const index = S.accountingRows.findIndex(r => String(r.id) === String(rowId));
+    if (index >= 0) S.accountingRows[index] = { ...S.accountingRows[index], ...detailedRow };
+    if (String(S.accountingSelected?.id) === String(rowId)) {
+      selectAccountingRow(index >= 0 ? S.accountingRows[index] : detailedRow);
+      partialDrawer();
+    }
+  } catch (error) {
+    console.error('Errore caricamento dettaglio contabile:', error);
+    toast('Errore caricamento dettaglio documento', 'err');
+  } finally {
+    S.accountingDetailLoading = false;
+    partialDrawer();
+  }
 }
 
 function getPaymentStatusLabel(value){
@@ -1578,9 +1616,9 @@ async function loadData() {
   try {
     const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('Timeout')), 120000));
     const query = Promise.all([
-      sb.from('ospiti_check_in').select('*').order('created_at',{ascending:false}),
+      sb.from('ospiti_check_in').select(BILLING_LIST_SELECT).order('created_at',{ascending:false}),
       sb.from('apartments').select('id,nome_appartamento').order('nome_appartamento'),
-      sb.from('contabilita_documenti').select('*, apartments(nome_appartamento)').order('received_at',{ascending:false}),
+      sb.from('contabilita_documenti').select(ACCOUNTING_LIST_SELECT).order('received_at',{ascending:false}),
       detectBillingOptionalColumns(),
     ]);
     const [o,a,c] = await Promise.race([query, timeout]);
@@ -1601,7 +1639,7 @@ async function loadData() {
       S.accountingEnabled = true;
       S.accountingRows = (c?.data || []).map(row => ({
         ...row,
-        nome_appartamento: row.apartments?.nome_appartamento || apartmentNameById.get(String(row.apartment_id)) || '',
+        nome_appartamento: apartmentNameById.get(String(row.apartment_id)) || row.nome_appartamento || '',
       }));
     }
   } catch(e) {
@@ -1838,7 +1876,14 @@ function renderDashboard() {
   });
   initNavbar(displayEmail);
   document.getElementById('btnRefresh').addEventListener('click', loadData);
-  document.getElementById('fSearch').addEventListener('input', e=>{ S.fSearch=e.target.value; partialTable(); });
+  document.getElementById('fSearch').addEventListener('input', e=>{
+    const nextValue = e.target.value;
+    if (billingSearchTimer) clearTimeout(billingSearchTimer);
+    billingSearchTimer = setTimeout(()=>{
+      S.fSearch = nextValue;
+      partialTable();
+    }, 180);
+  });
   document.getElementById('fStato').addEventListener('change', e=>{ S.fStato=e.target.value; partialTable(); });
   document.getElementById('fApt').addEventListener('change', e=>{ S.fApt=e.target.value; partialTable(); });
   document.getElementById('fGroupRole').addEventListener('change', e=>{ S.fGroupRole=e.target.value; partialTable(); });
@@ -1901,11 +1946,12 @@ function partialTable() {
         </tr>`).join('')}
       </tbody></table>`;
     panel.querySelectorAll('.row-item').forEach(tr=>{
-      tr.addEventListener('click', ()=>{
+      tr.addEventListener('click', async ()=>{
         const row = S.accountingRows.find(r=>String(r.id)===String(tr.dataset.id)); if(!row) return;
         selectAccountingRow(row);
         partialDrawer();
         highlightSelected();
+        await loadAccountingDetail(row.id);
       });
     });
     return;
@@ -1998,6 +2044,7 @@ function partialDrawer() {
         <div class="field"><label>Data documento</label><input class="df-acc" data-k="issue_date" type="date" value="${esc(f.issue_date)}"/></div>
         <div class="field"><label>Scadenza</label><input class="df-acc" data-k="due_date" type="date" value="${esc(f.due_date)}"/></div>
       </div>
+      ${S.accountingDetailLoading ? `<div class="loading" style="padding:16px 0"><span class="spin"></span> Caricamento dettagli documento…</div>` : ''}
       <div class="drawer-sec">Allegati</div>
       ${attachments.length ? `<div class="doc-list">${attachments.map((file, idx)=>`
         <div class="doc-item">

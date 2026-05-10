@@ -529,6 +529,35 @@
       text-decoration: none;
     }
 
+    .access-section {
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border);
+    }
+    .access-section:first-child {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: none;
+    }
+
+    .access-section-title {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+    }
+
+    .access-note {
+      background: var(--surface-2);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--text-primary);
+    }
+
     /* ─── Numbers / Contacts ─── */
     .contacts-grid {
       display: grid;
@@ -566,6 +595,53 @@
       color: var(--accent);
       font-weight: 500;
     }
+
+    .utility-stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .utility-item {
+      background: var(--surface-2);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .utility-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .utility-text {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    .utility-links {
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+
+    .utility-link {
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:8px 12px;
+      border-radius:999px;
+      background: var(--surface);
+      border:1px solid var(--border);
+      color: var(--accent);
+      text-decoration:none;
+      font-size:13px;
+      font-weight:500;
+    }
+    .utility-link:hover { background: var(--accent-light); }
 
     /* ─── Emergency Banner ─── */
     .emergency-banner {
@@ -718,11 +794,11 @@
       <h2 class="error-title" id="error-title">Accesso scaduto</h2>
       <p class="error-msg" id="error-msg">
         Questo link non è più valido o è già stato utilizzato.<br>
-        Contatta il supporto per ricevere un nuovo link di accesso.
+        Scrivici su WhatsApp per ricevere subito assistenza.
       </p>
-      <a href="mailto:info@illupoaffitta.com" class="btn-contact">
+      <a href="https://wa.me/393513239927" class="btn-contact" target="_blank" rel="noopener">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg>
-        Contatta il supporto
+        Supporto WhatsApp
       </a>
     </div>
   </div>
@@ -794,6 +870,9 @@
         section_credentials: 'Accesso Appartamento',
         section_instructions: 'Istruzioni',
         section_tips: 'Consigli',
+        section_beaches: 'Spiagge convenzionate',
+        section_waste: 'Gestione rifiuti',
+        section_wifi: 'Wi-Fi',
         section_map: 'Come Arrivare',
         section_contacts: 'Numeri Utili',
         access_code: 'Codice Cassettina Sicurezza',
@@ -801,6 +880,11 @@
         access_instructions: 'Istruzioni Accesso',
         video_tour: 'Video istruzioni',
         watch_video: 'Guarda il video',
+        access_main_entrance: 'Accesso alla struttura',
+        access_laundry: 'Accesso lavanderia',
+        access_notes: 'Note',
+        access_structure_details: 'Dettagli accesso',
+        room_code_note: 'Il codice della stanza verrà fornito da Serena. Per questo accesso contatta direttamente lei.',
         how_to_arrive: 'Come Arrivare',
         parking: 'Parcheggio',
         house_rules: 'Regole della Casa',
@@ -815,8 +899,8 @@
         copied: 'Copiato!',
         call: 'Chiama',
         error_title: 'Accesso scaduto',
-        error_msg: 'Questo link non è più valido. Contatta il supporto per ricevere un nuovo link.',
-        contact_support: 'Contatta il supporto',
+        error_msg: 'Questo link non è più valido. Scrivici su WhatsApp per ricevere assistenza immediata.',
+        contact_support: 'Supporto WhatsApp',
         emergency: 'Emergenza'
       },
       EN: {
@@ -828,6 +912,9 @@
         section_credentials: 'Apartment Access',
         section_instructions: 'Instructions',
         section_tips: 'Tips',
+        section_beaches: 'Partner Beaches',
+        section_waste: 'Waste Disposal',
+        section_wifi: 'Wi-Fi',
         section_map: 'How to Arrive',
         section_contacts: 'Useful Numbers',
         access_code: 'Lockbox Code',
@@ -849,8 +936,8 @@
         copied: 'Copied!',
         call: 'Call',
         error_title: 'Link expired',
-        error_msg: 'This link is no longer valid. Contact support to receive a new link.',
-        contact_support: 'Contact support',
+        error_msg: 'This link is no longer valid. Contact us on WhatsApp for immediate help.',
+        contact_support: 'WhatsApp support',
         emergency: 'Emergency'
       },
       DE: {
@@ -862,6 +949,9 @@
         section_credentials: 'Wohnungszugang',
         section_instructions: 'Anweisungen',
         section_tips: 'Tipps',
+        section_beaches: 'Partner-Strände',
+        section_waste: 'Müllentsorgung',
+        section_wifi: 'Wi-Fi',
         section_map: 'Anreise',
         section_contacts: 'Nützliche Nummern',
         access_code: 'Schlusselkasten-Code',
@@ -883,8 +973,8 @@
         copied: 'Kopiert!',
         call: 'Anrufen',
         error_title: 'Zugang abgelaufen',
-        error_msg: 'Dieser Link ist nicht mehr gültig. Kontaktieren Sie den Support.',
-        contact_support: 'Support kontaktieren',
+        error_msg: 'Dieser Link ist nicht mehr gültig. Schreiben Sie uns auf WhatsApp für schnelle Hilfe.',
+        contact_support: 'WhatsApp Support',
         emergency: 'Notfall'
       },
       FR: {
@@ -896,6 +986,9 @@
         section_credentials: 'Accès Appartement',
         section_instructions: 'Instructions',
         section_tips: 'Conseils',
+        section_beaches: 'Plages partenaires',
+        section_waste: 'Gestion des déchets',
+        section_wifi: 'Wi-Fi',
         section_map: 'Comment Arriver',
         section_contacts: 'Numéros Utiles',
         access_code: 'Code de la Boite a Cles',
@@ -917,8 +1010,8 @@
         copied: 'Copié!',
         call: 'Appeler',
         error_title: 'Lien expiré',
-        error_msg: 'Ce lien n\'est plus valide. Contactez le support pour recevoir un nouveau lien.',
-        contact_support: 'Contacter le support',
+        error_msg: 'Ce lien n\'est plus valide. Écrivez-nous sur WhatsApp pour une aide immédiate.',
+        contact_support: 'Support WhatsApp',
         emergency: 'Urgence'
       },
       ES: {
@@ -930,6 +1023,9 @@
         section_credentials: 'Acceso al Apartamento',
         section_instructions: 'Instrucciones',
         section_tips: 'Consejos',
+        section_beaches: 'Playas asociadas',
+        section_waste: 'Gestión de residuos',
+        section_wifi: 'Wi-Fi',
         section_map: 'Cómo Llegar',
         section_contacts: 'Números Útiles',
         access_code: 'Codigo de la Caja de Seguridad',
@@ -951,8 +1047,8 @@
         copied: '¡Copiado!',
         call: 'Llamar',
         error_title: 'Enlace caducado',
-        error_msg: 'Este enlace ya no es válido. Contacta con el soporte para recibir un nuevo enlace.',
-        contact_support: 'Contactar soporte',
+        error_msg: 'Este enlace ya no es válido. Escríbenos por WhatsApp para recibir ayuda inmediata.',
+        contact_support: 'Soporte WhatsApp',
         emergency: 'Emergencia'
       },
       RU: {
@@ -964,6 +1060,9 @@
         section_credentials: 'Доступ в квартиру',
         section_instructions: 'Инструкции',
         section_tips: 'Советы',
+        section_beaches: 'Пляжи-партнёры',
+        section_waste: 'Вывоз мусора',
+        section_wifi: 'Wi‑Fi',
         section_map: 'Как добраться',
         section_contacts: 'Полезные номера',
         access_code: 'Код сейф-бокса',
@@ -985,13 +1084,14 @@
         copied: 'Скопировано!',
         call: 'Позвонить',
         error_title: 'Ссылка устарела',
-        error_msg: 'Эта ссылка больше не действительна. Свяжитесь с поддержкой.',
-        contact_support: 'Связаться с поддержкой',
+        error_msg: 'Эта ссылка больше не действительна. Напишите нам в WhatsApp для быстрой помощи.',
+        contact_support: 'Поддержка WhatsApp',
         emergency: 'Экстренный'
       }
     };
 
     let lang = 'IT';
+    const SUPPORT_WHATSAPP = '393513239927';
     function t(key) { return (T[lang] || T['IT'])[key] || T['IT'][key] || key; }
 
     // ─── Helpers ────────────────────────────────────────────────
@@ -1009,11 +1109,24 @@
       return m ? m[1] : null;
     }
 
-    function showError(titleKey, msgKey) {
+    function buildSupportWhatsappHref() {
+      const message = 'Ciao, il link del portale check-in non funziona. Potete aiutarmi?';
+      return `https://wa.me/${SUPPORT_WHATSAPP}?text=${encodeURIComponent(message)}`;
+    }
+
+    function logPortalDebug(details) {
+      console.info('[portale]', details);
+    }
+
+    function showError(titleKey, msgKey, options = {}) {
       document.getElementById('loading-screen').classList.add('fade-out');
-      document.getElementById('error-title').textContent = t(titleKey);
-      document.getElementById('error-msg').textContent = t(msgKey);
-      document.querySelector('.btn-contact').textContent = t('contact_support');
+      document.getElementById('error-title').textContent = options.rawTitle || t(titleKey);
+      document.getElementById('error-msg').textContent = options.rawMessage || t(msgKey);
+      const contactBtn = document.querySelector('.btn-contact');
+      contactBtn.textContent = options.contactLabel || t('contact_support');
+      contactBtn.href = options.contactHref || buildSupportWhatsappHref();
+      contactBtn.target = '_blank';
+      contactBtn.rel = 'noopener';
       setTimeout(() => {
         document.getElementById('loading-screen').style.display = 'none';
         document.getElementById('error-screen').classList.add('visible');
@@ -1091,6 +1204,37 @@
       };
     }
 
+    function getBeachInfo(info) {
+      if (!Array.isArray(info?.beach_info)) return [];
+      return info.beach_info.filter((item) => item && typeof item === 'object' && Object.values(item).some(Boolean));
+    }
+
+    function getWasteInfo(info) {
+      const safe = info?.waste_info;
+      if (!safe || typeof safe !== 'object' || Array.isArray(safe)) {
+        return { instructions:'', video_url:'', schedule:'', recycling_rules:'', notes:'' };
+      }
+      return {
+        instructions: String(safe.instructions || ''),
+        video_url: String(safe.video_url || ''),
+        schedule: String(safe.schedule || ''),
+        recycling_rules: String(safe.recycling_rules || ''),
+        notes: String(safe.notes || ''),
+      };
+    }
+
+    function getWifiInfo(info) {
+      const safe = info?.wifi_info;
+      if (!safe || typeof safe !== 'object' || Array.isArray(safe)) {
+        return { ssid:'', password:'', notes:'' };
+      }
+      return {
+        ssid: String(safe.ssid || ''),
+        password: String(safe.password || ''),
+        notes: String(safe.notes || ''),
+      };
+    }
+
     function escHtml(str) {
       const d = document.createElement('div');
       d.textContent = str;
@@ -1104,6 +1248,29 @@
         const href = rawUrl.startsWith('www.') ? `https://${rawUrl}` : rawUrl;
         return `<a href="${href}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;word-break:break-word">${rawUrl}</a>`;
       }).replace(/\n/g, '<br>');
+    }
+
+    function utilityLink(href, label, icon = '') {
+      if (!href) return '';
+      return `<a href="${escHtml(href)}" target="_blank" rel="noopener" class="utility-link">${icon}${label}</a>`;
+    }
+
+    function renderVideoBlock(url) {
+      if (!url) return '';
+      const ytId = extractYoutubeId(url);
+      if (ytId) {
+        return `<div class="video-container"><iframe src="https://www.youtube.com/embed/${ytId}" allowfullscreen title="Video istruzioni" loading="lazy"></iframe></div>`;
+      }
+      const vm = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+      if (vm) {
+        return `<div class="video-container"><iframe src="https://player.vimeo.com/video/${vm[1]}" allowfullscreen title="Video istruzioni" loading="lazy"></iframe></div>`;
+      }
+      return `<div class="video-fallback"><a href="${escHtml(url)}" target="_blank" rel="noopener" class="video-link">${t('watch_video')}</a></div>`;
+    }
+
+    function isMontefeltroApartment(apt) {
+      const text = `${apt?.nome_appartamento || ''}`.toLowerCase();
+      return text.includes('montefeltro');
     }
 
     // ─── Copy to clipboard ──────────────────────────────────────
@@ -1168,8 +1335,39 @@
       if (lang) params.set('lang', lang);
       const res = await fetch(`/.netlify/functions/get-public-portal-data?${params.toString()}`);
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Errore caricamento portale');
+      if (!res.ok) {
+        const error = new Error(data.error || 'Errore caricamento portale');
+        error.status = res.status;
+        error.payload = data;
+        throw error;
+      }
       return data;
+    }
+
+    function renderOpenPortal(payload, langParam) {
+      const apartment = payload.apartment;
+      if (!apartment) {
+        return showError('error_title', 'error_msg');
+      }
+      lang = T[langParam] ? langParam : 'IT';
+      initNavbar('');
+      const creds = payload.creds || null;
+      const info = payload.info || null;
+      document.getElementById('header-stay').textContent = t('open_portal_note');
+      document.getElementById('label-welcome').textContent = t('open_portal_label');
+      document.getElementById('guest-name').textContent = apartment.nome_appartamento || '—';
+      document.getElementById('apt-name').textContent = apartment.nome_appartamento || '—';
+      document.getElementById('checkin-pill').style.display = 'none';
+      document.getElementById('checkout-pill').style.display = 'none';
+      renderPortalCards(apartment, creds, info);
+      return showPortalApp();
+    }
+
+    function showInvalidPortalError() {
+      return showError('error_title', 'error_msg', {
+        rawTitle: 'Link non valido',
+        rawMessage: 'Questo link non è valido. Contattaci su WhatsApp e ti inviamo subito il link corretto.',
+      });
     }
 
     function renderPortalCards(apt, creds, info) {
@@ -1178,31 +1376,58 @@
       let delay = 0.05;
 
       if (creds) {
-        let credsHTML = `<div class="cred-grid">`;
-        credsHTML += credItem(t('access_code'), creds.codice_accesso);
-        credsHTML += credItem(t('key_location'), creds.luogo_chiavi);
-        credsHTML += credItem(t('access_instructions'), creds.istruzioni_accesso);
-        credsHTML += `</div>`;
+        let credsHTML = '';
+        if (isMontefeltroApartment(apt)) {
+          const structureItems = [
+            credItem(t('access_code'), creds.codice_accesso),
+            credItem(t('access_structure_details'), creds.istruzioni_accesso),
+          ].filter(Boolean).join('');
+          const structureVideo = creds.video_url
+            ? `<div style="margin-top:16px">${renderVideoBlock(creds.video_url)}</div>`
+            : '';
+          const laundryItems = credItem(t('access_laundry'), creds.luogo_chiavi);
 
-        if (creds.video_url) {
-          const ytId = extractYoutubeId(creds.video_url);
-          if (ytId) {
-            credsHTML += `
-              <div style="margin-top:16px">
-                <div class="cred-label" style="margin-bottom:10px">${t('video_tour')}</div>
-                <div class="video-container">
-                  <iframe src="https://www.youtube.com/embed/${ytId}" allowfullscreen
-                    title="Video istruzioni" loading="lazy"></iframe>
-                </div>
-              </div>`;
-          } else {
-            credsHTML += `
-              <div class="video-fallback" style="margin-top:12px">
-                <a href="${escHtml(creds.video_url)}" target="_blank" rel="noopener" class="video-link">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                  ${t('watch_video')}
-                </a>
-              </div>`;
+          credsHTML += `
+            <div class="access-section">
+              <div class="access-section-title">${t('access_main_entrance')}</div>
+              ${structureItems ? `<div class="cred-grid">${structureItems}</div>` : ''}
+              ${structureVideo}
+            </div>
+            <div class="access-section">
+              <div class="access-section-title">${t('access_laundry')}</div>
+              ${laundryItems ? `<div class="cred-grid">${laundryItems}</div>` : '<div class="access-note">Informazioni lavanderia in aggiornamento.</div>'}
+            </div>
+            <div class="access-section">
+              <div class="access-section-title">${t('access_notes')}</div>
+              <div class="access-note">${linkifyText(t('room_code_note'))}</div>
+            </div>`;
+        } else {
+          credsHTML = `<div class="cred-grid">`;
+          credsHTML += credItem(t('access_code'), creds.codice_accesso);
+          credsHTML += credItem(t('key_location'), creds.luogo_chiavi);
+          credsHTML += credItem(t('access_instructions'), creds.istruzioni_accesso);
+          credsHTML += `</div>`;
+
+          if (creds.video_url) {
+            const ytId = extractYoutubeId(creds.video_url);
+            if (ytId) {
+              credsHTML += `
+                <div style="margin-top:16px">
+                  <div class="cred-label" style="margin-bottom:10px">${t('video_tour')}</div>
+                  <div class="video-container">
+                    <iframe src="https://www.youtube.com/embed/${ytId}" allowfullscreen
+                      title="Video istruzioni" loading="lazy"></iframe>
+                  </div>
+                </div>`;
+            } else {
+              credsHTML += `
+                <div class="video-fallback" style="margin-top:12px">
+                  <a href="${escHtml(creds.video_url)}" target="_blank" rel="noopener" class="video-link">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    ${t('watch_video')}
+                  </a>
+                </div>`;
+            }
           }
         }
 
@@ -1244,6 +1469,60 @@
           const tipsCard = buildCard('list', t('section_tips'), tipsHTML, delay);
           tipsCard.classList.add('collapsed');
           main.appendChild(tipsCard);
+          delay += 0.05;
+        }
+
+        const beaches = getBeachInfo(info);
+        if (beaches.length) {
+          const beachHTML = `<div class="utility-stack">${beaches.map((item) => {
+            const links = [
+              item.phone ? utilityLink(`tel:${String(item.phone).replace(/\s/g,'')}`, item.phone, '📞') : '',
+              item.whatsapp ? utilityLink(`https://wa.me/${String(item.whatsapp).replace(/[^\d]/g,'')}`, 'WhatsApp', '💬') : '',
+              item.email ? utilityLink(`mailto:${item.email}`, item.email, '✉️') : '',
+              item.maps_url ? utilityLink(item.maps_url, 'Maps', '📍') : '',
+              item.image_url ? utilityLink(item.image_url, 'Link', '🔗') : '',
+            ].filter(Boolean).join('');
+            return `
+              <div class="utility-item">
+                <div class="utility-title">${escHtml(item.name || 'Spiaggia')}</div>
+                ${item.description ? `<div class="utility-text">${linkifyText(item.description)}</div>` : ''}
+                ${item.discount ? `<div class="utility-text"><strong>Convenzione:</strong> ${linkifyText(item.discount)}</div>` : ''}
+                ${item.address ? `<div class="utility-text">${linkifyText(item.address)}</div>` : ''}
+                ${item.notes ? `<div class="utility-text">${linkifyText(item.notes)}</div>` : ''}
+                ${links ? `<div class="utility-links">${links}</div>` : ''}
+              </div>`;
+          }).join('')}</div>`;
+          const beachCard = buildCard('map', t('section_beaches'), beachHTML, delay);
+          beachCard.classList.add('collapsed');
+          main.appendChild(beachCard);
+          delay += 0.05;
+        }
+
+        const waste = getWasteInfo(info);
+        if (waste.instructions || waste.video_url || waste.schedule || waste.recycling_rules || waste.notes) {
+          let wasteHTML = `<div class="instructions-list">`;
+          let wasteNum = 1;
+          wasteHTML += instrItem(wasteNum++, 'Istruzioni', waste.instructions);
+          wasteHTML += instrItem(wasteNum++, 'Giorni e orari', waste.schedule);
+          wasteHTML += instrItem(wasteNum++, 'Regole differenziata', waste.recycling_rules);
+          wasteHTML += instrItem(wasteNum++, 'Note', waste.notes);
+          wasteHTML += `</div>`;
+          if (waste.video_url) wasteHTML += `<div style="margin-top:16px">${renderVideoBlock(waste.video_url)}</div>`;
+          const wasteCard = buildCard('list', t('section_waste'), wasteHTML, delay);
+          wasteCard.classList.add('collapsed');
+          main.appendChild(wasteCard);
+          delay += 0.05;
+        }
+
+        const wifi = getWifiInfo(info);
+        if (wifi.ssid || wifi.password || wifi.notes) {
+          let wifiHTML = `<div class="cred-grid">`;
+          wifiHTML += credItem('Wi-Fi / SSID', wifi.ssid);
+          wifiHTML += credItem('Password', wifi.password);
+          wifiHTML += `</div>`;
+          if (wifi.notes) wifiHTML += `<div class="utility-text" style="margin-top:14px">${linkifyText(wifi.notes)}</div>`;
+          const wifiCard = buildCard('key', t('section_wifi'), wifiHTML, delay);
+          main.appendChild(wifiCard);
           delay += 0.05;
         }
       }
@@ -1345,22 +1624,46 @@
     }
 
     // ─── Main Load ──────────────────────────────────────────────
+    function getFirstQueryParam(params, keys) {
+      for (const key of keys) {
+        const value = String(params.get(key) || '').trim();
+        if (value) return value;
+      }
+      return '';
+    }
+
     async function init() {
       const params = new URLSearchParams(window.location.search);
-      const token = params.get('token');
-      const aptKey = params.get('apt');
+      const token = getFirstQueryParam(params, ['token', 'portale_token']);
+      const aptKey = getFirstQueryParam(params, ['apt', 'aptId', 'apartment_ref', 'apartment_id', 'key']);
+      const mode = (params.get('mode') || '').trim().toLowerCase();
       const langParam = (params.get('lang') || 'IT').toUpperCase();
+      const isOpenMode = mode === 'open' || (!!aptKey && !token);
 
-      if (!token && !aptKey) { return showError('error_title', 'error_msg'); }
+      logPortalDebug({
+        token_present: !!token,
+        apt_present: !!aptKey,
+        mode: mode || 'default',
+      });
+
+      if (!token && !(aptKey && isOpenMode)) { return showInvalidPortalError(); }
 
       try {
         if (token) {
         // Il read pubblico passa lato Netlify per mantenere il token flow senza esporre la tabella ospiti in anon.
-        const payload = await fetchPublicPortalContext({ token, lang: langParam });
+        const payload = await fetchPublicPortalContext({ token, apt: aptKey, lang: langParam });
+        logPortalDebug({
+          token_present: !!token,
+          apt_present: !!aptKey,
+          mode: mode || 'default',
+          guest_found: !!payload?.guest,
+          apartment_found: !!payload?.apartment,
+        });
         const guest = payload.guest;
         const apt   = payload.apartment;
         if (!guest || !apt) {
-          return showError('error_title', 'error_msg');
+          if (apt) return renderOpenPortal(payload, langParam);
+          return showInvalidPortalError();
         }
         initNavbar('');
 
@@ -1382,29 +1685,32 @@
         return showPortalApp();
         }
 
-        if (aptKey) {
-          lang = T[langParam] ? langParam : 'IT';
-          initNavbar('');
-          const payload = await fetchPublicPortalContext({ apt: aptKey, lang });
-          const apartment = payload.apartment;
-          if (!apartment) {
-            return showError('error_title', 'error_msg');
+        if (aptKey && isOpenMode) {
+          const payload = await fetchPublicPortalContext({ apt: aptKey, lang: langParam });
+          logPortalDebug({
+            token_present: false,
+            apt_present: !!aptKey,
+            mode: mode || 'default',
+            guest_found: !!payload?.guest,
+            apartment_found: !!payload?.apartment,
+          });
+          if (!payload?.apartment) {
+            return showInvalidPortalError();
           }
-          const creds = payload.creds || null;
-          const info = payload.info || null;
-          document.getElementById('header-stay').textContent = t('open_portal_note');
-          document.getElementById('label-welcome').textContent = t('open_portal_label');
-          document.getElementById('guest-name').textContent = apartment.nome_appartamento || '—';
-          document.getElementById('apt-name').textContent = apartment.nome_appartamento || '—';
-          document.getElementById('checkin-pill').style.display = 'none';
-          document.getElementById('checkout-pill').style.display = 'none';
-          renderPortalCards(apartment, creds, info);
-          return showPortalApp();
+          return renderOpenPortal(payload, langParam);
         }
 
-        return showError('error_title', 'error_msg');
+        return showInvalidPortalError();
       } catch (err) {
         console.error('Portale error:', err);
+        logPortalDebug({
+          token_present: !!token,
+          apt_present: !!aptKey,
+          mode: mode || 'default',
+          guest_found: !!err?.payload?.meta?.guest_found,
+          apartment_found: !!err?.payload?.meta?.apartment_found,
+        });
+        if (err?.status === 404) return showInvalidPortalError();
         return showError('error_title', 'error_msg');
       }
     }

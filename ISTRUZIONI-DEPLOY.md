@@ -73,15 +73,15 @@ git push
 Netlify rileva automaticamente il push e deploya. In ~30 secondi i 2 file sono online.
 
 ### URL pubblici risultanti:
-- **Kekko**: https://checkinillupoaffitta.netlify.app/pr_kekko_riccione.html
-- **Tu admin**: https://checkinillupoaffitta.netlify.app/residence-backoffice.html
+- **Kekko**: https://checkin.illupoaffitta.com/pr_kekko_riccione.html
+- **Tu admin**: https://checkin.illupoaffitta.com/residence-backoffice.html
 
 ---
 
 ## 🧪 STEP 5 — Test
 
 ### Test admin (tu):
-1. Apri https://checkinillupoaffitta.netlify.app/residence-backoffice.html
+1. Apri https://checkin.illupoaffitta.com/residence-backoffice.html
 2. Inserisci la password admin
 3. Vedi tutte le 50 prenotazioni precaricate
 4. Filtra per "Pending" → deve mostrare 0 (sono tutte già confermate dal piano)
@@ -91,7 +91,7 @@ Netlify rileva automaticamente il push e deploya. In ~30 secondi i 2 file sono o
 8. Torna su Kekko → vedi lo stato cambiato
 
 ### Test Kekko:
-1. Apri https://checkinillupoaffitta.netlify.app/pr_kekko_riccione.html in incognito
+1. Apri https://checkin.illupoaffitta.com/pr_kekko_riccione.html in incognito
 2. Inserisci la password Kekko
 3. Vedi il calendario completo
 4. Crea una prenotazione test → deve apparire **arancione (pending)**
@@ -105,7 +105,7 @@ Manda a Kekko:
 
 > Ciao Kekko, ecco il calendario per il Residence Margherita per la stagione 2026:
 > 
-> 🔗 https://checkinillupoaffitta.netlify.app/pr_kekko_riccione.html
+> 🔗 https://checkin.illupoaffitta.com/pr_kekko_riccione.html
 > 
 > Password: `kekko2026` (cambia con quella vera)
 >

@@ -178,7 +178,14 @@ exports.handler = async (event) => {
 
     // 7. Invio (Test o Send)
     const soapAction = mode === 'send' ? 'Send' : 'Test';
-    const result = await soapSendOrTest(soapAction, account.username, tokenResult.token, schedine);
+    const soapRequest = buildSoapRequestConfig({
+      baseAction: soapAction,
+      username: account.username,
+      token: tokenResult.token,
+      schedine,
+      apartmentPortalId: link.id_appartamento_portale,
+    });
+    const result = await soapSendOrTest(soapRequest);
 
     // 8. Salva esito
     const fullSuccess = !result.error && result.schedineValide === ospiti.length;
@@ -241,7 +248,12 @@ exports.handler = async (event) => {
       esito,
       errore_dettaglio: result.error || partialMessage || (result.dettaglio?.length ? JSON.stringify(result.dettaglio) : null),
       ricevuta_id: result.ricevutaId || null,
-      payload_inviato: JSON.stringify({ action: soapAction, num_schedine: schedine.length, apartment: apartmentId }),
+      payload_inviato: JSON.stringify({
+        action: soapRequest.action,
+        num_schedine: schedine.length,
+        apartment: apartmentId,
+        apartment_portal_id: soapRequest.apartmentPortalId || null,
+      }),
       risposta_ricevuta: maskSensitiveData(result.rawResponse?.substring(0, 2000) || ''),
       inviato_da: user.email,
     });
@@ -364,18 +376,35 @@ async function soapGenerateToken(utente, password, wskey) {
 // ──────────────────────────────────────────────────────
 // SOAP: Test / Send
 // ──────────────────────────────────────────────────────
-async function soapSendOrTest(action, utente, token, schedine) {
+function buildSoapRequestConfig({ baseAction, username, token, schedine, apartmentPortalId }) {
+  const normalizedApartmentPortalId = String(apartmentPortalId || '').trim();
+  const useApartmentManagement = normalizedApartmentPortalId.length > 0;
+  return {
+    action: useApartmentManagement ? `GestioneAppartamenti_${baseAction}` : baseAction,
+    username,
+    token,
+    schedine,
+    apartmentPortalId: useApartmentManagement ? normalizedApartmentPortalId : '',
+  };
+}
+
+async function soapSendOrTest({ action, username, token, schedine, apartmentPortalId = '' }) {
   const schedineXml = schedine.map(s => `<string>${escXml(s)}</string>`).join('\n        ');
+  const apartmentPortalIdXml = apartmentPortalId
+    ? `
+      <IdAppartamento>${escXml(apartmentPortalId)}</IdAppartamento>`
+    : '';
 
   const xml = `<?xml version="1.0" encoding="utf-8"?>
 <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
   <soap:Body>
     <${action} xmlns="AlloggiatiService">
-      <Utente>${escXml(utente)}</Utente>
+      <Utente>${escXml(username)}</Utente>
       <token>${escXml(token)}</token>
       <ElencoSchedine>
         ${schedineXml}
       </ElencoSchedine>
+      ${apartmentPortalIdXml}
       <r>
         <SchedineValide>0</SchedineValide>
         <Dettaglio></Dettaglio>

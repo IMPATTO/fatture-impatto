@@ -38,6 +38,7 @@ const S = {
   quickNote: '',
   quickApartmentId: '',
   quickDueDate: '',
+  drawerPlacement: 'side',
 };
 
 const byId = (id) => document.getElementById(id);
@@ -219,6 +220,7 @@ async function loadData(){
   if (S.selectedId && !currentTask()) {
     S.selectedId = null;
     S.drawerOpen = false;
+    S.drawerPlacement = 'side';
     S.form = {};
   }
   S.loading = false;
@@ -320,9 +322,23 @@ function visibleGuestMatches(){
   }).slice(0, 12);
 }
 
-function openDrawerFor(task){
+function revealDrawer(){
+  requestAnimationFrame(() => {
+    const drawer = document.querySelector('.drawer.open');
+    if (!drawer) return;
+    drawer.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+    const titleInput = byId('taskTitolo');
+    if (!titleInput) return;
+    titleInput.focus({ preventScroll: true });
+    const cursor = titleInput.value.length;
+    if (typeof titleInput.setSelectionRange === 'function') titleInput.setSelectionRange(cursor, cursor);
+  });
+}
+
+function openDrawerFor(task, options = {}){
   S.selectedId = task?.id || null;
   S.drawerOpen = true;
+  S.drawerPlacement = options.placement || (task ? 'side' : 'top');
   S.guestSearch = '';
   S.form = task ? {
     id: task.id,
@@ -342,19 +358,21 @@ function openDrawerFor(task){
     completed_at: task.completed_at || '',
   } : emptyTaskForm();
   partialApp();
+  revealDrawer();
 }
 
 function closeDrawer(){
   S.drawerOpen = false;
   S.selectedId = null;
   S.guestSearch = '';
+  S.drawerPlacement = 'side';
   S.form = {};
   partialApp();
 }
 
 function createManualTask(){
   if (!canEdit()) return;
-  openDrawerFor(null);
+  openDrawerFor(null, { placement: 'top' });
 }
 
 function toggleOwnerTag(tag){
@@ -765,7 +783,7 @@ function renderDashboard(){
       </div>
     </section>
     ${renderAccessManager()}
-    <section class="body-wrap">
+    <section class="body-wrap ${S.drawerOpen && S.drawerPlacement === 'top' ? 'drawer-top' : ''}">
       <div class="table-panel">
         ${S.loading ? `<div class="loading"><span class="spin"></span>Carico operativita…</div>` : rows.length ? `
           <table>

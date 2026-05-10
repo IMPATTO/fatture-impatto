@@ -167,6 +167,8 @@
   .form-row-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
   .btn-secondary{background:white;color:var(--ink);border:1px solid var(--sand-200);padding:.6rem 1.1rem;border-radius:var(--radius-md);font-weight:500;cursor:pointer;font-size:13px;font-family:inherit;}
   .btn-primary{background:var(--ink);color:white;border:none;padding:.6rem 1.2rem;border-radius:var(--radius-md);font-weight:600;cursor:pointer;font-size:13px;font-family:inherit;}
+  .btn-danger{background:white;color:var(--conflict);border:1px solid var(--conflict-bg);padding:.6rem 1.1rem;border-radius:var(--radius-md);font-weight:600;cursor:pointer;font-size:13px;font-family:inherit;margin-right:auto;}
+  .btn-danger:hover{background:var(--conflict-bg);border-color:var(--conflict);}
 
   .alert{padding:.75rem 1rem;border-radius:var(--radius-md);margin-bottom:1rem;font-size:13px;border-left:3px solid;}
   .alert-warning{background:var(--pending-bg);border-left-color:var(--pending);color:#7d5a2a;}
@@ -309,6 +311,7 @@
       <div class="form-row"><label>Note</label><textarea id="m-notes" rows="2"></textarea></div>
     </div>
     <div class="modal-footer">
+      <button class="btn-danger" id="modal-delete-btn" onclick="deleteBookingFromModal()" style="display:none;">Elimina prenotazione</button>
       <button class="btn-secondary" onclick="closeModal()">Annulla</button>
       <button class="btn-primary" onclick="saveEdit()">Salva</button>
     </div>
@@ -725,10 +728,19 @@ async function deleteBooking(id) {
   } catch (e) { showToast('Errore: ' + e.message, 'error'); } finally { showLoading(false); }
 }
 
+async function deleteBookingFromModal() {
+  if (!editingBookingId) return;
+  const id = editingBookingId;
+  closeModal();
+  await deleteBooking(id);
+}
+
 function openEdit(id) {
   const b = BOOKINGS.find(x => x.id === id);
   if (!b) return;
   editingBookingId = id;
+  document.getElementById('modal-title').textContent = 'Modifica prenotazione';
+  document.getElementById('modal-delete-btn').style.display = 'inline-flex';
   document.getElementById('m-name').value = b.name;
   document.getElementById('m-checkin').value = b.checkin;
   document.getElementById('m-checkout').value = b.checkout;
@@ -760,6 +772,7 @@ function openEdit(id) {
 function openNewBooking() {
   editingBookingId = null;
   document.getElementById('modal-title').textContent = 'Nuova prenotazione';
+  document.getElementById('modal-delete-btn').style.display = 'none';
   document.getElementById('m-name').value = '';
   const start = new Date(currentYear, currentMonth, 1);
   const end = new Date(currentYear, currentMonth, 8);

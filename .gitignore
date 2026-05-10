@@ -1,2 +1,13 @@
 # Local Netlify folder
 .netlify
+
+# Dependencies and local build output
+node_modules
+test-results
+dist
+
+# Supabase local cache
+supabase/.temp
+
+# macOS noise
+.DS_Store

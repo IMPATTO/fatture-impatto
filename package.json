@@ -1,6 +1,10 @@
 {
   "name": "fatture-impatto",
   "version": "1.0.0",
+  "scripts": {
+    "build:site": "node scripts/build-site.mjs",
+    "verify:integrity": "node scripts/verify-site-integrity.mjs"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.102.1",
     "busboy": "^1.6.0",

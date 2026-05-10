@@ -237,7 +237,7 @@ const S = {
   saving: false,
   toastTimer: null,
   fCreds: { codice_accesso:'', luogo_chiavi:'', istruzioni_accesso:'', video_url:'' },
-  fInfo:  { come_arrivare:'', dove_parcheggiare:'', come_entrare:'', regole_della_casa:'', cosa_fare_se_luce_spenta:'', cosa_fare_se_chiuso_fuori:'', numeri_utili:[], consigli:{ ristoranti:'', bar_colazione:'', aperitivo_vita_serale:'', attivita_bambini:'' } },
+  fInfo:  { come_arrivare:'', dove_parcheggiare:'', come_entrare:'', regole_della_casa:'', cosa_fare_se_luce_spenta:'', cosa_fare_se_chiuso_fuori:'', numeri_utili:[], consigli:{ ristoranti:'', bar_colazione:'', aperitivo_vita_serale:'', attivita_bambini:'' }, beach_info:[], waste_info:{ instructions:'', video_url:'', schedule:'', recycling_rules:'', notes:'' }, wifi_info:{ ssid:'', password:'', notes:'' } },
   fMappa: { indirizzo_completo:'', latitudine:'', longitudine:'', maps_url_override:'' },
   fApartment: { nome_appartamento:'' },
   fConn:  { alloggiati_account_id:'', id_appartamento_portale:'', invio_automatico:false, istat_attivo:true, istat_regione:'', istat_portal_url:'', istat_codice_struttura:'', istat_auth_type:'', istat_username:'', istat_password:'', istat_note:'' },
@@ -248,6 +248,9 @@ const S = {
   syncBusyAction: '',
   syncError: '',
 };
+
+const APARTMENT_INFO_OPTIONAL_COLUMNS = ['beach_info', 'waste_info', 'wifi_info'];
+let apartmentInfoWritableColumns = null;
 
 function esc(s) { if(s==null)return''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function fmtTs(ts) { if(!ts)return'—'; return new Date(ts).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
@@ -299,6 +302,45 @@ function normalizeConsigli(value) {
   };
 }
 
+function normalizeBeachInfo(value) {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => {
+    const safe = item && typeof item === 'object' ? item : {};
+    return {
+      name: String(safe.name || ''),
+      description: String(safe.description || ''),
+      discount: String(safe.discount || ''),
+      phone: String(safe.phone || ''),
+      whatsapp: String(safe.whatsapp || ''),
+      email: String(safe.email || ''),
+      address: String(safe.address || ''),
+      maps_url: String(safe.maps_url || ''),
+      notes: String(safe.notes || ''),
+      image_url: String(safe.image_url || ''),
+    };
+  }).filter((item) => Object.values(item).some(Boolean));
+}
+
+function normalizeWasteInfo(value) {
+  const safe = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  return {
+    instructions: String(safe.instructions || ''),
+    video_url: String(safe.video_url || ''),
+    schedule: String(safe.schedule || ''),
+    recycling_rules: String(safe.recycling_rules || ''),
+    notes: String(safe.notes || ''),
+  };
+}
+
+function normalizeWifiInfo(value) {
+  const safe = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  return {
+    ssid: String(safe.ssid || ''),
+    password: String(safe.password || ''),
+    notes: String(safe.notes || ''),
+  };
+}
+
 function validateUrl(url) {
   if (!url) return true;
   try {
@@ -307,6 +349,11 @@ function validateUrl(url) {
   } catch {
     return false;
   }
+}
+
+function isMontefeltroApartment(apt) {
+  const text = `${apt?.nome_appartamento || ''} ${apt?.struttura_nome || ''}`.toLowerCase();
+  return text.includes('montefeltro');
 }
 
 async function loadApartments() {
@@ -335,7 +382,7 @@ async function loadConnections() {
 async function loadPortalRows() {
   const { data } = await sb
     .from('ospiti_check_in')
-    .select('id,nome,cognome,email,data_checkin,created_at,stato,apartment_id,portale_token,apartments(nome_appartamento)')
+    .select('id,nome,cognome,email,data_checkin,created_at,stato,apartment_id,portale_token,apartments(nome_appartamento,public_checkin_key)')
     .not('portale_token', 'is', null)
     .order('created_at', { ascending: false })
     .limit(200);
@@ -343,6 +390,7 @@ async function loadPortalRows() {
   S.portalRows = (data || []).map(row => ({
     ...row,
     nome_appartamento: row.apartments?.nome_appartamento || '',
+    public_checkin_key: row.apartments?.public_checkin_key || '',
   }));
 }
 
@@ -381,9 +429,22 @@ function getIstatConfig(apartmentId) {
   return S.istatConfigs.find(cfg => String(cfg.apartment_id) === String(apartmentId)) || null;
 }
 
+function getPortalBaseUrl() {
+  const configured = String(window.CHECKIN_PORTAL_BASE_URL || '').trim();
+  if (configured) return configured.replace(/\/+$/, '');
+  const origin = window.location.origin.replace(/\/+$/, '');
+  const host = String(window.location.hostname || '').toLowerCase();
+  if (host === 'localhost' || host === '127.0.0.1') return origin;
+  if (host.endsWith('.netlify.app') && host !== 'checkinillupoaffitta.netlify.app') return origin;
+  if (host === 'checkin.illupoaffitta.com') return origin;
+  return 'https://checkin.illupoaffitta.com';
+}
+
 function buildGuestPortalUrl(row) {
   if (!row?.portale_token) return '';
-  return `${window.location.origin.replace(/\/+$/,'')}/portale.html?token=${encodeURIComponent(row.portale_token)}`;
+  const params = new URLSearchParams({ token: row.portale_token });
+  if (row?.public_checkin_key) params.set('apt', row.public_checkin_key);
+  return `${getPortalBaseUrl()}/portale.html?${params.toString()}`;
 }
 
 function getFilteredPortalRows() {
@@ -404,12 +465,12 @@ function getFilteredPortalRows() {
 
 function buildPublicCheckinUrl(apartment) {
   if (!apartment?.public_checkin_key) return '';
-  return `https://checkin.illupoaffitta.com/?apt=${encodeURIComponent(apartment.public_checkin_key)}`;
+  return `${getPortalBaseUrl()}/?apt=${encodeURIComponent(apartment.public_checkin_key)}`;
 }
 
 function buildOpenApartmentPortalUrl(apartment) {
   if (!apartment?.public_checkin_key) return '';
-  return `https://checkin.illupoaffitta.com/portale.html?apt=${encodeURIComponent(apartment.public_checkin_key)}&mode=open`;
+  return `${getPortalBaseUrl()}/portale.html?apt=${encodeURIComponent(apartment.public_checkin_key)}&mode=open`;
 }
 
 function syncBadgeClass(status) {
@@ -1042,6 +1103,9 @@ async function loadApartmentInfo(aptId, lingua) {
     cosa_fare_se_chiuso_fuori: data?.cosa_fare_se_chiuso_fuori || '',
     numeri_utili: numeriToArray(data?.numeri_utili),
     consigli: normalizeConsigli(data?.consigli),
+    beach_info: normalizeBeachInfo(data?.beach_info),
+    waste_info: normalizeWasteInfo(data?.waste_info),
+    wifi_info: normalizeWifiInfo(data?.wifi_info),
   };
 }
 
@@ -1150,13 +1214,34 @@ async function saveApartmentVideoUrl(aptId) {
 }
 
 async function saveApartmentInfo(aptId, lingua) {
-  const payload = {
+  let payload = {
     ...S.fInfo,
     numeri_utili: arrayToNumeri(S.fInfo.numeri_utili),
     consigli: normalizeConsigli(S.fInfo.consigli),
+    beach_info: normalizeBeachInfo(S.fInfo.beach_info),
+    waste_info: normalizeWasteInfo(S.fInfo.waste_info),
+    wifi_info: normalizeWifiInfo(S.fInfo.wifi_info),
     updated_at: new Date().toISOString(),
   };
-  const { error } = await saveSingleRowByLookup('apartment_info', { apartment_id: aptId, lingua }, payload);
+  if (Array.isArray(apartmentInfoWritableColumns)) {
+    payload = Object.fromEntries(
+      Object.entries(payload).filter(([key]) => apartmentInfoWritableColumns.includes(key) || !APARTMENT_INFO_OPTIONAL_COLUMNS.includes(key))
+    );
+  }
+
+  let { error } = await saveSingleRowByLookup('apartment_info', { apartment_id: aptId, lingua }, payload);
+  if (error) {
+    let mutablePayload = { ...payload };
+    let missingColumn = getApartmentInfoMissingColumn(error.message);
+    while (missingColumn && APARTMENT_INFO_OPTIONAL_COLUMNS.includes(missingColumn) && missingColumn in mutablePayload) {
+      delete mutablePayload[missingColumn];
+      apartmentInfoWritableColumns = Object.keys(mutablePayload);
+      ({ error } = await saveSingleRowByLookup('apartment_info', { apartment_id: aptId, lingua }, mutablePayload));
+      if (!error) break;
+      missingColumn = getApartmentInfoMissingColumn(error.message);
+    }
+  }
+
   if (error) {
     toast('Errore: ' + error.message, 'err');
     return false;
@@ -1164,6 +1249,14 @@ async function saveApartmentInfo(aptId, lingua) {
   await loadApartmentInfo(aptId, lingua);
   toast('✓ Istruzioni salvate','ok');
   return true;
+}
+
+function getApartmentInfoMissingColumn(message) {
+  const normalized = String(message || '');
+  const postgresMatch = normalized.match(/column\s+apartment_info\.([a-z_]+)\s+does not exist/i);
+  if (postgresMatch) return postgresMatch[1];
+  const schemaCacheMatch = normalized.match(/Could not find the '([a-z_]+)' column of 'apartment_info' in the schema cache/i);
+  return schemaCacheMatch ? schemaCacheMatch[1] : '';
 }
 
 async function translateItalianInfo(aptId, targetLangs) {
@@ -1372,7 +1465,9 @@ function renderDashboard() {
     <div class="navbar-links">
       <a href="/backoffice.html" class="navbar-link">Fatturazione</a>
       <a href="/backoffice-documenti.html" class="navbar-link">Documenti</a>
-      <a href="/backoffice-portale.html" class="navbar-link active">Portale Admin</a>
+      <a href="/backoffice-portale.html" class="navbar-link active">Portale</a>
+      <a href="/backoffice-richieste.html" class="navbar-link">Richieste</a>
+      <a href="/backoffice-operativita.html" class="navbar-link">Operativita</a>
       <a href="/backoffice-beds24-messaggi.html" class="navbar-link">Beds24 Messaggi</a>
       <a href="/backoffice-contabilita.html" class="navbar-link">Contabilita</a>
     </div>
@@ -1573,9 +1668,18 @@ function renderTabAccesso(el) {
   const apt = getSelectedApartment();
   const apartmentDraft = S.fApartment;
   const publicUrl = buildPublicCheckinUrl(apt);
+  const isMontefeltro = isMontefeltroApartment(apt) || isMontefeltroApartment(apartmentDraft);
+  const accessSectionTitle = isMontefeltro ? 'Accesso Residence Montefeltro' : 'Accesso appartamento';
+  const accessCardTitle = isMontefeltro ? 'Accesso struttura e lavanderia' : 'Codici e istruzioni';
+  const codeLabel = isMontefeltro ? 'Codice tastiera' : 'Codice cassettina sicurezza';
+  const keyLocationLabel = isMontefeltro ? 'Accesso lavanderia' : 'Luogo chiavi';
+  const instructionsLabel = isMontefeltro ? 'Dettagli accesso struttura' : 'Istruzioni accesso';
+  const accessHint = isMontefeltro
+    ? 'Per Montefeltro il portale ospite mostrerà tre blocchi: accesso alla struttura, accesso lavanderia e una nota finale su Serena.'
+    : '';
   el.innerHTML = `
   <div class="content">
-    <div class="section-title">Accesso appartamento</div>
+    <div class="section-title">${accessSectionTitle}</div>
     <div class="section-sub">Tabella: apartment_credentials · Ultimo salvataggio: ${fmtTs(S.creds?.updated_at)}${apt?.struttura_nome ? ' · Struttura: ' + esc(apt.struttura_nome) : ''}${apt?.attivo===false ? ' · DISATTIVO' : ''}</div>
 
     <div class="card-section">
@@ -1597,10 +1701,11 @@ function renderTabAccesso(el) {
     </div>
 
     <div class="card-section">
-      <div class="card-section-title">Codici e istruzioni</div>
-      <div class="field"><label>Codice cassettina sicurezza</label><input id="codice_accesso" value="${esc(f.codice_accesso)}"/></div>
-      <div class="field"><label>Luogo chiavi</label><input id="luogo_chiavi" value="${esc(f.luogo_chiavi)}"/></div>
-      <div class="field"><label>Istruzioni accesso</label><textarea id="istruzioni_accesso">${esc(f.istruzioni_accesso)}</textarea></div>
+      <div class="card-section-title">${accessCardTitle}</div>
+      <div class="field"><label>${codeLabel}</label><input id="codice_accesso" value="${esc(f.codice_accesso)}"/></div>
+      ${isMontefeltro ? '' : `<div class="field"><label>${keyLocationLabel}</label><textarea id="luogo_chiavi">${esc(f.luogo_chiavi)}</textarea></div>`}
+      <div class="field"><label>${instructionsLabel}</label><textarea id="istruzioni_accesso">${esc(f.istruzioni_accesso)}</textarea></div>
+      ${accessHint ? `<div class="field-hint">${accessHint}</div>` : ''}
       <div class="save-row">
         <button id="btnSaveCreds" class="btn btn-primary">Salva accesso</button>
       </div>
@@ -1706,6 +1811,53 @@ function renderNumeriList() {
   bindNumeriEvents();
 }
 
+function beachRowHTML(item, i) {
+  return `<div class="card-section" style="padding:16px 18px;margin-bottom:12px">
+    <div class="card-section-title" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <span>Spiaggia ${i + 1}</span>
+      <button class="numeri-del" type="button" data-beach-del="${i}">✕</button>
+    </div>
+    <div class="field"><label>Nome bagno / spiaggia</label><input class="beach-field" data-beach-key="name" data-beach-idx="${i}" value="${esc(item.name)}"/></div>
+    <div class="field"><label>Descrizione</label><textarea class="beach-field" data-beach-key="description" data-beach-idx="${i}">${esc(item.description)}</textarea></div>
+    <div class="field-2">
+      <div class="field"><label>Sconto / convenzione</label><input class="beach-field" data-beach-key="discount" data-beach-idx="${i}" value="${esc(item.discount)}"/></div>
+      <div class="field"><label>Telefono</label><input class="beach-field" data-beach-key="phone" data-beach-idx="${i}" value="${esc(item.phone)}"/></div>
+    </div>
+    <div class="field-2">
+      <div class="field"><label>WhatsApp</label><input class="beach-field" data-beach-key="whatsapp" data-beach-idx="${i}" value="${esc(item.whatsapp)}"/></div>
+      <div class="field"><label>Email</label><input class="beach-field" data-beach-key="email" data-beach-idx="${i}" value="${esc(item.email)}"/></div>
+    </div>
+    <div class="field"><label>Indirizzo</label><input class="beach-field" data-beach-key="address" data-beach-idx="${i}" value="${esc(item.address)}"/></div>
+    <div class="field"><label>Link Google Maps</label><input class="beach-field" data-beach-key="maps_url" data-beach-idx="${i}" value="${esc(item.maps_url)}" placeholder="https://maps.google.com/..."/></div>
+    <div class="field"><label>Immagine o link esterno</label><input class="beach-field" data-beach-key="image_url" data-beach-idx="${i}" value="${esc(item.image_url)}" placeholder="https://..."/></div>
+    <div class="field"><label>Note operative</label><textarea class="beach-field" data-beach-key="notes" data-beach-idx="${i}">${esc(item.notes)}</textarea></div>
+  </div>`;
+}
+
+function bindBeachEvents() {
+  document.querySelectorAll('.beach-field').forEach((el) => {
+    el.addEventListener('input', (e) => {
+      const idx = Number(e.target.dataset.beachIdx);
+      const key = e.target.dataset.beachKey;
+      if (!S.fInfo.beach_info[idx]) return;
+      S.fInfo.beach_info[idx][key] = e.target.value;
+    });
+  });
+  document.querySelectorAll('[data-beach-del]').forEach((el) => {
+    el.addEventListener('click', () => {
+      S.fInfo.beach_info.splice(Number(el.dataset.beachDel), 1);
+      renderBeachList();
+    });
+  });
+}
+
+function renderBeachList() {
+  const list = document.getElementById('beachList');
+  if (!list) return;
+  list.innerHTML = S.fInfo.beach_info.map((item, i) => beachRowHTML(item, i)).join('');
+  bindBeachEvents();
+}
+
 function renderTabIstruzioni(el) {
   const f = S.fInfo;
   el.innerHTML = `
@@ -1756,6 +1908,28 @@ function renderTabIstruzioni(el) {
       <button id="btnAddNumero" class="btn btn-ghost btn-sm" style="margin-top:4px">+ Aggiungi numero</button>
     </div>
 
+    <div class="card-section">
+      <div class="card-section-title">Spiagge convenzionate</div>
+      <div id="beachList">${f.beach_info.map((item, i) => beachRowHTML(item, i)).join('')}</div>
+      <button id="btnAddBeach" class="btn btn-ghost btn-sm" style="margin-top:4px">+ Aggiungi spiaggia</button>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-title">Gestione rifiuti</div>
+      <div class="field"><label>Istruzioni testuali</label><textarea id="waste_instructions">${esc(f.waste_info?.instructions)}</textarea></div>
+      <div class="field"><label>Video istruzioni</label><input id="waste_video_url" value="${esc(f.waste_info?.video_url)}" placeholder="https://youtube.com/..."/></div>
+      <div class="field"><label>Giorni / orari di esposizione</label><textarea id="waste_schedule">${esc(f.waste_info?.schedule)}</textarea></div>
+      <div class="field"><label>Regole differenziata</label><textarea id="waste_recycling_rules">${esc(f.waste_info?.recycling_rules)}</textarea></div>
+      <div class="field"><label>Note importanti</label><textarea id="waste_notes">${esc(f.waste_info?.notes)}</textarea></div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-title">Wi-Fi</div>
+      <div class="field"><label>Nome rete / SSID</label><input id="wifi_ssid" value="${esc(f.wifi_info?.ssid)}"/></div>
+      <div class="field"><label>Password Wi-Fi</label><input id="wifi_password" value="${esc(f.wifi_info?.password)}"/></div>
+      <div class="field"><label>Note</label><textarea id="wifi_notes">${esc(f.wifi_info?.notes)}</textarea></div>
+    </div>
+
     <div style="padding:0 0 24px">
       <button id="btnSaveInfo" class="btn btn-primary">Salva istruzioni (${S.lingua})</button>
     </div>
@@ -1792,6 +1966,26 @@ function renderTabIstruzioni(el) {
     renderNumeriList();
   });
 
+  renderBeachList();
+  document.getElementById('btnAddBeach').addEventListener('click', () => {
+    S.fInfo.beach_info.push({
+      name:'', description:'', discount:'', phone:'', whatsapp:'', email:'', address:'', maps_url:'', notes:'', image_url:''
+    });
+    renderBeachList();
+  });
+
+  ['instructions','video_url','schedule','recycling_rules','notes'].forEach((key) => {
+    document.getElementById(`waste_${key}`).addEventListener('input', (e) => {
+      S.fInfo.waste_info[key] = e.target.value;
+    });
+  });
+
+  [['wifi_ssid','ssid'], ['wifi_password','password'], ['wifi_notes','notes']].forEach(([id, key]) => {
+    document.getElementById(id).addEventListener('input', (e) => {
+      S.fInfo.wifi_info[key] = e.target.value;
+    });
+  });
+
   document.getElementById('btnSaveInfo').addEventListener('click', async () => {
     const btn = document.getElementById('btnSaveInfo');
     btn.disabled = true;
@@ -1812,6 +2006,7 @@ function renderTabIstruzioni(el) {
   });
 
   bindNumeriEvents();
+  bindBeachEvents();
 }
 
 function renderTabMappa(el) {

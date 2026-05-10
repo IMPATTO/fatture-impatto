@@ -332,7 +332,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
           </div>
           <div class="field" id="birthPlaceForeignField" style="display:none">
             <label><span data-t="birthCountryLabel">Stato/Paese di nascita</span> <span class="req">*</span></label>
-            <input type="text" id="statoNascitaEstero" placeholder="Francia" oninput="markFilled(this);scheduleCfAutofill()" autocomplete="country-name">
+            <input type="text" id="statoNascitaEstero" placeholder="Francia" list="countryOptions" oninput="markFilled(this);scheduleCfAutofill()" onchange="handleCountryFieldBlur('statoNascitaEstero')" autocomplete="country-name">
           </div>
           <div class="field-row">
             <div class="field">
@@ -345,7 +345,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
             </div>
             <div class="field">
               <label><span data-t="citizenshipLabel">Cittadinanza</span> <span class="req">*</span></label>
-              <input type="text" id="cittadinanza" placeholder="Italia" oninput="markFilled(this)" autocomplete="country-name">
+              <input type="text" id="cittadinanza" placeholder="Italia" list="countryOptions" oninput="markFilled(this)" onchange="handleCountryFieldBlur('cittadinanza')" autocomplete="country-name">
             </div>
           </div>
           <div class="field-row">
@@ -410,6 +410,8 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
         </div>
       </div>
     </div>
+
+    <datalist id="countryOptions"></datalist>
 
     <div class="card">
       <div class="card-header"><span class="card-title" data-t="invoiceLabel">FATTURA</span></div>
@@ -481,7 +483,18 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 <div class="toast" id="toast"></div>
 
 <script>
-var PORTAL_BASE_URL = window.CHECKIN_PORTAL_BASE_URL || window.location.origin;
+var CANONICAL_PORTAL_BASE_URL='https://checkin.illupoaffitta.com';
+function getPortalBaseUrl(){
+  var configured=String(window.CHECKIN_PORTAL_BASE_URL||'').trim();
+  if(configured)return configured.replace(/\/+$/,'');
+  var origin=window.location.origin.replace(/\/+$/,'');
+  var host=String(window.location.hostname||'').toLowerCase();
+  if(host==='localhost'||host==='127.0.0.1')return origin;
+  if(host.endsWith('.netlify.app')&&host!=='checkinillupoaffitta.netlify.app')return origin;
+  if(host==='checkin.illupoaffitta.com')return origin;
+  return CANONICAL_PORTAL_BASE_URL;
+}
+var PORTAL_BASE_URL = getPortalBaseUrl();
 var T={
   it:{step1:'DATI',step2:'CONFERMA',title1:'I tuoi dati<br><em>check-in</em>',sub1:'Compila i campi per completare il check-in.',title2:'Conferma<br><em>i tuoi dati</em>',sub2:'Controlla che tutto sia corretto.',residenzaLabel:'PAESE DI RESIDENZA',paese:'Paese',countryNotice:'Per ospiti non residenti in Italia, codice fiscale e indirizzo non sono obbligatori.',anagraficaLabel:'DATI ANAGRAFICI',stayInfoLabel:'DATI SOGGIORNO',guestsCountLabel:'Numero ospiti',guestDocumentsLabel:'Documenti ospite principale',guestDocumentsLabelOther:'Documenti ospite',groupRoleAutoHint:'Scegli il ruolo del primo ospite quando viaggiate in piu persone.',invoiceLabel:'FATTURA',invoiceToggle:'Vuoi fattura?',invoiceNote:'Se sei una persona fisica, non serve compilare la sezione azienda: la fattura verra emessa automaticamente con i dati gia inseriti sopra e inviata alla tua email. Questa sezione serve solo se ti occorrono dati aziendali o un\'intestazione diversa.',nome:'Nome',cognome:'Cognome',email:'Email',telefono:'Telefono',birthDate:'Data di nascita',birthPlace:'Luogo di nascita',birthOriginLabel:'Luogo di nascita',birthOriginHint:'Seleziona dove e nato il guest principale per compilare i codici Alloggiati in modo corretto.',bornInItaly:'Nato in Italia',bornAbroad:"Nato all'estero",birthPlaceComune:'Comune di nascita',birthCountryLabel:'Stato/Paese di nascita',sexLabel:'Sesso',citizenshipLabel:'Cittadinanza',documentTypeLabel:'Tipo documento',documentTypeIdentity:"Carta d'identita",documentTypePassport:'Passaporto',documentTypeDrivingLicense:'Patente',documentNumberLabel:'Numero documento',issuePlaceLabel:'Comune di rilascio documento',comuneChoiceLabel:'Seleziona il comune corretto',comuneChoiceHint:'Questo comune esiste in piu province. Seleziona l\'opzione corretta.',comuneChoicePlaceholder:'Seleziona provincia e comune',comuneNotFoundHint:'Comune non trovato nel dataset Alloggiati. Il testo resta salvato ma senza codice.',comuneMatchedHint:'Comune riconosciuto automaticamente:',comuneChoiceRequiredMsg:'Seleziona una delle opzioni proposte per usare il codice corretto.',dayLabel:'Giorno',monthLabel:'Mese',yearLabel:'Anno',travelersCount:'Numero persone che viaggiano',guestRole:'Ruolo nel gruppo/famiglia',additionalGuestsTitle:'Altri ospiti',guestLabel:'Ospite',guestSex:'Sesso',guestStateBirth:'Stato di nascita',role16:'Ospite singolo',role17:'Capofamiglia',role18:'Capogruppo',role19:'Familiare',role20:'Membro gruppo',role17Hint:'Usa questa opzione se viaggi con il tuo nucleo familiare.',role18Hint:'Usa questa opzione se viaggi con amici, colleghi o conoscenti.',cf:'Codice fiscale',cfWarning:'Il codice fiscale non sembra valido. Correggi o prosegui se sei sicuro.',indirizzoLabel:'INDIRIZZO DI RESIDENZA',indirizzo:'Indirizzo',citta:'Citta',cap:'CAP',prov:'Prov.',ragSoc:'Ragione sociale',piva:'Partita IVA',vatHelper:'Italia: controllo formale reale. UE con prefisso paese: controllo di formato base. Extra-UE: inserimento manuale, non bloccato da controlli automatici.',sdi:'Codice SDI',pecLabel:'PEC',indirizzoAzLabel:'Sede legale',checkin:'Check-in',checkout:'Check-out',riepilogoLabel:'RIEPILOGO',uploadTitle:'Aggiungi foto documento',uploadSub:"Carta d'identita - Passaporto - Patente",uploadMultiHint:'Puoi caricare piu file per la stessa persona, anche fronte e retro.',continua:'Continua',indietro:'Indietro',invia:'Invia dati',ocrLoading:'Caricamento...',ocrErr:'Errore caricamento',successTitle:'Dati ricevuti',successMsg:"I tuoi dati sono stati inviati correttamente.<br>Riceverai a breve una email con le istruzioni per il check-in.<br><br>Grazie per aver scelto Il Lupo Affitta.",errRequired:'Compila tutti i campi obbligatori',errDate:'Inserisci le date di soggiorno',errSending:'Errore di invio - riprova',errPrivacy:'Accetta l\'informativa privacy per continuare',privacyLabel:'Ho letto e compreso l\'<a href="privacy-policy.html" target="_blank" rel="noopener">informativa sul trattamento dei dati personali</a> ai sensi dell\'art. 13 GDPR. I miei dati saranno comunicati all\'Autorità di Pubblica Sicurezza ai sensi dell\'art. 109 TULPS.',NOME:'NOME',EMAIL:'EMAIL',TELEFONO:'TELEFONO',CF:'CODICE FISCALE',INDIRIZZO:'INDIRIZZO',CHECKIN:'CHECK-IN',CHECKOUT:'CHECK-OUT',PAESE:'PAESE',RAGIONE:'RAGIONE SOCIALE',PIVA:'PARTITA IVA',SDI:'SDI'},
   en:{step1:'DATA',step2:'CONFIRM',title1:'Your<br><em>check-in</em>',sub1:'Fill in the fields to complete your check-in.',title2:'Confirm<br><em>your details</em>',sub2:'Make sure everything is correct.',residenzaLabel:'COUNTRY OF RESIDENCE',paese:'Country',countryNotice:'For guests not residing in Italy, tax code and address are not required.',anagraficaLabel:'PERSONAL DETAILS',stayInfoLabel:'STAY DETAILS',guestsCountLabel:'Guests count',guestDocumentsLabel:'Main guest documents',guestDocumentsLabelOther:'Guest documents',groupRoleAutoHint:'Choose the main guest role when more than one guest is staying.',invoiceLabel:'INVOICE',invoiceToggle:'Do you need an invoice?',nome:'First name',cognome:'Last name',email:'Email',telefono:'Phone',birthDate:'Date of birth',birthPlace:'Place of birth',birthOriginLabel:'Place of birth',birthOriginHint:'Choose whether the main guest was born in Italy or abroad to resolve Alloggiati codes correctly.',bornInItaly:'Born in Italy',bornAbroad:'Born abroad',birthPlaceComune:'Italian town of birth',birthCountryLabel:'Country of birth',sexLabel:'Sex',citizenshipLabel:'Citizenship',documentTypeLabel:'Document type',documentTypeIdentity:'ID card',documentTypePassport:'Passport',documentTypeDrivingLicense:'Driving licence',documentNumberLabel:'Document number',issuePlaceLabel:'Town of document issue',comuneChoiceLabel:'Select the correct town',comuneChoiceHint:'This town exists in more than one province. Select the correct option.',comuneChoicePlaceholder:'Select province and town',comuneNotFoundHint:'Town not found in the Alloggiati dataset. The text is kept but no code is saved.',comuneMatchedHint:'Town recognized automatically:',comuneChoiceRequiredMsg:'Select one of the proposed options to use the correct code.',dayLabel:'Day',monthLabel:'Month',yearLabel:'Year',travelersCount:'Number of travelers',guestRole:'Role in group',additionalGuestsTitle:'Other guests',guestLabel:'Guest',guestSex:'Sex',guestStateBirth:'Country of birth',role16:'Single guest',role17:'Head of household',role18:'Group leader',role19:'Family member',role20:'Group member',role17Hint:'Use this option if you are traveling with your household.',role18Hint:'Use this option if you are traveling with friends, colleagues or acquaintances.',cf:'Tax code',cfWarning:'The tax code does not appear valid. Please check or continue if sure.',indirizzoLabel:'HOME ADDRESS',indirizzo:'Address',citta:'City',cap:'Postal code',prov:'Prov.',ragSoc:'Company name',piva:'VAT number',sdi:'SDI code',pecLabel:'PEC email',indirizzoAzLabel:'Registered address',checkin:'Check-in',checkout:'Check-out',riepilogoLabel:'SUMMARY',uploadTitle:'Add document photo',uploadSub:'ID card - Passport - Driving licence',uploadMultiHint:'You can upload multiple files for the same guest, including front and back.',continua:'Continue',indietro:'Back',invia:'Submit',ocrLoading:'Uploading...',ocrErr:'Upload error',successTitle:'Data received',successMsg:"Your details have been submitted.<br>You will receive an email shortly with check-in instructions.<br><br>Thank you for choosing Il Lupo Affitta.",errRequired:'Please fill in all required fields',errDate:'Please enter your stay dates',errSending:'Submission error - please try again',errPrivacy:'Please accept the privacy policy to continue',privacyLabel:'I have read and understood the <a href="privacy-policy.html" target="_blank" rel="noopener">privacy policy</a> (art. 13 GDPR). My personal data will be communicated to the Public Security Authority as required by Italian law.',NOME:'NAME',EMAIL:'EMAIL',TELEFONO:'PHONE',CF:'TAX CODE',INDIRIZZO:'ADDRESS',CHECKIN:'CHECK-IN',CHECKOUT:'CHECK-OUT',PAESE:'COUNTRY',RAGIONE:'COMPANY',PIVA:'VAT NUMBER',SDI:'SDI CODE'},
@@ -497,17 +510,104 @@ var MESSAGES={
 };
 
 var lang='it',currentStep=1,isItalian=true,cfAttempts=0;
+var countryOptionsState={loaded:false,loading:null,names:[],map:new Map()};
 var guestDocumentStore={0:[]};
 var activeOCRTarget={scope:'main',index:0};
 var comuneLookupCache={},comuneLookupTimers={birth:null,issue:null,residence_city:null};
 var cfAutofillState={manual:false,lastGenerated:''};
 var capAutofillState={manual:false,lastCap:'',lastProvince:''};
+var COUNTRY_ALIASES={
+  usa:"STATI UNITI D'AMERICA",
+  'u.s.a.':"STATI UNITI D'AMERICA",
+  us:"STATI UNITI D'AMERICA",
+  'u.s.':"STATI UNITI D'AMERICA",
+  'united states':"STATI UNITI D'AMERICA",
+  'united states of america':"STATI UNITI D'AMERICA",
+  america:"STATI UNITI D'AMERICA",
+  americana:"STATI UNITI D'AMERICA",
+  americano:"STATI UNITI D'AMERICA",
+  americani:"STATI UNITI D'AMERICA",
+  americane:"STATI UNITI D'AMERICA",
+  uk:'REGNO UNITO',
+  'u.k.':'REGNO UNITO',
+  britain:'REGNO UNITO',
+  'great britain':'REGNO UNITO',
+  england:'REGNO UNITO',
+  britannica:'REGNO UNITO',
+  britannico:'REGNO UNITO',
+  britannici:'REGNO UNITO',
+  britanniche:'REGNO UNITO',
+  french:'FRANCIA',
+  france:'FRANCIA',
+  francese:'FRANCIA',
+  francesi:'FRANCIA',
+  german:'GERMANIA',
+  germany:'GERMANIA',
+  deutschland:'GERMANIA',
+  tedesca:'GERMANIA',
+  tedesco:'GERMANIA',
+  tedesche:'GERMANIA',
+  tedeschi:'GERMANIA',
+  spanish:'SPAGNA',
+  spain:'SPAGNA',
+  espana:'SPAGNA',
+  espagna:'SPAGNA',
+  spagnola:'SPAGNA',
+  spagnolo:'SPAGNA',
+  spagnole:'SPAGNA',
+  spagnoli:'SPAGNA',
+  dutch:'PAESI BASSI',
+  netherlands:'PAESI BASSI',
+  holland:'PAESI BASSI',
+  olanda:'PAESI BASSI',
+  belga:'BELGIO',
+  belgi:'BELGIO',
+  belghe:'BELGIO',
+  swiss:'SVIZZERA',
+  switzerland:'SVIZZERA',
+  svizzero:'SVIZZERA',
+  svizzera:'SVIZZERA',
+  svizzeri:'SVIZZERA',
+  svizzere:'SVIZZERA',
+  albanese:'ALBANIA',
+  albanesi:'ALBANIA',
+  moroccan:'MAROCCO',
+  marocchina:'MAROCCO',
+  marocchino:'MAROCCO',
+  marocchine:'MAROCCO',
+  marocchini:'MAROCCO',
+  romanian:'ROMANIA',
+  rumena:'ROMANIA',
+  rumeno:'ROMANIA',
+  rumene:'ROMANIA',
+  rumeni:'ROMANIA',
+  russian:'FEDERAZIONE RUSSA',
+  russa:'FEDERAZIONE RUSSA',
+  russo:'FEDERAZIONE RUSSA',
+  russe:'FEDERAZIONE RUSSA',
+  russi:'FEDERAZIONE RUSSA',
+  ukrainian:'UCRAINA',
+  ucraina:'UCRAINA',
+  ucraino:'UCRAINA',
+  ucraine:'UCRAINA',
+  ucraini:'UCRAINA',
+  chinese:'CINA',
+  cinese:'CINA',
+  cinesi:'CINA'
+};
 var MONTH_LABELS={
   it:['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'],
   en:['January','February','March','April','May','June','July','August','September','October','November','December']
 };
 var initialParams=new URLSearchParams(window.location.search);
-var aptRef=(initialParams.get('apt')||initialParams.get('aptId')||'').trim();
+function getFirstQueryParam(params,keys){
+  for(var i=0;i<keys.length;i++){
+    var value=(params.get(keys[i])||'').trim();
+    if(value)return value;
+  }
+  return '';
+}
+var aptRef=getFirstQueryParam(initialParams,['apt','aptId','apartment_ref','apartment_id','key']);
 function t(k){return(T[lang]&&T[lang][k]!==undefined)?T[lang][k]:(T.it[k]||k);}
 function msg(k){return(MESSAGES[lang]&&MESSAGES[lang][k]!==undefined)?MESSAGES[lang][k]:(MESSAGES.it[k]||k);}
 function normalizeUpperNoSpaces(value){return String(value||'').replace(/\s+/g,'').trim().toUpperCase();}
@@ -578,6 +678,101 @@ function onPaeseChange(){
 
 function markFilled(el){el.classList.toggle('filled',el.value.length>0);}
 function normalizeValue(v){return(v||'').trim();}
+function parseCsvLine(line){
+  var out=[],current='',insideQuotes=false;
+  for(var i=0;i<line.length;i++){
+    var char=line[i];
+    if(char==='"'){
+      if(insideQuotes&&line[i+1]==='"'){current+='"';i++;continue;}
+      insideQuotes=!insideQuotes;
+      continue;
+    }
+    if(char===','&&!insideQuotes){
+      out.push(current);
+      current='';
+      continue;
+    }
+    current+=char;
+  }
+  out.push(current);
+  return out;
+}
+function ensureCountryOptionsLoaded(){
+  if(countryOptionsState.loaded)return Promise.resolve(countryOptionsState);
+  if(countryOptionsState.loading)return countryOptionsState.loading;
+  countryOptionsState.loading=fetch('stati.csv',{cache:'force-cache'})
+    .then(function(res){
+      if(!res.ok)throw new Error('country options load failed');
+      return res.text();
+    })
+    .then(function(csv){
+      var rows=String(csv||'').split(/\r?\n/).map(function(line){return line.trim();}).filter(Boolean);
+      if(rows.length<2)return;
+      var names=[];
+      var map=new Map();
+      rows.slice(1).forEach(function(line){
+        var cols=parseCsvLine(line);
+        var description=normalizeValue(cols[1]||'');
+        var dataFineVal=normalizeValue(cols[3]||'');
+        if(!description||dataFineVal)return;
+        names.push(description);
+        map.set(normalizeComuneLookupValue(description),description);
+      });
+      Object.keys(COUNTRY_ALIASES).forEach(function(alias){
+        var targetKey=normalizeComuneLookupValue(COUNTRY_ALIASES[alias]);
+        var targetValue=map.get(targetKey);
+        if(targetValue)map.set(normalizeComuneLookupValue(alias),targetValue);
+      });
+      countryOptionsState.names=Array.from(new Set(names)).sort(function(a,b){return a.localeCompare(b,'it',{sensitivity:'base'});});
+      countryOptionsState.map=map;
+      countryOptionsState.loaded=true;
+      hydrateCountryDatalist();
+    })
+    .catch(function(err){
+      console.warn('country options unavailable',err);
+    })
+    .finally(function(){
+      countryOptionsState.loading=null;
+    });
+  return countryOptionsState.loading;
+}
+function hydrateCountryDatalist(){
+  var list=document.getElementById('countryOptions');
+  if(!list)return;
+  list.innerHTML=countryOptionsState.names.map(function(name){
+    return '<option value="'+escAttr(name)+'"></option>';
+  }).join('');
+}
+function normalizeKnownCountryValue(value){
+  var normalized=normalizeCitizenshipValue(value);
+  var key=normalizeComuneLookupValue(normalized);
+  if(!key)return '';
+  return countryOptionsState.map.get(key)||normalized;
+}
+function handleCountryFieldBlur(id){
+  ensureCountryOptionsLoaded().finally(function(){
+    var el=document.getElementById(id);
+    if(!el)return;
+    var normalized=normalizeKnownCountryValue(el.value);
+    if(normalized&&normalized!==el.value){
+      el.value=normalized;
+      markFilled(el);
+    }
+    if(id==='statoNascitaEstero')scheduleCfAutofill();
+  });
+}
+function handleAdditionalGuestCountryBlur(index,field){
+  ensureCountryOptionsLoaded().finally(function(){
+    var el=document.getElementById('additionalGuest_'+index+'_'+field);
+    if(!el)return;
+    var normalized=normalizeKnownCountryValue(el.value);
+    if(normalized&&normalized!==el.value){
+      el.value=normalized;
+      markFilled(el);
+    }
+    if(field==='stato_nascita')handleAdditionalGuestBirthStateChange(index);
+  });
+}
 function digitsOnly(v){return String(v||'').replace(/\D/g,'');}
 function isValidEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeValue(v));}
 function isValidPhone(v){return digitsOnly(v).length>=6;}
@@ -1375,14 +1570,14 @@ function renderAdditionalGuests(){
         '</div>'+
         '<div class="field-row">'+
           '<div class="field"><label>'+t('birthPlace')+' <span class="req">*</span></label><input type="text" id="additionalGuest_'+i+'_luogo_nascita" value="'+escAttr(guest.luogo_nascita||'')+'" oninput="markFilled(this);handleComuneFieldInput(\''+guestKind+'\')" onchange="handleComuneFieldInput(\''+guestKind+'\')"><input type="hidden" id="additionalGuest_'+i+'_luogo_nascita_codice" value="'+escAttr(guest.luogo_nascita_codice||'')+'" data-label="'+escAttr(guest.luogo_nascita_label||'')+'"><div class="helper-note warn" id="additionalGuest_'+i+'_luogo_nascita_status" style="display:none"></div></div>'+
-          '<div class="field"><label>'+t('guestStateBirth')+' <span class="req">*</span></label><input type="text" id="additionalGuest_'+i+'_stato_nascita" value="'+escAttr(guest.stato_nascita||'')+'" oninput="markFilled(this);handleAdditionalGuestBirthStateChange('+i+')" onchange="handleAdditionalGuestBirthStateChange('+i+')"></div>'+
+          '<div class="field"><label>'+t('guestStateBirth')+' <span class="req">*</span></label><input type="text" id="additionalGuest_'+i+'_stato_nascita" list="countryOptions" value="'+escAttr(guest.stato_nascita||'')+'" oninput="markFilled(this);handleAdditionalGuestBirthStateChange('+i+')" onchange="handleAdditionalGuestCountryBlur('+i+',\'stato_nascita\')"></div>'+
         '</div>'+
         '<div class="field comune-choice-field" id="additionalGuest_'+i+'_luogo_nascita_choice" style="display:none">'+
           '<label>'+t('comuneChoiceLabel')+' <span class="req">*</span></label><div class="comune-choice-list" id="additionalGuest_'+i+'_luogo_nascita_choice_list"></div>'+
           '<div class="helper-note">'+t('comuneChoiceHint')+'</div>'+
         '</div>'+
         '<div class="field">'+
-          '<label>'+t('citizenshipLabel')+' <span class="req">*</span></label><input type="text" id="additionalGuest_'+i+'_cittadinanza" value="'+escAttr(guest.cittadinanza||'')+'" oninput="markFilled(this)" autocomplete="country-name">'+
+          '<label>'+t('citizenshipLabel')+' <span class="req">*</span></label><input type="text" id="additionalGuest_'+i+'_cittadinanza" list="countryOptions" value="'+escAttr(guest.cittadinanza||'')+'" oninput="markFilled(this)" onchange="handleAdditionalGuestCountryBlur('+i+',\'cittadinanza\')" autocomplete="country-name">'+
         '</div>'+
       '</div>'
     );
@@ -1757,6 +1952,7 @@ if(urlParams.get('checkout'))document.getElementById('checkout').value=urlParams
 initDateParts();
 updateBirthOriginUi();
 updatePrimaryGuestUi();
+ensureCountryOptionsLoaded();
 document.addEventListener('input',function(e){
   if(e.target&&e.target.id){
     clearFieldError(e.target.id);

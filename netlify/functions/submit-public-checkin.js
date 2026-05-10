@@ -3,9 +3,11 @@ const fs = require('fs');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
+const DEFAULT_SUPABASE_URL = 'https://tysxeikqbgebpfyblgeb.supabase.co';
+const SUPABASE_URL = process.env.SUPABASE_URL || DEFAULT_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const PUBLIC_PORTAL_BASE_URL = process.env.PUBLIC_PORTAL_BASE_URL || '';
+const DEFAULT_PUBLIC_PORTAL_BASE_URL = 'https://checkin.illupoaffitta.com';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -19,6 +21,85 @@ const DOCUMENT_CODE_PREFERENCES = {
   'carta di identita': ['IDENT', 'IDELE', 'CERID'],
   'passaporto': ['PASOR', 'PASSE', 'PASDI'],
   'patente': ['PATEN', 'PATNA'],
+};
+const STATE_ALIASES = {
+  usa: "STATI UNITI D'AMERICA",
+  'u.s.a.': "STATI UNITI D'AMERICA",
+  us: "STATI UNITI D'AMERICA",
+  'u.s.': "STATI UNITI D'AMERICA",
+  'united states': "STATI UNITI D'AMERICA",
+  'united states of america': "STATI UNITI D'AMERICA",
+  america: "STATI UNITI D'AMERICA",
+  americana: "STATI UNITI D'AMERICA",
+  americano: "STATI UNITI D'AMERICA",
+  americane: "STATI UNITI D'AMERICA",
+  americani: "STATI UNITI D'AMERICA",
+  uk: 'REGNO UNITO',
+  'u.k.': 'REGNO UNITO',
+  britain: 'REGNO UNITO',
+  'great britain': 'REGNO UNITO',
+  england: 'REGNO UNITO',
+  britannica: 'REGNO UNITO',
+  britannico: 'REGNO UNITO',
+  britanniche: 'REGNO UNITO',
+  britannici: 'REGNO UNITO',
+  france: 'FRANCIA',
+  french: 'FRANCIA',
+  francese: 'FRANCIA',
+  francesi: 'FRANCIA',
+  germany: 'GERMANIA',
+  german: 'GERMANIA',
+  deutschland: 'GERMANIA',
+  tedesca: 'GERMANIA',
+  tedesco: 'GERMANIA',
+  tedesche: 'GERMANIA',
+  tedeschi: 'GERMANIA',
+  spain: 'SPAGNA',
+  spanish: 'SPAGNA',
+  espana: 'SPAGNA',
+  espagna: 'SPAGNA',
+  spagnola: 'SPAGNA',
+  spagnolo: 'SPAGNA',
+  spagnole: 'SPAGNA',
+  spagnoli: 'SPAGNA',
+  netherlands: 'PAESI BASSI',
+  dutch: 'PAESI BASSI',
+  holland: 'PAESI BASSI',
+  olanda: 'PAESI BASSI',
+  belga: 'BELGIO',
+  belghe: 'BELGIO',
+  belgi: 'BELGIO',
+  switzerland: 'SVIZZERA',
+  swiss: 'SVIZZERA',
+  svizzera: 'SVIZZERA',
+  svizzero: 'SVIZZERA',
+  svizzere: 'SVIZZERA',
+  svizzeri: 'SVIZZERA',
+  albanese: 'ALBANIA',
+  albanesi: 'ALBANIA',
+  moroccan: 'MAROCCO',
+  marocchina: 'MAROCCO',
+  marocchino: 'MAROCCO',
+  marocchine: 'MAROCCO',
+  marocchini: 'MAROCCO',
+  romanian: 'ROMANIA',
+  rumena: 'ROMANIA',
+  rumeno: 'ROMANIA',
+  rumene: 'ROMANIA',
+  rumeni: 'ROMANIA',
+  russian: 'FEDERAZIONE RUSSA',
+  russa: 'FEDERAZIONE RUSSA',
+  russo: 'FEDERAZIONE RUSSA',
+  russe: 'FEDERAZIONE RUSSA',
+  russi: 'FEDERAZIONE RUSSA',
+  ukrainian: 'UCRAINA',
+  ucraina: 'UCRAINA',
+  ucraino: 'UCRAINA',
+  ucraine: 'UCRAINA',
+  ucraini: 'UCRAINA',
+  chinese: 'CINA',
+  cinese: 'CINA',
+  cinesi: 'CINA',
 };
 let officialStateIndexPromise;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -139,7 +220,7 @@ exports.handler = async (event) => {
     ok: true,
     record: inserted,
     child_records: childRecords,
-    portal_url: `${resolvePortalBaseUrl(event).replace(/\/+$/, '')}/portale.html?token=${inserted.portale_token}`,
+    portal_url: buildPortalUrl(resolvePortalBaseUrl(event), inserted.portale_token, apartment.public_checkin_key),
   });
 };
 
@@ -438,7 +519,14 @@ function resolvePortalBaseUrl(event) {
   if (PUBLIC_PORTAL_BASE_URL) return PUBLIC_PORTAL_BASE_URL;
   if (event.headers.origin) return event.headers.origin;
   if (event.headers.host) return `https://${event.headers.host}`;
-  return 'https://checkin.illupoaffitta.com';
+  return DEFAULT_PUBLIC_PORTAL_BASE_URL;
+}
+
+function buildPortalUrl(baseUrl, token, publicCheckinKey) {
+  const url = new URL('/portale.html', `${baseUrl.replace(/\/+$/, '')}/`);
+  if (token) url.searchParams.set('token', token);
+  if (publicCheckinKey) url.searchParams.set('apt', publicCheckinKey);
+  return url.toString();
 }
 
 function errorField(field, message) {
@@ -794,6 +882,8 @@ async function findUniqueStateCode(supabase, value) {
 
   let rows = await fetchStateMatches(supabase, 'nome_it', normalized);
   if (!rows.length) rows = await fetchStateMatches(supabase, 'nome', normalized);
+  if (!rows.length) rows = await fetchStateLikeMatches(supabase, 'nome_it', normalized);
+  if (!rows.length) rows = await fetchStateLikeMatches(supabase, 'nome', normalized);
   if (rows.length !== 1) return resolveLookupRows(rows);
 
   const mappedState = await mapStateRowToOfficialCode(rows[0]);
@@ -814,9 +904,37 @@ async function fetchStateMatches(supabase, column, value) {
   return Array.isArray(data) ? data : [];
 }
 
+async function fetchStateLikeMatches(supabase, column, value) {
+  const escaped = escapeLikeValue(String(value || '').trim());
+  if (!escaped) return [];
+  const { data, error } = await supabase
+    .from('codici_stati')
+    .select('codice,nome,nome_it')
+    .ilike(column, `%${escaped}%`)
+    .limit(2);
+  if (error) {
+    console.warn(`submit-public-checkin state fuzzy lookup error on ${column}:`, error.message);
+    return [];
+  }
+  return Array.isArray(data) ? data : [];
+}
+
 async function findOfficialStateByName(value) {
   const index = await getOfficialStateIndex();
-  return index.get(value) || null;
+  const normalized = normalizeLookupValue(value);
+  if (!normalized) return null;
+  if (index.has(normalized)) return index.get(normalized);
+
+  const aliased = STATE_ALIASES[normalized];
+  if (aliased) {
+    const mapped = index.get(normalizeLookupValue(aliased));
+    if (mapped) return mapped;
+  }
+
+  const compact = normalizeLookupValue(stripParentheticalText(normalized));
+  if (compact && index.has(compact)) return index.get(compact);
+
+  return findApproxOfficialStateByName(index, normalized);
 }
 
 async function mapStateRowToOfficialCode(row) {
@@ -857,7 +975,7 @@ async function loadOfficialStateIndex() {
     const description = cols[descrizioneIdx] || '';
     const dataFineVal = dataFineValIdx !== -1 ? cols[dataFineValIdx] || '' : '';
     if (!code || !description || dataFineVal) continue;
-    index.set(normalizeLookupValue(description), { code, description });
+    registerOfficialState(index, code, description);
   }
 
   return index;
@@ -867,7 +985,7 @@ async function loadOfficialStatesCsv() {
   const localCsv = loadOfficialStatesCsvFromFile();
   if (localCsv) return localCsv;
 
-  const baseUrl = (PUBLIC_PORTAL_BASE_URL || 'https://checkinillupoaffitta.netlify.app').replace(/\/+$/, '');
+  const baseUrl = (PUBLIC_PORTAL_BASE_URL || DEFAULT_PUBLIC_PORTAL_BASE_URL).replace(/\/+$/, '');
   const response = await fetch(`${baseUrl}/stati.csv`);
   if (!response.ok) throw new Error(`Unable to load stati.csv: HTTP ${response.status}`);
   return response.text();
@@ -971,6 +1089,95 @@ function resolveLookupRows(rows) {
 
 function emptyLookup(status) {
   return { code: '', status: status || 'not_found', matches: 0 };
+}
+
+function registerOfficialState(index, code, description) {
+  const value = { code, description };
+  const variants = new Set([
+    normalizeLookupValue(description),
+    normalizeLookupValue(stripParentheticalText(description)),
+  ]);
+
+  Object.entries(STATE_ALIASES).forEach(([alias, target]) => {
+    if (normalizeLookupValue(target) === normalizeLookupValue(description)) {
+      variants.add(normalizeLookupValue(alias));
+    }
+  });
+
+  variants.forEach((variant) => {
+    if (variant) index.set(variant, value);
+  });
+}
+
+function stripParentheticalText(value) {
+  return String(value || '').replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function findApproxOfficialStateByName(index, value) {
+  let best = null;
+  let bestDistance = Number.POSITIVE_INFINITY;
+
+  for (const [candidate, official] of index.entries()) {
+    if (!candidate) continue;
+    if (candidate.includes(value) || value.includes(candidate)) {
+      if (best && best.code !== official.code) return null;
+      best = official;
+      bestDistance = 0;
+      continue;
+    }
+
+    const distance = levenshteinDistance(value, candidate);
+    const threshold = getApproximateStateThreshold(value, candidate);
+    if (distance > threshold) continue;
+    if (distance < bestDistance) {
+      best = official;
+      bestDistance = distance;
+      continue;
+    }
+    if (distance === bestDistance && best && best.code !== official.code) {
+      best = null;
+    }
+  }
+
+  return best;
+}
+
+function getApproximateStateThreshold(a, b) {
+  const maxLen = Math.max(String(a || '').length, String(b || '').length);
+  if (maxLen <= 6) return 1;
+  if (maxLen <= 9) return 2;
+  if (maxLen <= 14) return 3;
+  return 4;
+}
+
+function levenshteinDistance(a, b) {
+  const left = String(a || '');
+  const right = String(b || '');
+  if (!left) return right.length;
+  if (!right) return left.length;
+
+  const prev = new Array(right.length + 1);
+  const curr = new Array(right.length + 1);
+  for (let j = 0; j <= right.length; j += 1) prev[j] = j;
+
+  for (let i = 1; i <= left.length; i += 1) {
+    curr[0] = i;
+    for (let j = 1; j <= right.length; j += 1) {
+      const cost = left[i - 1] === right[j - 1] ? 0 : 1;
+      curr[j] = Math.min(
+        prev[j] + 1,
+        curr[j - 1] + 1,
+        prev[j - 1] + cost
+      );
+    }
+    for (let j = 0; j <= right.length; j += 1) prev[j] = curr[j];
+  }
+
+  return prev[right.length];
+}
+
+function escapeLikeValue(value) {
+  return String(value || '').replace(/[%_]/g, '\\$&');
 }
 
 function normalizeLookupValue(value) {
