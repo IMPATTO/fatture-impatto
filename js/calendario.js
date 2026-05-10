@@ -88,6 +88,7 @@ const S = {
   orphanRows: [],
   orphanCount: 0,
   lastSync: null,
+  _skipWarningLogged: false,
   expandedResidences: new Set(),
   selectedBookingId: null,
   errorMessage: '',
@@ -911,13 +912,21 @@ function setError(message) {
 
 function getAvailableCities() {
   const cities = new Set();
+  const skippedApartments = [];
   for (const apartment of S.apartments) {
     const units = S.unitsByApartment.get(String(apartment.id)) || [];
     if (!units.length) {
-      console.warn('Apartment senza unit, salto nel calendario', apartment.id, apartment.nome_appartamento);
+      skippedApartments.push(apartment.nome_appartamento);
       continue;
     }
     cities.add(apartment.city);
+  }
+  if (skippedApartments.length && !S._skipWarningLogged) {
+    console.warn(
+      `Calendario: ${skippedApartments.length} apartments senza unit sono stati esclusi dalla UI`,
+      skippedApartments
+    );
+    S._skipWarningLogged = true;
   }
   return [...cities].sort(compareCity);
 }

@@ -422,7 +422,7 @@ input {
   top: 0;
   z-index: 20;
   background: rgba(255, 255, 255, 0.98);
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid rgba(190, 175, 145, 0.7);
 }
 
 .timeline-grid {
@@ -541,7 +541,9 @@ input {
 }
 
 .day-header.today {
-  background: var(--gold-pale);
+  background: rgba(244, 234, 211, 0.6);
+  box-shadow: inset 1px 0 0 rgba(180, 139, 68, 0.6),
+              inset -1px 0 0 rgba(180, 139, 68, 0.6);
 }
 
 .day-name {
@@ -562,7 +564,7 @@ input {
 .day-cell {
   position: relative;
   background: rgba(255, 255, 255, 0.96);
-  border-right: 1px solid rgba(221, 212, 192, 0.5);
+  border-right: 1px solid rgba(190, 175, 145, 0.55);
 }
 
 .day-cell:last-child {
@@ -574,7 +576,9 @@ input {
 }
 
 .day-cell.today {
-  background: var(--gold-pale);
+  background: rgba(244, 234, 211, 0.45);
+  box-shadow: inset 1px 0 0 rgba(180, 139, 68, 0.5),
+              inset -1px 0 0 rgba(180, 139, 68, 0.5);
 }
 
 .section-row {
@@ -600,15 +604,15 @@ input {
 
 .booking-bar {
   position: absolute;
-  top: 8px;
-  height: calc(100% - 16px);
+  top: 6px;
+  height: calc(100% - 12px);
   display: flex;
   align-items: center;
-  padding: 0 10px;
-  border-radius: 6px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  padding: 0 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
   color: #fff;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.01em;
   overflow: hidden;
@@ -616,7 +620,7 @@ input {
   text-overflow: ellipsis;
   pointer-events: auto;
   cursor: pointer;
-  box-shadow: 0 2px 5px rgba(28, 25, 20, 0.08);
+  box-shadow: 0 1px 2px rgba(28, 25, 20, 0.1);
 }
 
 .booking-bar.is-soft {
