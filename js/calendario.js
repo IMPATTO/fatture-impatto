@@ -1121,7 +1121,7 @@ function formatMonthLabel(date) {
 
 function formatRangeLabel(date) {
   const { start, end } = getMonthBounds(date);
-  const from = formatDayMonthYear(start);
+  const from = formatDayMonthYear(parseIsoDate(start));
   const to = formatDayMonthYear(parseIsoDate(end));
   return `Dal ${from} al ${to}`;
 }
