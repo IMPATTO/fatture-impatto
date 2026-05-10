@@ -48,18 +48,24 @@ export const siteRegistry = {
     envVar: 'SITE_URL_PORTALE',
     pages: [
       'backoffice-portale.html',
+      'backoffice-calendario.html',
       'portale.html',
       'index.html',
       'carica-documenti-fattura.html',
     ],
     assets: [
       'js/supabase-client.js',
+      'js/calendario.js',
+      'css/calendario.css',
     ],
     functions: [
       'apply-apartment-links',
       'audit-apartment-links',
+      'beds24-sync-bookings',
+      'get-calendar',
       'get-public-apartment-links',
       'get-public-portal-data',
+      'populate-pms-mappings-and-units',
       'save-istat-config',
       'submit-public-checkin',
       'submit-public-invoice-documents',
@@ -118,7 +124,9 @@ export function getAllPageOwners() {
   const owners = new Map();
   for (const [siteKey, site] of Object.entries(siteRegistry)) {
     for (const page of site.pages || []) {
-      owners.set(page, siteKey);
+      if (!owners.has(page)) {
+        owners.set(page, siteKey);
+      }
     }
   }
   return owners;
