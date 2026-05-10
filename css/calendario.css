@@ -19,8 +19,8 @@
   --radius-sm: 10px;
   --label-width: 320px;
   --day-width: 48px;
-  --row-height: 58px;
-  --residence-height: 64px;
+  --row-height: 50px;
+  --residence-height: 58px;
   --font-serif: 'Cormorant Garamond', Georgia, serif;
   --font-sans: 'DM Sans', system-ui, sans-serif;
   --font-mono: 'DM Mono', ui-monospace, monospace;
@@ -562,10 +562,19 @@ input {
 .day-cell {
   position: relative;
   background: rgba(255, 255, 255, 0.96);
+  border-right: 1px solid rgba(221, 212, 192, 0.5);
+}
+
+.day-cell:last-child {
+  border-right: none;
 }
 
 .day-cell.weekend {
   background: #f7f5ef;
+}
+
+.day-cell.today {
+  background: var(--gold-pale);
 }
 
 .section-row {
@@ -591,13 +600,13 @@ input {
 
 .booking-bar {
   position: absolute;
-  top: 10px;
-  height: calc(100% - 20px);
+  top: 8px;
+  height: calc(100% - 16px);
   display: flex;
   align-items: center;
   padding: 0 10px;
-  border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
   color: #fff;
   font-size: 12px;
   font-weight: 600;
@@ -607,7 +616,7 @@ input {
   text-overflow: ellipsis;
   pointer-events: auto;
   cursor: pointer;
-  box-shadow: 0 4px 10px rgba(28, 25, 20, 0.12);
+  box-shadow: 0 2px 5px rgba(28, 25, 20, 0.08);
 }
 
 .booking-bar.is-soft {
@@ -1012,5 +1021,67 @@ input {
 
   .detail-row {
     grid-template-columns: 1fr;
+  }
+}
+
+.sidebar-toggle {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.sidebar-toggle:hover,
+.sidebar-toggle:focus-visible {
+  border-color: var(--gold);
+  outline: none;
+}
+
+.sidebar-toggle-icon {
+  display: inline-block;
+  transition: transform 0.2s ease;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.page-body.sidebar-collapsed .sidebar-toggle-icon {
+  transform: rotate(180deg);
+}
+
+.page-body.sidebar-collapsed .sidebar {
+  display: none;
+}
+
+.page-body.sidebar-collapsed {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.page-body {
+  position: relative;
+}
+
+.calendar-panel {
+  position: relative;
+}
+
+@media (max-width: 1200px) {
+  .sidebar-toggle {
+    display: none;
   }
 }

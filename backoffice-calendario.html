@@ -85,8 +85,12 @@
 
     <section id="orphanBanner" class="orphan-banner hidden" role="button" tabindex="0" aria-controls="orphanModal" aria-expanded="false"></section>
 
-    <main class="page-body">
-      <aside class="sidebar">
+    <main class="page-body" id="pageBody">
+      <button type="button" id="sidebarToggle" class="sidebar-toggle" aria-label="Nascondi filtri" aria-expanded="true">
+        <span class="sidebar-toggle-icon">‹</span>
+        <span class="sidebar-toggle-label">Filtri</span>
+      </button>
+      <aside class="sidebar" id="sidebar">
         <section class="filter-card">
           <h2>Citta</h2>
           <p class="filter-copy">Filtra le strutture per area operativa. Massimo 5 selezioni attive.</p>

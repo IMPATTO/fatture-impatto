@@ -113,7 +113,7 @@ function cacheElements() {
     'loginOverlay', 'loginForm', 'loginEmail', 'loginPassword', 'loginError', 'loginSubmit',
     'app', 'navUser', 'logoutBtn', 'navbarToggle', 'navbarMenu', 'rangeInfo',
     'prevMonthBtn', 'nextMonthBtn', 'monthPickerBtn', 'monthPickerInput',
-    'refreshBtn', 'exportBtn', 'lastSyncLabel', 'cityFilters', 'channelFilters',
+    'refreshBtn', 'exportBtn', 'lastSyncLabel', 'sidebarToggle', 'pageBody', 'sidebar', 'cityFilters', 'channelFilters',
     'statusFilters', 'timelineHeader', 'timelineBody', 'timelineShell', 'timelineScroll',
     'mobileList', 'loadingState', 'emptyState', 'errorState', 'orphanBanner',
     'bookingDrawer', 'drawerBackdrop', 'drawerCloseBtn', 'drawerCloseBtnFooter',
@@ -128,6 +128,7 @@ function bindShellEvents() {
   ELS.loginForm?.addEventListener('submit', handleLogin);
   ELS.logoutBtn?.addEventListener('click', () => sb.auth.signOut());
   ELS.navbarToggle?.addEventListener('click', toggleMenu);
+  ELS.sidebarToggle?.addEventListener('click', toggleSidebar);
   ELS.prevMonthBtn?.addEventListener('click', () => shiftMonth(-1));
   ELS.nextMonthBtn?.addEventListener('click', () => shiftMonth(1));
   ELS.monthPickerBtn?.addEventListener('click', () => ELS.monthPickerInput?.showPicker ? ELS.monthPickerInput.showPicker() : ELS.monthPickerInput.click());
@@ -210,6 +211,15 @@ function setLoginError(message) {
 function toggleMenu() {
   const open = ELS.navbarMenu.classList.toggle('open');
   ELS.navbarToggle.setAttribute('aria-expanded', String(open));
+}
+
+function toggleSidebar() {
+  const collapsed = ELS.pageBody.classList.toggle('sidebar-collapsed');
+  ELS.sidebarToggle.setAttribute('aria-expanded', String(!collapsed));
+  ELS.sidebarToggle.setAttribute(
+    'aria-label',
+    collapsed ? 'Mostra filtri' : 'Nascondi filtri'
+  );
 }
 
 function closeMenu() {
@@ -590,12 +600,17 @@ function buildHeatCells(row, monthDays) {
     const ratio = total ? occupied / total : 0;
     const bucket = ratio === 0 ? 0 : ratio < 0.34 ? 1 : ratio < 0.67 ? 2 : ratio < 1 ? 3 : 4;
     const weekend = isWeekend(date) ? ' weekend' : '';
-    return `<div class="day-cell heat-cell heat-fill-${bucket}${weekend}" aria-label="${occupied} occupate su ${total}">${occupied}/${total}</div>`;
+    const today = isSameDate(date, new Date()) ? ' today' : '';
+    return `<div class="day-cell heat-cell heat-fill-${bucket}${weekend}${today}" aria-label="${occupied} occupate su ${total}">${occupied}/${total}</div>`;
   }).join('');
 }
 
 function buildDayCells(monthDays) {
-  return monthDays.map((date) => `<div class="day-cell${isWeekend(date) ? ' weekend' : ''}"></div>`).join('');
+  return monthDays.map((date) => {
+    const weekend = isWeekend(date) ? ' weekend' : '';
+    const today = isSameDate(date, new Date()) ? ' today' : '';
+    return `<div class="day-cell${weekend}${today}"></div>`;
+  }).join('');
 }
 
 function buildBookingBars(bookings, monthDays) {
@@ -605,9 +620,8 @@ function buildBookingBars(bookings, monthDays) {
     const span = bookingSpanWithinMonth(booking, start, endExclusive);
     if (!span) return '';
     const dayWidth = getDayWidth();
-    const left = span.startIndex * dayWidth;
-    const rawWidth = span.days * dayWidth - 4;
-    const width = Math.max(rawWidth, dayWidth - 4);
+    const left = span.startIndex * dayWidth + 2;
+    const width = Math.max(span.days * dayWidth - 4, dayWidth - 8);
     const channelKey = booking.channel_normalized || 'fallback';
     const channelClass = CHANNEL_CONFIG[channelKey]?.className || 'channel-fallback';
     const soft = ['new', 'request'].includes(booking.status) ? ' is-soft' : '';
@@ -621,7 +635,7 @@ function buildBookingBars(bookings, monthDays) {
         class="booking-bar ${channelClass}${soft}"
         data-booking-id="${esc(booking.beds24_booking_id)}"
         data-tooltip="${esc(tooltip)}"
-        style="left:${left + 2}px;width:${width}px;"
+        style="left:${left}px;width:${width}px;"
       >
         <span class="bar-label">${esc(label)}</span>
       </button>
