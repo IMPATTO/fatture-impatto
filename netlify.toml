@@ -1,13 +1,12 @@
 [build]
-  publish = "."
-  command = "npm ci && npm run verify:integrity"
+  publish = "dist/portale"
+  command = "npm ci && SITE_KEY=portale npm run build:site"
 
 [build.environment]
   SECRETS_SCAN_OMIT_KEYS = "SUPABASE_URL,SUPABASE_ANON_KEY,SUPABASE_SERVICE_KEY,SUPABASE_SERVICE_ROLE_KEY,EMAIL_FROM,INTERNAL_API_KEY"
 
 [functions]
-  directory = "netlify/functions"
-  included_files = ["stati.csv"]
+  directory = "dist/portale/netlify/functions"
 
 [functions."sync-beds24-links"]
   schedule = "0 * * * *"
