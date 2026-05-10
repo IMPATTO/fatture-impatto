@@ -394,6 +394,55 @@ async function loadPortalRows() {
   }));
 }
 
+function applyBackofficePortaleData(payload = {}) {
+  S.apartments = (payload.apartments || []).sort((a, b) =>
+    normSort(a.struttura_nome).localeCompare(normSort(b.struttura_nome), 'it') ||
+    normSort(a.nome_appartamento).localeCompare(normSort(b.nome_appartamento), 'it')
+  );
+  S.accounts = payload.accounts || [];
+  S.links = payload.links || [];
+  S.istatConfigs = payload.istatConfigs || [];
+  S.portalRows = (payload.portalRows || []).map(row => ({
+    ...row,
+    nome_appartamento: row.apartments?.nome_appartamento || '',
+    public_checkin_key: row.apartments?.public_checkin_key || '',
+  }));
+}
+
+async function fetchBackofficePortaleData() {
+  const sessionData = S.session
+    ? { data: { session: S.session } }
+    : await sb.auth.getSession();
+  const accessToken = sessionData?.data?.session?.access_token;
+  if (!accessToken) return null;
+
+  const res = await fetch('/.netlify/functions/get-backoffice-portale-data', {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+    },
+  });
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(payload.error || 'Errore caricamento dati Portale');
+  }
+  return payload;
+}
+
+async function loadBackofficePortaleData() {
+  try {
+    const payload = await fetchBackofficePortaleData();
+    if (payload) {
+      applyBackofficePortaleData(payload);
+      return;
+    }
+  } catch (err) {
+    console.warn('Falling back to direct Portale queries:', err);
+  }
+
+  await Promise.all([loadApartments(), loadConnections(), loadPortalRows()]);
+}
+
 function getVisibleApartments() {
   return S.apartments.filter(item => S.showInactive || item.attivo !== false);
 }
@@ -749,13 +798,13 @@ async function createApartmentFromForm() {
   try {
     await saveApartmentAlloggiati(data.id, form);
     if (cleanVal(form.istat_regione)) await saveApartmentIstat(data.id, form);
-    await Promise.all([loadApartments(), loadConnections()]);
+    await loadBackofficePortaleData();
     resetNewApartmentForm();
     await openApartmentSheet(data.id, true);
     toast('✓ Appartamento creato e collegato', 'ok');
   } catch (err) {
     toast('Appartamento creato ma collegamenti incompleti: ' + err.message, 'err');
-    await Promise.all([loadApartments(), loadConnections()]);
+    await loadBackofficePortaleData();
     await openApartmentSheet(data.id, true);
   }
 }
@@ -1328,7 +1377,7 @@ async function saveApartmentIdentity(aptId) {
     toast('Errore: ' + error.message, 'err');
     return false;
   }
-  await Promise.all([loadApartments(), loadPortalRows()]);
+  await loadBackofficePortaleData();
   renderDashboard();
   await openApartmentSheet(aptId, false);
   toast('✓ Nome appartamento salvato','ok');
@@ -1363,7 +1412,7 @@ async function runApartmentLinksSync(mode) {
     if (!res.ok) throw new Error(data.error || 'Operazione non riuscita');
     S.syncReport = data.report || null;
     if (mode === 'apply') {
-      await Promise.all([loadApartments(), loadConnections()]);
+      await loadBackofficePortaleData();
     }
     toast(mode === 'apply' ? '✓ Apply completato' : '✓ Audit completato', 'ok');
   } catch (err) {
@@ -2158,7 +2207,7 @@ function renderTabCollegamenti(el) {
     btn.textContent = 'Salvo…';
     try {
       await saveApartmentAlloggiati(S.selectedApt, S.fConn);
-      await loadConnections();
+      await loadBackofficePortaleData();
       toast('✓ Collegamento Alloggiati salvato', 'ok');
       renderTabCollegamenti(el);
     } catch (err) {
@@ -2175,7 +2224,7 @@ function renderTabCollegamenti(el) {
     btn.textContent = 'Salvo…';
     try {
       await saveApartmentIstat(S.selectedApt, S.fConn);
-      await loadConnections();
+      await loadBackofficePortaleData();
       toast('✓ Collegamento ISTAT salvato', 'ok');
       renderTabCollegamenti(el);
     } catch (err) {
@@ -2246,11 +2295,10 @@ async function init() {
     return;
   }
   if (S.session) {
-    await Promise.all([loadApartments(), loadConnections(), loadPortalRows()]);
+    await loadBackofficePortaleData();
     renderDashboard();
     return;
   }
-  await loadApartments();
   renderLogin();
 }
 

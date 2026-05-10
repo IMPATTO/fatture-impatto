@@ -68,6 +68,7 @@ export const siteRegistry = {
       'apply-apartment-links',
       'audit-apartment-links',
       'beds24-sync-bookings',
+      'get-backoffice-portale-data',
       'get-calendar',
       'get-public-portal-data',
       'populate-pms-mappings-and-units',
