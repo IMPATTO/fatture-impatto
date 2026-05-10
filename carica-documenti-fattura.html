@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carica Documenti Fattura - Il Lupo Affitta</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f4f0;--surface:#ffffff;--surface2:#f0efeb;--border:#d8d5ce;--border2:#b8b5ae;
+  --text:#111111;--text2:#3a3a3a;--text3:#777770;--accent:#8a6200;--accent-bg:rgba(138,98,0,0.07);
+  --green:#2d7a4a;--green-bg:rgba(45,122,74,0.08);--green-border:rgba(45,122,74,0.25);
+  --red:#c0392b;--red-bg:rgba(192,57,43,0.07);--red-border:rgba(192,57,43,0.25);
+  --radius:12px;--radius-sm:8px;--radius-xs:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;-webkit-font-smoothing:antialiased;}
+.header{border-bottom:1px solid var(--border);padding:22px 28px;display:flex;align-items:center;justify-content:space-between;background:rgba(247,246,243,0.96);backdrop-filter:blur(16px);position:sticky;top:0;z-index:10;}
+.logo{display:flex;align-items:center;gap:13px;}
+.logo-mark{width:32px;height:32px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:18px;color:#fff;}
+.logo-text h1{font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:400;}
+.logo-text p{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:.1em;text-transform:uppercase;margin-top:1px;}
+.page{max-width:760px;margin:0 auto;padding:36px 20px 80px;}
+.hero{margin-bottom:24px;}
+.hero h2{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:300;line-height:1.05;letter-spacing:-.01em;margin-bottom:10px;}
+.hero h2 em{font-style:italic;color:var(--accent);}
+.hero p{font-size:14px;color:var(--text2);line-height:1.7;max-width:620px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:14px;}
+.card-header{padding:12px 18px;border-bottom:1px solid var(--border);}
+.card-title{font-size:10px;font-family:'DM Mono',monospace;color:var(--text2);letter-spacing:.14em;text-transform:uppercase;}
+.card-body{padding:18px;}
+.field{margin-bottom:14px;}
+.field:last-child{margin-bottom:0;}
+.field label{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text2);margin-bottom:6px;font-family:'DM Mono',monospace;font-weight:500;}
+.req{color:var(--accent);}
+.field input,.field textarea,.field select{width:100%;background:#fff;border:1.5px solid var(--border);border-radius:var(--radius-xs);padding:11px 13px;color:#111;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s,box-shadow .15s;}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(138,98,0,.08);}
+.field textarea{min-height:110px;resize:vertical;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.helper{font-size:11px;color:var(--text3);line-height:1.5;margin-top:7px;}
+.upload{border:1.5px dashed var(--border2);border-radius:var(--radius-sm);padding:22px 18px;text-align:center;background:var(--surface2);position:relative;}
+.upload input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.upload strong{display:block;font-size:14px;font-weight:500;margin-bottom:4px;}
+.upload span{display:block;font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;line-height:1.6;}
+.file-list{display:grid;gap:8px;margin-top:12px;}
+.file-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid var(--border);border-radius:var(--radius-xs);background:#fff;font-size:12px;}
+.file-remove{border:1px solid var(--border2);background:transparent;border-radius:var(--radius-xs);padding:4px 7px;font-size:10px;font-family:'DM Mono',monospace;cursor:pointer;}
+.privacy{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;display:flex;align-items:flex-start;gap:12px;}
+.privacy input{margin-top:2px;accent-color:var(--accent);}
+.privacy label{font-size:12px;color:var(--text2);line-height:1.6;cursor:pointer;}
+.privacy a{color:var(--accent);}
+.actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:18px;}
+.btn{border:none;border-radius:8px;padding:13px 22px;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary[disabled]{opacity:.6;cursor:wait;}
+.status{display:none;padding:12px 14px;border-radius:var(--radius-xs);font-size:12px;line-height:1.6;font-family:'DM Mono',monospace;margin-bottom:14px;}
+.status.show{display:block;}
+.status.ok{background:var(--green-bg);border:1px solid var(--green-border);color:var(--green);}
+.status.err{background:var(--red-bg);border:1px solid var(--red-border);color:var(--red);}
+.success{display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:34px 24px;text-align:center;}
+.success.show{display:block;}
+.success h3{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:300;margin-bottom:10px;}
+.success p{font-size:14px;color:var(--text2);line-height:1.7;max-width:520px;margin:0 auto;}
+@media(max-width:560px){
+  .header{padding:16px 14px;}
+  .page{padding:28px 14px 60px;}
+  .hero h2{font-size:30px;}
+  .field-row{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">
+    <div class="logo-mark">I</div>
+    <div class="logo-text">
+      <h1>Il Lupo Affitta</h1>
+      <p>Caricamento fattura</p>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+  <div id="status" class="status"></div>
+
+  <div class="hero">
+    <h2>Invia i documenti per la<br><em>fattura aziendale</em></h2>
+    <p>Compila i dati di fatturazione, allega i documenti utili e invia tutto in un unico passaggio. La richiesta arriverà in fatturazione e gli allegati saranno disponibili anche nella sezione documenti contabili.</p>
+  </div>
+
+  <div id="success" class="success">
+    <h3>Richiesta inviata</h3>
+    <p>I dati sono stati ricevuti correttamente. Il team fatturazione prenderà in carico la richiesta con gli allegati che hai caricato.</p>
+  </div>
+
+  <form id="invoiceForm" novalidate>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Azienda</div></div>
+      <div class="card-body">
+        <div class="field-row">
+          <div class="field">
+            <label>Tipo cliente <span class="req">*</span></label>
+            <select id="tipo_cliente" name="tipo_cliente">
+              <option value="azienda">Azienda</option>
+              <option value="professionista">Professionista</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Ragione sociale <span class="req">*</span></label>
+            <input id="ragione_sociale" name="ragione_sociale" placeholder="Es. Costruzioni Italia SRL">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Partita IVA <span class="req">*</span></label>
+            <input id="piva_cliente" name="piva_cliente" placeholder="IT01234567890">
+          </div>
+          <div class="field">
+            <label>Codice fiscale</label>
+            <input id="codice_fiscale" name="codice_fiscale" placeholder="Opzionale">
+          </div>
+        </div>
+        <div class="field">
+          <label>Sede legale <span class="req">*</span></label>
+          <input id="indirizzo_fatturazione" name="indirizzo_fatturazione" placeholder="Via, numero civico, CAP, città, provincia">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Codice SDI</label>
+            <input id="sdi" name="sdi" placeholder="Opzionale">
+          </div>
+          <div class="field">
+            <label>PEC</label>
+            <input id="pec" name="pec" type="email" placeholder="amministrazione@pec.it">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">Referente</div></div>
+      <div class="card-body">
+        <div class="field-row">
+          <div class="field">
+            <label>Nome <span class="req">*</span></label>
+            <input id="referente_nome" name="referente_nome" placeholder="Mario">
+          </div>
+          <div class="field">
+            <label>Cognome <span class="req">*</span></label>
+            <input id="referente_cognome" name="referente_cognome" placeholder="Rossi">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Email <span class="req">*</span></label>
+            <input id="email" name="email" type="email" placeholder="amministrazione@azienda.it">
+          </div>
+          <div class="field">
+            <label>Telefono <span class="req">*</span></label>
+            <input id="telefono" name="telefono" placeholder="+39 333 1234567">
+          </div>
+        </div>
+        <div class="field">
+          <label>Note</label>
+          <textarea id="note" name="note" placeholder="Aggiungi qui dettagli utili per la fatturazione o per riconoscere la prenotazione."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">Allegati</div></div>
+      <div class="card-body">
+        <div class="upload">
+          <input id="files" name="files" type="file" multiple accept=".pdf,image/*">
+          <strong>Carica documenti</strong>
+          <span>PDF, foto o scansioni. Puoi allegare visura, documento fiscale, email ordine o altri file utili.</span>
+        </div>
+        <div class="helper">Allega almeno un file. Gli allegati saranno salvati nella coda documenti contabili.</div>
+        <div id="fileList" class="file-list"></div>
+      </div>
+    </div>
+
+    <div class="privacy">
+      <input id="privacy_accepted" name="privacy_accepted" type="checkbox" value="true">
+      <label for="privacy_accepted">Ho letto e compreso l’<a href="/privacy-policy.html" target="_blank" rel="noopener">informativa privacy</a> e autorizzo il trattamento dei dati trasmessi per la gestione della richiesta di fatturazione.</label>
+    </div>
+
+    <div class="actions">
+      <button id="submitBtn" type="submit" class="btn btn-primary">Invia richiesta</button>
+    </div>
+  </form>
+</div>
+
+<script>
+const selectedFiles = [];
+
+function $(id){ return document.getElementById(id); }
+
+function showStatus(message, kind) {
+  const el = $('status');
+  el.textContent = message;
+  el.className = 'status show ' + (kind || 'ok');
+}
+
+function clearStatus() {
+  const el = $('status');
+  el.textContent = '';
+  el.className = 'status';
+}
+
+function renderFiles() {
+  $('fileList').innerHTML = selectedFiles.map((file, index) => {
+    return '<div class="file-item"><span>' + escapeHtml(file.name) + ' · ' + formatBytes(file.size) + '</span><button type="button" class="file-remove" onclick="removeFile(' + index + ')">Rimuovi</button></div>';
+  }).join('');
+}
+
+function removeFile(index) {
+  selectedFiles.splice(index, 1);
+  syncInputFiles();
+  renderFiles();
+}
+
+function syncInputFiles() {
+  const dt = new DataTransfer();
+  selectedFiles.forEach(file => dt.items.add(file));
+  $('files').files = dt.files;
+}
+
+function formatBytes(bytes) {
+  const size = Number(bytes || 0);
+  if (size < 1024) return size + ' B';
+  if (size < 1024 * 1024) return (size / 1024).toFixed(1) + ' KB';
+  return (size / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+$('files').addEventListener('change', function() {
+  Array.from(this.files || []).forEach(file => selectedFiles.push(file));
+  syncInputFiles();
+  renderFiles();
+});
+
+$('invoiceForm').addEventListener('submit', async function(event) {
+  event.preventDefault();
+  clearStatus();
+
+  const btn = $('submitBtn');
+  const formData = new FormData();
+  ['tipo_cliente','ragione_sociale','piva_cliente','codice_fiscale','indirizzo_fatturazione','sdi','pec','referente_nome','referente_cognome','email','telefono','note'].forEach(function(id) {
+    formData.append(id, $(id).value || '');
+  });
+  formData.append('privacy_accepted', $('privacy_accepted').checked ? 'true' : 'false');
+  selectedFiles.forEach(file => formData.append('files', file, file.name));
+
+  btn.disabled = true;
+  btn.textContent = 'Invio in corso...';
+
+  try {
+    const res = await fetch('/.netlify/functions/submit-public-invoice-documents', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const msg = Array.isArray(data.fields) && data.fields.length
+        ? data.fields.map(item => item.message).join(' · ')
+        : (data.error || 'Errore invio richiesta');
+      throw new Error(msg);
+    }
+
+    $('invoiceForm').style.display = 'none';
+    $('success').classList.add('show');
+    if (data.guest_warning) showStatus(data.guest_warning, 'ok');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (error) {
+    console.error(error);
+    showStatus(error.message || 'Errore invio richiesta', 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Invia richiesta';
+  }
+});
+</script>
+</body>
+</html>

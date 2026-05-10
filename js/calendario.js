@@ -85,6 +85,8 @@ const S = {
   bookingsByUnit: new Map(),
   occupancyRows: [],
   occupancyByApartmentDate: new Map(),
+  inventoryDays: [],
+  inventoryByRoomDate: new Map(),
   orphanRows: [],
   orphanCount: 0,
   lastSync: null,
@@ -289,6 +291,7 @@ async function loadStaticData() {
 
 async function loadMonthData() {
   const { start, end } = getMonthBounds(S.monthDate);
+  const inventoryUrl = `/.netlify/functions/get-calendar?dateFrom=${encodeURIComponent(start)}&dateTo=${encodeURIComponent(end)}`;
 
   const occupancyQuery = sb
     .from('v_calendar_occupancy')
@@ -327,7 +330,26 @@ async function loadMonthData() {
     { data: bookings, error: bookingsError },
     { data: orphanRows, error: orphanError, count: orphanCount },
     { data: lastSyncRows, error: syncError },
-  ] = await Promise.all([occupancyQuery, bookingsQuery, orphanQuery, lastSyncQuery]);
+    inventoryPayload,
+  ] = await Promise.all([
+    occupancyQuery,
+    bookingsQuery,
+    orphanQuery,
+    lastSyncQuery,
+    fetch(inventoryUrl)
+      .then(async (response) => {
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          console.warn('calendario inventory unavailable', payload.error || response.statusText || response.status);
+          return { inventoryDays: [] };
+        }
+        return payload;
+      })
+      .catch((error) => {
+        console.warn('calendario inventory fetch failed', error);
+        return { inventoryDays: [] };
+      }),
+  ]);
 
   if (occupancyError) throw occupancyError;
   if (bookingsError) throw bookingsError;
@@ -336,6 +358,8 @@ async function loadMonthData() {
 
   S.occupancyRows = (occupancyRows || []).slice();
   S.occupancyByApartmentDate = buildOccupancyIndex(S.occupancyRows);
+  S.inventoryDays = (inventoryPayload?.inventoryDays || []).slice();
+  S.inventoryByRoomDate = buildInventoryIndex(S.inventoryDays);
   S.bookings = (bookings || []).map(enrichBooking).sort(compareBookingsForRender);
   S.bookingMap = new Map(S.bookings.map((item) => [String(item.beds24_booking_id), item]));
   S.bookingsByApartment = groupBy(S.bookings, (item) => String(item.apartment_id));
@@ -389,6 +413,15 @@ function buildOccupancyIndex(rows) {
   for (const row of rows) {
     const key = `${row.apartment_id}:${row.date}`;
     map.set(key, (map.get(key) || 0) + 1);
+  }
+  return map;
+}
+
+function buildInventoryIndex(rows) {
+  const map = new Map();
+  for (const row of rows || []) {
+    if (!row?.propertyId || !row?.date) continue;
+    map.set(`${row.propertyId}:${row.date}`, row);
   }
   return map;
 }
@@ -515,8 +548,7 @@ function renderStates() {
   ELS.errorState.querySelector('#retryBtn')?.addEventListener('click', () => ensureDataLoaded({ monthOnly: true }));
 
   const visibleRows = getVisibleApartmentRows();
-  const hasBookings = getVisibleBookings().length > 0;
-  const shouldShowEmpty = !S.loading && !S.errorMessage && (!visibleRows.length || !hasBookings);
+  const shouldShowEmpty = !S.loading && !S.errorMessage && !visibleRows.length;
   ELS.emptyState.classList.toggle('hidden', !shouldShowEmpty);
   ELS.timelineShell.classList.toggle('hidden', shouldShowEmpty || !!S.errorMessage);
   ELS.mobileList.classList.toggle('hidden', shouldShowEmpty || !!S.errorMessage);
@@ -586,7 +618,7 @@ function buildTimelineRow(row, monthDays) {
           </div>
         </div>
         <div class="timeline-days">
-          ${row.kind === 'residence' ? buildHeatCells(row, monthDays) : buildDayCells(monthDays)}
+          ${row.kind === 'residence' ? buildHeatCells(row, monthDays) : buildDayCells(row, monthDays)}
           <div class="row-bars">${row.kind === 'residence' ? '' : buildBookingBars(row.bookings, monthDays)}</div>
         </div>
       </div>
@@ -598,19 +630,35 @@ function buildHeatCells(row, monthDays) {
   const total = row.units.length || 1;
   return monthDays.map((date) => {
     const occupied = countOccupiedUnitsForDate(row.units, date);
+    const unavailable = countUnavailableUnitsForDate(row.units, date);
     const ratio = total ? occupied / total : 0;
     const bucket = ratio === 0 ? 0 : ratio < 0.34 ? 1 : ratio < 0.67 ? 2 : ratio < 1 ? 3 : 4;
     const weekend = isWeekend(date) ? ' weekend' : '';
     const today = isSameDate(date, new Date()) ? ' today' : '';
-    return `<div class="day-cell heat-cell heat-fill-${bucket}${weekend}${today}" aria-label="${occupied} occupate su ${total}">${occupied}/${total}</div>`;
+    const closed = unavailable === total ? ' closed-all' : unavailable > 0 ? ' closed-some' : '';
+    return `<div class="day-cell heat-cell heat-fill-${bucket}${weekend}${today}${closed}" aria-label="${occupied} occupate su ${total}${unavailable ? `, ${unavailable} non vendibili` : ''}">${occupied}/${total}</div>`;
   }).join('');
 }
 
-function buildDayCells(monthDays) {
+function buildDayCells(row, monthDays) {
   return monthDays.map((date) => {
+    const state = getDayAvailabilityState(row, date);
     const weekend = isWeekend(date) ? ' weekend' : '';
     const today = isSameDate(date, new Date()) ? ' today' : '';
-    return `<div class="day-cell${weekend}${today}"></div>`;
+    const unavailable = state.closed ? ' unavail' : '';
+    const booked = state.hasBooking ? ' has-booking' : '';
+    const badge = state.closed
+      ? `<span class="cell-badge" aria-hidden="true">${state.hasBooking ? '•' : '×'}</span>`
+      : '';
+    return `
+      <div
+        class="day-cell${weekend}${today}${unavailable}${booked}"
+        data-date="${esc(isoDateLocal(date))}"
+        data-apartment-id="${esc(row.apartment.id)}"
+        data-unit-id="${esc(row.unit?.id || '')}"
+        aria-label="${esc(buildDayCellLabel(row, date, state))}"
+      >${badge}</div>
+    `;
   }).join('');
 }
 
@@ -1089,8 +1137,55 @@ function countOccupiedUnitsForDate(units, date) {
   return occupied;
 }
 
+function countUnavailableUnitsForDate(units, date) {
+  let unavailable = 0;
+  for (const unit of units) {
+    const state = getInventoryStateForUnit(unit, date);
+    if (state.closed) unavailable += 1;
+  }
+  return unavailable;
+}
+
 function getBookingsForUnit(unitId) {
   return (S.bookingsByUnit.get(String(unitId)) || []).slice().sort(compareBookingsForRender);
+}
+
+function getInventoryStateForUnit(unit, date) {
+  const roomId = String(unit?.beds24_room_id || '').trim();
+  if (!roomId) return { closed: false, available: null, hasBooking: false, price: null, minStay: null };
+  const iso = typeof date === 'string' ? date : isoDateLocal(date);
+  const row = S.inventoryByRoomDate.get(`${roomId}:${iso}`) || null;
+  if (!row) return { closed: false, available: null, hasBooking: false, price: null, minStay: null };
+  return {
+    closed: row.closed === true || row.available === false,
+    available: row.available,
+    hasBooking: Boolean(row.hasBooking),
+    price: row.price,
+    minStay: row.minStay,
+  };
+}
+
+function getDayAvailabilityState(row, date) {
+  const state = getInventoryStateForUnit(row.unit, date);
+  const iso = isoDateLocal(date);
+  const hasBooking = row.bookings.some((booking) => booking.check_in <= iso && booking.check_out > iso);
+  return {
+    ...state,
+    hasBooking: state.hasBooking || hasBooking,
+  };
+}
+
+function buildDayCellLabel(row, date, state) {
+  const bits = [
+    row.apartment.displayName,
+    formatDate(isoDateLocal(date)),
+  ];
+  if (state.closed) bits.push('non vendibile');
+  else bits.push('disponibile');
+  if (state.hasBooking) bits.push('con prenotazione');
+  if (state.minStay) bits.push(`min stay ${state.minStay}`);
+  if (state.price != null) bits.push(`${formatPrice(state.price)} EUR`);
+  return bits.join(' · ');
 }
 
 function compareApartment(a, b) {

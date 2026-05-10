@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Backoffice Richieste · Impatto</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/supabase-client.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#f5f4f1; --white:#ffffff; --surf:#fafaf8; --border:#e2e0db; --border2:#d0cdc6;
+      --accent:#2563eb; --accent-l:#eff4ff; --green:#16a34a; --red:#dc2626; --red-l:#fef2f2; --yellow:#d97706; --yellow-l:#fff7ed;
+      --text:#1a1917; --text2:#57534e; --muted:#a8a29e;
+      --serif:'Cormorant Garamond', Georgia, serif; --sans:'DM Sans', sans-serif; --mono:'DM Mono', monospace;
+    }
+    html, body { min-height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; overflow-x:hidden; }
+    .navbar { display:flex; align-items:center; justify-content:flex-end; gap:12px; padding:0 24px; height:44px; background:#111; border-bottom:1px solid #2a2a2a; }
+    .navbar-links { display:flex; align-items:center; gap:12px; margin-left:auto; }
+    .navbar-link { font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:#888; text-decoration:none; padding:5px 13px; border-radius:5px; transition:background .15s,color .15s; }
+    .navbar-link:hover { background:#222; color:#ccc; }
+    .navbar-link.active { background:#222; color:#fff; }
+    .header { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; padding:0 24px; min-height:64px; background:var(--white); border-bottom:1px solid var(--border); }
+    .header-left { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; min-width:0; }
+    .header-brand { font-family:var(--serif); font-size:24px; font-weight:500; }
+    .header-badge { font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--white); background:var(--accent); padding:3px 8px; border-radius:4px; }
+    .header-user { font-size:12px; font-family:var(--mono); color:var(--muted); }
+    .page-wrap { padding: 18px 24px 28px; }
+    .stats-row { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
+    .stat-card { background:var(--white); border:1px solid var(--border); border-radius:10px; padding:14px 16px; }
+    .stat-label { font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+    .stat-value { font-family:var(--serif); font-size:30px; font-weight:600; }
+    .shell { background:var(--white); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+    .filters { display:flex; gap:10px; flex-wrap:wrap; align-items:center; padding:16px; background:var(--white); border-bottom:1px solid var(--border); }
+    .filters input, .filters select, .detail-select, .detail-input, .login-field input { width:100%; background:var(--white); border:1px solid var(--border); border-radius:6px; padding:10px 12px; font-size:14px; font-family:var(--sans); color:var(--text); outline:none; }
+    .filters input { min-width:240px; flex:1 1 240px; }
+    .filters select { min-width:180px; }
+    .body-wrap { display:flex; min-height:calc(100vh - 170px); }
+    .list-panel { flex:1 1 auto; min-width:0; overflow:auto; background:var(--white); }
+    .empty { padding:64px 24px; text-align:center; color:var(--muted); }
+    table { width:100%; border-collapse:collapse; }
+    thead th { text-align:left; padding:10px 16px; font-family:var(--mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border); background:var(--surf); position:sticky; top:0; white-space:nowrap; }
+    tbody tr { border-bottom:1px solid var(--border); cursor:pointer; transition:background .12s; }
+    tbody tr:hover { background:var(--accent-l); }
+    tbody tr.active { background:var(--accent-l); }
+    tbody td { padding:14px 16px; vertical-align:top; }
+    .row-title { font-weight:600; }
+    .row-meta { color:var(--text2); font-size:12px; margin-top:4px; line-height:1.5; }
+    .row-date { color:var(--muted); font-size:12px; font-family:var(--mono); white-space:nowrap; }
+    .badge { display:inline-flex; align-items:center; padding:4px 9px; border-radius:999px; font-family:var(--mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; }
+    .badge-open { background:#eff6ff; color:#1d4ed8; }
+    .badge-work { background:var(--yellow-l); color:#b45309; }
+    .badge-done { background:#ecfdf3; color:#15803d; }
+    .detail-panel { width:420px; max-width:420px; border-left:1px solid var(--border); background:var(--white); display:flex; flex-direction:column; }
+    .detail-head { padding:18px 20px 14px; border-bottom:1px solid var(--border); }
+    .detail-title { font-family:var(--serif); font-size:28px; font-weight:500; }
+    .detail-sub { margin-top:6px; color:var(--muted); font-family:var(--mono); font-size:11px; }
+    .detail-body { padding:18px 20px 24px; overflow:auto; flex:1; }
+    .detail-section { margin-bottom:18px; }
+    .detail-label { font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+    .detail-value { color:var(--text); line-height:1.6; }
+    .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .detail-card { border:1px solid var(--border); border-radius:10px; background:var(--surf); padding:12px; }
+    .actions { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:9px 18px; border:none; border-radius:6px; font-size:13px; font-weight:500; font-family:var(--sans); cursor:pointer; transition:all .15s; white-space:nowrap; text-decoration:none; }
+    .btn:disabled { opacity:.45; cursor:not-allowed; }
+    .btn-primary { background:var(--accent); color:#fff; }
+    .btn-primary:hover:not(:disabled) { background:#1d4ed8; }
+    .btn-ghost { background:var(--white); color:var(--text2); border:1px solid var(--border); }
+    .btn-ghost:hover:not(:disabled) { border-color:var(--border2); color:var(--text); }
+    .login-wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; }
+    .login-card { width:400px; background:var(--white); border:1px solid var(--border); border-radius:12px; padding:48px 44px; box-shadow:0 4px 24px rgba(0,0,0,.06); }
+    .login-logo { font-family:var(--serif); font-size:30px; font-weight:500; margin-bottom:4px; }
+    .login-sub { font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:36px; }
+    .login-field { margin-bottom:14px; }
+    .login-field label { display:block; font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--text2); margin-bottom:6px; }
+    .msg-err { background:var(--red-l); border:1px solid #fecaca; color:var(--red); border-radius:6px; padding:10px 13px; font-size:13px; margin-bottom:12px; display:none; }
+    .loading { padding:48px 24px; color:var(--muted); }
+    @media (max-width: 1100px) {
+      .detail-panel { width:380px; max-width:380px; }
+    }
+    @media (max-width: 900px) {
+      .stats-row { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .body-wrap { flex-direction:column; min-height:0; }
+      .detail-panel { width:100%; max-width:none; border-left:none; border-top:1px solid var(--border); }
+    }
+    @media (max-width: 768px) {
+      .navbar, .header, .page-wrap { padding-left:16px; padding-right:16px; }
+      .header { align-items:flex-start; padding-top:14px; padding-bottom:14px; }
+      .filters { padding:14px 16px; }
+      .detail-grid, .stats-row { grid-template-columns:1fr; }
+      .header-user { width:100%; }
+    }
+  </style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const sb = window.sb;
+const STATUS_PRESETS = ['nuova', 'da_contattare', 'contattata', 'in_trattativa', 'chiusa', 'archiviata'];
+const S = {
+  session: null,
+  loading: false,
+  saving: false,
+  rows: [],
+  selectedId: null,
+  filters: { search: '', stato: '', canale: '' },
+  detailStatus: '',
+};
+
+function esc(s) { if (s == null) return ''; return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function txt(s) { return esc(s); }
+function fmtDate(v) { if (!v) return '—'; const d = new Date(v); return Number.isNaN(d.getTime()) ? v : d.toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit', year:'numeric' }); }
+function fmtDateTime(v) { if (!v) return '—'; const d = new Date(v); return Number.isNaN(d.getTime()) ? v : d.toLocaleString('it-IT', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }); }
+function zoneLabel(row) {
+  const zones = Array.isArray(row.zone) ? row.zone : Array.isArray(row.zone_richieste) ? row.zone_richieste : Array.isArray(row.zone_richiesta) ? row.zone_richiesta : Array.isArray(row.zone) ? row.zone : Array.isArray(row.zones) ? row.zones : row.zone;
+  const normalized = Array.isArray(zones) ? zones.filter(Boolean) : (zones ? [zones] : []);
+  if (row.zona_altro) normalized.push(`Altro: ${row.zona_altro}`);
+  return normalized.length ? normalized.join(', ') : '—';
+}
+function periodLabel(row) {
+  const arrivo = row.data_arrivo || row.checkin || null;
+  const partenza = row.data_partenza || row.checkout || null;
+  if (arrivo && partenza) return `${fmtDate(arrivo)} → ${fmtDate(partenza)}`;
+  if (arrivo) return `Da ${fmtDate(arrivo)}`;
+  if (partenza) return `Fino a ${fmtDate(partenza)}`;
+  return row.periodo_flessibile ? 'Periodo flessibile' : '—';
+}
+function paxLabel(row) {
+  const adulti = Number(row.adulti || 0);
+  const bambini = Number(row.bambini || 0);
+  const totale = adulti + bambini;
+  if (!totale) return '—';
+  return `${totale} persone${bambini ? ` (${adulti} adulti, ${bambini} bambini)` : ''}`;
+}
+function budgetLabel(row) {
+  if (!row.budget_testo && !row.budget_tipo) return '—';
+  return [row.budget_testo, row.budget_tipo].filter(Boolean).join(' · ');
+}
+function currentRow() {
+  return S.rows.find((row) => String(row.id) === String(S.selectedId)) || null;
+}
+function uniqueStatuses() {
+  return Array.from(new Set(S.rows.map((row) => String(row.stato || '').trim()).filter(Boolean).concat(STATUS_PRESETS))).sort();
+}
+function badgeClass(value) {
+  const normalized = String(value || '').toLowerCase();
+  if (['chiusa', 'archiviata', 'conclusa'].includes(normalized)) return 'badge-done';
+  if (['contattata', 'in_trattativa', 'da_contattare'].includes(normalized)) return 'badge-work';
+  return 'badge-open';
+}
+function filteredRows() {
+  const q = String(S.filters.search || '').trim().toLowerCase();
+  return S.rows.filter((row) => {
+    if (S.filters.stato && String(row.stato || '') !== S.filters.stato) return false;
+    if (S.filters.canale && String(row.canale_preferito || '') !== S.filters.canale) return false;
+    if (!q) return true;
+    const haystack = [
+      row.nome, row.telefono, row.email, row.note_cliente, row.budget_testo, row.stato,
+      row.budget_tipo, row.zona_altro, zoneLabel(row), periodLabel(row),
+    ].join(' ').toLowerCase();
+    return haystack.includes(q);
+  });
+}
+function stats() {
+  const rows = S.rows;
+  return {
+    total: rows.length,
+    nuove: rows.filter((row) => ['nuova', 'pending', ''].includes(String(row.stato || '').toLowerCase())).length,
+    contattare: rows.filter((row) => ['da_contattare', 'contattata', 'in_trattativa'].includes(String(row.stato || '').toLowerCase())).length,
+    chiuse: rows.filter((row) => ['chiusa', 'archiviata', 'conclusa'].includes(String(row.stato || '').toLowerCase())).length,
+  };
+}
+
+async function api(path, options = {}) {
+  if (!S.session?.access_token) throw new Error('Sessione non disponibile');
+  const res = await fetch(path, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${S.session.access_token}`,
+      ...(options.headers || {}),
+    },
+  });
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(payload.error || payload.detail || `HTTP ${res.status}`);
+  return payload;
+}
+
+async function loadRequests() {
+  S.loading = true;
+  renderApp();
+  try {
+    const payload = await api('/.netlify/functions/get-backoffice-richieste');
+    S.rows = Array.isArray(payload.requests) ? payload.requests : [];
+    if (!currentRow()) {
+      S.selectedId = S.rows[0]?.id || null;
+    }
+    S.detailStatus = currentRow()?.stato || '';
+  } finally {
+    S.loading = false;
+  }
+  renderApp();
+}
+
+async function saveStatus() {
+  const row = currentRow();
+  const stato = String(document.getElementById('detailStatus')?.value || '').trim();
+  if (!row || !stato) return;
+  S.saving = true;
+  renderApp();
+  try {
+    const payload = await api('/.netlify/functions/get-backoffice-richieste', {
+      method: 'PATCH',
+      body: JSON.stringify({ id: row.id, stato }),
+    });
+    const updated = payload.request;
+    S.rows = S.rows.map((item) => String(item.id) === String(updated.id) ? updated : item);
+    S.detailStatus = updated.stato || stato;
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    S.saving = false;
+    renderApp();
+  }
+}
+
+function renderLogin() {
+  document.getElementById('app').innerHTML = `
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo">Impatto</div>
+      <div class="login-sub">Backoffice Richieste</div>
+      <div id="lerr" class="msg-err"></div>
+      <div class="login-field"><label>Email</label><input id="lem" type="email" autocomplete="username"/></div>
+      <div class="login-field"><label>Password</label><input id="lpw" type="password" autocomplete="current-password"/></div>
+      <button id="lbtn" class="btn btn-primary" style="width:100%;margin-top:8px;padding:12px">Entra</button>
+    </div>
+  </div>`;
+
+  const doLogin = async () => {
+    const btn = document.getElementById('lbtn');
+    const err = document.getElementById('lerr');
+    btn.disabled = true;
+    btn.textContent = 'Accesso…';
+    const { error } = await sb.auth.signInWithPassword({
+      email: document.getElementById('lem').value,
+      password: document.getElementById('lpw').value,
+    });
+    if (error) {
+      err.textContent = error.message;
+      err.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Entra';
+    }
+  };
+
+  document.getElementById('lbtn').addEventListener('click', doLogin);
+  document.getElementById('lpw').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+}
+
+function renderApp() {
+  const userEmail = S.session?.user?.email || 'utente autenticato';
+  const rows = filteredRows();
+  const row = currentRow();
+  const st = stats();
+  document.getElementById('app').innerHTML = `
+  <nav class="navbar">
+    <div class="navbar-links">
+      <a href="/backoffice.html" class="navbar-link">Fatturazione</a>
+      <a href="/backoffice-documenti.html" class="navbar-link">Documenti</a>
+      <a href="/backoffice-portale.html" class="navbar-link">Portale</a>
+      <a href="/backoffice-richieste.html" class="navbar-link active">Richieste</a>
+      <a href="/backoffice-operativita.html" class="navbar-link">Operativita</a>
+      <a href="/backoffice-beds24-messaggi.html" class="navbar-link">Beds24 Messaggi</a>
+      <a href="/backoffice-contabilita.html" class="navbar-link">Contabilita</a>
+    </div>
+  </nav>
+  <header class="header">
+    <div class="header-left">
+      <span class="header-brand">Impatto</span>
+      <span class="header-badge">RICHIESTE</span>
+    </div>
+    <div class="actions">
+      <span class="header-user">${esc(userEmail)}</span>
+      <button id="btnLogout" class="btn btn-ghost" style="padding:6px 13px;font-size:12px">Esci</button>
+    </div>
+  </header>
+  <div class="page-wrap">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">Totali</div><div class="stat-value">${st.total}</div></div>
+      <div class="stat-card"><div class="stat-label">Nuove</div><div class="stat-value">${st.nuove}</div></div>
+      <div class="stat-card"><div class="stat-label">Da lavorare</div><div class="stat-value">${st.contattare}</div></div>
+      <div class="stat-card"><div class="stat-label">Chiuse</div><div class="stat-value">${st.chiuse}</div></div>
+    </div>
+    <div class="shell">
+      <div class="filters">
+        <input id="fSearch" placeholder="Cerca nome, telefono, email, zona, budget, note..." value="${esc(S.filters.search)}"/>
+        <select id="fStato">
+          <option value="">Tutti gli stati</option>
+          ${uniqueStatuses().map((value) => `<option value="${esc(value)}" ${value===S.filters.stato ? 'selected' : ''}>${esc(value)}</option>`).join('')}
+        </select>
+        <select id="fCanale">
+          <option value="">Tutti i canali</option>
+          ${['whatsapp','sms','email'].map((value) => `<option value="${value}" ${value===S.filters.canale ? 'selected' : ''}>${value}</option>`).join('')}
+        </select>
+      </div>
+      <div class="body-wrap">
+        <div class="list-panel">
+          ${S.loading ? `<div class="loading">Carico richieste…</div>` : rows.length ? `
+            <table>
+              <thead>
+                <tr>
+                  <th>Richiesta</th>
+                  <th>Zona</th>
+                  <th>Periodo</th>
+                  <th>Stato</th>
+                  <th>Inviata</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows.map((item) => `
+                  <tr data-row-id="${item.id}" class="${String(item.id)===String(S.selectedId) ? 'active' : ''}">
+                    <td>
+                      <div class="row-title">${esc(item.nome || 'Senza nome')}</div>
+                      <div class="row-meta">${esc(item.telefono || item.email || 'Nessun contatto')} · ${esc(item.canale_preferito || 'canale n/d')}</div>
+                      <div class="row-meta">${esc(paxLabel(item))} · ${esc(budgetLabel(item))}</div>
+                    </td>
+                    <td><div class="row-meta">${esc(zoneLabel(item))}</div></td>
+                    <td><div class="row-meta">${esc(periodLabel(item))}</div></td>
+                    <td><span class="badge ${badgeClass(item.stato)}">${esc(item.stato || 'nuova')}</span></td>
+                    <td class="row-date">${fmtDateTime(item.created_at)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          ` : `<div class="empty">Nessuna richiesta trovata.</div>`}
+        </div>
+        <aside class="detail-panel">
+          ${row ? `
+            <div class="detail-head">
+              <div class="detail-title">${esc(row.nome || 'Richiesta')}</div>
+              <div class="detail-sub">Inviata il ${fmtDateTime(row.created_at)}${row.source ? ` · ${esc(row.source)}` : ''}</div>
+            </div>
+            <div class="detail-body">
+              <div class="detail-section">
+                <div class="detail-label">Contatti</div>
+                <div class="detail-grid">
+                  <div class="detail-card"><div class="detail-label">Telefono / WhatsApp</div><div class="detail-value">${esc(row.telefono || '—')}</div></div>
+                  <div class="detail-card"><div class="detail-label">Email</div><div class="detail-value">${esc(row.email || '—')}</div></div>
+                </div>
+              </div>
+              <div class="detail-section">
+                <div class="detail-label">Richiesta soggiorno</div>
+                <div class="detail-grid">
+                  <div class="detail-card"><div class="detail-label">Zona richiesta</div><div class="detail-value">${esc(zoneLabel(row))}</div></div>
+                  <div class="detail-card"><div class="detail-label">Date / periodo</div><div class="detail-value">${esc(periodLabel(row))}${row.periodo_flessibile ? '<br/>Periodo flessibile: si' : ''}</div></div>
+                  <div class="detail-card"><div class="detail-label">Persone</div><div class="detail-value">${esc(paxLabel(row))}${row.bambini_eta ? `<br/>Età bambini: ${esc(row.bambini_eta)}` : ''}</div></div>
+                  <div class="detail-card"><div class="detail-label">Camere / divano letto</div><div class="detail-value">${esc(row.camere_letto != null ? String(row.camere_letto) : '—')} camere${row.divano_letto ? `<br/>Divano letto: ${esc(row.divano_letto)}` : ''}</div></div>
+                </div>
+              </div>
+              <div class="detail-section">
+                <div class="detail-label">Budget</div>
+                <div class="detail-value">${esc(budgetLabel(row))}</div>
+              </div>
+              <div class="detail-section">
+                <div class="detail-label">Note</div>
+                <div class="detail-value">${esc(row.note_cliente || '—')}</div>
+              </div>
+              <div class="detail-section">
+                <div class="detail-label">Stato richiesta</div>
+                <div class="actions">
+                  <input id="detailStatus" class="detail-input" list="statusOptions" value="${esc(S.detailStatus || row.stato || '')}" placeholder="Es. nuova, contattata, chiusa"/>
+                  <datalist id="statusOptions">
+                    ${uniqueStatuses().map((value) => `<option value="${esc(value)}"></option>`).join('')}
+                  </datalist>
+                  <button id="btnSaveStatus" class="btn btn-primary" ${S.saving ? 'disabled' : ''}>Salva stato</button>
+                </div>
+              </div>
+            </div>
+          ` : `<div class="empty">Seleziona una richiesta per vedere il dettaglio.</div>`}
+        </aside>
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById('btnLogout').addEventListener('click', () => sb.auth.signOut());
+  document.getElementById('fSearch')?.addEventListener('input', (e) => { S.filters.search = e.target.value; renderApp(); });
+  document.getElementById('fStato')?.addEventListener('change', (e) => { S.filters.stato = e.target.value; renderApp(); });
+  document.getElementById('fCanale')?.addEventListener('change', (e) => { S.filters.canale = e.target.value; renderApp(); });
+  document.querySelectorAll('[data-row-id]').forEach((el) => el.addEventListener('click', () => {
+    S.selectedId = el.dataset.rowId;
+    S.detailStatus = currentRow()?.stato || '';
+    renderApp();
+  }));
+  document.getElementById('detailStatus')?.addEventListener('input', (e) => { S.detailStatus = e.target.value; });
+  document.getElementById('btnSaveStatus')?.addEventListener('click', saveStatus);
+}
+
+async function init() {
+  if (!sb) {
+    document.getElementById('app').innerHTML = '<div class="login-wrap"><div class="login-card"><div class="login-logo">Impatto</div><div class="login-sub">Backoffice Richieste</div><div class="msg-err" style="display:block">Client Supabase non disponibile in pagina.</div></div></div>';
+    return;
+  }
+  if (!S.session) {
+    renderLogin();
+    return;
+  }
+  await loadRequests();
+}
+
+if (sb) {
+  sb.auth.onAuthStateChange(async (_event, session) => {
+    S.session = session;
+    if (session) await loadRequests();
+    else {
+      S.rows = [];
+      S.selectedId = null;
+      S.detailStatus = '';
+      renderLogin();
+    }
+  });
+
+  sb.auth.getSession().then(async ({ data: { session } }) => {
+    S.session = session;
+    await init();
+  });
+} else {
+  init();
+}
+</script>
+</body>
+</html>

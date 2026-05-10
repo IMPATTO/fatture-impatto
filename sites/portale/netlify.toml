@@ -1,0 +1,7 @@
+[build]
+  base = "../.."
+  publish = "dist/portale"
+  command = "npm ci && SITE_KEY=portale npm run build:site"
+
+[functions]
+  directory = "dist/portale/netlify/functions"

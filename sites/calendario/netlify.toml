@@ -1,0 +1,7 @@
+[build]
+  base = "../.."
+  publish = "dist/calendario"
+  command = "npm ci && SITE_KEY=calendario npm run build:site"
+
+[functions]
+  directory = "dist/calendario/netlify/functions"

@@ -1,0 +1,7 @@
+[build]
+  base = "../.."
+  publish = "dist/fatt-docs"
+  command = "npm ci && SITE_KEY=fatt-docs npm run build:site"
+
+[functions]
+  directory = "dist/fatt-docs/netlify/functions"

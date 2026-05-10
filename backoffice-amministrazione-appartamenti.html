@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Amministrazione Appartamenti · Impatto</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/supabase-client.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#f5f4f1; --white:#ffffff; --surf:#fafaf8; --border:#e2e0db; --border2:#d0cdc6;
+      --accent:#2563eb; --accent-l:#eff4ff; --green:#16a34a; --green-l:#f0fdf4;
+      --red:#dc2626; --red-l:#fef2f2; --yellow:#d97706; --yellow-l:#fffbeb;
+      --text:#1a1917; --text2:#57534e; --muted:#a8a29e;
+      --serif:'Cormorant Garamond', Georgia, serif; --sans:'DM Sans', sans-serif; --mono:'DM Mono', monospace;
+    }
+    html, body { min-height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; }
+    .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .login-card { width: 400px; background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 48px 44px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+    .login-logo { font-family: var(--serif); font-size: 30px; font-weight: 500; margin-bottom: 4px; }
+    .login-sub { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 36px; }
+    .msg-err { background: var(--red-l); border: 1px solid #fecaca; color: var(--red); border-radius: 6px; padding: 10px 13px; font-size: 13px; margin-bottom: 12px; display: none; }
+    .navbar { display:flex; align-items:center; justify-content:flex-end; gap:12px; padding:0 24px; height:44px; background:#111; border-bottom:1px solid #2a2a2a; }
+    .navbar-links { display:flex; align-items:center; gap:12px; margin-left:auto; }
+    .navbar-link { font-family:var(--mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#888; text-decoration:none; padding:5px 13px; border-radius:5px; transition:background .15s,color .15s; }
+    .navbar-link:hover { background:#222; color:#ccc; }
+    .navbar-link.active { background:#222; color:#fff; }
+    .header { display:flex; align-items:center; justify-content:space-between; padding:0 24px; min-height:64px; background:var(--white); border-bottom:1px solid var(--border); gap:16px; }
+    .header-left { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+    .header-brand { font-family:var(--serif); font-size:24px; font-weight:500; }
+    .header-badge { font-family:var(--mono); font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--white); background:var(--accent); padding:3px 8px; border-radius:4px; }
+    .header-user { font-size:12px; font-family:var(--mono); color:var(--muted); }
+    .page-wrap { padding: 18px 24px 28px; }
+    .shell { background: var(--white); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .toolbar { display:flex; align-items:end; justify-content:space-between; gap:16px; padding:18px 20px; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+    .section-title { font-family: var(--serif); font-size: 22px; font-weight: 500; margin-bottom: 4px; }
+    .section-sub { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+    .toolbar-actions { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .field { margin-bottom: 14px; }
+    .field label { display:block; font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--text2); margin-bottom:6px; }
+    .field input, .field select, .field textarea { width:100%; background:var(--white); border:1px solid var(--border); border-radius:6px; padding:10px 13px; font-size:14px; font-family:var(--sans); color:var(--text); outline:none; transition:border-color .15s, box-shadow .15s; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,.08); }
+    .field textarea { resize:vertical; min-height:84px; line-height:1.5; }
+    .field select { appearance:none; cursor:pointer; padding-right:30px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a8a29e' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; }
+    .field-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:9px 18px; border:none; border-radius:6px; font-size:13px; font-weight:500; font-family:var(--sans); cursor:pointer; transition:all .15s; white-space:nowrap; text-decoration:none; }
+    .btn:disabled { opacity:.38; cursor:not-allowed; }
+    .btn-primary { background:var(--accent); color:#fff; }
+    .btn-primary:hover:not(:disabled) { background:#1d4ed8; }
+    .btn-ghost { background:var(--white); color:var(--text2); border:1px solid var(--border); }
+    .btn-ghost:hover:not(:disabled) { border-color:var(--border2); color:var(--text); }
+    .mono-sm { font-family:var(--mono); font-size:11px; color:var(--muted); }
+    .content { padding: 24px; max-width: 980px; }
+    .card-section { background:var(--white); border:1px solid var(--border); border-radius:10px; padding:20px 24px; margin-bottom:16px; }
+    .card-section-title { font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:16px; padding-bottom:10px; border-bottom:1px solid var(--border); }
+    .field-hint { font-size:11px; color:var(--muted); margin-top:4px; }
+    .save-row { display:flex; align-items:center; gap:12px; margin-top:20px; padding-top:16px; border-top:1px solid var(--border); flex-wrap:wrap; }
+    .hint-box { background:var(--surf); border:1px solid var(--border); border-radius:8px; padding:12px 14px; font-size:12px; color:var(--text2); }
+    .empty-state { padding: 24px; }
+    .empty-card { background:var(--surf); border:1px dashed var(--border2); border-radius:10px; padding:24px; }
+    .empty-title { font-family:var(--serif); font-size:20px; margin-bottom:6px; }
+    .toast { position:fixed; bottom:20px; right:20px; background:var(--white); border:1px solid var(--border); border-radius:8px; padding:12px 18px; font-size:13px; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,.1); max-width:300px; }
+    .toast-ok { border-left:3px solid var(--green); color:var(--green); }
+    .toast-err { border-left:3px solid var(--red); color:var(--red); }
+    @media (max-width: 768px) {
+      .navbar, .header, .page-wrap { padding-left:16px; padding-right:16px; }
+      .header { align-items:flex-start; padding-top:14px; padding-bottom:14px; flex-direction:column; }
+      .field-2 { grid-template-columns:1fr; }
+      .content { padding:16px; }
+      .header-user { display:none; }
+    }
+  </style>
+</head>
+<body>
+<div id="app"></div>
+<div id="_toast"></div>
+
+<script>
+const sb = window.sb;
+const S = {
+  session: null,
+  apartments: [],
+  selectedApt: '',
+  showInactive: false,
+  adminDataAvailable: true,
+  adminDataError: '',
+  maintenanceDataAvailable: true,
+  maintenanceDataError: '',
+  ownerRows: [],
+  contractRows: [],
+  paymentRows: [],
+  maintenanceRows: [],
+  toastTimer: null,
+};
+
+function esc(s) { if (s == null) return ''; return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function cleanVal(v) { return String(v || '').trim(); }
+function toast(msg, type = 'ok') {
+  clearTimeout(S.toastTimer);
+  const el = document.getElementById('_toast');
+  el.innerHTML = `<div class="toast toast-${type}">${esc(msg)}</div>`;
+  S.toastTimer = setTimeout(() => { el.innerHTML = ''; }, 3500);
+}
+function getSelectedApartment() {
+  return S.apartments.find(row => String(row.id) === String(S.selectedApt)) || null;
+}
+function addOwnerRow() {
+  S.ownerRows.push({ link_id:'', owner_id:'', nome_visualizzato:'', nome:'', cognome:'', email:'', telefono:'', codice_fiscale:'', iban:'', ruolo:'proprietario', quota_percentuale:'', is_primary:false, note:'' });
+}
+function addContractRow() {
+  S.contractRows.push({
+    id:'', owner_id:'', titolo:'Contratto gestione', contract_type:'gestione', status:'bozza', decorrenza:'', scadenza:'', rinnovo_automatico:false,
+    canone_fisso:'', percentuale_gestione:'', deposito_cauzionale:'', documento_url:'', note:'',
+    registration_document_url:'', registration_payment_date:'', registration_paid_amount:'', registration_payment_method:'bonifico',
+    registration_note:'', registration_needs_accounting:false, registration_contabilita_documento_id:'', registration_accounting_sync_status:'solo_gestionale', registration_accounting_sync_error:''
+  });
+}
+function addPaymentRow() {
+  S.paymentRows.push(buildPaymentRowDraft({ id:'', owner_id:'', contract_id:'', payment_date:'', competence_month:'', amount:'', payment_type:'bonifico_proprietario', status:'da_pagare', reference:'', document_url:'', note:'' }));
+}
+function buildPaymentRowDraft(row = {}) {
+  const draft = {
+    id: row.id || '',
+    owner_id: row.owner_id || '',
+    contract_id: row.contract_id || '',
+    payment_date: row.payment_date || '',
+    competence_month: row.competence_month || '',
+    amount: row.amount ?? '',
+    payment_type: row.payment_type || 'bonifico_proprietario',
+    status: row.status || 'da_pagare',
+    reference: row.reference || '',
+    document_url: row.document_url || '',
+    note: row.note || '',
+    needs_accounting: row.needs_accounting === true,
+    accounting_sync_status: row.accounting_sync_status || 'solo_gestionale',
+    accounting_payment_method: row.accounting_payment_method || '',
+    accounting_fiscal_status: row.accounting_fiscal_status || '',
+    contabilita_documento_id: row.contabilita_documento_id || '',
+    accounting_sync_error: row.accounting_sync_error || '',
+  };
+  return applyPaymentTypeDefaults(draft, { preserveManualChoices: true });
+}
+function applyPaymentTypeDefaults(row, options = {}) {
+  const preserveManualChoices = options.preserveManualChoices !== false;
+  const next = { ...row };
+  if (next.payment_type === 'contante_da_fatturare') {
+    next.needs_accounting = true;
+    next.accounting_payment_method = 'contanti';
+    next.accounting_fiscal_status = 'da_fatturare';
+    if (!next.contabilita_documento_id) next.accounting_sync_status = 'da_contabilizzare';
+    return next;
+  }
+  if (next.payment_type === 'contante') {
+    if (!preserveManualChoices || !next.accounting_payment_method) next.accounting_payment_method = 'contanti';
+    if (!preserveManualChoices || !next.accounting_fiscal_status) next.accounting_fiscal_status = 'non_soggetto';
+    if (!next.needs_accounting && !next.contabilita_documento_id) next.accounting_sync_status = 'solo_gestionale';
+    return next;
+  }
+  if (next.payment_type === 'bonifico_proprietario') {
+    if (!preserveManualChoices || !next.accounting_payment_method) next.accounting_payment_method = 'bonifico';
+    if (!next.needs_accounting && !next.contabilita_documento_id) next.accounting_sync_status = 'solo_gestionale';
+  }
+  if (!next.needs_accounting && !next.contabilita_documento_id) next.accounting_sync_status = 'solo_gestionale';
+  return next;
+}
+function accountingSyncLabel(value) {
+  return {
+    solo_gestionale:'Solo gestionale',
+    da_contabilizzare:'Da contabilizzare',
+    contabilizzato:'Contabilizzato',
+    fatturato:'Fatturato',
+    errore_sync:'Errore sync',
+  }[value] || '—';
+}
+function paymentTypeLabel(value) {
+  return {
+    bonifico_proprietario:'Bonifico proprietario',
+    contante:'Contante',
+    contante_da_fatturare:'Contante da fatturare',
+    rimborso_spese:'Rimborso spese',
+    canone:'Canone',
+    anticipo:'Anticipo',
+    altro:'Altro',
+  }[value] || value || '—';
+}
+
+function normalizeMaintenanceErrorMessage(message) {
+  const raw = cleanVal(message);
+  if (!raw) return 'La sezione manutenzioni non e ancora attiva su questo database.';
+  const lower = raw.toLowerCase();
+  if (lower.includes('apartment_maintenance_tasks') || lower.includes('schema cache') || lower.includes('could not find the table')) {
+    return 'La sezione manutenzioni non e ancora attiva su questo database. Applica prima la migration dedicata e poi ricarica la pagina.';
+  }
+  return `La sezione manutenzioni non e disponibile al momento. ${raw}`;
+}
+
+function addMaintenanceRow() {
+  S.maintenanceRows.push({
+    id: '',
+    title: '',
+    description: '',
+    status: 'da_fare',
+    priority: 'media',
+    assigned_to: '',
+    due_date: '',
+    completed_at: '',
+  });
+}
+
+async function loadApartments() {
+  const { data, error } = await sb
+    .from('apartments')
+    .select('id,nome_appartamento,struttura_nome,attivo')
+    .order('struttura_nome', { ascending: true, nullsFirst: false })
+    .order('nome_appartamento', { ascending: true });
+  if (error) throw error;
+  S.apartments = data || [];
+}
+
+async function loadApartmentAdminData(aptId) {
+  const [ownersRes, contractsRes, paymentsRes, maintenanceRes] = await Promise.all([
+    sb.from('apartment_owner_links')
+      .select('id,owner_id,ruolo,quota_percentuale,is_primary,sort_order,note,owners(id,nome_visualizzato,nome,cognome,email,telefono,codice_fiscale,iban,note,attivo)')
+      .eq('apartment_id', aptId)
+      .order('sort_order', { ascending: true }),
+    sb.from('apartment_contracts')
+      .select('*')
+      .eq('apartment_id', aptId)
+      .order('decorrenza', { ascending: false, nullsFirst: false }),
+    sb.from('apartment_owner_payments')
+      .select('*')
+      .eq('apartment_id', aptId)
+      .order('payment_date', { ascending: false, nullsFirst: false })
+      .order('created_at', { ascending: false }),
+    sb.from('apartment_maintenance_tasks')
+      .select('*')
+      .eq('apartment_id', aptId)
+      .order('status', { ascending: true })
+      .order('priority', { ascending: false, nullsFirst: false })
+      .order('due_date', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: false }),
+  ]);
+  const firstError = ownersRes.error || contractsRes.error || paymentsRes.error;
+  if (firstError) {
+    S.adminDataAvailable = false;
+    S.adminDataError = firstError.message || 'Tabelle amministrative non disponibili';
+    S.ownerRows = [];
+    S.contractRows = [];
+    S.paymentRows = [];
+    return;
+  }
+  S.adminDataAvailable = true;
+  S.adminDataError = '';
+  S.ownerRows = (ownersRes.data || []).map(row => ({
+    link_id: row.id || '',
+    owner_id: row.owner_id || '',
+    nome_visualizzato: row.owners?.nome_visualizzato || '',
+    nome: row.owners?.nome || '',
+    cognome: row.owners?.cognome || '',
+    email: row.owners?.email || '',
+    telefono: row.owners?.telefono || '',
+    codice_fiscale: row.owners?.codice_fiscale || '',
+    iban: row.owners?.iban || '',
+    ruolo: row.ruolo || 'proprietario',
+    quota_percentuale: row.quota_percentuale ?? '',
+    is_primary: !!row.is_primary,
+    note: row.note || row.owners?.note || '',
+  }));
+  S.contractRows = (contractsRes.data || []).map(row => ({
+    id: row.id || '',
+    owner_id: row.owner_id || '',
+    titolo: row.titolo || '',
+    contract_type: row.contract_type || 'gestione',
+    status: row.status || 'bozza',
+    decorrenza: row.decorrenza || '',
+    scadenza: row.scadenza || '',
+    rinnovo_automatico: !!row.rinnovo_automatico,
+    canone_fisso: row.canone_fisso ?? '',
+    percentuale_gestione: row.percentuale_gestione ?? '',
+    deposito_cauzionale: row.deposito_cauzionale ?? '',
+    documento_url: row.documento_url || '',
+    note: row.note || '',
+    registration_document_url: row.registration_document_url || '',
+    registration_payment_date: row.registration_payment_date || '',
+    registration_paid_amount: row.registration_paid_amount ?? '',
+    registration_payment_method: row.registration_payment_method || 'bonifico',
+    registration_note: row.registration_note || '',
+    registration_needs_accounting: row.registration_needs_accounting === true,
+    registration_contabilita_documento_id: row.registration_contabilita_documento_id || '',
+    registration_accounting_sync_status: row.registration_accounting_sync_status || 'solo_gestionale',
+    registration_accounting_sync_error: row.registration_accounting_sync_error || '',
+  }));
+  S.paymentRows = (paymentsRes.data || []).map(row => buildPaymentRowDraft(row));
+  if (maintenanceRes.error) {
+    S.maintenanceDataAvailable = false;
+    S.maintenanceDataError = normalizeMaintenanceErrorMessage(maintenanceRes.error.message);
+    S.maintenanceRows = [];
+  } else {
+    S.maintenanceDataAvailable = true;
+    S.maintenanceDataError = '';
+    S.maintenanceRows = (maintenanceRes.data || []).map(row => ({
+      id: row.id || '',
+      title: row.title || '',
+      description: row.description || '',
+      status: row.status || 'da_fare',
+      priority: row.priority || 'media',
+      assigned_to: row.assigned_to || '',
+      due_date: row.due_date || '',
+      completed_at: row.completed_at || '',
+    }));
+  }
+}
+
+async function saveApartmentOwners(aptId) {
+  const rows = S.ownerRows.filter(row => cleanVal(row.nome_visualizzato) || cleanVal(row.nome) || cleanVal(row.cognome) || cleanVal(row.email));
+  for (const row of rows) {
+    const ownerPayload = {
+      nome_visualizzato: cleanVal(row.nome_visualizzato) || cleanVal(`${row.nome || ''} ${row.cognome || ''}`) || cleanVal(row.email) || 'Proprietario',
+      nome: cleanVal(row.nome) || null,
+      cognome: cleanVal(row.cognome) || null,
+      email: cleanVal(row.email) || null,
+      telefono: cleanVal(row.telefono) || null,
+      codice_fiscale: cleanVal(row.codice_fiscale) || null,
+      iban: cleanVal(row.iban) || null,
+      note: cleanVal(row.note) || null,
+      attivo: true,
+    };
+    let ownerId = row.owner_id || '';
+    if (ownerId) {
+      const { error } = await sb.from('owners').update(ownerPayload).eq('id', ownerId);
+      if (error) throw new Error(error.message);
+    } else {
+      const { data, error } = await sb.from('owners').insert(ownerPayload).select('id').single();
+      if (error) throw new Error(error.message);
+      ownerId = data.id;
+      row.owner_id = ownerId;
+    }
+  }
+  const { error: deleteLinksError } = await sb.from('apartment_owner_links').delete().eq('apartment_id', aptId);
+  if (deleteLinksError) throw new Error(deleteLinksError.message);
+  const linkRows = rows.map((row, index) => ({
+    apartment_id: aptId,
+    owner_id: row.owner_id,
+    ruolo: cleanVal(row.ruolo) || 'proprietario',
+    quota_percentuale: cleanVal(row.quota_percentuale) === '' ? null : Number(row.quota_percentuale),
+    is_primary: !!row.is_primary,
+    sort_order: index,
+    note: cleanVal(row.note) || null,
+  }));
+  if (linkRows.length) {
+    const { error } = await sb.from('apartment_owner_links').insert(linkRows);
+    if (error) throw new Error(error.message);
+  }
+  await loadApartmentAdminData(aptId);
+}
+
+async function saveApartmentContracts(aptId) {
+  const rows = S.contractRows.filter(row =>
+    cleanVal(row.titolo) || cleanVal(row.decorrenza) || cleanVal(row.scadenza) || cleanVal(row.note) ||
+    cleanVal(row.registration_document_url) || cleanVal(row.registration_payment_date) || cleanVal(row.registration_paid_amount) || cleanVal(row.registration_note)
+  );
+  const keepIds = rows.map(row => row.id).filter(Boolean);
+  if (keepIds.length) {
+    const { error } = await sb.from('apartment_contracts').delete().eq('apartment_id', aptId).not('id', 'in', `(${keepIds.map(id => `"${id}"`).join(',')})`);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await sb.from('apartment_contracts').delete().eq('apartment_id', aptId);
+    if (error) throw new Error(error.message);
+  }
+  for (const row of rows) {
+    const payload = {
+      apartment_id: aptId,
+      owner_id: cleanVal(row.owner_id) || null,
+      titolo: cleanVal(row.titolo) || 'Contratto gestione',
+      contract_type: cleanVal(row.contract_type) || 'gestione',
+      status: cleanVal(row.status) || 'bozza',
+      decorrenza: cleanVal(row.decorrenza) || null,
+      scadenza: cleanVal(row.scadenza) || null,
+      rinnovo_automatico: !!row.rinnovo_automatico,
+      canone_fisso: cleanVal(row.canone_fisso) === '' ? null : Number(row.canone_fisso),
+      percentuale_gestione: cleanVal(row.percentuale_gestione) === '' ? null : Number(row.percentuale_gestione),
+      deposito_cauzionale: cleanVal(row.deposito_cauzionale) === '' ? null : Number(row.deposito_cauzionale),
+      documento_url: cleanVal(row.documento_url) || null,
+      note: cleanVal(row.note) || null,
+      registration_document_url: cleanVal(row.registration_document_url) || null,
+      registration_payment_date: cleanVal(row.registration_payment_date) || null,
+      registration_paid_amount: cleanVal(row.registration_paid_amount) === '' ? null : Number(row.registration_paid_amount),
+      registration_payment_method: cleanVal(row.registration_payment_method) || null,
+      registration_note: cleanVal(row.registration_note) || null,
+      registration_needs_accounting: !!row.registration_needs_accounting,
+      registration_accounting_sync_status: cleanVal(row.registration_accounting_sync_status) || (row.registration_needs_accounting ? 'da_contabilizzare' : 'solo_gestionale'),
+      registration_contabilita_documento_id: cleanVal(row.registration_contabilita_documento_id) || null,
+      registration_accounting_sync_error: cleanVal(row.registration_accounting_sync_error) || null,
+    };
+    if (row.id) {
+      const { error } = await sb.from('apartment_contracts').update(payload).eq('id', row.id);
+      if (error) throw new Error(error.message);
+    } else {
+      const { data, error } = await sb.from('apartment_contracts').insert(payload).select('id').single();
+      if (error) throw new Error(error.message);
+      row.id = data.id;
+    }
+  }
+  await loadApartmentAdminData(aptId);
+}
+
+async function createAccountingFromContractRegistration(row) {
+  const session = await sb.auth.getSession();
+  const accessToken = session?.data?.session?.access_token;
+  if (!accessToken) throw new Error('Sessione non disponibile per creare il documento contabile');
+  if (!row?.id) throw new Error('Salva prima il contratto');
+  const res = await fetch('/.netlify/functions/create-contract-registration-accounting', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+    body: JSON.stringify({ contract_id: row.id }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.success) throw new Error(data.error || 'Creazione documento contabile registrazione non riuscita');
+  await loadApartmentAdminData(S.selectedApt);
+  return data;
+}
+
+async function saveApartmentPayments(aptId) {
+  const rows = S.paymentRows
+    .map(row => applyPaymentTypeDefaults({ ...row }, { preserveManualChoices: true }))
+    .filter(row => cleanVal(row.payment_date) || cleanVal(row.amount) || cleanVal(row.reference) || cleanVal(row.note));
+  const keepIds = rows.map(row => row.id).filter(Boolean);
+  if (keepIds.length) {
+    const { error } = await sb.from('apartment_owner_payments').delete().eq('apartment_id', aptId).not('id', 'in', `(${keepIds.map(id => `"${id}"`).join(',')})`);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await sb.from('apartment_owner_payments').delete().eq('apartment_id', aptId);
+    if (error) throw new Error(error.message);
+  }
+  for (const row of rows) {
+    const payload = {
+      apartment_id: aptId,
+      owner_id: cleanVal(row.owner_id) || null,
+      contract_id: cleanVal(row.contract_id) || null,
+      payment_date: cleanVal(row.payment_date) || null,
+      competence_month: cleanVal(row.competence_month) || null,
+      amount: cleanVal(row.amount) === '' ? 0 : Number(row.amount),
+      payment_type: cleanVal(row.payment_type) || 'bonifico_proprietario',
+      status: cleanVal(row.status) || 'da_pagare',
+      reference: cleanVal(row.reference) || null,
+      document_url: cleanVal(row.document_url) || null,
+      note: cleanVal(row.note) || null,
+      needs_accounting: !!row.needs_accounting,
+      accounting_sync_status: cleanVal(row.accounting_sync_status) || (row.needs_accounting ? 'da_contabilizzare' : 'solo_gestionale'),
+      accounting_payment_method: cleanVal(row.accounting_payment_method) || null,
+      accounting_fiscal_status: cleanVal(row.accounting_fiscal_status) || null,
+      contabilita_documento_id: cleanVal(row.contabilita_documento_id) || null,
+      accounting_sync_error: cleanVal(row.accounting_sync_error) || null,
+    };
+    if (row.id) {
+      const { error } = await sb.from('apartment_owner_payments').update(payload).eq('id', row.id);
+      if (error) throw new Error(error.message);
+    } else {
+      const { data, error } = await sb.from('apartment_owner_payments').insert(payload).select('id').single();
+      if (error) throw new Error(error.message);
+      row.id = data.id;
+    }
+  }
+  await loadApartmentAdminData(aptId);
+}
+
+async function saveApartmentMaintenanceTasks(aptId) {
+  const rows = S.maintenanceRows.filter(row =>
+    cleanVal(row.title) ||
+    cleanVal(row.description) ||
+    cleanVal(row.assigned_to) ||
+    cleanVal(row.due_date)
+  );
+  const keepIds = rows.map(row => row.id).filter(Boolean);
+  if (keepIds.length) {
+    const { error } = await sb.from('apartment_maintenance_tasks').delete().eq('apartment_id', aptId).not('id', 'in', `(${keepIds.map(id => `"${id}"`).join(',')})`);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await sb.from('apartment_maintenance_tasks').delete().eq('apartment_id', aptId);
+    if (error) throw new Error(error.message);
+  }
+  for (const row of rows) {
+    const isDone = cleanVal(row.status) === 'fatto';
+    const payload = {
+      apartment_id: aptId,
+      title: cleanVal(row.title) || 'Manutenzione',
+      description: cleanVal(row.description) || null,
+      status: cleanVal(row.status) || 'da_fare',
+      priority: cleanVal(row.priority) || null,
+      assigned_to: cleanVal(row.assigned_to) || null,
+      due_date: cleanVal(row.due_date) || null,
+      completed_at: isDone ? (row.completed_at || new Date().toISOString()) : null,
+      updated_at: new Date().toISOString(),
+    };
+    if (row.id) {
+      const { error } = await sb.from('apartment_maintenance_tasks').update(payload).eq('id', row.id);
+      if (error) throw new Error(error.message);
+    } else {
+      const { data, error } = await sb.from('apartment_maintenance_tasks').insert(payload).select('id,completed_at').single();
+      if (error) throw new Error(error.message);
+      row.id = data.id;
+      row.completed_at = data.completed_at || payload.completed_at || '';
+    }
+  }
+  await loadApartmentAdminData(aptId);
+}
+
+async function createAccountingFromOwnerPayment(row) {
+  const session = await sb.auth.getSession();
+  const accessToken = session?.data?.session?.access_token;
+  if (!accessToken) throw new Error('Sessione non disponibile per creare il documento contabile');
+  if (!row?.id) throw new Error('Salva prima il pagamento');
+  const res = await fetch('/.netlify/functions/create-owner-payment-accounting', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+    body: JSON.stringify({ payment_id: row.id }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.success) throw new Error(data.error || 'Creazione documento contabile non riuscita');
+  await loadApartmentAdminData(S.selectedApt);
+  return data;
+}
+
+async function openApartmentSheet(aptId) {
+  if (!aptId) return;
+  S.selectedApt = aptId;
+  await loadApartmentAdminData(aptId);
+  renderDashboard();
+}
+
+function renderAdminSection() {
+  const apt = getSelectedApartment();
+  if (!apt) {
+    return `
+    <div class="empty-state">
+      <div class="empty-card">
+        <div class="empty-title">Seleziona un appartamento</div>
+        <div class="section-sub" style="margin:0">La scheda amministrativa resta privata e separata dal portale ospite.</div>
+      </div>
+    </div>`;
+  }
+  const paymentContractOptions = S.contractRows.filter(row => row.id).map(row => ({ value: row.id, label: cleanVal(row.titolo) || 'Contratto' }));
+  return `
+  <div class="content">
+    <div class="section-title">Scheda amministrativa</div>
+    <div class="section-sub">${esc(apt.nome_appartamento || '—')}${apt.struttura_nome ? ' · ' + esc(apt.struttura_nome) : ''}${apt.attivo === false ? ' · DISATTIVO' : ''}</div>
+
+    <div class="card-section" style="background:var(--yellow-l);border-color:#fde68a">
+      <div class="card-section-title" style="color:var(--yellow);border-bottom-color:#fde68a">Privacy interna</div>
+      <div class="field-hint" style="font-size:12px;color:var(--text2);margin-top:0">
+        Questa sezione e queste note sono solo backoffice. Non vengono mostrate nel link ospite e non devono mai essere copiate dentro <span class="mono-sm">apartment_info</span> o <span class="mono-sm">apartment_credentials</span>.
+      </div>
+    </div>
+
+    ${S.adminDataAvailable ? '' : `<div class="card-section"><div class="hint-box">Sezione non ancora disponibile nel database. Applica prima la migration <span class="mono-sm">202605060002_create_apartment_admin_tables.sql</span>. Dettaglio: ${esc(S.adminDataError || 'tabelle mancanti')}</div></div>`}
+
+    <div class="card-section">
+      <div class="card-section-title">Proprietari</div>
+      <div class="field-hint">Anagrafica del proprietario collegata all'appartamento con ruolo, quota e referente principale.</div>
+      <div style="display:grid;gap:12px">
+        ${S.ownerRows.length ? S.ownerRows.map((row, index) => `
+          <div class="card-section" style="margin:0;background:var(--surf)">
+            <div class="field-2">
+              <div class="field"><label>Nome visualizzato</label><input data-owner-field="nome_visualizzato" data-owner-index="${index}" value="${esc(row.nome_visualizzato)}" placeholder="Mario Rossi"/></div>
+              <div class="field"><label>Ruolo</label><select data-owner-field="ruolo" data-owner-index="${index}">
+                <option value="proprietario" ${row.ruolo === 'proprietario' ? 'selected' : ''}>Proprietario</option>
+                <option value="co_proprietario" ${row.ruolo === 'co_proprietario' ? 'selected' : ''}>Co-proprietario</option>
+                <option value="referente" ${row.ruolo === 'referente' ? 'selected' : ''}>Referente</option>
+                <option value="amministratore" ${row.ruolo === 'amministratore' ? 'selected' : ''}>Amministratore</option>
+              </select></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Nome</label><input data-owner-field="nome" data-owner-index="${index}" value="${esc(row.nome)}"/></div>
+              <div class="field"><label>Cognome</label><input data-owner-field="cognome" data-owner-index="${index}" value="${esc(row.cognome)}"/></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Email</label><input data-owner-field="email" data-owner-index="${index}" value="${esc(row.email)}"/></div>
+              <div class="field"><label>Telefono</label><input data-owner-field="telefono" data-owner-index="${index}" value="${esc(row.telefono)}"/></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Codice fiscale</label><input data-owner-field="codice_fiscale" data-owner-index="${index}" value="${esc(row.codice_fiscale)}"/></div>
+              <div class="field"><label>IBAN</label><input data-owner-field="iban" data-owner-index="${index}" value="${esc(row.iban)}"/></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Quota %</label><input type="number" step="0.01" data-owner-field="quota_percentuale" data-owner-index="${index}" value="${esc(row.quota_percentuale)}"/></div>
+              <div class="field"><label style="display:inline-flex;align-items:center;gap:8px;font-size:12px;letter-spacing:normal;text-transform:none;color:var(--text2);margin-top:24px"><input type="checkbox" data-owner-check="is_primary" data-owner-index="${index}" ${row.is_primary ? 'checked' : ''}/> Referente principale</label></div>
+            </div>
+            <div class="field"><label>Note private interne</label><textarea data-owner-field="note" data-owner-index="${index}" placeholder="Mai visibili agli ospiti">${esc(row.note)}</textarea></div>
+            <div class="save-row"><button class="btn btn-ghost" data-owner-remove="${index}">Rimuovi proprietario</button></div>
+          </div>`).join('') : `<div class="hint-box">Nessun proprietario inserito.</div>`}
+      </div>
+      <div class="save-row">
+        <button id="btnAddOwner" class="btn btn-ghost">+ Aggiungi proprietario</button>
+        <button id="btnSaveOwners" class="btn btn-primary" ${S.adminDataAvailable ? '' : 'disabled'}>Salva proprietari</button>
+      </div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-title">Contratti</div>
+      <div class="field-hint">Salva qui i dati del rapporto contrattuale. I documenti restano come URL o link file.</div>
+      <div style="display:grid;gap:12px">
+        ${S.contractRows.length ? S.contractRows.map((row, index) => `
+          <div class="card-section" style="margin:0;background:var(--surf)">
+            <div class="field-2">
+              <div class="field"><label>Titolo</label><input data-contract-field="titolo" data-contract-index="${index}" value="${esc(row.titolo)}"/></div>
+              <div class="field"><label>Proprietario</label><select data-contract-field="owner_id" data-contract-index="${index}">
+                <option value="">— Nessuno —</option>
+                ${S.ownerRows.map(owner => `<option value="${esc(owner.owner_id)}" ${String(row.owner_id) === String(owner.owner_id) ? 'selected' : ''}>${esc(owner.nome_visualizzato || `${owner.nome || ''} ${owner.cognome || ''}`.trim() || 'Proprietario')}</option>`).join('')}
+              </select></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Tipo contratto</label><select data-contract-field="contract_type" data-contract-index="${index}">
+                <option value="gestione" ${row.contract_type === 'gestione' ? 'selected' : ''}>Gestione</option>
+                <option value="locazione" ${row.contract_type === 'locazione' ? 'selected' : ''}>Locazione</option>
+                <option value="comodato" ${row.contract_type === 'comodato' ? 'selected' : ''}>Comodato</option>
+                <option value="mandato" ${row.contract_type === 'mandato' ? 'selected' : ''}>Mandato</option>
+                <option value="altro" ${row.contract_type === 'altro' ? 'selected' : ''}>Altro</option>
+              </select></div>
+              <div class="field"><label>Stato</label><select data-contract-field="status" data-contract-index="${index}">
+                <option value="bozza" ${row.status === 'bozza' ? 'selected' : ''}>Bozza</option>
+                <option value="attivo" ${row.status === 'attivo' ? 'selected' : ''}>Attivo</option>
+                <option value="scaduto" ${row.status === 'scaduto' ? 'selected' : ''}>Scaduto</option>
+                <option value="cessato" ${row.status === 'cessato' ? 'selected' : ''}>Cessato</option>
+              </select></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Decorrenza</label><input type="date" data-contract-field="decorrenza" data-contract-index="${index}" value="${esc(row.decorrenza)}"/></div>
+              <div class="field"><label>Scadenza</label><input type="date" data-contract-field="scadenza" data-contract-index="${index}" value="${esc(row.scadenza)}"/></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Canone fisso</label><input type="number" step="0.01" data-contract-field="canone_fisso" data-contract-index="${index}" value="${esc(row.canone_fisso)}"/></div>
+              <div class="field"><label>% gestione</label><input type="number" step="0.01" data-contract-field="percentuale_gestione" data-contract-index="${index}" value="${esc(row.percentuale_gestione)}"/></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Deposito cauzionale</label><input type="number" step="0.01" data-contract-field="deposito_cauzionale" data-contract-index="${index}" value="${esc(row.deposito_cauzionale)}"/></div>
+              <div class="field"><label>Documento URL</label><input data-contract-field="documento_url" data-contract-index="${index}" value="${esc(row.documento_url)}" placeholder="https://..."/></div>
+            </div>
+            <div class="field"><label style="display:inline-flex;align-items:center;gap:8px;font-size:12px;letter-spacing:normal;text-transform:none;color:var(--text2)"><input type="checkbox" data-contract-check="rinnovo_automatico" data-contract-index="${index}" ${row.rinnovo_automatico ? 'checked' : ''}/> Rinnovo automatico</label></div>
+            <div class="field"><label>Note private contratto</label><textarea data-contract-field="note" data-contract-index="${index}" placeholder="Mai visibili agli ospiti">${esc(row.note)}</textarea></div>
+            <div class="card-section" style="margin:0;background:#f8fafc;border-color:#dbeafe">
+              <div class="section-title" style="color:#1d4ed8;border-bottom-color:#dbeafe">Registrazione contratto</div>
+              <div class="section-sub" style="margin-bottom:8px">
+                Sync contabilità: <strong>${esc(accountingSyncLabel(row.registration_accounting_sync_status))}</strong>${row.registration_contabilita_documento_id ? ` · Doc: <span class="mono-sm">${esc(row.registration_contabilita_documento_id)}</span>` : ''}${row.registration_accounting_sync_error ? ` · Errore: ${esc(row.registration_accounting_sync_error)}` : ''}
+              </div>
+              <div class="field-2">
+                <div class="field"><label>Documento registrazione URL</label><input data-contract-field="registration_document_url" data-contract-index="${index}" value="${esc(row.registration_document_url)}" placeholder="https://..."/></div>
+                <div class="field"><label>Data pagamento registrazione</label><input type="date" data-contract-field="registration_payment_date" data-contract-index="${index}" value="${esc(row.registration_payment_date)}"/></div>
+              </div>
+              <div class="field-2">
+                <div class="field"><label>Quanto ho pagato</label><input type="number" step="0.01" data-contract-field="registration_paid_amount" data-contract-index="${index}" value="${esc(row.registration_paid_amount)}" placeholder="0.00"/></div>
+                <div class="field"><label>Metodo pagamento</label><select data-contract-field="registration_payment_method" data-contract-index="${index}">
+                  <option value="">Non impostato</option>
+                  ${ACCOUNTING_PAYMENT_METHODS.map(v=>`<option value="${v}" ${row.registration_payment_method===v?'selected':''}>${esc(paymentMethodLbl(v))}</option>`).join('')}
+                </select></div>
+              </div>
+              <div class="field"><label>Note registrazione contratto</label><textarea data-contract-field="registration_note" data-contract-index="${index}" placeholder="Costi, estremi registrazione, note operative interne">${esc(row.registration_note)}</textarea></div>
+              <div class="field"><label style="display:inline-flex;align-items:center;gap:8px;font-size:12px;letter-spacing:normal;text-transform:none;color:var(--text2)"><input type="checkbox" data-contract-check="registration_needs_accounting" data-contract-index="${index}" ${row.registration_needs_accounting ? 'checked' : ''}/> Contabilizza questa registrazione nei conti</label></div>
+              <div class="save-row">
+                <button class="btn btn-primary" data-contract-accounting="${index}" ${(S.adminDataAvailable && row.id && row.registration_needs_accounting && numberVal(row.registration_paid_amount) > 0) ? '' : 'disabled'}>${row.registration_contabilita_documento_id ? 'Aggiorna contabilità registrazione' : 'Crea in contabilità registrazione'}</button>
+              </div>
+            </div>
+            <div class="save-row"><button class="btn btn-ghost" data-contract-remove="${index}">Rimuovi contratto</button></div>
+          </div>`).join('') : `<div class="hint-box">Nessun contratto inserito.</div>`}
+      </div>
+      <div class="save-row">
+        <button id="btnAddContract" class="btn btn-ghost">+ Aggiungi contratto</button>
+        <button id="btnSaveContracts" class="btn btn-primary" ${S.adminDataAvailable ? '' : 'disabled'}>Salva contratti</button>
+      </div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-title">Pagamenti proprietario</div>
+      <div class="field-hint">Qui tieni traccia di bonifici, canoni, contanti e rimborsi verso il proprietario. Le voci segnate come da contabilizzare possono creare un documento contabile collegato.</div>
+      <div style="display:grid;gap:12px">
+        ${S.paymentRows.length ? S.paymentRows.map((row, index) => `
+          <div class="card-section" style="margin:0;background:var(--surf)">
+            <div class="field-hint" style="margin-bottom:8px">
+              Tipo: <strong>${esc(paymentTypeLabel(row.payment_type))}</strong> · Sync contabilità: <strong>${esc(accountingSyncLabel(row.accounting_sync_status))}</strong>${row.contabilita_documento_id ? ` · Doc: <span class="mono-sm">${esc(row.contabilita_documento_id)}</span>` : ''}${row.accounting_sync_error ? ` · Errore: ${esc(row.accounting_sync_error)}` : ''}
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Data pagamento</label><input type="date" data-payment-field="payment_date" data-payment-index="${index}" value="${esc(row.payment_date)}"/></div>
+              <div class="field"><label>Mese competenza</label><input type="date" data-payment-field="competence_month" data-payment-index="${index}" value="${esc(row.competence_month)}"/></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Importo</label><input type="number" step="0.01" data-payment-field="amount" data-payment-index="${index}" value="${esc(row.amount)}"/></div>
+              <div class="field"><label>Stato</label><select data-payment-field="status" data-payment-index="${index}">
+                <option value="da_pagare" ${row.status === 'da_pagare' ? 'selected' : ''}>Da pagare</option>
+                <option value="pagato" ${row.status === 'pagato' ? 'selected' : ''}>Pagato</option>
+                <option value="annullato" ${row.status === 'annullato' ? 'selected' : ''}>Annullato</option>
+              </select></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Tipo pagamento</label><select data-payment-field="payment_type" data-payment-index="${index}">
+                <option value="bonifico_proprietario" ${row.payment_type === 'bonifico_proprietario' ? 'selected' : ''}>Bonifico proprietario</option>
+                <option value="contante" ${row.payment_type === 'contante' ? 'selected' : ''}>Contante</option>
+                <option value="contante_da_fatturare" ${row.payment_type === 'contante_da_fatturare' ? 'selected' : ''}>Contante da fatturare</option>
+                <option value="rimborso_spese" ${row.payment_type === 'rimborso_spese' ? 'selected' : ''}>Rimborso spese</option>
+                <option value="canone" ${row.payment_type === 'canone' ? 'selected' : ''}>Canone</option>
+                <option value="anticipo" ${row.payment_type === 'anticipo' ? 'selected' : ''}>Anticipo</option>
+                <option value="altro" ${row.payment_type === 'altro' ? 'selected' : ''}>Altro</option>
+              </select></div>
+              <div class="field"><label>Proprietario</label><select data-payment-field="owner_id" data-payment-index="${index}">
+                <option value="">— Nessuno —</option>
+                ${S.ownerRows.map(owner => `<option value="${esc(owner.owner_id)}" ${String(row.owner_id) === String(owner.owner_id) ? 'selected' : ''}>${esc(owner.nome_visualizzato || `${owner.nome || ''} ${owner.cognome || ''}`.trim() || 'Proprietario')}</option>`).join('')}
+              </select></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Contratto</label><select data-payment-field="contract_id" data-payment-index="${index}">
+                <option value="">— Nessuno —</option>
+                ${paymentContractOptions.map(opt => `<option value="${esc(opt.value)}" ${String(row.contract_id) === String(opt.value) ? 'selected' : ''}>${esc(opt.label)}</option>`).join('')}
+              </select></div>
+              <div class="field"><label>Riferimento</label><input data-payment-field="reference" data-payment-index="${index}" value="${esc(row.reference)}" placeholder="Bonifico 05/2026"/></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label style="display:inline-flex;align-items:center;gap:8px;font-size:12px;letter-spacing:normal;text-transform:none;color:var(--text2);margin-top:24px"><input type="checkbox" data-payment-check="needs_accounting" data-payment-index="${index}" ${row.needs_accounting ? 'checked' : ''}/> Invia / collega in contabilità</label></div>
+              <div class="field"><label>Stato sync</label><select data-payment-field="accounting_sync_status" data-payment-index="${index}">
+                <option value="solo_gestionale" ${row.accounting_sync_status === 'solo_gestionale' ? 'selected' : ''}>Solo gestionale</option>
+                <option value="da_contabilizzare" ${row.accounting_sync_status === 'da_contabilizzare' ? 'selected' : ''}>Da contabilizzare</option>
+                <option value="contabilizzato" ${row.accounting_sync_status === 'contabilizzato' ? 'selected' : ''}>Contabilizzato</option>
+                <option value="fatturato" ${row.accounting_sync_status === 'fatturato' ? 'selected' : ''}>Fatturato</option>
+                <option value="errore_sync" ${row.accounting_sync_status === 'errore_sync' ? 'selected' : ''}>Errore sync</option>
+              </select></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Metodo contabile</label><select data-payment-field="accounting_payment_method" data-payment-index="${index}">
+                <option value="">— Nessuno —</option>
+                <option value="contanti" ${row.accounting_payment_method === 'contanti' ? 'selected' : ''}>Contanti</option>
+                <option value="bonifico" ${row.accounting_payment_method === 'bonifico' ? 'selected' : ''}>Bonifico</option>
+                <option value="carta" ${row.accounting_payment_method === 'carta' ? 'selected' : ''}>Carta</option>
+                <option value="pos" ${row.accounting_payment_method === 'pos' ? 'selected' : ''}>POS</option>
+                <option value="addebito" ${row.accounting_payment_method === 'addebito' ? 'selected' : ''}>Addebito</option>
+                <option value="altro" ${row.accounting_payment_method === 'altro' ? 'selected' : ''}>Altro</option>
+              </select></div>
+              <div class="field"><label>Stato fiscale</label><select data-payment-field="accounting_fiscal_status" data-payment-index="${index}">
+                <option value="">— Nessuno —</option>
+                <option value="da_fatturare" ${row.accounting_fiscal_status === 'da_fatturare' ? 'selected' : ''}>Da fatturare</option>
+                <option value="fatturato" ${row.accounting_fiscal_status === 'fatturato' ? 'selected' : ''}>Fatturato</option>
+                <option value="non_soggetto" ${row.accounting_fiscal_status === 'non_soggetto' ? 'selected' : ''}>Non soggetto</option>
+                <option value="annullato" ${row.accounting_fiscal_status === 'annullato' ? 'selected' : ''}>Annullato</option>
+              </select></div>
+            </div>
+            <div class="field"><label>Documento URL</label><input data-payment-field="document_url" data-payment-index="${index}" value="${esc(row.document_url)}" placeholder="https://..."/></div>
+            <div class="field"><label>Note private pagamento</label><textarea data-payment-field="note" data-payment-index="${index}" placeholder="Mai visibili agli ospiti">${esc(row.note)}</textarea></div>
+            <div class="save-row">
+              <button class="btn btn-primary" data-payment-accounting="${index}" ${S.adminDataAvailable && row.id && row.needs_accounting ? '' : 'disabled'}>${row.contabilita_documento_id ? 'Aggiorna contabilità' : 'Crea in contabilità'}</button>
+              <button class="btn btn-ghost" data-payment-remove="${index}">Rimuovi pagamento</button>
+            </div>
+          </div>`).join('') : `<div class="hint-box">Nessun pagamento proprietario inserito.</div>`}
+      </div>
+      <div class="save-row">
+        <button id="btnAddPayment" class="btn btn-ghost">+ Aggiungi pagamento</button>
+        <button id="btnSavePayments" class="btn btn-primary" ${S.adminDataAvailable ? '' : 'disabled'}>Salva pagamenti</button>
+      </div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-title">Manutenzioni da fare</div>
+      <div class="field-hint">Lista privata backoffice per attivita tecniche, riparazioni e controlli interni dell'appartamento.</div>
+      ${S.maintenanceDataAvailable ? '' : `<div class="hint-box" style="margin-top:12px">${esc(S.maintenanceDataError || 'La sezione manutenzioni non e disponibile al momento.')}</div>`}
+      <div style="display:grid;gap:12px;margin-top:12px">
+        ${S.maintenanceDataAvailable ? (S.maintenanceRows.length ? S.maintenanceRows.map((row, index) => `
+          <div class="card-section" style="margin:0;background:var(--surf)">
+            <div class="field-2">
+              <div class="field"><label>Titolo</label><input data-maintenance-field="title" data-maintenance-index="${index}" value="${esc(row.title)}" placeholder="Cambiare serratura"/></div>
+              <div class="field"><label>Assegnato a</label><input data-maintenance-field="assigned_to" data-maintenance-index="${index}" value="${esc(row.assigned_to)}" placeholder="Idraulico / Marco"/></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Stato</label><select data-maintenance-field="status" data-maintenance-index="${index}">
+                <option value="da_fare" ${row.status === 'da_fare' ? 'selected' : ''}>Da fare</option>
+                <option value="in_corso" ${row.status === 'in_corso' ? 'selected' : ''}>In corso</option>
+                <option value="fatto" ${row.status === 'fatto' ? 'selected' : ''}>Fatto</option>
+                <option value="annullato" ${row.status === 'annullato' ? 'selected' : ''}>Annullato</option>
+              </select></div>
+              <div class="field"><label>Priorita</label><select data-maintenance-field="priority" data-maintenance-index="${index}">
+                <option value="">— Nessuna —</option>
+                <option value="bassa" ${row.priority === 'bassa' ? 'selected' : ''}>Bassa</option>
+                <option value="media" ${row.priority === 'media' ? 'selected' : ''}>Media</option>
+                <option value="alta" ${row.priority === 'alta' ? 'selected' : ''}>Alta</option>
+                <option value="urgente" ${row.priority === 'urgente' ? 'selected' : ''}>Urgente</option>
+              </select></div>
+            </div>
+            <div class="field-2">
+              <div class="field"><label>Scadenza</label><input type="date" data-maintenance-field="due_date" data-maintenance-index="${index}" value="${esc(row.due_date)}"/></div>
+              <div class="field"><label>Completata il</label><input value="${esc(row.completed_at ? new Date(row.completed_at).toLocaleString('it-IT') : '')}" disabled/></div>
+            </div>
+            <div class="field"><label>Descrizione</label><textarea data-maintenance-field="description" data-maintenance-index="${index}" placeholder="Dettagli lavoro, materiali, accesso, note interne">${esc(row.description)}</textarea></div>
+            <div class="save-row">
+              <button class="btn btn-ghost" data-maintenance-done="${index}" ${row.status === 'fatto' ? 'disabled' : ''}>Segna come fatta</button>
+              <button class="btn btn-ghost" data-maintenance-remove="${index}">Rimuovi</button>
+            </div>
+          </div>`).join('') : `<div class="hint-box">Nessuna manutenzione inserita.</div>`) : ''}
+      </div>
+      <div class="save-row">
+        <button id="btnAddMaintenance" class="btn btn-ghost" ${S.maintenanceDataAvailable ? '' : 'disabled'}>+ Aggiungi manutenzione</button>
+        <button id="btnSaveMaintenance" class="btn btn-primary" ${S.maintenanceDataAvailable ? '' : 'disabled'}>Salva manutenzioni</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function bindAdminEvents() {
+  document.querySelectorAll('[data-owner-field]').forEach(input => {
+    input.addEventListener('input', e => { S.ownerRows[Number(e.target.dataset.ownerIndex)][e.target.dataset.ownerField] = e.target.value; });
+    input.addEventListener('change', e => { S.ownerRows[Number(e.target.dataset.ownerIndex)][e.target.dataset.ownerField] = e.target.value; });
+  });
+  document.querySelectorAll('[data-owner-check]').forEach(input => {
+    input.addEventListener('change', e => {
+      const idx = Number(e.target.dataset.ownerIndex);
+      S.ownerRows.forEach((row, rowIndex) => { row.is_primary = rowIndex === idx ? !!e.target.checked : false; });
+      renderDashboard();
+    });
+  });
+  document.querySelectorAll('[data-owner-remove]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const removed = S.ownerRows.splice(Number(btn.dataset.ownerRemove), 1)[0];
+      if (removed?.owner_id) {
+        S.contractRows = S.contractRows.map(row => String(row.owner_id) === String(removed.owner_id) ? { ...row, owner_id: '' } : row);
+        S.paymentRows = S.paymentRows.map(row => String(row.owner_id) === String(removed.owner_id) ? { ...row, owner_id: '' } : row);
+      }
+      renderDashboard();
+    });
+  });
+  document.querySelectorAll('[data-contract-field]').forEach(input => {
+    input.addEventListener('input', e => { S.contractRows[Number(e.target.dataset.contractIndex)][e.target.dataset.contractField] = e.target.value; });
+    input.addEventListener('change', e => { S.contractRows[Number(e.target.dataset.contractIndex)][e.target.dataset.contractField] = e.target.value; });
+  });
+  document.querySelectorAll('[data-contract-check]').forEach(input => {
+    input.addEventListener('change', e => {
+      const idx = Number(e.target.dataset.contractIndex);
+      const key = e.target.dataset.contractCheck;
+      S.contractRows[idx][key] = !!e.target.checked;
+      if (key === 'registration_needs_accounting' && !S.contractRows[idx].registration_contabilita_documento_id) {
+        S.contractRows[idx].registration_accounting_sync_status = S.contractRows[idx].registration_needs_accounting ? 'da_contabilizzare' : 'solo_gestionale';
+      }
+      renderDashboard();
+    });
+  });
+  document.querySelectorAll('[data-contract-remove]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const removed = S.contractRows.splice(Number(btn.dataset.contractRemove), 1)[0];
+      if (removed?.id) S.paymentRows = S.paymentRows.map(row => String(row.contract_id) === String(removed.id) ? { ...row, contract_id: '' } : row);
+      renderDashboard();
+    });
+  });
+  document.querySelectorAll('[data-contract-accounting]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const idx = Number(btn.dataset.contractAccounting);
+      btn.disabled = true;
+      btn.textContent = 'Sync…';
+      try {
+        await saveApartmentContracts(S.selectedApt);
+        await createAccountingFromContractRegistration(S.contractRows[idx]);
+        toast('✓ Registrazione contratto collegata alla contabilità', 'ok');
+        renderDashboard();
+      } catch (err) {
+        toast('Errore registrazione contratto: ' + (err.message || err), 'err');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = S.contractRows[idx]?.registration_contabilita_documento_id ? 'Aggiorna contabilità registrazione' : 'Crea in contabilità registrazione';
+      }
+    });
+  });
+  document.querySelectorAll('[data-payment-field]').forEach(input => {
+    input.addEventListener('input', e => { S.paymentRows[Number(e.target.dataset.paymentIndex)][e.target.dataset.paymentField] = e.target.value; });
+    input.addEventListener('change', e => {
+      const idx = Number(e.target.dataset.paymentIndex);
+      const key = e.target.dataset.paymentField;
+      S.paymentRows[idx][key] = e.target.value;
+      S.paymentRows[idx] = applyPaymentTypeDefaults(S.paymentRows[idx], { preserveManualChoices: key !== 'payment_type' });
+      if (key === 'payment_type') renderDashboard();
+    });
+  });
+  document.querySelectorAll('[data-payment-check]').forEach(input => {
+    input.addEventListener('change', e => {
+      const idx = Number(e.target.dataset.paymentIndex);
+      S.paymentRows[idx][e.target.dataset.paymentCheck] = !!e.target.checked;
+      if (!S.paymentRows[idx].needs_accounting && !S.paymentRows[idx].contabilita_documento_id) S.paymentRows[idx].accounting_sync_status = 'solo_gestionale';
+      if (S.paymentRows[idx].needs_accounting && !S.paymentRows[idx].contabilita_documento_id) S.paymentRows[idx].accounting_sync_status = 'da_contabilizzare';
+      renderDashboard();
+    });
+  });
+  document.querySelectorAll('[data-payment-remove]').forEach(btn => {
+    btn.addEventListener('click', () => { S.paymentRows.splice(Number(btn.dataset.paymentRemove), 1); renderDashboard(); });
+  });
+  document.querySelectorAll('[data-payment-accounting]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const idx = Number(btn.dataset.paymentAccounting);
+      btn.disabled = true;
+      btn.textContent = 'Sync…';
+      try {
+        await saveApartmentPayments(S.selectedApt);
+        await createAccountingFromOwnerPayment(S.paymentRows[idx]);
+        toast('✓ Documento contabile collegato', 'ok');
+        renderDashboard();
+      } catch (err) {
+        toast('Errore contabilità: ' + (err.message || err), 'err');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Crea in contabilità';
+      }
+    });
+  });
+  document.querySelectorAll('[data-maintenance-field]').forEach(input => {
+    input.addEventListener('input', e => { S.maintenanceRows[Number(e.target.dataset.maintenanceIndex)][e.target.dataset.maintenanceField] = e.target.value; });
+    input.addEventListener('change', e => { S.maintenanceRows[Number(e.target.dataset.maintenanceIndex)][e.target.dataset.maintenanceField] = e.target.value; });
+  });
+  document.querySelectorAll('[data-maintenance-done]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = Number(btn.dataset.maintenanceDone);
+      S.maintenanceRows[idx].status = 'fatto';
+      S.maintenanceRows[idx].completed_at = new Date().toISOString();
+      renderDashboard();
+    });
+  });
+  document.querySelectorAll('[data-maintenance-remove]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      S.maintenanceRows.splice(Number(btn.dataset.maintenanceRemove), 1);
+      renderDashboard();
+    });
+  });
+
+  const aptSelect = document.getElementById('aptSelect');
+  if (aptSelect) aptSelect.addEventListener('change', async e => { await openApartmentSheet(e.target.value); });
+  const toggleInactive = document.getElementById('toggleInactive');
+  if (toggleInactive) toggleInactive.addEventListener('change', () => { S.showInactive = !!toggleInactive.checked; renderDashboard(); });
+  const btnAddOwner = document.getElementById('btnAddOwner');
+  if (btnAddOwner) btnAddOwner.addEventListener('click', () => { addOwnerRow(); renderDashboard(); });
+  const btnAddContract = document.getElementById('btnAddContract');
+  if (btnAddContract) btnAddContract.addEventListener('click', () => { addContractRow(); renderDashboard(); });
+  const btnAddPayment = document.getElementById('btnAddPayment');
+  if (btnAddPayment) btnAddPayment.addEventListener('click', () => { addPaymentRow(); renderDashboard(); });
+  const btnAddMaintenance = document.getElementById('btnAddMaintenance');
+  if (btnAddMaintenance) btnAddMaintenance.addEventListener('click', () => { addMaintenanceRow(); renderDashboard(); });
+
+  const btnSaveOwners = document.getElementById('btnSaveOwners');
+  if (btnSaveOwners) btnSaveOwners.addEventListener('click', async () => {
+    btnSaveOwners.disabled = true;
+    btnSaveOwners.textContent = 'Salvo…';
+    try { await saveApartmentOwners(S.selectedApt); toast('✓ Proprietari salvati', 'ok'); renderDashboard(); }
+    catch (err) { toast('Errore proprietari: ' + (err.message || err), 'err'); }
+    finally { btnSaveOwners.disabled = !S.adminDataAvailable; btnSaveOwners.textContent = 'Salva proprietari'; }
+  });
+  const btnSaveContracts = document.getElementById('btnSaveContracts');
+  if (btnSaveContracts) btnSaveContracts.addEventListener('click', async () => {
+    btnSaveContracts.disabled = true;
+    btnSaveContracts.textContent = 'Salvo…';
+    try { await saveApartmentContracts(S.selectedApt); toast('✓ Contratti salvati', 'ok'); renderDashboard(); }
+    catch (err) { toast('Errore contratti: ' + (err.message || err), 'err'); }
+    finally { btnSaveContracts.disabled = !S.adminDataAvailable; btnSaveContracts.textContent = 'Salva contratti'; }
+  });
+  const btnSavePayments = document.getElementById('btnSavePayments');
+  if (btnSavePayments) btnSavePayments.addEventListener('click', async () => {
+    btnSavePayments.disabled = true;
+    btnSavePayments.textContent = 'Salvo…';
+    try { await saveApartmentPayments(S.selectedApt); toast('✓ Pagamenti salvati', 'ok'); renderDashboard(); }
+    catch (err) { toast('Errore pagamenti: ' + (err.message || err), 'err'); }
+    finally { btnSavePayments.disabled = !S.adminDataAvailable; btnSavePayments.textContent = 'Salva pagamenti'; }
+  });
+  const btnSaveMaintenance = document.getElementById('btnSaveMaintenance');
+  if (btnSaveMaintenance) btnSaveMaintenance.addEventListener('click', async () => {
+    btnSaveMaintenance.disabled = true;
+    btnSaveMaintenance.textContent = 'Salvo…';
+    try { await saveApartmentMaintenanceTasks(S.selectedApt); toast('✓ Manutenzioni salvate', 'ok'); renderDashboard(); }
+    catch (err) { toast('Errore manutenzioni: ' + (err.message || err), 'err'); }
+    finally { btnSaveMaintenance.disabled = !S.maintenanceDataAvailable; btnSaveMaintenance.textContent = 'Salva manutenzioni'; }
+  });
+  const btnLogout = document.getElementById('btnLogout');
+  if (btnLogout) btnLogout.addEventListener('click', () => sb.auth.signOut());
+}
+
+function renderLogin() {
+  document.getElementById('app').innerHTML = `
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo">Impatto</div>
+      <div class="login-sub">Amministrazione Appartamenti</div>
+      <div id="lerr" class="msg-err"></div>
+      <div class="field"><label>Email</label><input id="lem" type="email" value="fatturazione@illupoaffitta.com" autocomplete="username"/></div>
+      <div class="field"><label>Password</label><input id="lpw" type="password" autocomplete="current-password"/></div>
+      <button id="lbtn" class="btn btn-primary" style="width:100%;margin-top:8px;padding:12px">Entra</button>
+    </div>
+  </div>`;
+  const doLogin = async () => {
+    const btn = document.getElementById('lbtn');
+    const err = document.getElementById('lerr');
+    btn.disabled = true;
+    btn.textContent = 'Accesso…';
+    const { error } = await sb.auth.signInWithPassword({ email: document.getElementById('lem').value, password: document.getElementById('lpw').value });
+    if (error) {
+      err.textContent = error.message;
+      err.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Entra';
+    }
+  };
+  document.getElementById('lbtn').addEventListener('click', doLogin);
+  document.getElementById('lpw').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+}
+
+function renderDashboard() {
+  const userEmail = S.session?.user?.email || 'utente autenticato';
+  const visibleApartments = S.apartments.filter(item => S.showInactive || item.attivo !== false);
+  const apt = getSelectedApartment();
+  document.getElementById('app').innerHTML = `
+  <nav class="navbar">
+    <div class="navbar-links">
+      <a href="/backoffice.html" class="navbar-link">Fatturazione</a>
+      <a href="/backoffice-documenti.html" class="navbar-link">Documenti</a>
+      <a href="/backoffice-portale.html" class="navbar-link">Portale</a>
+      <a href="/backoffice-richieste.html" class="navbar-link">Richieste</a>
+      <a href="/backoffice-operativita.html" class="navbar-link">Operativita</a>
+      <a href="/backoffice-beds24-messaggi.html" class="navbar-link">Beds24 Messaggi</a>
+      <a href="/backoffice-contabilita.html" class="navbar-link">Contabilita</a>
+    </div>
+  </nav>
+  <header class="header">
+    <div class="header-left">
+      <span class="header-brand">Impatto</span>
+      <span class="header-badge">AMMINISTRAZIONE APPARTAMENTI</span>
+    </div>
+    <div class="toolbar-actions">
+      <span class="header-user">${esc(userEmail)}</span>
+      <button id="btnLogout" class="btn btn-ghost" style="padding:6px 13px;font-size:12px">Esci</button>
+    </div>
+  </header>
+  <div class="page-wrap">
+    <div class="shell">
+      <div style="padding:16px 24px 0">
+        <div class="hint-box">Questa pagina resta disponibile solo come fallback tecnico. La gestione appartamenti ora si raggiunge da <span class="mono-sm">Contabilita → Appartamenti</span>.</div>
+      </div>
+      <div class="toolbar">
+        <div>
+          <div class="section-title">Scheda amministrativa privata</div>
+          <div class="section-sub">Proprietari, contratti, pagamenti proprietario, note private e ponte contabilità</div>
+        </div>
+        <div class="toolbar-actions">
+          <div class="field" style="margin-bottom:0;min-width:320px">
+            <label>Appartamento</label>
+            <select id="aptSelect">
+              <option value="">— Seleziona —</option>
+              ${visibleApartments.map(row => `<option value="${row.id}" ${String(row.id) === String(S.selectedApt) ? 'selected' : ''}>${esc(row.nome_appartamento)}${row.struttura_nome ? ' · ' + esc(row.struttura_nome) : ''}${row.attivo === false ? ' · DISATTIVO' : ''}</option>`).join('')}
+            </select>
+          </div>
+          <label style="display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);margin-top:18px"><input id="toggleInactive" type="checkbox" ${S.showInactive ? 'checked' : ''}/> Mostra disattivi</label>
+        </div>
+      </div>
+      ${apt ? `<div style="padding:16px 24px 0"><div class="hint-box">Appartamento selezionato: <strong>${esc(apt.nome_appartamento || '—')}</strong>${apt.struttura_nome ? ' · ' + esc(apt.struttura_nome) : ''}</div></div>` : ''}
+      ${renderAdminSection()}
+    </div>
+  </div>`;
+  bindAdminEvents();
+}
+
+async function init() {
+  if (!sb) {
+    document.getElementById('app').innerHTML = `<div class="login-wrap"><div class="login-card"><div class="login-logo">Impatto</div><div class="login-sub">Amministrazione Appartamenti</div><div class="msg-err" style="display:block">Client Supabase non disponibile in pagina.</div></div></div>`;
+    return;
+  }
+  if (!S.session) {
+    renderLogin();
+    return;
+  }
+  await loadApartments();
+  const urlApt = new URLSearchParams(window.location.search).get('apartment_id');
+  if (urlApt && S.apartments.some(row => String(row.id) === String(urlApt))) {
+    S.selectedApt = urlApt;
+    await loadApartmentAdminData(urlApt);
+  }
+  renderDashboard();
+}
+
+if (sb) {
+  sb.auth.onAuthStateChange(async (event, session) => {
+    S.session = session;
+    if (event === 'SIGNED_OUT') {
+      S.selectedApt = '';
+      S.ownerRows = [];
+      S.contractRows = [];
+      S.paymentRows = [];
+      renderLogin();
+      return;
+    }
+    if (session) await init();
+  });
+  sb.auth.getSession().then(async ({ data: { session } }) => {
+    S.session = session;
+    await init();
+  });
+} else {
+  init();
+}
+</script>
+</body>
+</html>

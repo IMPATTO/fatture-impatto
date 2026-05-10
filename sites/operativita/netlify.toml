@@ -1,0 +1,7 @@
+[build]
+  base = "../.."
+  publish = "dist/operativita"
+  command = "npm ci && SITE_KEY=operativita npm run build:site"
+
+[functions]
+  directory = "dist/operativita/netlify/functions"

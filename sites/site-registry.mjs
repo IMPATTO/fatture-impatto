@@ -1,0 +1,125 @@
+export const siteRegistry = {
+  'fatt-docs': {
+    label: 'Fatturazione + Documenti',
+    envVar: 'SITE_URL_FATT_DOCS',
+    pages: [
+      'backoffice.html',
+      'backoffice-documenti.html',
+    ],
+    assets: [
+      'js/supabase-client.js',
+      'comuni.csv',
+      'stati.csv',
+    ],
+    functions: [
+      'build-istat-monthly',
+      'create-fattura-fic',
+      'create-fattura-from-text',
+      'export-alloggiati-report',
+      'export-istat-marche-xml',
+      'save-istat-config',
+      'send-alloggiati',
+      'transcribe-invoice-audio',
+    ],
+    includedFiles: [
+      'manifest.json',
+      'privacy-policy.html',
+    ],
+  },
+  operativita: {
+    label: 'Operativita',
+    envVar: 'SITE_URL_OPERATIVITA',
+    pages: [
+      'backoffice-operativita.html',
+      'backoffice-richieste.html',
+      'backoffice-beds24-messaggi.html',
+    ],
+    assets: [
+      'js/supabase-client.js',
+      'js/backoffice-operativita.js',
+    ],
+    functions: [
+      'get-backoffice-richieste',
+      'get-operativita-apartments',
+    ],
+  },
+  portale: {
+    label: 'Portale',
+    envVar: 'SITE_URL_PORTALE',
+    pages: [
+      'backoffice-portale.html',
+      'portale.html',
+      'index.html',
+      'carica-documenti-fattura.html',
+    ],
+    assets: [
+      'js/supabase-client.js',
+    ],
+    functions: [
+      'apply-apartment-links',
+      'audit-apartment-links',
+      'get-public-apartment-links',
+      'get-public-portal-data',
+      'save-istat-config',
+      'submit-public-checkin',
+      'submit-public-invoice-documents',
+      'translate-apartment-info',
+    ],
+    includedFiles: [
+      'manifest.json',
+      'privacy-policy.html',
+    ],
+  },
+  contabilita: {
+    label: 'Contabilita',
+    envVar: 'SITE_URL_CONTABILITA',
+    pages: [
+      'backoffice-contabilita.html',
+      'backoffice-amministrazione-appartamenti.html',
+    ],
+    assets: [
+      'js/supabase-client.js',
+    ],
+    functions: [
+      'create-contract-registration-accounting',
+      'create-fattura-fic',
+      'create-owner-payment-accounting',
+      'inbound-bollette-email',
+      'inbound-bollette-telegram',
+      'inbound-contabilita-email',
+      'monthly-export-commercialista',
+      'upload-bollette-manual',
+    ],
+  },
+  calendario: {
+    label: 'Calendario',
+    envVar: 'SITE_URL_CALENDARIO',
+    pages: [
+      'backoffice-calendario.html',
+    ],
+    assets: [
+      'js/supabase-client.js',
+      'js/calendario.js',
+      'css/calendario.css',
+    ],
+    functions: [
+      'beds24-inspect',
+      'beds24-rate-diagnostics',
+      'beds24-sync-bookings',
+      'get-calendar',
+      'populate-pms-mappings-and-units',
+      'sync-beds24-links',
+      'update-calendar-inventory',
+    ],
+  },
+};
+
+export function getAllPageOwners() {
+  const owners = new Map();
+  for (const [siteKey, site] of Object.entries(siteRegistry)) {
+    for (const page of site.pages || []) {
+      owners.set(page, siteKey);
+    }
+  }
+  return owners;
+}

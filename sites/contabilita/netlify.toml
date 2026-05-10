@@ -1,0 +1,7 @@
+[build]
+  base = "../.."
+  publish = "dist/contabilita"
+  command = "npm ci && SITE_KEY=contabilita npm run build:site"
+
+[functions]
+  directory = "dist/contabilita/netlify/functions"
