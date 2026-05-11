@@ -50,6 +50,7 @@ export const siteRegistry = {
     envVar: 'SITE_URL_PORTALE',
     entryPage: 'index.html',
     includeSites: [
+      'operativita',
       'residence-pr',
     ],
     pages: [
