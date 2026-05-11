@@ -10,6 +10,10 @@ import {
   startOfMonth,
   toMonthInputValue,
 } from './utils.js';
+import {
+  closeDrawer,
+  closeOrphanModal,
+} from './render.js';
 
 const RENDER = {
   renderAll: null,
