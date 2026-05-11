@@ -1164,3 +1164,34 @@ input {
     display: none;
   }
 }
+
+.bar-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0.85;
+  flex: 0 0 auto;
+}
+
+.bar-chevron-left {
+  margin-right: 4px;
+  margin-left: -2px;
+}
+
+.bar-chevron-right {
+  margin-left: 4px;
+  margin-right: -2px;
+}
+
+.booking-bar.continues-before {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.booking-bar.continues-after {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}

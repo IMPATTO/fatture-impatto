@@ -66,6 +66,7 @@ const CHANNEL_CONFIG = {
   serena_cerulli: { className: 'channel-serena_cerulli', label: 'Serena Cerulli' },
   app: { className: 'channel-app', label: 'App' },
 };
+const SIDEBAR_STORAGE_KEY = 'calendario:sidebar:collapsed';
 
 const S = {
   session: null,
@@ -106,6 +107,7 @@ document.addEventListener('DOMContentLoaded', init);
 async function init() {
   cacheElements();
   bindShellEvents();
+  restoreSidebarState();
   await initializeSession();
 }
 
@@ -221,6 +223,24 @@ function toggleSidebar() {
     'aria-label',
     collapsed ? 'Mostra filtri' : 'Nascondi filtri'
   );
+  try {
+    localStorage.setItem(SIDEBAR_STORAGE_KEY, collapsed ? '1' : '0');
+  } catch (e) {
+    // localStorage può fallire in incognito Safari, ignora
+  }
+}
+
+function restoreSidebarState() {
+  try {
+    const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+    if (stored === '1') {
+      ELS.pageBody?.classList.add('sidebar-collapsed');
+      ELS.sidebarToggle?.setAttribute('aria-expanded', 'false');
+      ELS.sidebarToggle?.setAttribute('aria-label', 'Mostra filtri');
+    }
+  } catch (e) {
+    // localStorage può fallire in incognito Safari, ignora
+  }
 }
 
 function closeMenu() {
@@ -652,15 +672,19 @@ function buildBookingBars(bookings, monthDays) {
       ? 'BLOCCO'
       : `${booking.guest_last_name || booking.guest_first_name || 'Ospite'} · ${Math.max(booking.guestCount || 0, 0)}p`;
     const tooltip = buildBookingTooltip(booking);
+    const beforeMark = span.continuesBefore ? '<span class="bar-chevron bar-chevron-left">‹</span>' : '';
+    const afterMark = span.continuesAfter ? '<span class="bar-chevron bar-chevron-right">›</span>' : '';
     return `
       <button
         type="button"
-        class="booking-bar ${channelClass}${soft}"
+        class="booking-bar ${channelClass}${soft}${span.continuesBefore ? ' continues-before' : ''}${span.continuesAfter ? ' continues-after' : ''}"
         data-booking-id="${esc(booking.beds24_booking_id)}"
         data-tooltip="${esc(tooltip)}"
         style="left:${left}px;width:${width}px;"
       >
+        ${beforeMark}
         <span class="bar-label">${esc(label)}</span>
+        ${afterMark}
       </button>
     `;
   }).join('');
@@ -1199,6 +1223,8 @@ function bookingSpanWithinMonth(booking, monthStart, monthEndExclusive) {
   return {
     startIndex: diffDays(monthStart, start),
     days,
+    continuesBefore: bookingStart < monthStart,
+    continuesAfter: bookingEnd > monthEndExclusive,
   };
 }
 
