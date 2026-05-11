@@ -2,12 +2,12 @@
  * Calendario PMS centrale read-only.
  * Componenti principali:
  * - auth/sessione via window.sb
- * - fetch dati da apartments, apartment_units, v_calendar_occupancy, bookings
+ * - fetch dati da apartments, apartment_units, bookings e inventoryDays
  * - timeline mensile con heatmap residence collassati e barre booking per unita
  * - pannello laterale dettaglio booking, modale orphan, export CSV e refresh Beds24
  * Query:
  * - apartments attivi + apartment_units attive una volta per sessione
- * - occupancy, bookings visibili, orphan, ultimo sync a ogni cambio mese/refresh
+ * - bookings visibili, orphan, ultimo sync e inventoryDays a ogni cambio mese/refresh
  * Eventi:
  * - cambio mese, filtri, espansione residence, click booking, export CSV, refresh sync
  * Nota:
@@ -83,8 +83,6 @@ const S = {
   bookingMap: new Map(),
   bookingsByApartment: new Map(),
   bookingsByUnit: new Map(),
-  occupancyRows: [],
-  occupancyByApartmentDate: new Map(),
   inventoryDays: [],
   inventoryByRoomDate: new Map(),
   orphanRows: [],
@@ -242,11 +240,9 @@ async function ensureDataLoaded({ monthOnly = false } = {}) {
     }
     await loadMonthData();
     initializeFilterDefaults();
-    renderAll();
   } catch (error) {
     console.error('calendario load error', error);
     setError(error.message || 'Errore nel caricamento del calendario');
-    renderAll();
   } finally {
     setLoading(false);
     renderAll();
@@ -293,14 +289,6 @@ async function loadMonthData() {
   const { start, end } = getMonthBounds(S.monthDate);
   const inventoryUrl = `/.netlify/functions/get-calendar?dateFrom=${encodeURIComponent(start)}&dateTo=${encodeURIComponent(end)}`;
 
-  const occupancyQuery = sb
-    .from('v_calendar_occupancy')
-    .select('*')
-    .gte('date', start)
-    .lte('date', end)
-    .order('date')
-    .order('apartment_id');
-
   const bookingsQuery = sb
     .from('bookings')
     .select('id,beds24_booking_id,guest_first_name,guest_last_name,guest_email,guest_phone,num_adults,num_children,channel,channel_normalized,status,check_in,check_out,total_price,currency,source_updated_at,source_created_at,synced_at,apartment_id,apartment_unit_id,raw_payload')
@@ -326,13 +314,11 @@ async function loadMonthData() {
     .limit(1);
 
   const [
-    { data: occupancyRows, error: occupancyError },
     { data: bookings, error: bookingsError },
     { data: orphanRows, error: orphanError, count: orphanCount },
     { data: lastSyncRows, error: syncError },
     inventoryPayload,
   ] = await Promise.all([
-    occupancyQuery,
     bookingsQuery,
     orphanQuery,
     lastSyncQuery,
@@ -351,13 +337,10 @@ async function loadMonthData() {
       }),
   ]);
 
-  if (occupancyError) throw occupancyError;
   if (bookingsError) throw bookingsError;
   if (orphanError) throw orphanError;
   if (syncError) throw syncError;
 
-  S.occupancyRows = (occupancyRows || []).slice();
-  S.occupancyByApartmentDate = buildOccupancyIndex(S.occupancyRows);
   S.inventoryDays = (inventoryPayload?.inventoryDays || []).slice();
   S.inventoryByRoomDate = buildInventoryIndex(S.inventoryDays);
   S.bookings = (bookings || []).map(enrichBooking).sort(compareBookingsForRender);
@@ -406,15 +389,6 @@ function enrichOrphan(row) {
     ...row,
     reason: row.raw_payload?.__assignment?.reason || '—',
   };
-}
-
-function buildOccupancyIndex(rows) {
-  const map = new Map();
-  for (const row of rows) {
-    const key = `${row.apartment_id}:${row.date}`;
-    map.set(key, (map.get(key) || 0) + 1);
-  }
-  return map;
 }
 
 function buildInventoryIndex(rows) {
@@ -960,19 +934,19 @@ function setError(message) {
 
 function getAvailableCities() {
   const cities = new Set();
-  const skippedApartments = [];
+  const skipped = [];
   for (const apartment of S.apartments) {
     const units = S.unitsByApartment.get(String(apartment.id)) || [];
     if (!units.length) {
-      skippedApartments.push(apartment.nome_appartamento);
+      skipped.push(apartment.nome_appartamento);
       continue;
     }
     cities.add(apartment.city);
   }
-  if (skippedApartments.length && !S._skipWarningLogged) {
+  if (skipped.length && !S._skipWarningLogged) {
     console.warn(
-      `Calendario: ${skippedApartments.length} apartments senza unit sono stati esclusi dalla UI`,
-      skippedApartments
+      `Calendario: ${skipped.length} apartment senza unit (saltati):`,
+      skipped
     );
     S._skipWarningLogged = true;
   }
