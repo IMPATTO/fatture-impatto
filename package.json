@@ -2,6 +2,7 @@
   "name": "fatture-impatto",
   "version": "1.0.0",
   "scripts": {
+    "audit:client-flows": "node scripts/audit-client-flows.mjs",
     "build:site": "node scripts/build-site.mjs",
     "verify:integrity": "node scripts/verify-site-integrity.mjs"
   },
