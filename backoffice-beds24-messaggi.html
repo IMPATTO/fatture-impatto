@@ -167,6 +167,9 @@ const CHANNELS = [
   { value: 'airbnb', label: 'Airbnb' },
 ];
 
+const DEFAULT_WHATSAPP = '+39 351 3239927';
+const VALLE_DAOSTA_WHATSAPP = '+39 349 243 4501';
+
 const MESSAGE_TYPES = [
   {
     key: 'BOOKING_CONFIRMATION',
@@ -312,7 +315,7 @@ PS: Se vorrai tornare scrivimi direttamente al {{whatsapp}}: ti riservo uno scon
 const DEFAULTS = {
   guest_name: 'NOME OSPITE',
   city: 'CITTÀ',
-  whatsapp: '+39 351 3239927',
+  whatsapp: DEFAULT_WHATSAPP,
   checkin_time: '16:00',
 };
 
@@ -354,6 +357,22 @@ function getSelectedApartment() {
 
 function getTypeMeta(typeKey) {
   return MESSAGE_TYPES.find((item) => item.key === typeKey) || MESSAGE_TYPES[0];
+}
+
+function isValleDAostaApartment(apartment) {
+  const text = `${apartment?.nome_appartamento || ''} ${apartment?.struttura_nome || ''}`.toLowerCase();
+  return text.includes('valtournenche') || text.includes("valle d'aosta") || text.includes("val d'aosta");
+}
+
+function getApartmentWhatsapp(apartment) {
+  const emergencyNumber = String(apartment?.numero_emergenza || '').trim();
+  if (emergencyNumber) return emergencyNumber;
+  if (isValleDAostaApartment(apartment)) return VALLE_DAOSTA_WHATSAPP;
+  return DEFAULT_WHATSAPP;
+}
+
+function syncPreviewVarsWithApartment(apartment = getSelectedApartment()) {
+  S.previewVars.whatsapp = getApartmentWhatsapp(apartment);
 }
 
 function buildCheckinLink(apartment) {
@@ -447,13 +466,24 @@ async function copyText(text) {
 }
 
 async function loadApartments() {
-  const { data, error } = await sb
+  let { data, error } = await sb
     .from('apartments')
-    .select('id,nome_appartamento,struttura_nome,public_checkin_key,attivo')
+    .select('id,nome_appartamento,struttura_nome,public_checkin_key,attivo,numero_emergenza')
     .order('nome_appartamento');
+
+  if (error && /numero_emergenza/i.test(String(error.message || ''))) {
+    const fallback = await sb
+      .from('apartments')
+      .select('id,nome_appartamento,struttura_nome,public_checkin_key,attivo')
+      .order('nome_appartamento');
+    data = (fallback.data || []).map((item) => ({ ...item, numero_emergenza: null }));
+    error = fallback.error;
+  }
+
   if (error) throw error;
   S.apartments = data || [];
   if (!S.selectedApt && S.apartments.length) S.selectedApt = S.apartments[0].id;
+  syncPreviewVarsWithApartment(getSelectedApartment());
 }
 
 async function loadTemplates() {
@@ -732,6 +762,7 @@ function renderApp() {
 function bindAppEvents() {
   document.getElementById('aptSelect')?.addEventListener('change', async (event) => {
     S.selectedApt = event.target.value;
+    syncPreviewVarsWithApartment(getSelectedApartment());
     await loadTemplates();
     renderApp();
   });
