@@ -1822,7 +1822,7 @@ function renderLogin() {
 
 function renderDashboard() {
   const st=stats(), pct=(S.timeLeft/TIMEOUT_MS)*100;
-  const displayEmail = 'fatturazione@illupoaffitta.com';
+  const displayEmail = S.session?.user?.email || 'fatturazione@illupoaffitta.com';
   const barClr = pct<20?'#dc2626':pct<50?'#d97706':'#2563eb';
   const activeCount = countByView('active');
   const archiveCount = countByView('archive');

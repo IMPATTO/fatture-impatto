@@ -1019,7 +1019,7 @@ function renderLogin() {
 // ── Main Dashboard ──
 function renderDashboard() {
   const st = stats();
-  const displayEmail = 'fatturazione@illupoaffitta.com';
+  const displayEmail = S.session?.user?.email || 'fatturazione@illupoaffitta.com';
   document.getElementById('app').innerHTML = `
   <header class="section-header">
     <div class="section-header-left">
