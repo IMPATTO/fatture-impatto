@@ -506,6 +506,9 @@ registerRenderBindings({
   renderFilters,
   renderStaticShell,
   renderSyncMeta,
+  closeDrawer,
+  openOrphanModal,
+  closeOrphanModal,
 });
 
 function updateTodayMarker(monthDays) {

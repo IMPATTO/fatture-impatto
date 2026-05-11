@@ -10,17 +10,15 @@ import {
   startOfMonth,
   toMonthInputValue,
 } from './utils.js';
-import {
-  closeDrawer,
-  openOrphanModal,
-  closeOrphanModal,
-} from './render.js';
 
 const RENDER = {
   renderAll: null,
   renderFilters: null,
   renderStaticShell: null,
   renderSyncMeta: null,
+  closeDrawer: null,
+  openOrphanModal: null,
+  closeOrphanModal: null,
 };
 
 export async function init() {
@@ -67,25 +65,25 @@ export function bindShellEvents() {
   ELS.refreshBtn?.addEventListener('click', refreshFromBeds24);
   ELS.miniRefreshBtn?.addEventListener('click', refreshFromBeds24);
   ELS.exportBtn?.addEventListener('click', exportVisibleCsv);
-  ELS.orphanBanner?.addEventListener('click', openOrphanModal);
+  ELS.orphanBanner?.addEventListener('click', () => RENDER.openOrphanModal?.());
   ELS.orphanBanner?.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      openOrphanModal();
+      RENDER.openOrphanModal?.();
     }
   });
-  ELS.drawerBackdrop?.addEventListener('click', closeDrawer);
-  ELS.drawerCloseBtn?.addEventListener('click', closeDrawer);
-  ELS.drawerCloseBtnFooter?.addEventListener('click', closeDrawer);
-  ELS.orphanModalClose?.addEventListener('click', closeOrphanModal);
-  ELS.orphanModalCloseFooter?.addEventListener('click', closeOrphanModal);
+  ELS.drawerBackdrop?.addEventListener('click', () => RENDER.closeDrawer?.());
+  ELS.drawerCloseBtn?.addEventListener('click', () => RENDER.closeDrawer?.());
+  ELS.drawerCloseBtnFooter?.addEventListener('click', () => RENDER.closeDrawer?.());
+  ELS.orphanModalClose?.addEventListener('click', () => RENDER.closeOrphanModal?.());
+  ELS.orphanModalCloseFooter?.addEventListener('click', () => RENDER.closeOrphanModal?.());
   ELS.orphanModal?.addEventListener('click', (event) => {
-    if (event.target === ELS.orphanModal) closeOrphanModal();
+    if (event.target === ELS.orphanModal) RENDER.closeOrphanModal?.();
   });
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
-      closeDrawer();
-      closeOrphanModal();
+      RENDER.closeDrawer?.();
+      RENDER.closeOrphanModal?.();
       closeMenu();
     }
   });
