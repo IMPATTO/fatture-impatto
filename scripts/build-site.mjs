@@ -86,6 +86,43 @@ function copyFile(relativePath) {
   fs.copyFileSync(source, destination);
 }
 
+function findRelativeDependencies(relativePath, code) {
+  const dir = path.dirname(relativePath);
+  const refs = new Set();
+  const patterns = [
+    /require\((['"])(\.{1,2}\/[^'"]+)\1\)/g,
+    /from\s+(['"])(\.{1,2}\/[^'"]+)\1/g,
+    /import\((['"])(\.{1,2}\/[^'"]+)\1\)/g,
+    /@import\s+(?:url\()?(["'])(\.{1,2}\/[^"')]+)\1\)?/g,
+  ];
+
+  for (const pattern of patterns) {
+    for (const match of code.matchAll(pattern)) {
+      refs.add(match[2]);
+    }
+  }
+
+  return [...refs]
+    .flatMap((rawRef) => [rawRef, `${rawRef}.js`, `${rawRef}.mjs`, `${rawRef}.cjs`, `${rawRef}.css`])
+    .map((candidate) => path.normalize(path.join(dir, candidate)))
+    .filter((candidate, index, list) => list.indexOf(candidate) === index);
+}
+
+function copyAssetFile(relativePath, seen = new Set()) {
+  if (seen.has(relativePath)) return;
+  seen.add(relativePath);
+  copyFile(relativePath);
+
+  const source = path.join(repoRoot, relativePath);
+  const code = fs.readFileSync(source, 'utf8');
+  const dependencies = findRelativeDependencies(relativePath, code)
+    .filter((candidate) => trackedFiles.has(candidate));
+
+  for (const dependency of dependencies) {
+    copyAssetFile(dependency, seen);
+  }
+}
+
 function copyFunctionFile(relativePath, seen = new Set()) {
   if (seen.has(relativePath)) return;
   seen.add(relativePath);
@@ -97,19 +134,14 @@ function copyFunctionFile(relativePath, seen = new Set()) {
   fs.copyFileSync(source, destination);
 
   const code = fs.readFileSync(source, 'utf8');
-  const dir = path.dirname(relativePath);
-  const patterns = [
-    /require\((['"])(\.{1,2}\/[^'"]+)\1\)/g,
-    /from\s+(['"])(\.{1,2}\/[^'"]+)\1/g,
-  ];
+  const dependencies = findRelativeDependencies(relativePath, code)
+    .filter((candidate) => trackedFiles.has(candidate));
 
-  for (const pattern of patterns) {
-    for (const match of code.matchAll(pattern)) {
-      const rawRef = match[2];
-      const candidates = [rawRef, `${rawRef}.js`, `${rawRef}.mjs`, `${rawRef}.cjs`]
-        .map((candidate) => path.normalize(path.join(dir, candidate)));
-      const next = candidates.find((candidate) => trackedFiles.has(candidate));
-      if (next) copyFunctionFile(next, seen);
+  for (const dependency of dependencies) {
+    if (dependency.startsWith(path.normalize('netlify/functions/'))) {
+      copyFunctionFile(dependency, seen);
+    } else {
+      copyFile(dependency);
     }
   }
 }
@@ -135,7 +167,10 @@ function generateRedirectPage(route, destinationBaseUrl) {
 }
 
 function writeRedirectPage(route, ownerSiteKey) {
-  const destinationBaseUrl = process.env[siteRegistry[ownerSiteKey].envVar] || '';
+  const destinationBaseUrl =
+    process.env[siteRegistry[ownerSiteKey].envVar] ||
+    siteRegistry[ownerSiteKey].fallbackUrl ||
+    '';
   const destination = path.join(outputRoot, route);
   ensureDir(path.dirname(destination));
   fs.writeFileSync(destination, generateRedirectPage(route, destinationBaseUrl), 'utf8');
@@ -169,7 +204,7 @@ const buildBundle = resolveSiteBundle(targetSiteKey);
 const includedPages = new Set(buildBundle.pages);
 
 for (const relativePath of buildBundle.pages) copyFile(relativePath);
-for (const relativePath of buildBundle.assets) copyFile(relativePath);
+for (const relativePath of buildBundle.assets) copyAssetFile(relativePath);
 for (const relativePath of buildBundle.includedFiles) copyFile(relativePath);
 for (const functionName of buildBundle.functions) {
   copyFunctionFile(path.join('netlify', 'functions', `${functionName}.js`));

@@ -2,6 +2,7 @@ export const siteRegistry = {
   'fatt-docs': {
     label: 'Fatturazione + Documenti',
     envVar: 'SITE_URL_FATT_DOCS',
+    fallbackUrl: 'https://fatture.illupoaffitta.com',
     entryPage: 'backoffice.html',
     pages: [
       'backoffice.html',
@@ -30,6 +31,7 @@ export const siteRegistry = {
   operativita: {
     label: 'Operativita',
     envVar: 'SITE_URL_OPERATIVITA',
+    fallbackUrl: 'https://operativita.illupoaffitta.com',
     entryPage: 'backoffice-operativita.html',
     pages: [
       'backoffice-operativita.html',
@@ -48,6 +50,7 @@ export const siteRegistry = {
   portale: {
     label: 'Portale',
     envVar: 'SITE_URL_PORTALE',
+    fallbackUrl: 'https://checkin.illupoaffitta.com',
     entryPage: 'index.html',
     includeSites: [
       'operativita',
@@ -87,6 +90,7 @@ export const siteRegistry = {
   contabilita: {
     label: 'Contabilita',
     envVar: 'SITE_URL_CONTABILITA',
+    fallbackUrl: 'https://contabilita.illupoaffitta.com',
     entryPage: 'backoffice-contabilita.html',
     pages: [
       'backoffice-contabilita.html',
@@ -109,6 +113,7 @@ export const siteRegistry = {
   calendario: {
     label: 'Calendario',
     envVar: 'SITE_URL_CALENDARIO',
+    fallbackUrl: 'https://checkin.illupoaffitta.com',
     entryPage: 'backoffice-calendario.html',
     pages: [
       'backoffice-calendario.html',
@@ -130,6 +135,7 @@ export const siteRegistry = {
   'residence-pr': {
     label: 'Residence + PR',
     envVar: 'SITE_URL_RESIDENCE_PR',
+    fallbackUrl: 'https://checkin.illupoaffitta.com',
     entryPage: 'residence-backoffice.html',
     pages: [
       'residence-kekko.html',
