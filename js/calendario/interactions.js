@@ -12,6 +12,7 @@ import {
 } from './utils.js';
 import {
   closeDrawer,
+  openOrphanModal,
   closeOrphanModal,
 } from './render.js';
 
@@ -329,16 +330,6 @@ export function toggleSetValue(set, value, rerender) {
     set.add(value);
   }
   rerender?.();
-}
-
-function openOrphanModal() {
-  ELS.orphanModal.classList.remove('hidden');
-  ELS.orphanModal.setAttribute('aria-hidden', 'false');
-}
-
-function closeOrphanModal() {
-  ELS.orphanModal.classList.add('hidden');
-  ELS.orphanModal.setAttribute('aria-hidden', 'true');
 }
 
 function syncMiniHeaderLabel() {
