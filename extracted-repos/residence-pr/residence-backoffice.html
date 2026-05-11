@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Backoffice — PR Kekko Riccione | Il Lupo Affitta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/shared-app-auth.js"></script>
+<style>
+  :root {
+    --sand-50:#faf6ee;--sand-100:#f4ecd9;--sand-200:#e8dcc0;
+    --cream:#fdfbf5;--ink:#1a2332;--ink-soft:#2d3e54;
+    --slate:#5d6b7d;--slate-light:#8b96a4;
+    --gold:#b8893a;--gold-light:#e8c574;--gold-pale:#faecc8;--gold-dark:#8a6429;
+    --confirmed:#5a8a6f;--confirmed-bg:#dde8e0;
+    --pending:#c89052;--pending-bg:#f5e6d0;
+    --conflict:#b85c47;--conflict-bg:#f0d4cc;
+    --staff:#6b5b8a;--staff-bg:#e0d8eb;
+    --external:#4a6e8a;--external-bg:#d8e3ec;
+    --shadow-sm:0 1px 2px rgba(26,35,50,.04);
+    --shadow-md:0 4px 12px rgba(26,35,50,.06);
+    --radius-md:10px;--radius-lg:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',system-ui,sans-serif;background:#f5f3ee;color:var(--ink);font-size:14px;line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased;}
+
+  .login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#1a2332 0%,#2d3e54 100%);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;}
+  .login-overlay.hidden{display:none;}
+  .login-box{background:white;border-radius:24px;padding:2.5rem;max-width:420px;width:100%;box-shadow:0 25px 80px rgba(0,0,0,.4);text-align:center;}
+  .login-box h1{font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--ink);margin-bottom:4px;}
+  .login-box .subtitle{color:var(--slate);font-size:13px;margin-bottom:1.75rem;}
+  .login-box input{width:100%;padding:.85rem 1rem;border:1px solid var(--sand-200);border-radius:var(--radius-md);font-size:15px;font-family:inherit;margin-bottom:1rem;}
+  .login-box input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-pale);}
+  .login-box button{width:100%;background:var(--ink);color:white;border:none;padding:.85rem 1rem;border-radius:var(--radius-md);font-weight:600;font-size:14px;cursor:pointer;font-family:inherit;}
+  .login-box .err{color:var(--conflict);font-size:13px;margin-top:.75rem;min-height:16px;}
+
+  .header{background:var(--ink);color:white;padding:1.25rem 2rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;}
+  .header h1{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;}
+  .header h1 em{color:var(--gold-light);font-style:italic;}
+  .header .meta{font-size:12px;color:rgba(255,255,255,.7);}
+  .btn-logout{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:white;padding:.45rem 1rem;border-radius:var(--radius-md);cursor:pointer;font-size:12px;font-family:inherit;}
+  .btn-logout:hover{background:rgba(255,255,255,.2);}
+
+  .main{max-width:1400px;margin:0 auto;padding:1.5rem 2rem;}
+
+  .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem;}
+  .stat-card{background:white;border:1px solid var(--sand-200);border-radius:var(--radius-lg);padding:1.25rem;box-shadow:var(--shadow-sm);}
+  .stat-card .num{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:700;color:var(--ink);line-height:1;}
+  .stat-card .lbl{font-size:11px;color:var(--slate);text-transform:uppercase;letter-spacing:1.2px;margin-top:.5rem;}
+  .stat-card.urgent .num{color:var(--pending);}
+  .stat-card.confirmed .num{color:var(--confirmed);}
+
+  .filters{background:white;border:1px solid var(--sand-200);border-radius:var(--radius-lg);padding:1rem 1.25rem;margin-bottom:1rem;display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;box-shadow:var(--shadow-sm);}
+  .filter-group{display:flex;gap:.5rem;align-items:center;}
+  .filter-group label{font-size:11px;color:var(--slate);text-transform:uppercase;letter-spacing:1px;font-weight:600;}
+  .filter-pill{background:white;border:1px solid var(--sand-200);padding:.4rem .8rem;border-radius:20px;cursor:pointer;font-size:12px;font-family:inherit;color:var(--slate);transition:all .15s;}
+  .filter-pill.active{background:var(--ink);color:white;border-color:var(--ink);}
+  .filter-pill:hover:not(.active){background:var(--sand-50);}
+  .search-input{padding:.5rem .85rem;border:1px solid var(--sand-200);border-radius:var(--radius-md);font-size:13px;font-family:inherit;min-width:200px;}
+  .search-input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-pale);}
+  .view-controls{margin-left:auto;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;}
+  .month-nav{display:flex;align-items:center;gap:.5rem;}
+  .month-label{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;margin:0 1rem;min-width:200px;text-align:center;color:var(--ink);letter-spacing:-.3px;}
+  .month-label .year{color:var(--gold-dark);font-style:italic;}
+  .nav-btn{background:white;border:1px solid var(--sand-200);border-radius:var(--radius-md);width:40px;height:40px;cursor:pointer;font-size:18px;color:var(--ink);font-family:serif;}
+  .nav-btn:hover{background:var(--sand-50);border-color:var(--gold);}
+
+  .bookings-section{background:white;border:1px solid var(--sand-200);border-radius:var(--radius-lg);padding:1.5rem;box-shadow:var(--shadow-sm);}
+  .section-title{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:1rem;border-bottom:1px solid var(--sand-200);padding-bottom:.75rem;}
+  .section-title h2{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--ink);}
+  .section-title .count{font-size:12px;color:var(--slate);font-style:italic;}
+  .view-panel{display:none;}
+  .view-panel.active{display:block;}
+  .calendar-wrapper{background:white;border:1px solid var(--sand-200);border-radius:var(--radius-lg);padding:1.25rem;box-shadow:var(--shadow-md);overflow-x:auto;}
+  .calendar-grid{display:grid;gap:0;min-width:1200px;position:relative;}
+  .cal-header{background:var(--sand-50);padding:.5rem .25rem;text-align:center;border-bottom:2px solid var(--sand-200);border-right:1px solid var(--sand-100);position:sticky;top:0;z-index:2;}
+  .cal-header.weekend{background:#eef5f7;}
+  .cal-header.apt-col{text-align:left;padding:.625rem .875rem;background:white;z-index:3;position:sticky;left:0;font-family:'Cormorant Garamond',serif;font-size:14px;font-weight:600;color:var(--ink);letter-spacing:.5px;text-transform:uppercase;}
+  .cal-day-name{font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--slate);font-weight:500;}
+  .cal-header.weekend .cal-day-name{color:var(--sea-500, #2d6b7a);}
+  .cal-day-label{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:var(--ink);margin-top:1px;}
+  .cal-header.weekend .cal-day-label{color:var(--sea-700, #1a4a56);}
+  .cal-header.today{background:var(--gold-pale);}
+  .cal-header.today .cal-day-label{color:var(--gold-dark);}
+  .apt-name{background:white;padding:.5rem .875rem;border-bottom:1px solid var(--sand-100);border-right:2px solid var(--sand-200);position:sticky;left:0;z-index:1;display:flex;flex-direction:column;justify-content:center;gap:1px;min-height:48px;}
+  .apt-name .a-title{font-size:13px;font-weight:600;color:var(--ink);line-height:1.2;}
+  .apt-name .a-title .star{color:var(--gold);font-size:11px;}
+  .apt-name .a-meta{font-size:10px;color:var(--slate);font-weight:400;}
+  .apt-name .a-note{font-size:9px;color:var(--gold-dark);font-style:italic;margin-top:1px;}
+  .apt-name.blocked{background:linear-gradient(90deg,var(--staff-bg) 0%, white 100%);opacity:.85;}
+  .apt-name.external{background:linear-gradient(90deg,var(--external-bg) 0%, white 100%);border-left:3px solid var(--external);}
+  .apt-name.external .a-note{color:var(--external);}
+  .apt-cell{border-bottom:1px solid var(--sand-100);border-right:1px solid var(--sand-100);min-height:48px;position:relative;transition:background .1s;background:white;}
+  .apt-cell:hover{background:var(--sand-50);}
+  .apt-cell.weekend{background:rgba(238,245,247,.4);}
+  .apt-cell.weekend:hover{background:#eef5f7;}
+  .apt-cell.today{box-shadow:inset 0 0 0 1px var(--gold-light);}
+  .apt-cell.unavail{background:repeating-linear-gradient(45deg, #f0ebe0, #f0ebe0 4px, #e8dcc0 4px, #e8dcc0 8px);opacity:.5;}
+  .apt-cell.unavail:hover{background:repeating-linear-gradient(45deg, #f0ebe0, #f0ebe0 4px, #e8dcc0 4px, #e8dcc0 8px);}
+  .group-header{background:linear-gradient(90deg,var(--sand-100) 0%, var(--sand-50) 100%);padding:.5rem .875rem;font-family:'Cormorant Garamond',serif;font-size:12px;font-weight:700;color:var(--gold-dark);text-transform:uppercase;letter-spacing:2px;grid-column:1 / -1;border-top:1px solid var(--sand-200);border-bottom:1px solid var(--sand-200);}
+  .group-header.external-group{background:linear-gradient(90deg,var(--external-bg) 0%, var(--sand-50) 100%);color:var(--external);}
+  .booking{position:absolute;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:600;color:white;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer;z-index:1;display:flex;align-items:center;gap:4px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.12);border:none;}
+  .booking:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.18);z-index:5;}
+  .booking.confirmed{background:linear-gradient(135deg, #6a9d80 0%, #4a7d60 100%);}
+  .booking.pending{background:linear-gradient(135deg, #d4a062 0%, #b88040 100%);}
+  .booking.rejected{background:linear-gradient(135deg, #c87862 0%, #a05a48 100%);opacity:.7;text-decoration:line-through;}
+  .booking.staff{background:repeating-linear-gradient(45deg, #8a7ba8, #8a7ba8 4px, #6b5b8a 4px, #6b5b8a 8px);}
+  .booking.checco{box-shadow:inset 0 0 0 2px var(--gold-light), 0 1px 3px rgba(0,0,0,.12);}
+  .booking.checco:hover{box-shadow:inset 0 0 0 2px var(--gold), 0 4px 12px rgba(184,137,58,.3);}
+  .booking.confirmed.non-checco{background:linear-gradient(135deg, #607d98 0%, #456079 100%);}
+  .booking.pending.non-checco{background:linear-gradient(135deg, #8d6aa9 0%, #6b4f86 100%);}
+  .booking.non-checco{box-shadow:inset 0 0 0 2px rgba(255,255,255,.72), 0 1px 3px rgba(0,0,0,.12);filter:saturate(.88);}
+  .booking.non-checco:hover{box-shadow:inset 0 0 0 2px var(--ink), 0 4px 12px rgba(26,35,50,.2);}
+  .booking.conflict{outline:2px solid var(--conflict-bg);}
+  .booking .seg-icon{font-size:9px;opacity:.85;}
+
+  .bookings-table{width:100%;border-collapse:collapse;font-size:13px;}
+  .bookings-table th{text-align:left;padding:.75rem .5rem;border-bottom:2px solid var(--sand-200);font-size:11px;font-weight:600;color:var(--slate);text-transform:uppercase;letter-spacing:1px;}
+  .bookings-table td{padding:.75rem .5rem;border-bottom:1px solid var(--sand-100);vertical-align:middle;}
+  .bookings-table tr:hover{background:var(--sand-50);}
+  .bookings-table tr.pending-row{background:#fefaf0;}
+  .bookings-table tr.pending-row:hover{background:#fbf3e0;}
+
+  .pill{display:inline-block;padding:3px 10px;border-radius:12px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;}
+  .pill.confirmed{background:var(--confirmed-bg);color:var(--confirmed);}
+  .pill.pending{background:var(--pending-bg);color:var(--pending);}
+  .pill.rejected{background:var(--conflict-bg);color:var(--conflict);}
+  .pill.staff{background:var(--staff-bg);color:var(--staff);}
+
+  .source-badge{display:inline-block;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:600;text-transform:uppercase;}
+  .source-badge.checco{background:var(--gold-pale);color:var(--gold-dark);}
+  .source-badge.pr-serena{background:#e8dde0;color:#8a3e5e;}
+  .source-badge.pr-luca{background:#dde0e8;color:#3e5e8a;}
+  .source-badge.esterno{background:var(--external-bg);color:var(--external);}
+  .source-badge.system{background:var(--staff-bg);color:var(--staff);}
+
+  .actions-cell{white-space:nowrap;}
+  .btn-mini{padding:.35rem .7rem;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;border:1px solid transparent;margin-right:.25rem;letter-spacing:.3px;}
+  .btn-confirm{background:var(--confirmed);color:white;border-color:var(--confirmed);}
+  .btn-confirm:hover{background:#4a7d60;}
+  .btn-reject{background:white;color:var(--conflict);border-color:var(--conflict);}
+  .btn-reject:hover{background:var(--conflict-bg);}
+  .btn-edit{background:white;color:var(--ink);border-color:var(--sand-200);}
+  .btn-edit:hover{background:var(--sand-50);}
+  .btn-delete{background:white;color:var(--slate);border-color:var(--sand-200);font-size:14px;padding:.3rem .55rem;}
+  .btn-delete:hover{color:var(--conflict);border-color:var(--conflict);}
+
+  .empty{padding:3rem;text-align:center;color:var(--slate-light);font-style:italic;font-family:'Cormorant Garamond',serif;font-size:18px;}
+
+  .conflict-warning{background:var(--conflict-bg);color:var(--conflict);padding:6px 10px;border-radius:6px;font-size:11px;font-weight:600;display:inline-block;margin-top:4px;}
+
+  .modal-backdrop{display:none;position:fixed;inset:0;background:rgba(13,47,55,.5);backdrop-filter:blur(8px);z-index:100;justify-content:center;align-items:center;padding:1rem;}
+  .modal-backdrop.active{display:flex;}
+  .modal{background:white;border-radius:24px;width:100%;max-width:500px;overflow:hidden;box-shadow:0 25px 80px rgba(0,0,0,.25);max-height:92vh;display:flex;flex-direction:column;}
+  .modal-header{padding:1.5rem 1.75rem;border-bottom:1px solid var(--sand-200);display:flex;justify-content:space-between;align-items:center;}
+  .modal-header h2{font-family:'Cormorant Garamond',serif;font-size:22px;}
+  .modal-close{background:var(--sand-50);border:none;font-size:20px;cursor:pointer;color:var(--slate);width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+  .modal-body{padding:1.5rem 1.75rem;overflow-y:auto;}
+  .modal-footer{padding:1rem 1.75rem;border-top:1px solid var(--sand-200);display:flex;justify-content:flex-end;gap:.5rem;background:var(--sand-50);flex-wrap:wrap;}
+  .form-row{margin-bottom:1rem;}
+  .form-row label{display:block;font-size:11px;font-weight:600;color:var(--slate);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:1px;}
+  .form-row input,.form-row select,.form-row textarea{width:100%;padding:.65rem .85rem;border:1px solid var(--sand-200);border-radius:var(--radius-md);font-size:14px;font-family:inherit;background:white;}
+  .form-row input:focus,.form-row select:focus,.form-row textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-pale);}
+  .form-row-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
+  .btn-secondary{background:white;color:var(--ink);border:1px solid var(--sand-200);padding:.6rem 1.1rem;border-radius:var(--radius-md);font-weight:500;cursor:pointer;font-size:13px;font-family:inherit;}
+  .btn-primary{background:var(--ink);color:white;border:none;padding:.6rem 1.2rem;border-radius:var(--radius-md);font-weight:600;cursor:pointer;font-size:13px;font-family:inherit;}
+  .btn-danger{background:white;color:var(--conflict);border:1px solid var(--conflict-bg);padding:.6rem 1.1rem;border-radius:var(--radius-md);font-weight:600;cursor:pointer;font-size:13px;font-family:inherit;margin-right:auto;}
+  .btn-danger:hover{background:var(--conflict-bg);border-color:var(--conflict);}
+
+  .alert{padding:.75rem 1rem;border-radius:var(--radius-md);margin-bottom:1rem;font-size:13px;border-left:3px solid;}
+  .alert-warning{background:var(--pending-bg);border-left-color:var(--pending);color:#7d5a2a;}
+  .alert-danger{background:var(--conflict-bg);border-left-color:var(--conflict);color:var(--conflict);}
+  .alert-info{background:var(--gold-pale);border-left-color:var(--gold);color:var(--gold-dark);}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:white;padding:.75rem 1.25rem;border-radius:var(--radius-md);font-size:13px;box-shadow:0 10px 40px rgba(0,0,0,.2);z-index:300;opacity:0;transition:opacity .3s;pointer-events:none;}
+  .toast.show{opacity:1;}
+  .toast.success{background:var(--confirmed);}
+  .toast.error{background:var(--conflict);}
+
+  .loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,.85);z-index:200;display:none;align-items:center;justify-content:center;}
+  .loading-overlay.active{display:flex;}
+  .spinner{width:40px;height:40px;border:3px solid var(--sand-200);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  @media(max-width:768px){
+    .main{padding:1rem;}
+    .bookings-table{font-size:11px;}
+    .bookings-table th, .bookings-table td{padding:.5rem .35rem;}
+  }
+</style>
+</head>
+<body>
+
+<div class="login-overlay" id="login-overlay">
+  <div class="login-box">
+    <h1>Backoffice <em>Residence</em></h1>
+    <div class="subtitle">Accesso amministratore</div>
+    <input type="password" id="login-password" placeholder="Password admin" autocomplete="current-password">
+    <button onclick="doLogin()">Entra</button>
+    <div class="err" id="login-err"></div>
+  </div>
+</div>
+
+<header class="header">
+  <div>
+    <h1>Backoffice <em>Residence Margherita</em></h1>
+    <div class="meta">Gestione prenotazioni · Stagione 2026</div>
+  </div>
+  <div style="display:flex;gap:.75rem;align-items:center;">
+    <a href="pr_kekko_riccione.html" target="_blank" style="color:rgba(255,255,255,.7);font-size:12px;text-decoration:none;border-bottom:1px dashed rgba(255,255,255,.3);">→ Vista Kekko</a>
+    <a href="backoffice-pr-luca.html" target="_blank" style="color:rgba(255,255,255,.7);font-size:12px;text-decoration:none;border-bottom:1px dashed rgba(255,255,255,.3);">→ PR Luca</a>
+    <button class="btn-logout" onclick="doLogout()">Esci</button>
+  </div>
+</header>
+
+<main class="main">
+
+  <div class="stats-row" id="stats-row"></div>
+
+  <div class="filters">
+    <div class="filter-group">
+      <label>Stato</label>
+      <button class="filter-pill active" data-filter="status" data-value="all" onclick="setFilter('status','all')">Tutti</button>
+      <button class="filter-pill" data-filter="status" data-value="pending" onclick="setFilter('status','pending')">⏱ In attesa</button>
+      <button class="filter-pill" data-filter="status" data-value="confirmed" onclick="setFilter('status','confirmed')">✓ Confermate</button>
+      <button class="filter-pill" data-filter="status" data-value="rejected" onclick="setFilter('status','rejected')">✕ Rifiutate</button>
+    </div>
+    <div class="filter-group">
+      <label>Fonte</label>
+      <button class="filter-pill active" data-filter="source" data-value="all" onclick="setFilter('source','all')">Tutte</button>
+      <button class="filter-pill" data-filter="source" data-value="checco" onclick="setFilter('source','checco')">Kekko</button>
+      <button class="filter-pill" data-filter="source" data-value="pr-serena" onclick="setFilter('source','pr-serena')">Serena</button>
+      <button class="filter-pill" data-filter="source" data-value="pr-luca" onclick="setFilter('source','pr-luca')">Luca</button>
+      <button class="filter-pill" data-filter="source" data-value="esterno" onclick="setFilter('source','esterno')">Esterni</button>
+    </div>
+    <input type="text" class="search-input" id="search" placeholder="Cerca nome cliente..." oninput="render()">
+    <div class="view-controls">
+      <button class="filter-pill active" id="view-table-btn" onclick="setViewMode('table')">Tabella</button>
+      <button class="filter-pill" id="view-calendar-btn" onclick="setViewMode('calendar')">Calendario</button>
+      <div class="month-nav" id="month-nav" style="display:none;">
+        <button class="nav-btn" onclick="changeMonth(-1)">‹</button>
+        <div class="month-label" id="month-label">Luglio 2026</div>
+        <button class="nav-btn" onclick="changeMonth(1)">›</button>
+      </div>
+      <button class="btn-primary" onclick="openNewBooking()">+ Nuova prenotazione</button>
+      <button class="btn-secondary" onclick="exportCSV()">⬇ Esporta CSV</button>
+    </div>
+  </div>
+
+  <div class="bookings-section">
+    <div class="section-title">
+      <h2>Prenotazioni</h2>
+      <div class="count" id="count-meta"></div>
+    </div>
+    <div id="table-view" class="view-panel active" style="overflow-x:auto;">
+      <table class="bookings-table">
+        <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>Date</th>
+            <th>Pax</th>
+            <th>Appartamento</th>
+            <th>Caparra</th>
+            <th>Saldo</th>
+            <th>Fonte</th>
+            <th>Stato</th>
+            <th>Azioni</th>
+          </tr>
+        </thead>
+        <tbody id="bookings-body"></tbody>
+      </table>
+    </div>
+    <div id="calendar-view" class="view-panel">
+      <div class="calendar-wrapper">
+        <div class="calendar-grid" id="calendar-grid"></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<div class="modal-backdrop" id="edit-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-title">Modifica prenotazione</h2>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="modal-alerts"></div>
+      <div class="form-row"><label>Nome</label><input type="text" id="m-name"></div>
+      <div class="form-row-grid">
+        <div class="form-row"><label>Check-in</label><input type="date" id="m-checkin"></div>
+        <div class="form-row"><label>Check-out</label><input type="date" id="m-checkout"></div>
+      </div>
+      <div class="form-row-grid">
+        <div class="form-row"><label>Pax</label><input type="number" id="m-pax" min="1"></div>
+        <div class="form-row"><label>Stato</label><select id="m-status">
+          <option value="pending">In attesa</option>
+          <option value="confirmed">Confermata</option>
+          <option value="rejected">Rifiutata</option>
+        </select></div>
+      </div>
+      <div class="form-row"><label>Appartamento</label><select id="m-apt"></select></div>
+      <div class="form-row-grid">
+        <div class="form-row"><label>Caparra versata (€)</label><input type="number" id="m-deposit" min="0" step="0.01"></div>
+        <div class="form-row"><label>Saldo all'arrivo (€)</label><input type="number" id="m-balance" min="0" step="0.01"></div>
+      </div>
+      <div class="form-row"><label>Note</label><textarea id="m-notes" rows="2"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-danger" id="modal-delete-btn" onclick="deleteBookingFromModal()" style="display:none;">Elimina prenotazione</button>
+      <button class="btn-secondary" onclick="closeModal()">Annulla</button>
+      <button class="btn-primary" onclick="saveEdit()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<div class="loading-overlay" id="loading-overlay"><div class="spinner"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const AUTH = window.sharedAppAuth;
+const AUTH_APP = 'rm_admin';
+const ADMIN_NAME = 'admin';
+let refreshTimer = null;
+
+let APARTMENTS = [];
+let BOOKINGS = [];
+let UNAVAILABLE = [];
+let filters = { status: 'all', source: 'all' };
+let editingBookingId = null;
+let viewMode = 'table';
+let currentMonth = 6;
+let currentYear = 2026;
+
+function checkAuth() {
+  if (AUTH.loadSession(AUTH_APP)) {
+    document.getElementById('login-overlay').classList.add('hidden');
+    init();
+  }
+}
+async function doLogin() {
+  const pw = document.getElementById('login-password').value.trim();
+  document.getElementById('login-err').textContent = '';
+  if (!pw) {
+    document.getElementById('login-err').textContent = 'Inserisci la password';
+    return;
+  }
+  try {
+    await AUTH.login(AUTH_APP, pw);
+    document.getElementById('login-overlay').classList.add('hidden');
+    await init();
+  } catch (error) {
+    document.getElementById('login-err').textContent = error.message;
+  }
+}
+function doLogout() { AUTH.clearSession(AUTH_APP); location.reload(); }
+document.getElementById('login-password').addEventListener('keypress', e => { if (e.key === 'Enter') doLogin(); });
+
+function showLoading(on=true) { document.getElementById('loading-overlay').classList.toggle('active', on); }
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show ' + type;
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+async function loadAll() {
+  showLoading(true);
+  try {
+    const payload = await AUTH.fetchJson('/.netlify/functions/residence-api', {
+      app: AUTH_APP,
+    });
+    APARTMENTS = payload.apartments || [];
+    BOOKINGS = (payload.bookings || []).map((b) => {
+      const payment = extractPaymentData(b.notes);
+      return {
+        ...b,
+        notes: payment.cleanNotes,
+        deposit_amount: b.deposit_amount ?? payment.depositAmount,
+        balance_due_at_checkin: b.balance_due_at_checkin ?? payment.balanceDueAtCheckin
+      };
+    });
+    UNAVAILABLE = payload.unavailability || [];
+  } catch (e) {
+    console.error(e);
+    showToast('Errore caricamento: ' + e.message, 'error');
+  } finally { showLoading(false); }
+}
+
+async function init() {
+  await loadAll();
+  render();
+  if (refreshTimer) clearInterval(refreshTimer);
+  refreshTimer = setInterval(async () => {
+    try {
+      await loadAll();
+      render();
+    } catch (_error) {
+      // Evita toast ripetitivi in background.
+    }
+  }, 45000);
+}
+
+function getDateRange(checkin, checkout) {
+  const start = new Date(checkin + 'T00:00:00');
+  const end = new Date(checkout + 'T00:00:00');
+  const days = [];
+  for (let d = new Date(start); d < end; d.setDate(d.getDate()+1)) days.push(d.toISOString().slice(0,10));
+  return days;
+}
+
+function checkConflicts(b) {
+  const conflicts = [];
+  const reqDays = getDateRange(b.checkin, b.checkout);
+  for (const other of BOOKINGS) {
+    if (other.id === b.id) continue;
+    if (other.apartment_id !== b.apartment_id) continue;
+    if (other.status === 'rejected' || other.status === 'cancelled') continue;
+    const oDays = getDateRange(other.checkin, other.checkout);
+    if (reqDays.some(d => oDays.includes(d))) conflicts.push(other);
+  }
+  return conflicts;
+}
+
+function setFilter(key, val) {
+  filters[key] = val;
+  document.querySelectorAll(`.filter-pill[data-filter="${key}"]`).forEach(p => {
+    p.classList.toggle('active', p.dataset.value === val);
+  });
+  render();
+}
+
+function fmt(iso) { return new Date(iso + 'T00:00:00').toLocaleDateString('it-IT', { day:'numeric', month:'short' }); }
+function dateOnly(d) { return d.toISOString().slice(0,10); }
+function parseISO(iso) { return new Date(iso + 'T00:00:00'); }
+function parseMoneyInput(value) {
+  if (value === '' || value == null) return null;
+  const parsed = Number(String(value).replace(',', '.'));
+  return Number.isFinite(parsed) ? Number(parsed.toFixed(2)) : null;
+}
+function formatMoney(value) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return '—';
+  return amount.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });
+}
+function extractPaymentData(notes) {
+  const raw = String(notes || '');
+  const match = raw.match(/\[\[PAYMENT:deposit=([^;\]]*);balance=([^\]]*)\]\]/);
+  const cleanNotes = raw.replace(/\[\[PAYMENT:[^\]]*\]\]\s*/g, '').trim();
+  if (!match) return { cleanNotes, depositAmount: null, balanceDueAtCheckin: null };
+  const depositAmount = parseMoneyInput(match[1]);
+  const balanceDueAtCheckin = parseMoneyInput(match[2]);
+  return { cleanNotes, depositAmount, balanceDueAtCheckin };
+}
+function buildNotesWithPayment(notes, depositAmount, balanceDueAtCheckin) {
+  const cleanNotes = String(notes || '').replace(/\[\[PAYMENT:[^\]]*\]\]\s*/g, '').trim();
+  const hasPayment = depositAmount != null || balanceDueAtCheckin != null;
+  if (!hasPayment) return cleanNotes;
+  const tag = `[[PAYMENT:deposit=${depositAmount ?? ''};balance=${balanceDueAtCheckin ?? ''}]]`;
+  return cleanNotes ? `${tag}\n${cleanNotes}` : tag;
+}
+function daysInMonth(year, month) { return new Date(year, month + 1, 0).getDate(); }
+const DAY_NAMES = ['DOM','LUN','MAR','MER','GIO','VEN','SAB'];
+const MONTH_NAMES = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+function isWeekend(dateStr) { const d = parseISO(dateStr).getDay(); return d === 0 || d === 6; }
+function isUnavailable(aptId, dateStr) {
+  for (const u of UNAVAILABLE) {
+    if (u.apartment_id !== aptId) continue;
+    const days = getDateRange(u.start_date, u.end_date);
+    if (days.includes(dateStr)) return true;
+  }
+  return false;
+}
+function sourceLabel(source) {
+  return ({
+    checco: 'Kekko',
+    'pr-serena': 'Serena',
+    'pr-luca': 'Luca',
+    esterno: 'Esterno',
+    system: 'Sistema'
+  })[source] || source;
+}
+function filteredBookings() {
+  const search = document.getElementById('search').value.toLowerCase().trim();
+  let filtered = BOOKINGS.filter(b => {
+    if (filters.status !== 'all' && b.status !== filters.status) return false;
+    if (filters.source !== 'all' && b.source !== filters.source) return false;
+    if (search && !b.name.toLowerCase().includes(search)) return false;
+    return true;
+  });
+  filtered.sort((a, b) => {
+    if (a.status === 'pending' && b.status !== 'pending') return -1;
+    if (a.status !== 'pending' && b.status === 'pending') return 1;
+    return a.checkin.localeCompare(b.checkin);
+  });
+  return filtered;
+}
+function setViewMode(mode) {
+  viewMode = mode;
+  document.getElementById('view-table-btn').classList.toggle('active', mode === 'table');
+  document.getElementById('view-calendar-btn').classList.toggle('active', mode === 'calendar');
+  document.getElementById('table-view').classList.toggle('active', mode === 'table');
+  document.getElementById('calendar-view').classList.toggle('active', mode === 'calendar');
+  document.getElementById('month-nav').style.display = mode === 'calendar' ? 'flex' : 'none';
+  render();
+}
+function changeMonth(delta) {
+  currentMonth += delta;
+  if (currentMonth < 0) { currentMonth = 11; currentYear -= 1; }
+  if (currentMonth > 11) { currentMonth = 0; currentYear += 1; }
+  render();
+}
+function renderCalendar(filtered) {
+  const grid = document.getElementById('calendar-grid');
+  const numDays = daysInMonth(currentYear, currentMonth);
+  grid.innerHTML = '';
+  document.getElementById('month-label').innerHTML = `${MONTH_NAMES[currentMonth]} <span class="year">${currentYear}</span>`;
+  grid.style.gridTemplateColumns = `200px repeat(${numDays}, minmax(36px, 1fr))`;
+  const todayStr = dateOnly(new Date());
+
+  const headerApt = document.createElement('div');
+  headerApt.className = 'cal-header apt-col';
+  headerApt.textContent = 'Appartamento';
+  grid.appendChild(headerApt);
+  for (let day = 1; day <= numDays; day += 1) {
+    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const dayName = DAY_NAMES[parseISO(dateStr).getDay()];
+    const cell = document.createElement('div');
+    cell.className = `cal-header${isWeekend(dateStr) ? ' weekend' : ''}${dateStr === todayStr ? ' today' : ''}`;
+    cell.innerHTML = `<div class="cal-day-name">${dayName}</div><div class="cal-day-label">${day}</div>`;
+    grid.appendChild(cell);
+  }
+
+  const groups = {};
+  [...APARTMENTS].sort((a, b) => a.sort_order - b.sort_order).forEach(apt => {
+    const key = apt.group_name || 'Residence';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(apt);
+  });
+
+  for (const groupName of Object.keys(groups)) {
+    const isExtGroup = groups[groupName][0].external;
+    const gh = document.createElement('div');
+    gh.className = `group-header${isExtGroup ? ' external-group' : ''}`;
+    gh.style.gridColumn = `1 / ${numDays + 2}`;
+    gh.textContent = groupName;
+    grid.appendChild(gh);
+
+    for (const apt of groups[groupName]) {
+      const aptCell = document.createElement('div');
+      let cls = 'apt-name';
+      if (apt.blocked) cls += ' blocked';
+      if (apt.external) cls += ' external';
+      const star = (apt.id === 'B202' || apt.id === 'T1') ? '<span class="star">★</span> ' : '';
+      const noteHtml = apt.note ? `<div class="a-note">${apt.note}</div>` : '';
+      aptCell.className = cls;
+      aptCell.innerHTML = `<div class="a-title">${star}${apt.name}</div><div class="a-meta">${apt.floor} · ${apt.capacity} pax</div>${noteHtml}`;
+      grid.appendChild(aptCell);
+
+      for (let day = 1; day <= numDays; day++) {
+        const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        const cell = document.createElement('div');
+        let cellCls = 'apt-cell';
+        if (isWeekend(dateStr)) cellCls += ' weekend';
+        if (dateStr === todayStr) cellCls += ' today';
+        if (isUnavailable(apt.id, dateStr)) cellCls += ' unavail';
+        cell.className = cellCls;
+        cell.dataset.aptId = apt.id;
+        cell.dataset.date = dateStr;
+        grid.appendChild(cell);
+      }
+    }
+  }
+
+  setTimeout(() => placeBookings(filtered, numDays), 0);
+}
+function placeBookings(filtered, numDays) {
+  const grid = document.getElementById('calendar-grid');
+  document.querySelectorAll('.calendar-grid > .booking').forEach(b => b.remove());
+  const monthStart = new Date(currentYear, currentMonth, 1);
+  const monthEnd = new Date(currentYear, currentMonth, numDays);
+  for (const booking of filtered) {
+    const bIn = parseISO(booking.checkin);
+    const bOut = parseISO(booking.checkout);
+    if (bOut <= monthStart || bIn > monthEnd) continue;
+    if (!APARTMENTS.find(a => a.id === booking.apartment_id)) continue;
+    const startDay = bIn < monthStart ? 1 : bIn.getDate();
+    const endDay = bOut > monthEnd ? numDays : (bOut.getDate() - 1);
+    if (endDay < startDay) continue;
+    const firstCell = document.querySelector(`.apt-cell[data-apt-id="${booking.apartment_id}"][data-date="${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(startDay).padStart(2,'0')}"]`);
+    const lastCell = document.querySelector(`.apt-cell[data-apt-id="${booking.apartment_id}"][data-date="${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(endDay).padStart(2,'0')}"]`);
+    if (!firstCell || !lastCell) continue;
+    const conflicts = checkConflicts(booking);
+    const div = document.createElement('button');
+    div.type = 'button';
+    div.className = `booking ${booking.status}${booking.source === 'checco' ? ' checco' : ' non-checco'}${conflicts.length ? ' conflict' : ''}`;
+    div.style.left = (firstCell.offsetLeft + 2) + 'px';
+    div.style.width = ((lastCell.offsetLeft + lastCell.offsetWidth) - firstCell.offsetLeft - 4) + 'px';
+    div.style.top = (firstCell.offsetTop + 4) + 'px';
+    div.style.height = (firstCell.offsetHeight - 8) + 'px';
+    const segLabel = booking.segment ? `<span class="seg-icon">⇄ ${booking.segment}</span>` : '';
+    div.innerHTML = `${segLabel}${booking.name} · ${booking.pax}p`;
+    div.title = `${booking.name}${booking.segment ? ' (segmento ' + booking.segment + ')' : ''}\n${fmt(booking.checkin)} → ${fmt(booking.checkout)}\n${booking.pax} persone\nCaparra: ${formatMoney(booking.deposit_amount)}\nSaldo all'arrivo: ${formatMoney(booking.balance_due_at_checkin)}\nFonte: ${sourceLabel(booking.source)}`;
+    div.onclick = (e) => { e.stopPropagation(); openEdit(booking.id); };
+    grid.appendChild(div);
+  }
+  grid.style.position = 'relative';
+}
+
+function render() {
+  // Stats
+  const totalPending = BOOKINGS.filter(b => b.status === 'pending').length;
+  const totalConfirmed = BOOKINGS.filter(b => b.status === 'confirmed').length;
+  const totalRejected = BOOKINGS.filter(b => b.status === 'rejected').length;
+  const checcoPending = BOOKINGS.filter(b => b.source === 'checco' && b.status === 'pending').length;
+  const totalGuests = BOOKINGS.filter(b => b.status === 'confirmed' && b.source !== 'system')
+    .reduce((acc, b) => {
+      const key = b.group_id || b.id;
+      if (!acc.seen.has(key)) { acc.seen.add(key); acc.total += b.pax; }
+      return acc;
+    }, {seen: new Set(), total: 0}).total;
+
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat-card urgent"><div class="num">${totalPending}</div><div class="lbl">⏱ Da approvare</div></div>
+    <div class="stat-card"><div class="num">${checcoPending}</div><div class="lbl">Da Kekko</div></div>
+    <div class="stat-card confirmed"><div class="num">${totalConfirmed}</div><div class="lbl">✓ Confermate</div></div>
+    <div class="stat-card"><div class="num">${totalRejected}</div><div class="lbl">✕ Rifiutate</div></div>
+    <div class="stat-card"><div class="num">${totalGuests}</div><div class="lbl">Ospiti totali</div></div>
+  `;
+
+  const filtered = filteredBookings();
+
+  document.getElementById('count-meta').textContent = `${filtered.length} risultati`;
+  if (viewMode === 'calendar') renderCalendar(filtered);
+
+  const body = document.getElementById('bookings-body');
+  body.innerHTML = '';
+  if (filtered.length === 0) {
+    body.innerHTML = '<tr><td colspan="9" class="empty">Nessuna prenotazione trovata</td></tr>';
+    return;
+  }
+
+  for (const b of filtered) {
+    const apt = APARTMENTS.find(a => a.id === b.apartment_id);
+    const conflicts = checkConflicts(b);
+    const hasConflict = conflicts.length > 0 && b.status !== 'rejected';
+    const tr = document.createElement('tr');
+    if (b.status === 'pending') tr.className = 'pending-row';
+
+    const segLabel = b.segment ? `<span style="font-size:9px;background:var(--external-bg);color:var(--external);padding:1px 5px;border-radius:6px;margin-left:4px;">⇄ ${b.segment}</span>` : '';
+    const confictWarning = hasConflict ? `<div class="conflict-warning">⚠ Conflitto con ${conflicts.map(c=>c.name).join(', ')}</div>` : '';
+
+    tr.innerHTML = `
+      <td><strong>${b.name}</strong>${segLabel}${b.notes ? `<div style="font-size:11px;color:var(--slate);margin-top:2px;">${b.notes}</div>` : ''}${confictWarning}</td>
+      <td>${fmt(b.checkin)} → ${fmt(b.checkout)}<div style="font-size:10px;color:var(--slate);">${getDateRange(b.checkin,b.checkout).length} notti</div></td>
+      <td><strong>${b.pax}</strong></td>
+      <td>${apt ? `${apt.name}<div style="font-size:10px;color:var(--slate);">${apt.floor} · ${apt.capacity}p${apt.external?' [esterno]':''}</div>` : '—'}</td>
+      <td>${formatMoney(b.deposit_amount)}</td>
+      <td>${formatMoney(b.balance_due_at_checkin)}</td>
+      <td><span class="source-badge ${b.source}">${sourceLabel(b.source)}</span></td>
+      <td><span class="pill ${b.status}">${b.status}</span></td>
+      <td class="actions-cell">
+        ${b.status === 'pending' ? `
+          <button class="btn-mini btn-confirm" onclick="approveBooking('${b.id}')">✓ Approva</button>
+          <button class="btn-mini btn-reject" onclick="rejectBooking('${b.id}')">✕ Rifiuta</button>
+        ` : ''}
+        <button class="btn-mini btn-edit" onclick="openEdit('${b.id}')">✎</button>
+        <button class="btn-mini btn-delete" onclick="deleteBooking('${b.id}')" title="Elimina">🗑</button>
+      </td>
+    `;
+    body.appendChild(tr);
+  }
+}
+
+async function approveBooking(id) {
+  const b = BOOKINGS.find(x => x.id === id);
+  if (!b) return;
+  const conflicts = checkConflicts(b);
+  if (conflicts.length > 0) {
+    if (!confirm(`⚠ Conflitto con ${conflicts.map(c=>c.name).join(', ')}.\nApprovare comunque?`)) return;
+  }
+  // Se è uno split (group_id), approva entrambi i segmenti
+  const ids = b.group_id ? BOOKINGS.filter(x => x.group_id === b.group_id).map(x=>x.id) : [id];
+  showLoading(true);
+  try {
+    await AUTH.fetchJson('/.netlify/functions/residence-api', {
+      app: AUTH_APP,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'approve', id }),
+    });
+    showToast(`Approvato${ids.length>1?' (split: '+ids.length+' segmenti)':''}`, 'success');
+    await loadAll(); render();
+  } catch (e) { showToast('Errore: ' + e.message, 'error'); } finally { showLoading(false); }
+}
+
+async function rejectBooking(id) {
+  const b = BOOKINGS.find(x => x.id === id);
+  if (!b) return;
+  const reason = prompt(`Motivo del rifiuto per "${b.name}" (opzionale):`);
+  if (reason === null) return;
+  showLoading(true);
+  try {
+    await AUTH.fetchJson('/.netlify/functions/residence-api', {
+      app: AUTH_APP,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'reject', id, reason }),
+    });
+    showToast('Rifiutata', 'success');
+    await loadAll(); render();
+  } catch (e) { showToast('Errore: ' + e.message, 'error'); } finally { showLoading(false); }
+}
+
+async function deleteBooking(id) {
+  const b = BOOKINGS.find(x => x.id === id);
+  if (!b) return;
+  if (!confirm(`Eliminare definitivamente "${b.name}"?`)) return;
+  const ids = b.group_id ? BOOKINGS.filter(x => x.group_id === b.group_id).map(x=>x.id) : [id];
+  showLoading(true);
+  try {
+    await AUTH.fetchJson('/.netlify/functions/residence-api', {
+      app: AUTH_APP,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', ids }),
+    });
+    showToast('Eliminata', 'success');
+    await loadAll(); render();
+  } catch (e) { showToast('Errore: ' + e.message, 'error'); } finally { showLoading(false); }
+}
+
+async function deleteBookingFromModal() {
+  if (!editingBookingId) return;
+  const id = editingBookingId;
+  closeModal();
+  await deleteBooking(id);
+}
+
+function openEdit(id) {
+  const b = BOOKINGS.find(x => x.id === id);
+  if (!b) return;
+  editingBookingId = id;
+  document.getElementById('modal-title').textContent = 'Modifica prenotazione';
+  document.getElementById('modal-delete-btn').style.display = 'inline-flex';
+  document.getElementById('m-name').value = b.name;
+  document.getElementById('m-checkin').value = b.checkin;
+  document.getElementById('m-checkout').value = b.checkout;
+  document.getElementById('m-pax').value = b.pax;
+  document.getElementById('m-status').value = b.status;
+  document.getElementById('m-deposit').value = b.deposit_amount ?? '';
+  document.getElementById('m-balance').value = b.balance_due_at_checkin ?? '';
+  document.getElementById('m-notes').value = b.notes || '';
+  const sel = document.getElementById('m-apt');
+  sel.innerHTML = '';
+  APARTMENTS.forEach(a => {
+    const o = document.createElement('option');
+    o.value = a.id;
+    o.textContent = `${a.name} (${a.floor}, ${a.capacity}p)${a.external?' [esterno]':''}${a.blocked?' [bloccato]':''}`;
+    sel.appendChild(o);
+  });
+  sel.value = b.apartment_id;
+
+  // Conflict check
+  const conflicts = checkConflicts(b);
+  const alerts = document.getElementById('modal-alerts');
+  alerts.innerHTML = conflicts.length > 0
+    ? `<div class="alert alert-warning"><strong>⚠ Conflitto rilevato</strong>Sovrapposizione con: ${conflicts.map(c=>c.name).join(', ')}</div>`
+    : '';
+
+  document.getElementById('edit-modal').classList.add('active');
+}
+
+function openNewBooking() {
+  editingBookingId = null;
+  document.getElementById('modal-title').textContent = 'Nuova prenotazione';
+  document.getElementById('modal-delete-btn').style.display = 'none';
+  document.getElementById('m-name').value = '';
+  const start = new Date(currentYear, currentMonth, 1);
+  const end = new Date(currentYear, currentMonth, 8);
+  document.getElementById('m-checkin').value = dateOnly(start);
+  document.getElementById('m-checkout').value = dateOnly(end);
+  document.getElementById('m-pax').value = 2;
+  document.getElementById('m-status').value = 'pending';
+  document.getElementById('m-deposit').value = '';
+  document.getElementById('m-balance').value = '';
+  document.getElementById('m-notes').value = '';
+  const sel = document.getElementById('m-apt');
+  sel.innerHTML = '';
+  APARTMENTS.forEach(a => {
+    const o = document.createElement('option');
+    o.value = a.id;
+    o.textContent = `${a.name} (${a.floor}, ${a.capacity}p)${a.external?' [esterno]':''}${a.blocked?' [bloccato]':''}`;
+    sel.appendChild(o);
+  });
+  if (APARTMENTS[0]) sel.value = APARTMENTS[0].id;
+  document.getElementById('modal-alerts').innerHTML = '<div class="alert alert-info"><strong>Nuova prenotazione admin</strong>Questa prenotazione viene creata direttamente dal backoffice.</div>';
+  document.getElementById('edit-modal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('edit-modal').classList.remove('active');
+  editingBookingId = null;
+}
+
+async function saveEdit() {
+  const depositAmount = parseMoneyInput(document.getElementById('m-deposit').value);
+  const balanceDueAtCheckin = parseMoneyInput(document.getElementById('m-balance').value);
+  const data = {
+    name: document.getElementById('m-name').value.trim(),
+    checkin: document.getElementById('m-checkin').value,
+    checkout: document.getElementById('m-checkout').value,
+    pax: parseInt(document.getElementById('m-pax').value),
+    status: document.getElementById('m-status').value,
+    apartment_id: document.getElementById('m-apt').value,
+    notes: buildNotesWithPayment(document.getElementById('m-notes').value, depositAmount, balanceDueAtCheckin),
+    deposit_amount: depositAmount,
+    balance_due_at_checkin: balanceDueAtCheckin,
+  };
+  if (data.status === 'confirmed') {
+    data.approved_at = new Date().toISOString();
+    data.approved_by = ADMIN_NAME;
+  }
+  showLoading(true);
+  try {
+    if (editingBookingId) {
+      await AUTH.fetchJson('/.netlify/functions/residence-api', {
+        app: AUTH_APP,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update',
+          id: editingBookingId,
+          booking: data,
+        }),
+      });
+    } else {
+      await AUTH.fetchJson('/.netlify/functions/residence-api', {
+        app: AUTH_APP,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create',
+          booking: { ...data, source: 'system' },
+        }),
+      });
+    }
+    showToast(editingBookingId ? 'Salvato' : 'Creata', 'success');
+    closeModal();
+    await loadAll(); render();
+  } catch (e) { showToast('Errore: ' + e.message, 'error'); } finally { showLoading(false); }
+}
+
+function exportCSV() {
+  const headers = ['Cliente','Segmento','Check-in','Check-out','Notti','Pax','Appartamento','Capacità','Caparra','Saldo all arrivo','Fonte','Stato','Note','Group ID'];
+  const rows = BOOKINGS.map(b => {
+    const apt = APARTMENTS.find(a => a.id === b.apartment_id);
+    return [
+      b.name, b.segment || '', b.checkin, b.checkout,
+      getDateRange(b.checkin, b.checkout).length,
+      b.pax, apt?apt.name:'', apt?apt.capacity:'',
+      b.deposit_amount ?? '', b.balance_due_at_checkin ?? '',
+      b.source, b.status, (b.notes||'').replace(/"/g,'""'), b.group_id||''
+    ].map(v => `"${v}"`).join(',');
+  });
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `prenotazioni-residence-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV esportato', 'success');
+}
+
+checkAuth();
+</script>
+
+</body>
+</html>

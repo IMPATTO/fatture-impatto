@@ -1,0 +1,60 @@
+{
+  "totalRows": 13,
+  "migratedRows": [
+    {
+      "id": "7811a277-71db-4c9e-acce-3f44084daed0",
+      "file_name": "2f10b42cb192c41d98fd33f31f7cf54d.pdf",
+      "file_url": "contabilita-bollette/portal/2026-04-23/portal-1776926478447-yatcgs3h_0_2f10b42cb192c41d98fd33f31f7cf54d.pdf",
+      "attachments": 1
+    },
+    {
+      "id": "64e98ca0-5b66-4c98-a9f1-4ed55a03318e",
+      "file_name": "00338000409_41406116_000000000000000_20251118093040 (1).pdf",
+      "file_url": "contabilita-bollette/portal/2026-04-23/portal-1776928978924-s3xwfh2o_0_00338000409_41406116_000000000000000_20251118093040__1_.pdf",
+      "attachments": 1
+    },
+    {
+      "id": "0e6e9057-73cb-4cae-bdf4-f8f1605da8eb",
+      "file_name": "test-upload.XXXXXX.png",
+      "file_url": "customer-accounting-uploads/2026-04-27/mario_example.com_0_test-upload.XXXXXX.png",
+      "attachments": 1
+    },
+    {
+      "id": "5012e8e3-010a-4623-804a-45bf91395ce7",
+      "file_name": "test-upload.XXXXXX.png",
+      "file_url": "customer-accounting-uploads/2026-04-27/mario_example.com_0_test-upload.XXXXXX.png",
+      "attachments": 1
+    },
+    {
+      "id": "1a8b9db6-ef52-4243-b065-b4796cd459c1",
+      "file_name": "test-upload.XXXXXX.png",
+      "file_url": "customer-accounting-uploads/2026-04-27/customer-1777300925293_0_test-upload.XXXXXX.png",
+      "attachments": 1
+    },
+    {
+      "id": "9de0210b-e2a8-452d-b1fe-1e84430757cb",
+      "file_name": "test-upload.XXXXXX.png",
+      "file_url": "customer-accounting-uploads/2026-04-27/customer-1777302663516_0_test-upload.XXXXXX.png",
+      "attachments": 1
+    },
+    {
+      "id": "0a360296-90b0-4ac9-ad0a-80971162272e",
+      "file_name": "test-upload.XXXXXX.png",
+      "file_url": "customer-accounting-uploads/2026-04-27/mario_example.com_0_test-upload.XXXXXX.png",
+      "attachments": 1
+    },
+    {
+      "id": "61f9a538-8361-4e65-b2d0-e32565c15048",
+      "file_name": "IMG_4049.jpeg",
+      "file_url": "customer-accounting-uploads/2026-04-27/laferreira.santos_hotmail.com_0_IMG_4049.jpeg",
+      "attachments": 1
+    },
+    {
+      "id": "cef6b8fa-9a7a-44ff-b6be-6b691f081039",
+      "file_name": "Doc. Rinnovato Gerson Arias Melo.pdf",
+      "file_url": "customer-accounting-uploads/2026-04-27/girson18melo_gmail.com_0_Doc._Rinnovato_Gerson_Arias_Melo.pdf",
+      "attachments": 1
+    }
+  ],
+  "uploadedFiles": 7
+}

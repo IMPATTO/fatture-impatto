@@ -1,4 +1,8 @@
 const { createClient } = require('@supabase/supabase-js');
+const {
+  getSupabaseRuntimeConfig,
+  isInternalAllowedEmail,
+} = require('./_lib/shared-auth');
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -24,9 +28,10 @@ exports.handler = async (event) => {
     return respond(405, { error: 'Method not allowed' });
   }
 
-  const supabaseUrl = process.env.SUPABASE_URL || 'https://tysxeikqbgebpfyblgeb.supabase.co';
+  const runtimeConfig = getSupabaseRuntimeConfig();
+  const supabaseUrl = runtimeConfig.url;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
-  const anonKey = process.env.SUPABASE_ANON_KEY || 'sb_publishable_oMSD-SJgBZAA3Hql6vbxHg_0l2t9S5F';
+  const anonKey = runtimeConfig.anonKey;
 
   if (!supabaseUrl || !serviceRoleKey) {
     return respond(500, { error: 'Configurazione Supabase mancante' });
@@ -46,18 +51,8 @@ exports.handler = async (event) => {
     return respond(401, { error: 'Sessione non valida' });
   }
 
-  const allowedEmails = new Set([
-    'fatturazione@illupoaffitta.com',
-    'contabilita@illupoaffitta.com',
-    'info@marcovenzon.com',
-    'veronica.dieta@gmail.com',
-    'jessica.appartamenticaldari@gmail.com',
-    'cerulliserena@gmail.com',
-    'ramirezgonzalezv44@gmail.com',
-  ]);
-
   const email = String(authData.user.email || '').trim().toLowerCase();
-  if (!allowedEmails.has(email)) {
+  if (!isInternalAllowedEmail(email)) {
     return respond(403, { error: 'Accesso non autorizzato' });
   }
 

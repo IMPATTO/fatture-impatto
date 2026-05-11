@@ -1,0 +1,338 @@
+[
+  {
+    "apartment_id": "53f358dd-408c-465c-adc7-05fd040435bf",
+    "apartment_name": "Cattolica - Via Amalfi 5 con Balcone",
+    "old_public_checkin_key": "apt-05",
+    "new_public_checkin_key": "apt-7ogvt_jomzu"
+  },
+  {
+    "apartment_id": "73c3f928-d57e-4457-91de-108500ea4bc9",
+    "apartment_name": "Cattolica - Via Amalfi 5 con Cortile",
+    "old_public_checkin_key": "apt-04",
+    "new_public_checkin_key": "apt-tpthhb4b8h0"
+  },
+  {
+    "apartment_id": "efdea905-f375-464b-bbc4-7aaf38bea078",
+    "apartment_name": "Cattolica - Via Bovio 25",
+    "old_public_checkin_key": "apt-11",
+    "new_public_checkin_key": "apt-ab5jrsymne8"
+  },
+  {
+    "apartment_id": "23d2c7f4-6367-4a5a-a1e9-25b7e567576f",
+    "apartment_name": "Cattolica - Via Bovio 3",
+    "old_public_checkin_key": "apt-10",
+    "new_public_checkin_key": "apt-8mr5nzbz9oq"
+  },
+  {
+    "apartment_id": "e8d0442b-09ea-4f5b-b408-1cbd79e6454c",
+    "apartment_name": "Cattolica - Via Cesare Battisti 51",
+    "old_public_checkin_key": "apt-41",
+    "new_public_checkin_key": "apt-cq0lbainpia"
+  },
+  {
+    "apartment_id": "e223c334-6223-435c-a5a7-668d8b52717d",
+    "apartment_name": "Cattolica - Via Cremona 2/c con Balcone Davanti",
+    "old_public_checkin_key": "apt-03",
+    "new_public_checkin_key": "apt-bm0q1pqytaw"
+  },
+  {
+    "apartment_id": "a4c433ba-3c5f-404a-a079-416e6b8116c0",
+    "apartment_name": "Cattolica - Via Cremona 2/c con Balcone Interno",
+    "old_public_checkin_key": "apt-02",
+    "new_public_checkin_key": "apt-dgt4hpakkso"
+  },
+  {
+    "apartment_id": "c3d80ae8-2c47-44d0-999b-7030a616059d",
+    "apartment_name": "Cattolica - Via Donizetti 13/a",
+    "old_public_checkin_key": "apt-12",
+    "new_public_checkin_key": "apt-0dnwdt0i2no"
+  },
+  {
+    "apartment_id": "1b0c48b5-8102-4e6a-bdf5-1ae7fd1fb247",
+    "apartment_name": "Cattolica - Via Fiume 37",
+    "old_public_checkin_key": "apt-01",
+    "new_public_checkin_key": "apt-qutyhvgzzqu"
+  },
+  {
+    "apartment_id": "16f21b34-873a-4e2d-9fef-03cd64a89970",
+    "apartment_name": "Cattolica - Via Giuseppe Mazzini 169",
+    "old_public_checkin_key": "via-giuseppe-mazzini-169-cattolica",
+    "new_public_checkin_key": "apt-33ooux_xneu"
+  },
+  {
+    "apartment_id": "909f0eb5-8de9-455e-9db5-278943af5ed2",
+    "apartment_name": "Cattolica - Via Rasi Spinelli 2",
+    "old_public_checkin_key": "apt-13",
+    "new_public_checkin_key": "apt-vakzugrq-cw"
+  },
+  {
+    "apartment_id": "d41ec154-b8f6-49e6-8d46-eb262a007b01",
+    "apartment_name": "Cattolica - Via Salvator Allende 144",
+    "old_public_checkin_key": "apt-14",
+    "new_public_checkin_key": "apt-8ivynpcjveg"
+  },
+  {
+    "apartment_id": "fe7eac22-4443-49bb-90e1-68bbf686cf70",
+    "apartment_name": "Cattolica - Via Venezia 7 Cortile Interno",
+    "old_public_checkin_key": "apt-07",
+    "new_public_checkin_key": "apt-_rzknvgqt7a"
+  },
+  {
+    "apartment_id": "af7d5d4a-89b5-4332-94fb-195857a97921",
+    "apartment_name": "Cattolica - Via Venezia 7 Fronte Strada",
+    "old_public_checkin_key": "apt-06",
+    "new_public_checkin_key": "apt-2a259hqtsfu"
+  },
+  {
+    "apartment_id": "0e2be762-c80b-457e-81a1-78c47b9ba6d4",
+    "apartment_name": "Cattolica - Via Venezia 9 con cucina",
+    "old_public_checkin_key": "apt-09",
+    "new_public_checkin_key": "apt-k2i9bw4xkkk"
+  },
+  {
+    "apartment_id": "243f0d19-05ce-442c-938f-38b80a24e0c1",
+    "apartment_name": "Cattolica - Via Venezia 9 no cucina",
+    "old_public_checkin_key": "apt-08",
+    "new_public_checkin_key": "apt-pau6shcpqxk"
+  },
+  {
+    "apartment_id": "3e454f59-fee1-45df-aad1-8659d0a65674",
+    "apartment_name": "Cattolica - Via Verdi 29",
+    "old_public_checkin_key": "apt-39",
+    "new_public_checkin_key": "apt-5h71o_mn31q"
+  },
+  {
+    "apartment_id": "94949e99-0717-4b75-8f48-0d795b7572e6",
+    "apartment_name": "Cattolica - Via Zara 24",
+    "old_public_checkin_key": "apt-15",
+    "new_public_checkin_key": "apt-h3hqttjk5jm"
+  },
+  {
+    "apartment_id": "b1d4b606-98bc-47df-8bcf-179cc53ba647",
+    "apartment_name": "Fanano - Via Sotto Farneto snc",
+    "old_public_checkin_key": "apt-34",
+    "new_public_checkin_key": "apt-wmwo9uefrzc"
+  },
+  {
+    "apartment_id": "e5c5144b-8772-4bd9-b41c-e2399d81a439",
+    "apartment_name": "Gabicce Mare - Via Macchiavelli snc",
+    "old_public_checkin_key": "apt-40",
+    "new_public_checkin_key": "apt-vgtedgsdiie"
+  },
+  {
+    "apartment_id": "77703eec-c49a-4fd6-8372-8e33c8d5de0b",
+    "apartment_name": "Miramare - Via Lugano 41",
+    "old_public_checkin_key": "apt-25",
+    "new_public_checkin_key": "apt-ee-wytjb0kq"
+  },
+  {
+    "apartment_id": "896a4f4b-a821-4e44-b220-6fe32d34facc",
+    "apartment_name": "Misano Adriatico - Via Litoranea Sud 40 con Balcone",
+    "old_public_checkin_key": "apt-33",
+    "new_public_checkin_key": "apt-nyeukdizhn4"
+  },
+  {
+    "apartment_id": "263b0313-26d9-46f5-8932-3b5fe873a5e1",
+    "apartment_name": "Misano Adriatico - Via Litoranea Sud 40 con Terrazza Panoramica",
+    "old_public_checkin_key": "apt-32",
+    "new_public_checkin_key": "apt-qc6czq4std8"
+  },
+  {
+    "apartment_id": "ab2e4cb0-2679-46fb-8ef9-edd71ab6ec7a",
+    "apartment_name": "Montefeltro Bilocale con Cucina",
+    "old_public_checkin_key": "montefeltro-bilocale-cucina",
+    "new_public_checkin_key": "apt-6gg6guece0o"
+  },
+  {
+    "apartment_id": "73bad44f-f73c-4807-83a8-9a19b34c14f0",
+    "apartment_name": "Montefeltro Monolocale con Cucina",
+    "old_public_checkin_key": "montefeltro-monolocale-cucina",
+    "new_public_checkin_key": "apt-5yhbtkt0zsq"
+  },
+  {
+    "apartment_id": "75db6fc0-6996-4a88-85c7-0ac44a9028dd",
+    "apartment_name": "Montefeltro Stanza",
+    "old_public_checkin_key": "montefeltro-stanza",
+    "new_public_checkin_key": "apt-ygl00o15wls"
+  },
+  {
+    "apartment_id": "ffb8c985-3343-4f51-b0e2-4f3bb0b83c0f",
+    "apartment_name": "Montellabbate - Via Cesare Pavese",
+    "old_public_checkin_key": "apt-36",
+    "new_public_checkin_key": "apt-tl_eer42ci0"
+  },
+  {
+    "apartment_id": "27663c90-8936-4556-b05f-dddc9ae9e1e0",
+    "apartment_name": "RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro",
+    "old_public_checkin_key": "montefeltro",
+    "new_public_checkin_key": "apt-e2bfxf_hnqq"
+  },
+  {
+    "apartment_id": "ca7641f6-82a4-40f3-85e6-149c39d46a03",
+    "apartment_name": "RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare",
+    "old_public_checkin_key": "residence-2",
+    "new_public_checkin_key": "apt-cz3cegudh-0"
+  },
+  {
+    "apartment_id": "a07093f6-de07-435a-a065-85043243bd29",
+    "apartment_name": "Riccione - Via Catullo 22",
+    "old_public_checkin_key": "apt-19",
+    "new_public_checkin_key": "apt-fhmmn14jnh8"
+  },
+  {
+    "apartment_id": "b85140d5-cc13-4c0f-a88e-68ac2ba96af0",
+    "apartment_name": "Riccione - Via Panoramica",
+    "old_public_checkin_key": "apt-16",
+    "new_public_checkin_key": "apt-ntumhbgbv5s"
+  },
+  {
+    "apartment_id": "a648ead6-88ef-4a1c-b0fd-1249e8c78f9c",
+    "apartment_name": "Riccione - Via Panzini 12/b",
+    "old_public_checkin_key": "apt-17",
+    "new_public_checkin_key": "apt-01dqj7iamo0"
+  },
+  {
+    "apartment_id": "49cb83a0-e540-4d75-97de-28fa2378fcd9",
+    "apartment_name": "Riccione - Viale Dante 274",
+    "old_public_checkin_key": "apt-18",
+    "new_public_checkin_key": "apt-1fxu4k1mpik"
+  },
+  {
+    "apartment_id": "467afd2c-46a1-4ac8-a0c7-1a8c2400e861",
+    "apartment_name": "Riccione - Viale Mincio 3",
+    "old_public_checkin_key": "apt-21",
+    "new_public_checkin_key": "apt-6pex9op-8ws"
+  },
+  {
+    "apartment_id": "cb161d5a-1846-4ee9-bab3-d70fc9251dfd",
+    "apartment_name": "Riccione - Viale Sesia 17",
+    "old_public_checkin_key": "apt-20",
+    "new_public_checkin_key": "apt-9pu0tuajjx8"
+  },
+  {
+    "apartment_id": "d73728a0-0987-4b62-95b0-b84338fcfbcd",
+    "apartment_name": "Rimini - Piazzetta San Martino 9",
+    "old_public_checkin_key": "apt-29",
+    "new_public_checkin_key": "apt-eeo1zuysngq"
+  },
+  {
+    "apartment_id": "3adf36d3-60d1-42ed-b40b-4d31b915eef7",
+    "apartment_name": "Rimini - Via Dario Campana 30",
+    "old_public_checkin_key": "apt-28",
+    "new_public_checkin_key": "apt-xxuhvjszj9i"
+  },
+  {
+    "apartment_id": "58365c4e-8c1f-4755-aac1-b0ab27cf2698",
+    "apartment_name": "Rimini - Via Lagomaggio Monolocale",
+    "old_public_checkin_key": "apt-42",
+    "new_public_checkin_key": "apt-v0qgvp4hjna"
+  },
+  {
+    "apartment_id": "cab37239-3e4f-4ea7-830e-8ab1240510a2",
+    "apartment_name": "Rimini - Via Lagomaggio Trilocale",
+    "old_public_checkin_key": "apt-43",
+    "new_public_checkin_key": "apt-wiunkvp4c2s"
+  },
+  {
+    "apartment_id": "e786e032-1b0b-42a6-a87f-7563260e3cec",
+    "apartment_name": "Rimini - Via Sinistra del Porto 64",
+    "old_public_checkin_key": "apt-30",
+    "new_public_checkin_key": "apt-c96aabv6szw"
+  },
+  {
+    "apartment_id": "2a9aac3b-2d7d-484c-aa89-1fde2a721407",
+    "apartment_name": "Rimini - Viale Ramusio 2",
+    "old_public_checkin_key": "apt-26",
+    "new_public_checkin_key": "apt-ziz0gywsc_q"
+  },
+  {
+    "apartment_id": "843722f3-f76a-43a1-aab7-7d961aa6be89",
+    "apartment_name": "Rimini - Viale Zuara",
+    "old_public_checkin_key": "apt-27",
+    "new_public_checkin_key": "apt-2sysb3jdzwe"
+  },
+  {
+    "apartment_id": "4ad996a4-ee53-49e4-bc63-fe3c874378db",
+    "apartment_name": "Rivazzurra - Viale Bergamo 23",
+    "old_public_checkin_key": "apt-31",
+    "new_public_checkin_key": "apt-m5apvj7osom"
+  },
+  {
+    "apartment_id": "f7bd99b6-f596-4086-93d1-bf1f21af6f9a",
+    "apartment_name": "San Giovanni In Marignano - Via Enrico Fermi 8",
+    "old_public_checkin_key": "apt-35",
+    "new_public_checkin_key": "apt-u26plwtxrak"
+  },
+  {
+    "apartment_id": "c3fa80bc-a428-43a4-b8b8-277151286df9",
+    "apartment_name": "Test Appartamento",
+    "old_public_checkin_key": "test-appartamento",
+    "new_public_checkin_key": "apt-hnxuynuxrdc"
+  },
+  {
+    "apartment_id": "34a29327-4313-4761-ac31-49224b88e3b2",
+    "apartment_name": "Valtournenche - Frazione Chaloz di Sotto SNC - Condominio Grolla A",
+    "old_public_checkin_key": "apt-38",
+    "new_public_checkin_key": "apt-cc5qgsby-fo"
+  },
+  {
+    "apartment_id": "a9ad3351-4e32-4555-b07b-31c4420df230",
+    "apartment_name": "Valtournenche - Frazione Evette snc - Condominio Lisa",
+    "old_public_checkin_key": "apt-37",
+    "new_public_checkin_key": "apt-rr9gb_v2uwy"
+  },
+  {
+    "apartment_id": "75fc773d-eacb-4a04-b965-3daff9c89c38",
+    "apartment_name": "Verona - Vicolo Pozzo 2 - Gaviota srl",
+    "old_public_checkin_key": "apt-44",
+    "new_public_checkin_key": "apt-ifwc7i033zo"
+  },
+  {
+    "apartment_id": "a81c4ad1-3a10-442f-bfbf-c82a581232a3",
+    "apartment_name": "Villa Margherita Bilocale Piano Terra con Cortile",
+    "old_public_checkin_key": "villa-margherita-bilocale-piano-terra-cortile",
+    "new_public_checkin_key": "apt-0e5vukrnb7k"
+  },
+  {
+    "apartment_id": "c49adffc-f302-4410-92f2-f2df5d695ac8",
+    "apartment_name": "Villa Margherita Bilocale Piccolo",
+    "old_public_checkin_key": "villa-margherita-bilocale-piccolo",
+    "new_public_checkin_key": "apt-s4sjeou40eo"
+  },
+  {
+    "apartment_id": "cd29f985-dc9b-49c4-b6c3-51f499eedea8",
+    "apartment_name": "Villa Margherita Bilocale Primo Piano",
+    "old_public_checkin_key": "villa-margherita-bilocale-primo-piano",
+    "new_public_checkin_key": "apt-t1g073orbku"
+  },
+  {
+    "apartment_id": "00e6ee98-bac0-4e11-84b3-a12c23b459ee",
+    "apartment_name": "Villa Margherita Monolocale",
+    "old_public_checkin_key": "villa-margherita-monolocale",
+    "new_public_checkin_key": "apt-t0pz2-6mjos"
+  },
+  {
+    "apartment_id": "fa528704-8d6d-4a4c-9e52-8e13b5177f0c",
+    "apartment_name": "Villa Margherita Trilocale",
+    "old_public_checkin_key": "villa-margherita-trilocale",
+    "new_public_checkin_key": "apt-shgpwjewp9y"
+  },
+  {
+    "apartment_id": "524a901c-ab5b-4c71-afd2-29a2d9188c05",
+    "apartment_name": "Viserba - Via Giuliano Dati 33 con Giardino",
+    "old_public_checkin_key": "apt-23",
+    "new_public_checkin_key": "apt-jdnboyhiexy"
+  },
+  {
+    "apartment_id": "aea4fecf-b860-4af2-8e13-394f9e7fed9c",
+    "apartment_name": "Viserba - Via Giuliano Dati 35 con Balcone",
+    "old_public_checkin_key": "apt-24",
+    "new_public_checkin_key": "apt-1v5uhmzs-3k"
+  },
+  {
+    "apartment_id": "464b0deb-273d-4cc6-b330-19c84229c92e",
+    "apartment_name": "Viserbella - Via Massimiliano Grazia 15",
+    "old_public_checkin_key": "apt-22",
+    "new_public_checkin_key": "apt-0twfoyhk_qm"
+  }
+]

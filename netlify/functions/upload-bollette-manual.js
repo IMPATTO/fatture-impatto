@@ -1,5 +1,6 @@
 const Busboy = require('busboy');
 const { ingestBollette, getSupabaseService } = require('./_bollette-ingest');
+const { isInternalAllowedEmail } = require('./_lib/shared-auth');
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -22,7 +23,7 @@ exports.handler = async (event) => {
     if (authError) throw authError;
     const user = authData?.user;
     const email = String(user?.email || '').trim().toLowerCase();
-    if (email !== 'contabilita@illupoaffitta.com') {
+    if (!isInternalAllowedEmail(email)) {
       return { statusCode: 403, headers: CORS, body: JSON.stringify({ error: 'Utente non autorizzato' }) };
     }
 

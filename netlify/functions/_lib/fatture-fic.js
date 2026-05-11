@@ -1,7 +1,12 @@
 const { createClient } = require('@supabase/supabase-js');
+const {
+  INTERNAL_ALLOWED_EMAILS,
+  getSupabaseRuntimeConfig,
+  isInternalAllowedEmail,
+} = require('./shared-auth');
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_URL = getSupabaseRuntimeConfig().url;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
 const FIC_TOKEN = process.env.FATTURE_CLOUD_TOKEN;
 const FIC_COMPANY_ID = process.env.FATTURE_CLOUD_COMPANY_ID;
 const FIC_BASE = 'https://api-v2.fattureincloud.it';
@@ -23,10 +28,7 @@ const SEZIONALE_LABELS = {
   D: 'Diretti'
 };
 const DEFAULT_SEZIONALE = 'D';
-const BACKOFFICE_EMAILS = [
-  'fatturazione@illupoaffitta.com',
-  'contabilita@illupoaffitta.com'
-];
+const BACKOFFICE_EMAILS = Array.from(INTERNAL_ALLOWED_EMAILS);
 
 function jsonResponse(statusCode, body) {
   return {
@@ -56,7 +58,7 @@ async function authenticateRequest(event, supabase) {
   }
 
   const userEmail = normalizeString(user.email).toLowerCase();
-  if (!BACKOFFICE_EMAILS.includes(userEmail)) {
+  if (!isInternalAllowedEmail(userEmail)) {
     return { errorResponse: jsonResponse(403, { error: 'Forbidden' }) };
   }
 

@@ -469,7 +469,15 @@ const ACTIVE_STATI = ['CHECK_IN_COMPLETATO','DA_VERIFICARE','APPROVATA'];
 const ARCHIVE_STATI = ['SCARTATA','BOZZA_CREATA','CREDENZIALI_INVIATE'];
 const CONTABILITA_STATI = ['DA_APPROVARE', 'DA_CORREGGERE', 'APPROVATO', 'SCARTATO'];
 const CONTABILITA_DOC_TYPES = ['bolletta', 'fattura_fornitore', 'ricevuta', 'contratto', 'altro'];
-const ACCOUNTING_ALLOWED_EMAILS = ['contabilita@illupoaffitta.com'];
+const ACCOUNTING_ALLOWED_EMAILS = [
+  'fatturazione@illupoaffitta.com',
+  'contabilita@illupoaffitta.com',
+  'info@marcovenzon.com',
+  'veronica.dieta@gmail.com',
+  'jessica.appartamenticaldari@gmail.com',
+  'cerulliserena@gmail.com',
+  'ramirezgonzalezv44@gmail.com',
+];
 const ACCOUNTING_APPROVAL_STATI = ['da_revisionare', 'approvato', 'corretto', 'scartato'];
 const ACCOUNTING_PAYMENT_METHODS = ['contanti', 'bonifico', 'carta', 'pos', 'addebito', 'altro'];
 const ACCOUNTING_FISCAL_STATI = ['da_fatturare', 'fatturato', 'non_soggetto', 'annullato'];
@@ -2984,7 +2992,7 @@ function renderLogin() {
     }
     if (!isAllowedAccountingEmail(data?.user?.email)) {
       await sb.auth.signOut();
-      err.textContent='Questo pannello accetta solo le credenziali dedicate della contabilità.';
+      err.textContent='Questo pannello accetta solo account autorizzati per la contabilità.';
       err.style.display='block';
       btn.disabled=false;
       btn.textContent='Entra →';
@@ -2997,7 +3005,7 @@ function renderLogin() {
 
 function renderDashboard() {
   const st=stats(), pct=(S.timeLeft/TIMEOUT_MS)*100;
-  const displayEmail = 'contabilita@illupoaffitta.com';
+  const displayEmail = S.session?.user?.email || 'contabilita@illupoaffitta.com';
   const barClr = pct<20?'#dc2626':pct<50?'#d97706':'#2563eb';
   const adminApartmentOptions = S.showInactiveApartments
     ? S.apartments
@@ -3967,7 +3975,7 @@ sb.auth.onAuthStateChange(async (_,session)=>{
     renderLogin();
     const err = document.getElementById('lerr');
     if (err) {
-      err.textContent = 'Questo pannello accetta solo le credenziali dedicate della contabilità.';
+      err.textContent = 'Questo pannello accetta solo account autorizzati per la contabilità.';
       err.style.display = 'block';
     }
     return;

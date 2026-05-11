@@ -14,44 +14,10 @@ const INTERNAL_ALLOWED_EMAILS = new Set([
   'ramirezgonzalezv44@gmail.com',
 ]);
 
-function isInternalAllowedEmail(email) {
-  return INTERNAL_ALLOWED_EMAILS.has(String(email || '').trim().toLowerCase());
-}
-
-function normalizeSupabaseUrl(value, fallback = DEFAULT_SUPABASE_URL) {
-  const rawValue = String(value || '').trim();
-  const fallbackValue = String(fallback || DEFAULT_SUPABASE_URL).trim() || DEFAULT_SUPABASE_URL;
-
-  if (!rawValue) {
-    return fallbackValue;
-  }
-
-  const sanitizedValue = rawValue.replace(/^["']|["']$/g, '');
-  if (!sanitizedValue) {
-    return fallbackValue;
-  }
-
-  if (/^https?:\/\//i.test(sanitizedValue)) {
-    return sanitizedValue.replace(/\/+$/g, '');
-  }
-
-  const withoutMaskedPrefix = sanitizedValue.replace(/^[*.]+/, '');
-  if (!withoutMaskedPrefix) {
-    return fallbackValue;
-  }
-
-  const candidate = `https://${withoutMaskedPrefix.replace(/\/+$/g, '')}`;
-
-  try {
-    const parsed = new URL(candidate);
-    const hostname = String(parsed.hostname || '').toLowerCase();
-    if (!hostname.includes('supabase.co') && !hostname.includes('supabase.in')) {
-      return fallbackValue;
-    }
-    return parsed.origin;
-  } catch (_error) {
-    return fallbackValue;
-  }
+function normalizeSupabaseUrl(rawValue, fallback = DEFAULT_SUPABASE_URL) {
+  const trimmed = String(rawValue || '').trim();
+  if (/^https?:\/\/\S+$/i.test(trimmed)) return trimmed;
+  return fallback;
 }
 
 function getSupabaseRuntimeConfig() {
@@ -236,7 +202,6 @@ module.exports = {
   getSharedSessionSecret,
   getSupabaseRuntimeConfig,
   getSupabaseUserFromToken,
-  isInternalAllowedEmail,
   normalizeSupabaseUrl,
   parsePasswordList,
   signSharedSession,

@@ -1528,7 +1528,7 @@ function renderLogin() {
 }
 
 function renderDashboard() {
-  const displayEmail = 'fatturazione@illupoaffitta.com';
+  const displayEmail = S.session?.user?.email || 'fatturazione@illupoaffitta.com';
   document.getElementById('app').innerHTML = `
   <nav class="navbar">
     <div class="navbar-links">

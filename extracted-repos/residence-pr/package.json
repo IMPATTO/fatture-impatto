@@ -1,0 +1,11 @@
+{
+  "name": "residence-pr-impatto",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "netlify dev"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.102.1"
+  }
+}

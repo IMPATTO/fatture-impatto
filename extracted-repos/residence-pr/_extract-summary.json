@@ -1,0 +1,28 @@
+{
+  "generatedAt": "2026-05-10T16:41:42.369Z",
+  "sourceRepo": "/Users/impattosrl/Desktop/fatture-impatto",
+  "targetRoot": "/Users/impattosrl/Desktop/fatture-impatto/extracted-repos/residence-pr",
+  "copiedFiles": [
+    "backoffice-pr-luca.html",
+    "pr_kekko_riccione.html",
+    "pr_luca_riccione.html",
+    "residence-backoffice.html",
+    "residence-kekko.html",
+    "js/pr-luca-shared.js",
+    "js/shared-app-auth.js",
+    "js/supabase-client.js",
+    "netlify/functions/_lib/shared-auth.js",
+    "netlify/functions/approve-partner-booking.js",
+    "netlify/functions/get-calendar.js",
+    "netlify/functions/pr-luca-data.js",
+    "netlify/functions/residence-api.js",
+    "netlify/functions/shared-app-login.js",
+    "setup-supabase.sql",
+    "supabase/migrations/202605050001_create_partner_booking_requests.sql",
+    "supabase/migrations/202605060001_add_rm_booking_payment_fields.sql",
+    "supabase/migrations/202605100004_harden_residence_and_partner_access.sql"
+  ],
+  "warnings": [
+    "Copied untracked working-tree file: supabase/migrations/202605100004_harden_residence_and_partner_access.sql"
+  ]
+}

@@ -1,0 +1,137 @@
+[
+  {
+    "apartment_id": "a4c433ba-3c5f-404a-a079-416e6b8116c0",
+    "apartment_name": "Cattolica - Via Cremona 2/c con Balcone Interno",
+    "has_codice_accesso": true,
+    "has_luogo_chiavi": true,
+    "has_istruzioni_accesso": true,
+    "updated_at": "2026-04-22T19:25:14.747+00:00",
+    "action_required": "Manuale: ruotare o verificare fisicamente codici/istruzioni accesso e poi aggiornare il DB."
+  },
+  {
+    "apartment_id": "23d2c7f4-6367-4a5a-a1e9-25b7e567576f",
+    "apartment_name": "Cattolica - Via Bovio 3",
+    "has_codice_accesso": true,
+    "has_luogo_chiavi": true,
+    "has_istruzioni_accesso": true,
+    "updated_at": "2026-04-23T10:43:19.881+00:00",
+    "action_required": "Manuale: ruotare o verificare fisicamente codici/istruzioni accesso e poi aggiornare il DB."
+  },
+  {
+    "apartment_id": "94949e99-0717-4b75-8f48-0d795b7572e6",
+    "apartment_name": "Cattolica - Via Zara 24",
+    "has_codice_accesso": true,
+    "has_luogo_chiavi": true,
+    "has_istruzioni_accesso": true,
+    "updated_at": "2026-04-23T10:43:29.59+00:00",
+    "action_required": "Manuale: ruotare o verificare fisicamente codici/istruzioni accesso e poi aggiornare il DB."
+  },
+  {
+    "apartment_id": "464b0deb-273d-4cc6-b330-19c84229c92e",
+    "apartment_name": "Viserbella - Via Massimiliano Grazia 15",
+    "has_codice_accesso": true,
+    "has_luogo_chiavi": true,
+    "has_istruzioni_accesso": true,
+    "updated_at": "2026-04-23T20:37:19.64+00:00",
+    "action_required": "Manuale: ruotare o verificare fisicamente codici/istruzioni accesso e poi aggiornare il DB."
+  },
+  {
+    "apartment_id": "263b0313-26d9-46f5-8932-3b5fe873a5e1",
+    "apartment_name": "Misano Adriatico - Via Litoranea Sud 40 con Terrazza Panoramica",
+    "has_codice_accesso": true,
+    "has_luogo_chiavi": true,
+    "has_istruzioni_accesso": true,
+    "updated_at": "2026-04-23T20:15:37.981+00:00",
+    "action_required": "Manuale: ruotare o verificare fisicamente codici/istruzioni accesso e poi aggiornare il DB."
+  },
+  {
+    "apartment_id": "16f21b34-873a-4e2d-9fef-03cd64a89970",
+    "apartment_name": "Cattolica - Via Giuseppe Mazzini 169",
+    "has_codice_accesso": true,
+    "has_luogo_chiavi": true,
+    "has_istruzioni_accesso": true,
+    "updated_at": "2026-04-23T10:22:52.409+00:00",
+    "action_required": "Manuale: ruotare o verificare fisicamente codici/istruzioni accesso e poi aggiornare il DB."
+  },
+  {
+    "apartment_id": "b1d4b606-98bc-47df-8bcf-179cc53ba647",
+    "apartment_name": "Fanano - Via Sotto Farneto snc",
+    "has_codice_accesso": true,
+    "has_luogo_chiavi": true,
+    "has_istruzioni_accesso": true,
+    "updated_at": "2026-04-23T10:39:36.862+00:00",
+    "action_required": "Manuale: ruotare o verificare fisicamente codici/istruzioni accesso e poi aggiornare il DB."
+  },
+  {
+    "apartment_id": "fe7eac22-4443-49bb-90e1-68bbf686cf70",
+    "apartment_name": "Cattolica - Via Venezia 7 Cortile Interno",
+    "has_codice_accesso": true,
+    "has_luogo_chiavi": true,
+    "has_istruzioni_accesso": true,
+    "updated_at": "2026-05-04T09:44:00.035+00:00",
+    "action_required": "Manuale: ruotare o verificare fisicamente codici/istruzioni accesso e poi aggiornare il DB."
+  },
+  {
+    "apartment_id": "3e454f59-fee1-45df-aad1-8659d0a65674",
+    "apartment_name": "Cattolica - Via Verdi 29",
+    "has_codice_accesso": true,
+    "has_luogo_chiavi": true,
+    "has_istruzioni_accesso": true,
+    "updated_at": "2026-04-23T10:42:48.148+00:00",
+    "action_required": "Manuale: ruotare o verificare fisicamente codici/istruzioni accesso e poi aggiornare il DB."
+  },
+  {
+    "apartment_id": "73c3f928-d57e-4457-91de-108500ea4bc9",
+    "apartment_name": "Cattolica - Via Amalfi 5 con Cortile",
+    "has_codice_accesso": true,
+    "has_luogo_chiavi": true,
+    "has_istruzioni_accesso": true,
+    "updated_at": "2026-04-23T10:42:58.907+00:00",
+    "action_required": "Manuale: ruotare o verificare fisicamente codici/istruzioni accesso e poi aggiornare il DB."
+  },
+  {
+    "apartment_id": "896a4f4b-a821-4e44-b220-6fe32d34facc",
+    "apartment_name": "Misano Adriatico - Via Litoranea Sud 40 con Balcone",
+    "has_codice_accesso": true,
+    "has_luogo_chiavi": true,
+    "has_istruzioni_accesso": true,
+    "updated_at": "2026-04-23T20:21:57.236+00:00",
+    "action_required": "Manuale: ruotare o verificare fisicamente codici/istruzioni accesso e poi aggiornare il DB."
+  },
+  {
+    "apartment_id": "a648ead6-88ef-4a1c-b0fd-1249e8c78f9c",
+    "apartment_name": "Riccione - Via Panzini 12/b",
+    "has_codice_accesso": true,
+    "has_luogo_chiavi": true,
+    "has_istruzioni_accesso": true,
+    "updated_at": "2026-04-23T20:43:20.924+00:00",
+    "action_required": "Manuale: ruotare o verificare fisicamente codici/istruzioni accesso e poi aggiornare il DB."
+  },
+  {
+    "apartment_id": "f7bd99b6-f596-4086-93d1-bf1f21af6f9a",
+    "apartment_name": "San Giovanni In Marignano - Via Enrico Fermi 8",
+    "has_codice_accesso": true,
+    "has_luogo_chiavi": true,
+    "has_istruzioni_accesso": true,
+    "updated_at": "2026-04-23T21:06:57.811+00:00",
+    "action_required": "Manuale: ruotare o verificare fisicamente codici/istruzioni accesso e poi aggiornare il DB."
+  },
+  {
+    "apartment_id": "a9ad3351-4e32-4555-b07b-31c4420df230",
+    "apartment_name": "Valtournenche - Frazione Evette snc - Condominio Lisa",
+    "has_codice_accesso": true,
+    "has_luogo_chiavi": true,
+    "has_istruzioni_accesso": true,
+    "updated_at": "2026-05-04T18:48:47.544+00:00",
+    "action_required": "Manuale: ruotare o verificare fisicamente codici/istruzioni accesso e poi aggiornare il DB."
+  },
+  {
+    "apartment_id": "34a29327-4313-4761-ac31-49224b88e3b2",
+    "apartment_name": "Valtournenche - Frazione Chaloz di Sotto SNC - Condominio Grolla A",
+    "has_codice_accesso": true,
+    "has_luogo_chiavi": true,
+    "has_istruzioni_accesso": true,
+    "updated_at": "2026-05-04T19:00:01.654+00:00",
+    "action_required": "Manuale: ruotare o verificare fisicamente codici/istruzioni accesso e poi aggiornare il DB."
+  }
+]

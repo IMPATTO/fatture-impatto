@@ -1,8 +1,9 @@
 const { createClient } = require('@supabase/supabase-js');
 const crypto = require('crypto');
+const { getSupabaseRuntimeConfig } = require('./_lib/shared-auth');
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_URL = getSupabaseRuntimeConfig().url;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const STORAGE_BUCKET = process.env.CONTABILITA_STORAGE_BUCKET || 'contabilita-media';
 
