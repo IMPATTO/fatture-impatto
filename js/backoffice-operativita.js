@@ -132,6 +132,7 @@ async function refreshDataAfterMutation(focusTask = null){
     }
   } catch (error) {
     console.error('operativita refresh after mutation error', error);
+    S.loading = false;
     if (focusTask?.id) {
       upsertTaskInState(focusTask);
       openDrawerFor(focusTask);
@@ -174,57 +175,58 @@ function bestEffortAudit(action, id){
 async function loadData(){
   S.loading = true;
   partialApp();
-  const { data: profiles, error: profilesError } = await sb.from('operativita_access_profiles').select('*').order('sort_order');
-  if (profilesError) throw profilesError;
-  S.accessProfiles = profiles || [];
-  S.accessProfile = resolveAccessProfile(S.accessProfiles, userEmail());
-  if (!S.accessProfile) {
-    S.tasks = [];
-    S.apartments = [];
-    S.guests = [];
-    S.loading = false;
-    partialApp();
-    return;
-  }
-  const [tasksRes, apartmentsRes] = await Promise.all([
-    sb.from('operativita_tasks').select('*').order('due_date', { ascending: true, nullsFirst: false }).order('created_at', { ascending: false }).limit(500),
-    sb.from('apartments').select('id,nome_appartamento').order('nome_appartamento'),
-  ]);
-  if (tasksRes.error) throw tasksRes.error;
-  S.tasks = tasksRes.data || [];
-  S.apartments = apartmentsRes.error ? [] : (apartmentsRes.data || []);
-  if (!S.apartments.length && S.session?.access_token) {
-    S.apartments = await loadOperativitaApartmentsFallback();
-  }
-
-  if (canEdit()) {
-    const guestsRes = await sb.from('ospiti_check_in')
-      .select('id,nome,cognome,email,tag_prenotazione,data_checkin,data_checkout,apartment_id')
-      .order('data_checkin', { ascending: false })
-      .limit(500);
-    if (guestsRes.error) throw guestsRes.error;
-    S.guests = guestsRes.data || [];
-  } else {
-    const guestIds = unique(S.tasks.map(row => row.ospiti_check_in_id).filter(Boolean));
-    if (!guestIds.length) {
+  try {
+    const { data: profiles, error: profilesError } = await sb.from('operativita_access_profiles').select('*').order('sort_order');
+    if (profilesError) throw profilesError;
+    S.accessProfiles = profiles || [];
+    S.accessProfile = resolveAccessProfile(S.accessProfiles, userEmail());
+    if (!S.accessProfile) {
+      S.tasks = [];
+      S.apartments = [];
       S.guests = [];
-    } else {
+      return;
+    }
+    const [tasksRes, apartmentsRes] = await Promise.all([
+      sb.from('operativita_tasks').select('*').order('due_date', { ascending: true, nullsFirst: false }).order('created_at', { ascending: false }).limit(500),
+      sb.from('apartments').select('id,nome_appartamento').order('nome_appartamento'),
+    ]);
+    if (tasksRes.error) throw tasksRes.error;
+    S.tasks = tasksRes.data || [];
+    S.apartments = apartmentsRes.error ? [] : (apartmentsRes.data || []);
+    if (!S.apartments.length && S.session?.access_token) {
+      S.apartments = await loadOperativitaApartmentsFallback();
+    }
+
+    if (canEdit()) {
       const guestsRes = await sb.from('ospiti_check_in')
         .select('id,nome,cognome,email,tag_prenotazione,data_checkin,data_checkout,apartment_id')
-        .in('id', guestIds);
+        .order('data_checkin', { ascending: false })
+        .limit(500);
       if (guestsRes.error) throw guestsRes.error;
       S.guests = guestsRes.data || [];
+    } else {
+      const guestIds = unique(S.tasks.map(row => row.ospiti_check_in_id).filter(Boolean));
+      if (!guestIds.length) {
+        S.guests = [];
+      } else {
+        const guestsRes = await sb.from('ospiti_check_in')
+          .select('id,nome,cognome,email,tag_prenotazione,data_checkin,data_checkout,apartment_id')
+          .in('id', guestIds);
+        if (guestsRes.error) throw guestsRes.error;
+        S.guests = guestsRes.data || [];
+      }
     }
-  }
 
-  if (S.selectedId && !currentTask()) {
-    S.selectedId = null;
-    S.drawerOpen = false;
-    S.drawerPlacement = 'side';
-    S.form = {};
+    if (S.selectedId && !currentTask()) {
+      S.selectedId = null;
+      S.drawerOpen = false;
+      S.drawerPlacement = 'side';
+      S.form = {};
+    }
+  } finally {
+    S.loading = false;
+    partialApp();
   }
-  S.loading = false;
-  partialApp();
 }
 
 async function loadOperativitaApartmentsFallback() {
