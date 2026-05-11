@@ -74,6 +74,8 @@ export const S = {
   bookingsByUnit: new Map(),
   inventoryDays: [],
   inventoryByRoomDate: new Map(),
+  calendarDays: [],
+  calendarDayByUnitDate: new Map(),
   orphanRows: [],
   orphanCount: 0,
   lastSync: null,

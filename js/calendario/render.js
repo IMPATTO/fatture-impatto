@@ -253,9 +253,20 @@ export function buildDayCells(row, monthDays) {
     const today = isSameDate(date, new Date()) ? ' today' : '';
     const unavailable = state.closed ? ' unavail' : '';
     const booked = state.hasBooking ? ' has-booking' : '';
-    const badge = state.closed
-      ? `<span class="cell-badge" aria-hidden="true">${state.hasBooking ? '•' : '×'}</span>`
-      : '';
+    let content = '';
+    if (state.closed) {
+      content = `<span class="cell-badge" aria-hidden="true">${state.hasBooking ? '•' : '×'}</span>`;
+    } else if (!state.hasBooking && (state.price != null || state.minStay != null)) {
+      const priceLabel = state.price != null
+        ? `<span class="cell-price">€${esc(String(Math.round(Number(state.price))))}</span>`
+        : '';
+      const stayLabel = state.minStay != null && Number(state.minStay) > 1
+        ? `<span class="cell-stay">${esc(String(state.minStay))}n</span>`
+        : '';
+      if (priceLabel || stayLabel) {
+        content = `<div class="cell-info">${priceLabel}${stayLabel}</div>`;
+      }
+    }
     return `
       <div
         class="day-cell${weekend}${today}${unavailable}${booked}"
@@ -263,7 +274,7 @@ export function buildDayCells(row, monthDays) {
         data-apartment-id="${esc(row.apartment.id)}"
         data-unit-id="${esc(row.unit?.id || '')}"
         aria-label="${esc(buildDayCellLabel(row, date, state))}"
-      >${badge}</div>
+      >${content}</div>
     `;
   }).join('');
 }

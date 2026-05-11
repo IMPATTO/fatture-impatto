@@ -84,15 +84,23 @@ export async function loadMonthData() {
     .order('synced_at', { ascending: false })
     .limit(1);
 
+  const calendarDaysQuery = window.sb
+    .from('calendar_days')
+    .select('apartment_unit_id, date, price, min_stay, available, closed')
+    .gte('date', start)
+    .lte('date', end);
+
   const [
     { data: bookings, error: bookingsError },
     { data: orphanRows, error: orphanError, count: orphanCount },
     { data: lastSyncRows, error: syncError },
+    { data: calendarDays, error: calendarDaysError },
     inventoryPayload,
   ] = await Promise.all([
     bookingsQuery,
     orphanQuery,
     lastSyncQuery,
+    calendarDaysQuery,
     fetch(inventoryUrl)
       .then(async (response) => {
         const payload = await response.json().catch(() => ({}));
@@ -111,9 +119,16 @@ export async function loadMonthData() {
   if (bookingsError) throw bookingsError;
   if (orphanError) throw orphanError;
   if (syncError) throw syncError;
+  if (calendarDaysError) {
+    console.warn('calendar_days query failed', calendarDaysError);
+  }
 
   S.inventoryDays = (inventoryPayload?.inventoryDays || []).slice();
   S.inventoryByRoomDate = buildInventoryIndex(S.inventoryDays);
+  S.calendarDays = (calendarDays || []).slice();
+  S.calendarDayByUnitDate = new Map(
+    (calendarDays || []).map((row) => [`${row.apartment_unit_id}:${row.date}`, row])
+  );
   S.bookings = (bookings || []).map(enrichBooking).sort(compareBookingsForRender);
   S.bookingMap = new Map(S.bookings.map((item) => [String(item.beds24_booking_id), item]));
   S.bookingsByApartment = groupBy(S.bookings, (item) => String(item.apartment_id));
@@ -357,16 +372,33 @@ export function getBookingsForUnit(unitId) {
 
 export function getInventoryStateForUnit(unit, date) {
   const roomId = String(unit?.beds24_room_id || '').trim();
-  if (!roomId) return { closed: false, available: null, hasBooking: false, price: null, minStay: null };
   const iso = typeof date === 'string' ? date : isoDateLocal(date);
+  const cachedDay = S.calendarDayByUnitDate.get(`${unit?.id || ''}:${iso}`) || null;
+  if (!roomId) {
+    return {
+      closed: cachedDay?.closed === true,
+      available: cachedDay?.available ?? null,
+      hasBooking: false,
+      price: cachedDay?.price ?? null,
+      minStay: cachedDay?.min_stay ?? null,
+    };
+  }
   const row = S.inventoryByRoomDate.get(`${roomId}:${iso}`) || null;
-  if (!row) return { closed: false, available: null, hasBooking: false, price: null, minStay: null };
+  if (!row) {
+    return {
+      closed: cachedDay?.closed === true,
+      available: cachedDay?.available ?? null,
+      hasBooking: false,
+      price: cachedDay?.price ?? null,
+      minStay: cachedDay?.min_stay ?? null,
+    };
+  }
   return {
-    closed: row.closed === true || row.available === false,
-    available: row.available,
+    closed: row.closed === true || row.available === false || cachedDay?.closed === true,
+    available: row.available ?? cachedDay?.available ?? null,
     hasBooking: Boolean(row.hasBooking),
-    price: row.price,
-    minStay: row.minStay,
+    price: row.price ?? cachedDay?.price ?? null,
+    minStay: row.minStay ?? cachedDay?.min_stay ?? null,
   };
 }
 

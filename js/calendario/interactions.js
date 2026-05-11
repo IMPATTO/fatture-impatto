@@ -207,12 +207,25 @@ export async function refreshFromBeds24() {
   S.syncing = true;
   RENDER.renderSyncMeta?.();
   try {
-    const url = '/.netlify/functions/beds24-sync-bookings?dryRun=0';
-    const response = await fetch(url, { method: 'GET' });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(payload.error || payload.detail || 'Aggiornamento Beds24 non riuscito');
+    const bookingsUrl = '/.netlify/functions/beds24-sync-bookings?dryRun=0';
+    const bookingsResponse = await fetch(bookingsUrl, { method: 'GET' });
+    const bookingsPayload = await bookingsResponse.json().catch(() => ({}));
+    if (!bookingsResponse.ok) {
+      throw new Error(bookingsPayload.error || bookingsPayload.detail || 'Aggiornamento Beds24 non riuscito');
     }
+
+    const accessToken = S.session?.access_token || '';
+    const calendarResponse = await fetch('/.netlify/functions/sync-beds24-calendar', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    const calendarPayload = await calendarResponse.json().catch(() => ({}));
+    if (!calendarResponse.ok) {
+      console.warn('Calendar sync failed (booking sync ok)', calendarPayload);
+    }
+
     await ensureDataLoaded({ monthOnly: true });
   } catch (error) {
     console.error('calendario refresh error', error);
