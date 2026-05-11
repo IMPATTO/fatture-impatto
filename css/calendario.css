@@ -149,6 +149,7 @@ input {
 }
 
 .page-shell {
+  position: relative;
   padding: 20px 24px 32px;
 }
 
@@ -167,7 +168,13 @@ input {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(250, 246, 238, 0.97) 100%);
   backdrop-filter: blur(16px);
   box-shadow: var(--shadow-sm);
+  max-height: 280px;
+  overflow: hidden;
   transition:
+    max-height 0.18s ease,
+    padding-top 0.18s ease,
+    padding-bottom 0.18s ease,
+    margin-bottom 0.18s ease,
     opacity 0.18s ease,
     transform 0.18s ease,
     border-color 0.18s ease,
@@ -175,9 +182,15 @@ input {
 }
 
 .page-header.compact {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-bottom: -18px;
   opacity: 0;
   transform: translateY(-12px);
   pointer-events: none;
+  border-color: transparent;
+  box-shadow: none;
 }
 
 .mini-header {
@@ -678,6 +691,16 @@ input {
   font-size: 19px;
   line-height: 1;
   margin-top: 2px;
+}
+
+.day-subname {
+  margin-top: 4px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.9;
 }
 
 .day-cell {

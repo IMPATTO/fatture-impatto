@@ -190,6 +190,7 @@ export function buildTimelineHeader(monthDays) {
               <div class="day-header${weekend}${today}">
                 <div class="day-name">${esc(formatWeekday(date))}</div>
                 <div class="day-num">${esc(String(date.getDate()))}</div>
+                <div class="day-subname">${esc(formatWeekday(date))}</div>
               </div>
             `;
           }).join('')}
