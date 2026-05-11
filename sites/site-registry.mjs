@@ -63,6 +63,7 @@ export const siteRegistry = {
       'js/supabase-client.js',
       'js/calendario.js',
       'css/calendario.css',
+      'stati.csv',
     ],
     functions: [
       'apply-apartment-links',

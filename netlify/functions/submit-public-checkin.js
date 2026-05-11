@@ -945,7 +945,12 @@ async function mapStateRowToOfficialCode(row) {
     const official = await findOfficialStateByName(candidate);
     if (official) return official;
   }
-  return null;
+  const rawCode = String(row?.codice || '').trim();
+  if (!rawCode) return null;
+  return {
+    code: rawCode,
+    name: String(row?.nome_it || row?.nome || '').trim() || rawCode,
+  };
 }
 
 async function getOfficialStateIndex() {
@@ -960,6 +965,7 @@ async function getOfficialStateIndex() {
 
 async function loadOfficialStateIndex() {
   const csv = await loadOfficialStatesCsv();
+  if (!csv) return new Map();
   const rows = csv.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
   if (rows.length < 2) return new Map();
 
@@ -986,9 +992,17 @@ async function loadOfficialStatesCsv() {
   if (localCsv) return localCsv;
 
   const baseUrl = (PUBLIC_PORTAL_BASE_URL || DEFAULT_PUBLIC_PORTAL_BASE_URL).replace(/\/+$/, '');
-  const response = await fetch(`${baseUrl}/stati.csv`);
-  if (!response.ok) throw new Error(`Unable to load stati.csv: HTTP ${response.status}`);
-  return response.text();
+  try {
+    const response = await fetch(`${baseUrl}/stati.csv`);
+    if (!response.ok) {
+      console.warn(`submit-public-checkin unable to load stati.csv: HTTP ${response.status}`);
+      return '';
+    }
+    return response.text();
+  } catch (error) {
+    console.warn('submit-public-checkin unable to load stati.csv:', error.message);
+    return '';
+  }
 }
 
 function loadOfficialStatesCsvFromFile() {
