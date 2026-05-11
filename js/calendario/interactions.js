@@ -91,7 +91,9 @@ export function bindShellEvents() {
   ELS.timelineScroll?.addEventListener('scroll', handleTimelineScroll, { passive: true });
 }
 
-const SCROLL_THRESHOLD = 120;
+const MINI_HEADER_SHOW_THRESHOLD = 140;
+const MINI_HEADER_HIDE_THRESHOLD = 90;
+let miniHeaderVisible = false;
 
 export async function initializeSession() {
   const { data: { session } } = await window.sb.auth.getSession();
@@ -290,11 +292,16 @@ export function handleRetryClick() {
 }
 
 export function handleScrollHeaderToggle() {
-  const scrolled = window.scrollY > SCROLL_THRESHOLD;
-  ELS.pageHeader?.classList.toggle('compact', scrolled);
-  ELS.miniHeader?.classList.toggle('visible', scrolled);
-  ELS.miniHeader?.setAttribute('aria-hidden', String(!scrolled));
-  document.documentElement.style.setProperty('--timeline-sticky-top', scrolled ? '88px' : '48px');
+  const scrollY = window.scrollY;
+  if (!miniHeaderVisible && scrollY > MINI_HEADER_SHOW_THRESHOLD) {
+    miniHeaderVisible = true;
+  } else if (miniHeaderVisible && scrollY < MINI_HEADER_HIDE_THRESHOLD) {
+    miniHeaderVisible = false;
+  }
+  ELS.pageHeader?.classList.toggle('compact', miniHeaderVisible);
+  ELS.miniHeader?.classList.toggle('visible', miniHeaderVisible);
+  ELS.miniHeader?.setAttribute('aria-hidden', String(!miniHeaderVisible));
+  document.documentElement.style.setProperty('--timeline-sticky-top', miniHeaderVisible ? '88px' : '48px');
   syncMiniHeaderLabel();
 }
 

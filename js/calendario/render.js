@@ -526,7 +526,7 @@ function updateTodayMarker(monthDays) {
     getComputedStyle(document.documentElement).getPropertyValue('--label-width').trim(),
     10
   ) || 320;
-  const baseLeft = labelWidth + (todayIndex * dayWidth) + (dayWidth / 2) - 1;
+  const baseLeft = labelWidth + (todayIndex * dayWidth);
   const scrollLeft = ELS.timelineScroll?.scrollLeft || 0;
   marker.dataset.baseLeft = String(baseLeft);
   marker.style.left = `${baseLeft - scrollLeft}px`;

@@ -153,8 +153,8 @@ input {
 }
 
 .page-header {
-  position: sticky;
-  top: 48px;
+  position: relative;
+  top: 0;
   z-index: 40;
   display: flex;
   align-items: flex-start;
@@ -167,12 +167,7 @@ input {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(250, 246, 238, 0.97) 100%);
   backdrop-filter: blur(16px);
   box-shadow: var(--shadow-sm);
-  max-height: 280px;
-  overflow: hidden;
   transition:
-    max-height 0.18s ease,
-    padding-top 0.18s ease,
-    padding-bottom 0.18s ease,
     opacity 0.18s ease,
     transform 0.18s ease,
     border-color 0.18s ease,
@@ -180,14 +175,9 @@ input {
 }
 
 .page-header.compact {
-  max-height: 0;
-  padding-top: 0;
-  padding-bottom: 0;
   opacity: 0;
   transform: translateY(-12px);
   pointer-events: none;
-  border-color: transparent;
-  box-shadow: none;
 }
 
 .mini-header {
@@ -524,12 +514,14 @@ input {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 3px;
-  background: rgba(205, 36, 36, 0.82);
+  width: var(--day-width);
+  background: rgba(205, 36, 36, 0.14);
   pointer-events: none;
   z-index: 15;
   display: none;
-  box-shadow: 0 0 12px rgba(205, 36, 36, 0.38);
+  box-shadow:
+    inset 1px 0 0 rgba(205, 36, 36, 0.32),
+    inset -1px 0 0 rgba(205, 36, 36, 0.32);
 }
 
 .today-marker.visible {
@@ -667,9 +659,9 @@ input {
 }
 
 .day-header.today {
-  background: rgba(244, 234, 211, 0.6);
-  box-shadow: inset 1px 0 0 rgba(180, 139, 68, 0.6),
-              inset -1px 0 0 rgba(180, 139, 68, 0.6);
+  background: rgba(205, 36, 36, 0.12);
+  box-shadow: inset 1px 0 0 rgba(205, 36, 36, 0.28),
+              inset -1px 0 0 rgba(205, 36, 36, 0.28);
 }
 
 .day-name {
@@ -711,9 +703,9 @@ input {
 }
 
 .day-cell.today {
-  background: rgba(244, 234, 211, 0.18);
-  box-shadow: inset 1px 0 0 rgba(180, 139, 68, 0.6),
-              inset -1px 0 0 rgba(180, 139, 68, 0.6);
+  background: rgba(205, 36, 36, 0.08);
+  box-shadow: inset 1px 0 0 rgba(205, 36, 36, 0.22),
+              inset -1px 0 0 rgba(205, 36, 36, 0.22);
 }
 
 .day-cell.unavail {
