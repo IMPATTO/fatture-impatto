@@ -883,7 +883,10 @@
         access_main_entrance: 'Accesso alla struttura',
         access_laundry: 'Accesso lavanderia',
         access_notes: 'Note',
+        access_structure_code: 'Codici accesso struttura',
         access_structure_details: 'Dettagli accesso',
+        access_laundry_code: 'Codici accesso lavanderia',
+        access_laundry_details: 'Dettagli accesso lavanderia',
         room_code_note: 'Il codice della stanza verrà fornito da Serena. Per questo accesso contatta direttamente lei.',
         how_to_arrive: 'Come Arrivare',
         parking: 'Parcheggio',
@@ -922,6 +925,14 @@
         access_instructions: 'Access Instructions',
         video_tour: 'Video instructions',
         watch_video: 'Watch video',
+        access_main_entrance: 'Building entrance',
+        access_laundry: 'Laundry access',
+        access_notes: 'Notes',
+        access_structure_code: 'Building access codes',
+        access_structure_details: 'Building access details',
+        access_laundry_code: 'Laundry access codes',
+        access_laundry_details: 'Laundry access details',
+        room_code_note: 'Serena will provide the room code. For this access, contact her directly.',
         how_to_arrive: 'How to Arrive',
         parking: 'Parking',
         house_rules: 'House Rules',
@@ -959,6 +970,14 @@
         access_instructions: 'Zugangsinstruktionen',
         video_tour: 'Video-Anleitung',
         watch_video: 'Video ansehen',
+        access_main_entrance: 'Gebäudeeingang',
+        access_laundry: 'Zugang zur Waschküche',
+        access_notes: 'Hinweise',
+        access_structure_code: 'Zugangscodes Gebäude',
+        access_structure_details: 'Zugangsdetails Gebäude',
+        access_laundry_code: 'Zugangscodes Waschküche',
+        access_laundry_details: 'Zugangsdetails Waschküche',
+        room_code_note: 'Den Zimmercode erhalten Sie von Serena. Kontaktieren Sie sie dafür direkt.',
         how_to_arrive: 'Anreise',
         parking: 'Parken',
         house_rules: 'Hausregeln',
@@ -996,6 +1015,14 @@
         access_instructions: 'Instructions d\'Accès',
         video_tour: 'Vidéo instructions',
         watch_video: 'Regarder la vidéo',
+        access_main_entrance: 'Accès à la structure',
+        access_laundry: 'Accès buanderie',
+        access_notes: 'Notes',
+        access_structure_code: 'Codes d\'accès structure',
+        access_structure_details: 'Détails accès structure',
+        access_laundry_code: 'Codes d\'accès buanderie',
+        access_laundry_details: 'Détails accès buanderie',
+        room_code_note: 'Serena vous fournira le code de la chambre. Pour cet accès, contactez-la directement.',
         how_to_arrive: 'Comment Arriver',
         parking: 'Stationnement',
         house_rules: 'Regles de la Maison',
@@ -1033,6 +1060,14 @@
         access_instructions: 'Instrucciones de Acceso',
         video_tour: 'Video instrucciones',
         watch_video: 'Ver el vídeo',
+        access_main_entrance: 'Acceso al edificio',
+        access_laundry: 'Acceso lavandería',
+        access_notes: 'Notas',
+        access_structure_code: 'Códigos de acceso del edificio',
+        access_structure_details: 'Detalles de acceso del edificio',
+        access_laundry_code: 'Códigos de acceso lavandería',
+        access_laundry_details: 'Detalles de acceso lavandería',
+        room_code_note: 'Serena te dará el código de la habitación. Para este acceso, contáctala directamente.',
         how_to_arrive: 'Cómo Llegar',
         parking: 'Aparcamiento',
         house_rules: 'Reglas de la Casa',
@@ -1070,6 +1105,14 @@
         access_instructions: 'Инструкции по доступу',
         video_tour: 'Видео-инструкция',
         watch_video: 'Смотреть видео',
+        access_main_entrance: 'Вход в здание',
+        access_laundry: 'Доступ в прачечную',
+        access_notes: 'Примечания',
+        access_structure_code: 'Коды доступа в здание',
+        access_structure_details: 'Детали доступа в здание',
+        access_laundry_code: 'Коды доступа в прачечную',
+        access_laundry_details: 'Детали доступа в прачечную',
+        room_code_note: 'Код комнаты сообщит Серена. Для этого доступа свяжитесь с ней напрямую.',
         how_to_arrive: 'Как добраться',
         parking: 'Парковка',
         house_rules: 'Правила дома',
@@ -1378,14 +1421,18 @@
       if (creds) {
         let credsHTML = '';
         if (isMontefeltroApartment(apt)) {
+          const laundryDetails = creds.istruzioni_accesso_lavanderia || creds.luogo_chiavi;
           const structureItems = [
-            credItem(t('access_code'), creds.codice_accesso),
+            credItem(t('access_structure_code'), creds.codice_accesso),
             credItem(t('access_structure_details'), creds.istruzioni_accesso),
           ].filter(Boolean).join('');
           const structureVideo = creds.video_url
             ? `<div style="margin-top:16px">${renderVideoBlock(creds.video_url)}</div>`
             : '';
-          const laundryItems = credItem(t('access_laundry'), creds.luogo_chiavi);
+          const laundryItems = [
+            credItem(t('access_laundry_code'), creds.codice_accesso_lavanderia),
+            credItem(t('access_laundry_details'), laundryDetails),
+          ].filter(Boolean).join('');
 
           credsHTML += `
             <div class="access-section">

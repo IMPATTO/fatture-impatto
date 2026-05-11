@@ -208,7 +208,7 @@ exports.handler = async (event) => {
 async function loadApartmentPortalData(supabase, apartmentId, preferredLang) {
   const { data: creds, error: credsError } = await supabase
     .from('apartment_credentials')
-    .select('codice_accesso, luogo_chiavi, istruzioni_accesso, video_url')
+    .select('codice_accesso, luogo_chiavi, istruzioni_accesso, codice_accesso_lavanderia, istruzioni_accesso_lavanderia, video_url')
     .eq('apartment_id', apartmentId)
     .limit(1)
     .maybeSingle();

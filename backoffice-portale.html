@@ -236,7 +236,7 @@ const S = {
   lingua: 'IT',
   saving: false,
   toastTimer: null,
-  fCreds: { codice_accesso:'', luogo_chiavi:'', istruzioni_accesso:'', video_url:'' },
+  fCreds: { codice_accesso:'', luogo_chiavi:'', istruzioni_accesso:'', codice_accesso_lavanderia:'', istruzioni_accesso_lavanderia:'', video_url:'' },
   fInfo:  { come_arrivare:'', dove_parcheggiare:'', come_entrare:'', regole_della_casa:'', cosa_fare_se_luce_spenta:'', cosa_fare_se_chiuso_fuori:'', numeri_utili:[], consigli:{ ristoranti:'', bar_colazione:'', aperitivo_vita_serale:'', attivita_bambini:'' }, beach_info:[], waste_info:{ instructions:'', video_url:'', schedule:'', recycling_rules:'', notes:'' }, wifi_info:{ ssid:'', password:'', notes:'' } },
   fMappa: { indirizzo_completo:'', latitudine:'', longitudine:'', maps_url_override:'' },
   fApartment: { nome_appartamento:'' },
@@ -1136,6 +1136,8 @@ async function loadApartmentCredentials(aptId) {
     codice_accesso:     data?.codice_accesso     || '',
     luogo_chiavi:       data?.luogo_chiavi       || '',
     istruzioni_accesso: data?.istruzioni_accesso || '',
+    codice_accesso_lavanderia: data?.codice_accesso_lavanderia || '',
+    istruzioni_accesso_lavanderia: data?.istruzioni_accesso_lavanderia || data?.luogo_chiavi || '',
     video_url:          data?.video_url          || '',
   };
 }
@@ -1226,20 +1228,38 @@ async function saveSingleRowByLookup(table, lookup, payload) {
   return sb.from(table).insert({ ...lookup, ...payload });
 }
 
-async function saveApartmentCredentials(aptId) {
-  const payload = {
-    codice_accesso: S.fCreds.codice_accesso || '',
-    luogo_chiavi: S.fCreds.luogo_chiavi || '',
-    istruzioni_accesso: S.fCreds.istruzioni_accesso || '',
-    updated_at: new Date().toISOString(),
-  };
+async function saveApartmentCredentials(aptId, scope = 'all') {
+  const apt = getSelectedApartment();
+  const isMontefeltro = isMontefeltroApartment(apt) || isMontefeltroApartment(S.fApartment);
+  const payload = { updated_at: new Date().toISOString() };
+
+  if (scope === 'all' || scope === 'structure') {
+    payload.codice_accesso = S.fCreds.codice_accesso || '';
+    payload.istruzioni_accesso = S.fCreds.istruzioni_accesso || '';
+  }
+
+  if (scope === 'all' && !isMontefeltro) {
+    payload.luogo_chiavi = S.fCreds.luogo_chiavi || '';
+  }
+
+  if (scope === 'laundry' || (scope === 'all' && isMontefeltro)) {
+    payload.codice_accesso_lavanderia = S.fCreds.codice_accesso_lavanderia || '';
+    payload.istruzioni_accesso_lavanderia = S.fCreds.istruzioni_accesso_lavanderia || '';
+    payload.luogo_chiavi = S.fCreds.istruzioni_accesso_lavanderia || '';
+  }
+
   const { error } = await saveSingleRowByLookup('apartment_credentials', { apartment_id: aptId }, payload);
   if (error) {
     toast('Errore: ' + error.message, 'err');
     return false;
   }
   await loadApartmentCredentials(aptId);
-  toast('✓ Accesso salvato','ok');
+  const toastLabel = scope === 'structure'
+    ? 'Accesso struttura salvato'
+    : scope === 'laundry'
+      ? 'Accesso lavanderia salvato'
+      : 'Accesso salvato';
+  toast(`✓ ${toastLabel}`,'ok');
   return true;
 }
 
@@ -1719,10 +1739,12 @@ function renderTabAccesso(el) {
   const publicUrl = buildPublicCheckinUrl(apt);
   const isMontefeltro = isMontefeltroApartment(apt) || isMontefeltroApartment(apartmentDraft);
   const accessSectionTitle = isMontefeltro ? 'Accesso Residence Montefeltro' : 'Accesso appartamento';
-  const accessCardTitle = isMontefeltro ? 'Accesso struttura e lavanderia' : 'Codici e istruzioni';
-  const codeLabel = isMontefeltro ? 'Codice tastiera' : 'Codice cassettina sicurezza';
+  const accessCardTitle = isMontefeltro ? 'Accesso struttura' : 'Codici e istruzioni';
+  const codeLabel = isMontefeltro ? 'Codici accesso struttura' : 'Codice cassettina sicurezza';
   const keyLocationLabel = isMontefeltro ? 'Accesso lavanderia' : 'Luogo chiavi';
   const instructionsLabel = isMontefeltro ? 'Dettagli accesso struttura' : 'Istruzioni accesso';
+  const laundryCodeLabel = 'Codici accesso lavanderia';
+  const laundryInstructionsLabel = 'Dettagli accesso lavanderia';
   const accessHint = isMontefeltro
     ? 'Per Montefeltro il portale ospite mostrerà tre blocchi: accesso alla struttura, accesso lavanderia e una nota finale su Serena.'
     : '';
@@ -1749,16 +1771,34 @@ function renderTabAccesso(el) {
       <div class="field-hint">Il link viene costruito dinamicamente e non viene salvato come URL completo nel database.</div>
     </div>
 
+    ${isMontefeltro ? `
     <div class="card-section">
       <div class="card-section-title">${accessCardTitle}</div>
       <div class="field"><label>${codeLabel}</label><input id="codice_accesso" value="${esc(f.codice_accesso)}"/></div>
-      ${isMontefeltro ? '' : `<div class="field"><label>${keyLocationLabel}</label><textarea id="luogo_chiavi">${esc(f.luogo_chiavi)}</textarea></div>`}
       <div class="field"><label>${instructionsLabel}</label><textarea id="istruzioni_accesso">${esc(f.istruzioni_accesso)}</textarea></div>
+      <div class="save-row">
+        <button id="btnSaveStructureCreds" class="btn btn-primary">Salva accesso struttura</button>
+      </div>
+    </div>
+
+    <div class="card-section">
+      <div class="card-section-title">Accesso lavanderia</div>
+      <div class="field"><label>${laundryCodeLabel}</label><input id="codice_accesso_lavanderia" value="${esc(f.codice_accesso_lavanderia)}"/></div>
+      <div class="field"><label>${laundryInstructionsLabel}</label><textarea id="istruzioni_accesso_lavanderia">${esc(f.istruzioni_accesso_lavanderia)}</textarea></div>
       ${accessHint ? `<div class="field-hint">${accessHint}</div>` : ''}
+      <div class="save-row">
+        <button id="btnSaveLaundryCreds" class="btn btn-primary">Salva accesso lavanderia</button>
+      </div>
+    </div>` : `
+    <div class="card-section">
+      <div class="card-section-title">${accessCardTitle}</div>
+      <div class="field"><label>${codeLabel}</label><input id="codice_accesso" value="${esc(f.codice_accesso)}"/></div>
+      <div class="field"><label>${keyLocationLabel}</label><textarea id="luogo_chiavi">${esc(f.luogo_chiavi)}</textarea></div>
+      <div class="field"><label>${instructionsLabel}</label><textarea id="istruzioni_accesso">${esc(f.istruzioni_accesso)}</textarea></div>
       <div class="save-row">
         <button id="btnSaveCreds" class="btn btn-primary">Salva accesso</button>
       </div>
-    </div>
+    </div>`}
 
     <div class="card-section">
       <div class="card-section-title">Video check-in</div>
@@ -1779,8 +1819,9 @@ function renderTabAccesso(el) {
     </div>
   </div>`;
 
-  ['codice_accesso','luogo_chiavi','istruzioni_accesso','video_url'].forEach(k => {
-    document.getElementById(k).addEventListener('input', e => { S.fCreds[k] = e.target.value; });
+  ['codice_accesso','luogo_chiavi','istruzioni_accesso','codice_accesso_lavanderia','istruzioni_accesso_lavanderia','video_url'].forEach(k => {
+    const field = document.getElementById(k);
+    if (field) field.addEventListener('input', e => { S.fCreds[k] = e.target.value; });
   });
 
   document.getElementById('apt_nome_appartamento').addEventListener('input', e => {
@@ -1796,14 +1837,30 @@ function renderTabAccesso(el) {
     btn.textContent = 'Salva nome appartamento';
   });
 
-  document.getElementById('btnSaveCreds').addEventListener('click', async () => {
-    const btn = document.getElementById('btnSaveCreds');
-    btn.disabled = true;
-    btn.textContent = 'Salvo…';
-    await saveApartmentCredentials(S.selectedApt);
-    btn.disabled = false;
-    btn.textContent = 'Salva accesso';
-  });
+  if (isMontefeltro) {
+    const bindCredsSave = (id, label, scope) => {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        btn.textContent = 'Salvo…';
+        await saveApartmentCredentials(S.selectedApt, scope);
+        btn.disabled = false;
+        btn.textContent = label;
+      });
+    };
+    bindCredsSave('btnSaveStructureCreds', 'Salva accesso struttura', 'structure');
+    bindCredsSave('btnSaveLaundryCreds', 'Salva accesso lavanderia', 'laundry');
+  } else {
+    document.getElementById('btnSaveCreds').addEventListener('click', async () => {
+      const btn = document.getElementById('btnSaveCreds');
+      btn.disabled = true;
+      btn.textContent = 'Salvo…';
+      await saveApartmentCredentials(S.selectedApt);
+      btn.disabled = false;
+      btn.textContent = 'Salva accesso';
+    });
+  }
 
   document.getElementById('btnSaveVideo').addEventListener('click', async () => {
     S.fCreds.video_url = document.getElementById('video_url').value;
@@ -2254,7 +2311,7 @@ function renderTabPreview(el) {
     (m?.latitudine != null && String(m.latitudine).trim() !== '' && m?.longitudine != null && String(m.longitudine).trim() !== '') ||
     (m?.indirizzo_completo != null && String(m.indirizzo_completo).trim() !== '');
   const hasInfo = i?.come_arrivare || i?.regole_della_casa || i?.consigli?.ristoranti || i?.consigli?.bar_colazione || i?.consigli?.aperitivo_vita_serale || i?.consigli?.attivita_bambini;
-  const hasCreds = c?.codice_accesso || c?.istruzioni_accesso;
+  const hasCreds = c?.codice_accesso || c?.istruzioni_accesso || c?.luogo_chiavi || c?.codice_accesso_lavanderia || c?.istruzioni_accesso_lavanderia;
   const numeriCount = Object.keys(i?.numeri_utili || {}).length;
 
   el.innerHTML = `
