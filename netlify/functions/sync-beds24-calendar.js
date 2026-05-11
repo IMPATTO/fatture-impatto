@@ -103,7 +103,6 @@ exports.handler = async (event) => {
           updated_at: sourceUpdatedAt,
           raw_payload: {
             room_id: roomId,
-            property_id: unit.beds24_property_id || null,
             offer: offerEntry,
             calendar: calendarEntry,
             available,
@@ -162,7 +161,7 @@ async function getBeds24AccessToken(env) {
 
 async function getApartmentUnits(env) {
   const url = new URL(`${env.SUPABASE_URL}/rest/v1/apartment_units`);
-  url.searchParams.set('select', 'id,beds24_room_id,beds24_property_id');
+  url.searchParams.set('select', 'id,beds24_room_id');
   url.searchParams.set('active', 'eq.true');
   url.searchParams.set('beds24_room_id', 'not.is.null');
 
