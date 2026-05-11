@@ -23,6 +23,7 @@ export async function init() {
   await import('./render.js');
   bindShellEvents();
   restoreSidebarState();
+  handleScrollHeaderToggle();
   await initializeSession();
 }
 
@@ -35,11 +36,12 @@ export function cacheElements() {
     'loginOverlay', 'loginForm', 'loginEmail', 'loginPassword', 'loginError', 'loginSubmit',
     'app', 'navUser', 'logoutBtn', 'navbarToggle', 'navbarMenu', 'rangeInfo',
     'prevMonthBtn', 'nextMonthBtn', 'monthPickerBtn', 'monthPickerInput',
-    'refreshBtn', 'exportBtn', 'lastSyncLabel', 'sidebarToggle', 'pageBody', 'sidebar', 'cityFilters', 'channelFilters',
+    'refreshBtn', 'exportBtn', 'lastSyncLabel', 'sidebarToggle', 'pageBody', 'pageHeader', 'sidebar', 'cityFilters', 'channelFilters',
+    'miniHeader', 'miniMonthLabel', 'miniPrevMonth', 'miniNextMonth', 'miniRefreshBtn',
     'statusFilters', 'timelineHeader', 'timelineBody', 'timelineShell', 'timelineScroll',
     'mobileList', 'loadingState', 'emptyState', 'errorState', 'orphanBanner',
     'bookingDrawer', 'drawerBackdrop', 'drawerCloseBtn', 'drawerCloseBtnFooter',
-    'drawerTitle', 'drawerBody', 'orphanModal', 'orphanModalBody', 'orphanModalTitle',
+    'drawerTitle', 'drawerBody', 'orphanModal', 'orphanModalBody', 'orphanModalTitle', 'todayMarker',
     'orphanModalClose', 'orphanModalCloseFooter', 'tooltip',
   ].forEach((id) => {
     ELS[id] = document.getElementById(id);
@@ -53,9 +55,12 @@ export function bindShellEvents() {
   ELS.sidebarToggle?.addEventListener('click', toggleSidebar);
   ELS.prevMonthBtn?.addEventListener('click', () => shiftMonth(-1));
   ELS.nextMonthBtn?.addEventListener('click', () => shiftMonth(1));
+  ELS.miniPrevMonth?.addEventListener('click', () => shiftMonth(-1));
+  ELS.miniNextMonth?.addEventListener('click', () => shiftMonth(1));
   ELS.monthPickerBtn?.addEventListener('click', () => ELS.monthPickerInput?.showPicker ? ELS.monthPickerInput.showPicker() : ELS.monthPickerInput.click());
   ELS.monthPickerInput?.addEventListener('change', handleMonthPicker);
   ELS.refreshBtn?.addEventListener('click', refreshFromBeds24);
+  ELS.miniRefreshBtn?.addEventListener('click', refreshFromBeds24);
   ELS.exportBtn?.addEventListener('click', exportVisibleCsv);
   ELS.orphanBanner?.addEventListener('click', openOrphanModal);
   ELS.orphanBanner?.addEventListener('keydown', (event) => {
@@ -79,7 +84,11 @@ export function bindShellEvents() {
       closeMenu();
     }
   });
+  window.addEventListener('scroll', handleScrollHeaderToggle, { passive: true });
+  ELS.timelineScroll?.addEventListener('scroll', handleTimelineScroll, { passive: true });
 }
+
+const SCROLL_THRESHOLD = 120;
 
 export async function initializeSession() {
   const { data: { session } } = await window.sb.auth.getSession();
@@ -252,6 +261,7 @@ export function csvCell(value) {
 export function shiftMonth(delta) {
   S.monthDate = startOfMonth(new Date(S.monthDate.getFullYear(), S.monthDate.getMonth() + delta, 1));
   ELS.monthPickerInput.value = toMonthInputValue(S.monthDate);
+  syncMiniHeaderLabel();
   void ensureDataLoaded({ monthOnly: true });
 }
 
@@ -260,6 +270,7 @@ export function handleMonthPicker() {
   if (!value) return;
   const [year, month] = value.split('-').map(Number);
   S.monthDate = startOfMonth(new Date(year, month - 1, 1));
+  syncMiniHeaderLabel();
   void ensureDataLoaded({ monthOnly: true });
 }
 
@@ -275,18 +286,27 @@ export function handleRetryClick() {
   void ensureDataLoaded({ monthOnly: true });
 }
 
+export function handleScrollHeaderToggle() {
+  const scrolled = window.scrollY > SCROLL_THRESHOLD;
+  ELS.pageHeader?.classList.toggle('compact', scrolled);
+  ELS.miniHeader?.classList.toggle('visible', scrolled);
+  ELS.miniHeader?.setAttribute('aria-hidden', String(!scrolled));
+  document.documentElement.style.setProperty('--timeline-sticky-top', scrolled ? '88px' : '48px');
+  syncMiniHeaderLabel();
+}
+
 export function toggleCityFilter(city, callbacks = {}) {
-  const { onLimitExceeded, onChange } = callbacks;
+  const { onLimitOrSame, onChange } = callbacks;
   const selected = S.filters.cities;
   if (selected.has(city)) {
     if (selected.size === 1) {
-      onLimitExceeded?.();
+      onLimitOrSame?.();
       return;
     }
     selected.delete(city);
   } else {
     if (selected.size >= 8) {
-      onLimitExceeded?.();
+      onLimitOrSame?.();
       alert('Puoi selezionare al massimo 8 citta alla volta.');
       return;
     }
@@ -295,11 +315,9 @@ export function toggleCityFilter(city, callbacks = {}) {
   onChange?.();
 }
 
-export function toggleSetValue(set, value, rerender, callbacks = {}) {
-  const { onLimitExceeded } = callbacks;
+export function toggleSetValue(set, value, rerender) {
   if (set.has(value)) {
     if (set.size === 1) {
-      onLimitExceeded?.();
       return;
     }
     set.delete(value);
@@ -317,4 +335,18 @@ function openOrphanModal() {
 function closeOrphanModal() {
   ELS.orphanModal.classList.add('hidden');
   ELS.orphanModal.setAttribute('aria-hidden', 'true');
+}
+
+function syncMiniHeaderLabel() {
+  if (ELS.miniMonthLabel) {
+    ELS.miniMonthLabel.textContent = ELS.monthPickerBtn?.textContent || '';
+  }
+}
+
+function handleTimelineScroll() {
+  const marker = ELS.todayMarker;
+  if (!marker || !marker.classList.contains('visible')) return;
+  const baseLeft = Number(marker.dataset.baseLeft || 0);
+  const scrollLeft = ELS.timelineScroll?.scrollLeft || 0;
+  marker.style.left = `${baseLeft - scrollLeft}px`;
 }

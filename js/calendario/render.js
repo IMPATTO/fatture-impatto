@@ -46,6 +46,9 @@ export function renderStaticShell() {
   ELS.monthPickerBtn.textContent = formatMonthLabel(S.monthDate);
   ELS.monthPickerInput.value = `${S.monthDate.getFullYear()}-${`${S.monthDate.getMonth() + 1}`.padStart(2, '0')}`;
   ELS.rangeInfo.textContent = formatRangeLabel(S.monthDate);
+  if (ELS.miniMonthLabel) {
+    ELS.miniMonthLabel.textContent = ELS.monthPickerBtn.textContent;
+  }
 }
 
 export function renderAll() {
@@ -73,7 +76,7 @@ export function renderFilters() {
       count: countVisibleApartmentsByCity(city),
       checked: S.filters.cities.has(city),
       onChange: () => toggleCityFilter(city, {
-        onLimitExceeded: renderFilters,
+        onLimitOrSame: renderFilters,
         onChange: renderAll,
       }),
     })),
@@ -86,7 +89,7 @@ export function renderFilters() {
       label: channelLabel(channel, CHANNEL_CONFIG),
       count: countBookingsByChannel(channel),
       checked: S.filters.channels.has(channel),
-      onChange: () => toggleSetValue(S.filters.channels, channel, renderAll, { onLimitExceeded: renderFilters }),
+      onChange: () => toggleSetValue(S.filters.channels, channel, renderAll),
     })),
   });
 
@@ -97,7 +100,7 @@ export function renderFilters() {
       label: STATUS_LABELS[status] || titleCase(status),
       count: countBookingsByStatus(status),
       checked: S.filters.statuses.has(status),
-      onChange: () => toggleSetValue(S.filters.statuses, status, renderAll, { onLimitExceeded: renderFilters }),
+      onChange: () => toggleSetValue(S.filters.statuses, status, renderAll),
     })),
   });
 }
@@ -122,6 +125,10 @@ export function renderSyncMeta() {
   ELS.lastSyncLabel.textContent = S.lastSync ? `${formatDateTime(S.lastSync)} (${minutesAgoLabel(S.lastSync)})` : 'Nessun sync ancora registrato';
   ELS.refreshBtn.disabled = S.syncing;
   ELS.refreshBtn.innerHTML = S.syncing ? '<span class="spinner" aria-hidden="true"></span> Aggiornamento…' : 'Aggiorna da Beds24';
+  if (ELS.miniRefreshBtn) {
+    ELS.miniRefreshBtn.disabled = S.syncing;
+    ELS.miniRefreshBtn.textContent = S.syncing ? 'Aggiorna…' : 'Aggiorna';
+  }
 }
 
 export function renderOrphanBanner() {
@@ -167,6 +174,7 @@ export function renderTimeline() {
   ELS.timelineBody.innerHTML = rowsHtml.join('');
 
   bindTimelineEvents();
+  updateTodayMarker(monthDays);
 }
 
 export function buildTimelineHeader(monthDays) {
@@ -499,3 +507,25 @@ registerRenderBindings({
   renderStaticShell,
   renderSyncMeta,
 });
+
+function updateTodayMarker(monthDays) {
+  const marker = ELS.todayMarker;
+  if (!marker) return;
+  const today = new Date();
+  const todayIndex = monthDays.findIndex((date) => isSameDate(date, today));
+  if (todayIndex < 0) {
+    marker.classList.remove('visible');
+    marker.dataset.baseLeft = '';
+    return;
+  }
+  const dayWidth = getDayWidth();
+  const labelWidth = parseInt(
+    getComputedStyle(document.documentElement).getPropertyValue('--label-width').trim(),
+    10
+  ) || 320;
+  const baseLeft = labelWidth + (todayIndex * dayWidth) + (dayWidth / 2) - 1;
+  const scrollLeft = ELS.timelineScroll?.scrollLeft || 0;
+  marker.dataset.baseLeft = String(baseLeft);
+  marker.style.left = `${baseLeft - scrollLeft}px`;
+  marker.classList.add('visible');
+}

@@ -157,7 +157,7 @@ export function unique(values) {
 
 export function channelLabel(value, channelConfig) {
   if (!value) return 'Altro';
-  return channelConfig[value]?.label || titleCase(String(value).replace(/_/g, ' '));
+  return channelConfig?.[value]?.label || titleCase(String(value).replace(/_/g, ' '));
 }
 
 export function compareBookingsForRender(a, b) {
