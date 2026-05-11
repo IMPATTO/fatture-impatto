@@ -524,12 +524,12 @@ input {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 2px;
-  background: rgba(214, 76, 76, 0.55);
+  width: 3px;
+  background: rgba(205, 36, 36, 0.82);
   pointer-events: none;
   z-index: 15;
   display: none;
-  box-shadow: 0 0 8px rgba(214, 76, 76, 0.25);
+  box-shadow: 0 0 12px rgba(205, 36, 36, 0.38);
 }
 
 .today-marker.visible {
