@@ -207,24 +207,29 @@ export async function refreshFromBeds24() {
   S.syncing = true;
   RENDER.renderSyncMeta?.();
   try {
+    const token = S.session?.access_token;
+    if (!token) throw new Error('Sessione non valida');
+
     const bookingsUrl = '/.netlify/functions/beds24-sync-bookings?dryRun=0';
-    const bookingsResponse = await fetch(bookingsUrl, { method: 'GET' });
+    const bookingsResponse = await fetch(bookingsUrl, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     const bookingsPayload = await bookingsResponse.json().catch(() => ({}));
     if (!bookingsResponse.ok) {
       throw new Error(bookingsPayload.error || bookingsPayload.detail || 'Aggiornamento Beds24 non riuscito');
     }
 
-    const accessToken = S.session?.access_token || '';
-    const calendarResponse = await fetch('/.netlify/functions/sync-beds24-calendar', {
+    fetch('/.netlify/functions/sync-beds24-calendar-background?days=7', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${accessToken}`,
+        Authorization: `Bearer ${token}`,
       },
+    }).catch((error) => {
+      console.warn('Calendar sync trigger failed', error);
     });
-    const calendarPayload = await calendarResponse.json().catch(() => ({}));
-    if (!calendarResponse.ok) {
-      console.warn('Calendar sync failed (booking sync ok)', calendarPayload);
-    }
 
     await ensureDataLoaded({ monthOnly: true });
   } catch (error) {
