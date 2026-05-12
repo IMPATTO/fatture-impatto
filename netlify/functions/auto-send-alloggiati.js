@@ -225,7 +225,21 @@ async function processApartmentSend(supabase, link, ospiti, actorEmail) {
     schedine,
     apartmentPortalId: link.id_appartamento_portale,
   });
-  const result = await soapSendOrTest(soapRequest);
+  let result = await soapSendOrTest(soapRequest);
+  if (isAlloggiatiMethodMismatch(result.error)) {
+    const fallbackSoapRequest = flipSoapRequestMode(soapRequest);
+    if (fallbackSoapRequest) {
+      const fallbackResult = await soapSendOrTest(fallbackSoapRequest);
+      if (!fallbackResult.error || fallbackResult.schedineValide > 0) {
+        console.info('[auto-send-alloggiati] method fallback applied', {
+          from: soapRequest.action,
+          to: fallbackSoapRequest.action,
+          apartmentPortalId: fallbackSoapRequest.apartmentPortalId || null,
+        });
+        result = fallbackResult;
+      }
+    }
+  }
   const fullSuccess = !result.error && result.schedineValide === ospiti.length;
   const partialSuccess = !result.error && result.schedineValide > 0 && result.schedineValide < ospiti.length;
   const partialMessage = partialSuccess
@@ -440,6 +454,38 @@ function buildSoapRequestConfig({ baseAction, username, token, schedine, apartme
     token,
     schedine,
     apartmentPortalId: useApartmentManagement ? normalizedApartmentPortalId : '',
+  };
+}
+
+function isAlloggiatiMethodMismatch(errorMessage) {
+  const message = String(errorMessage || '').toLowerCase();
+  return message.includes('utilizzare i metodi appropriati')
+    || message.includes('utente gestore di appartamenti');
+}
+
+function flipSoapRequestMode({ action, username, token, schedine, apartmentPortalId }) {
+  const baseAction = String(action || '').includes('Test') ? 'Test' : 'Send';
+  const currentlyUsingApartmentManagement = String(action || '').startsWith('GestioneAppartamenti_');
+  const normalizedApartmentPortalId = String(apartmentPortalId || '').trim();
+
+  if (currentlyUsingApartmentManagement) {
+    return {
+      action: baseAction,
+      username,
+      token,
+      schedine,
+      apartmentPortalId: '',
+    };
+  }
+
+  if (!normalizedApartmentPortalId) return null;
+
+  return {
+    action: `GestioneAppartamenti_${baseAction}`,
+    username,
+    token,
+    schedine,
+    apartmentPortalId: normalizedApartmentPortalId,
   };
 }
 
