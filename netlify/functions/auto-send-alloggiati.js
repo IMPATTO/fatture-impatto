@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const ENDPOINT = 'https://alloggiatiweb.poliziadistato.it/service/service.asmx';
 const ITALIA_CODE = '100000100';
 const ROME_TIMEZONE = 'Europe/Rome';
+const DEFAULT_SUPABASE_URL = 'https://tysxeikqbgebpfyblgeb.supabase.co';
 const ELIGIBLE_STATI = ['APPROVATA', 'CREDENZIALI_INVIATE', 'BOZZA_CREATA', 'CHECK_IN_COMPLETATO'];
 const ELIGIBLE_ALLOGGIATI_STATI = ['DA_INVIARE', 'ERRORE'];
 
@@ -15,10 +16,13 @@ exports.handler = async () => {
   const now = new Date();
   const romeNow = getRomeDateParts(now);
 
-  const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
+  const supabaseUrl = process.env.SUPABASE_URL || DEFAULT_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+  if (!serviceRoleKey) {
+    return json(500, { ok: false, error: 'Configurazione server non valida: SUPABASE_SERVICE_ROLE_KEY mancante' });
+  }
+
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   try {
     const { data: links, error: linksError } = await supabase
