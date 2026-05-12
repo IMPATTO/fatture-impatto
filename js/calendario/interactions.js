@@ -39,7 +39,7 @@ export function cacheElements() {
     'loginOverlay', 'loginForm', 'loginEmail', 'loginPassword', 'loginError', 'loginSubmit',
     'app', 'navUser', 'logoutBtn', 'navbarToggle', 'navbarMenu', 'rangeInfo',
     'prevMonthBtn', 'nextMonthBtn', 'monthPickerBtn', 'monthPickerInput',
-    'refreshBtn', 'exportBtn', 'lastSyncLabel', 'sidebarToggle', 'pageBody', 'pageHeader', 'sidebar', 'cityFilters', 'channelFilters',
+    'refreshBtn', 'syncPricesBtn', 'exportBtn', 'lastSyncLabel', 'sidebarToggle', 'pageBody', 'pageHeader', 'sidebar', 'cityFilters', 'channelFilters',
     'miniHeader', 'miniMonthLabel', 'miniPrevMonth', 'miniNextMonth', 'miniRefreshBtn',
     'statusFilters', 'timelineHeader', 'timelineBody', 'timelineShell', 'timelineScroll',
     'mobileList', 'loadingState', 'emptyState', 'errorState', 'orphanBanner',
@@ -63,6 +63,7 @@ export function bindShellEvents() {
   ELS.monthPickerBtn?.addEventListener('click', () => ELS.monthPickerInput?.showPicker ? ELS.monthPickerInput.showPicker() : ELS.monthPickerInput.click());
   ELS.monthPickerInput?.addEventListener('change', handleMonthPicker);
   ELS.refreshBtn?.addEventListener('click', refreshFromBeds24);
+  ELS.syncPricesBtn?.addEventListener('click', syncPricesWeek);
   ELS.miniRefreshBtn?.addEventListener('click', refreshFromBeds24);
   ELS.exportBtn?.addEventListener('click', exportVisibleCsv);
   ELS.orphanBanner?.addEventListener('click', () => RENDER.openOrphanModal?.());
@@ -222,15 +223,6 @@ export async function refreshFromBeds24() {
       throw new Error(bookingsPayload.error || bookingsPayload.detail || 'Aggiornamento Beds24 non riuscito');
     }
 
-    fetch('/.netlify/functions/sync-beds24-calendar-background?days=7', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }).catch((error) => {
-      console.warn('Calendar sync trigger failed', error);
-    });
-
     await ensureDataLoaded({ monthOnly: true });
   } catch (error) {
     console.error('calendario refresh error', error);
@@ -238,6 +230,37 @@ export async function refreshFromBeds24() {
   } finally {
     S.syncing = false;
     RENDER.renderSyncMeta?.();
+  }
+}
+
+export async function syncPricesWeek() {
+  if (S.syncingPrices) return;
+  S.syncingPrices = true;
+  updatePricesSyncBtn();
+  try {
+    const token = S.session?.access_token;
+    if (!token) throw new Error('Sessione non valida');
+
+    const url = '/.netlify/functions/sync-beds24-calendar-background?days=7';
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (response.status !== 202 && !response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(payload.error || `Sync prezzi failed: ${response.status}`);
+    }
+
+    alert('Sync prezzi avviato in background. Tra 1-2 minuti aggiorna la pagina per vedere i nuovi prezzi.');
+  } catch (error) {
+    console.error('sync prezzi error', error);
+    alert(error.message || 'Sync prezzi non riuscito');
+  } finally {
+    S.syncingPrices = false;
+    updatePricesSyncBtn();
   }
 }
 
@@ -307,6 +330,13 @@ export function setError(message) {
 
 export function handleRetryClick() {
   void ensureDataLoaded({ monthOnly: true });
+}
+
+function updatePricesSyncBtn() {
+  const btn = ELS.syncPricesBtn;
+  if (!btn) return;
+  btn.disabled = !!S.syncingPrices;
+  btn.textContent = S.syncingPrices ? 'Sync in corso…' : 'Sync prezzi';
 }
 
 export function handleScrollHeaderToggle() {

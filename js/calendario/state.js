@@ -62,6 +62,7 @@ export const S = {
   staticLoaded: false,
   loading: false,
   syncing: false,
+  syncingPrices: false,
   monthDate: new Date(now.getFullYear(), now.getMonth(), 1),
   apartments: [],
   apartmentMap: new Map(),

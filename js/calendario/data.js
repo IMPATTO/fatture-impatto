@@ -403,12 +403,16 @@ export function getInventoryStateForUnit(unit, date) {
 }
 
 export function getDayAvailabilityState(row, date) {
-  const state = getInventoryStateForUnit(row.unit, date);
+  const stateFromInventory = getInventoryStateForUnit(row.unit, date);
   const iso = isoDateLocal(date);
   const hasBooking = row.bookings.some((booking) => booking.check_in <= iso && booking.check_out > iso);
+  const cachedDay = S.calendarDayByUnitDate.get(`${row.unit?.id || ''}:${iso}`);
   return {
-    ...state,
-    hasBooking: state.hasBooking || hasBooking,
+    ...stateFromInventory,
+    hasBooking: stateFromInventory.hasBooking || hasBooking,
+    price: stateFromInventory.price ?? cachedDay?.price ?? null,
+    minStay: stateFromInventory.minStay ?? cachedDay?.min_stay ?? null,
+    closed: stateFromInventory.closed || (cachedDay?.closed === true),
   };
 }
 

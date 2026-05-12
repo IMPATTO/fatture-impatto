@@ -125,6 +125,10 @@ export function renderSyncMeta() {
   ELS.lastSyncLabel.textContent = S.lastSync ? `${formatDateTime(S.lastSync)} (${minutesAgoLabel(S.lastSync)})` : 'Nessun sync ancora registrato';
   ELS.refreshBtn.disabled = S.syncing;
   ELS.refreshBtn.innerHTML = S.syncing ? '<span class="spinner" aria-hidden="true"></span> Aggiornamento…' : 'Aggiorna da Beds24';
+  if (ELS.syncPricesBtn) {
+    ELS.syncPricesBtn.disabled = S.syncingPrices;
+    ELS.syncPricesBtn.textContent = S.syncingPrices ? 'Sync in corso…' : 'Sync prezzi';
+  }
   if (ELS.miniRefreshBtn) {
     ELS.miniRefreshBtn.disabled = S.syncing;
     ELS.miniRefreshBtn.textContent = S.syncing ? 'Aggiorna…' : 'Aggiorna';
@@ -257,15 +261,20 @@ export function buildDayCells(row, monthDays) {
     let content = '';
     if (state.closed) {
       content = `<span class="cell-badge" aria-hidden="true">${state.hasBooking ? '•' : '×'}</span>`;
-    } else if (!state.hasBooking && (state.price != null || state.minStay != null)) {
-      const priceLabel = state.price != null
-        ? `<span class="cell-price">€${esc(String(Math.round(Number(state.price))))}</span>`
+    } else if (!state.hasBooking) {
+      const priceTxt = state.price != null
+        ? `€${Math.round(Number(state.price))}`
         : '';
-      const stayLabel = state.minStay != null && Number(state.minStay) > 1
-        ? `<span class="cell-stay">${esc(String(state.minStay))}n</span>`
-        : '';
-      if (priceLabel || stayLabel) {
-        content = `<div class="cell-info">${priceLabel}${stayLabel}</div>`;
+      const stayTxt = state.minStay != null && Number(state.minStay) > 1
+        ? `${state.minStay}n`
+        : '-';
+      if (priceTxt) {
+        content = `
+          <div class="cell-info">
+            <span class="cell-price">${esc(priceTxt)}</span>
+            <span class="cell-stay">${esc(stayTxt)}</span>
+          </div>
+        `;
       }
     }
     return `
