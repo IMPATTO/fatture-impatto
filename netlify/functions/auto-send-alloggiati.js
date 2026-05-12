@@ -8,6 +8,12 @@ const DEFAULT_SUPABASE_URL = 'https://tysxeikqbgebpfyblgeb.supabase.co';
 const ELIGIBLE_STATI = ['APPROVATA', 'CREDENZIALI_INVIATE', 'BOZZA_CREATA', 'CHECK_IN_COMPLETATO'];
 const ELIGIBLE_ALLOGGIATI_STATI = ['DA_INVIARE', 'ERRORE'];
 
+function normalizeSupabaseUrl(value) {
+  const normalized = String(value || '').trim();
+  if (/^https?:\/\//i.test(normalized)) return normalized.replace(/\/+$/, '');
+  return DEFAULT_SUPABASE_URL;
+}
+
 exports.config = {
   schedule: '30 23 * * *',
 };
@@ -16,7 +22,7 @@ exports.handler = async () => {
   const now = new Date();
   const romeNow = getRomeDateParts(now);
 
-  const supabaseUrl = process.env.SUPABASE_URL || DEFAULT_SUPABASE_URL;
+  const supabaseUrl = normalizeSupabaseUrl(process.env.SUPABASE_URL);
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
   if (!serviceRoleKey) {
     return json(500, { ok: false, error: 'Configurazione server non valida: SUPABASE_SERVICE_ROLE_KEY mancante' });

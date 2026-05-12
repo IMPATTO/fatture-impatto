@@ -13,6 +13,12 @@ const ENDPOINT = 'https://alloggiatiweb.poliziadistato.it/service/service.asmx';
 const ITALIA_CODE = '100000100';
 const DEFAULT_SUPABASE_URL = 'https://tysxeikqbgebpfyblgeb.supabase.co';
 
+function normalizeSupabaseUrl(value) {
+  const normalized = String(value || '').trim();
+  if (/^https?:\/\//i.test(normalized)) return normalized.replace(/\/+$/, '');
+  return DEFAULT_SUPABASE_URL;
+}
+
 // ── Security: Rate limiting (in-memory, per-function instance) ──
 const rateLimits = {};
 function checkRateLimit(userId, maxPerHour = 60) {
@@ -44,7 +50,7 @@ exports.handler = async (event) => {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
-  const supabaseUrl = process.env.SUPABASE_URL || DEFAULT_SUPABASE_URL;
+  const supabaseUrl = normalizeSupabaseUrl(process.env.SUPABASE_URL);
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
   if (!serviceRoleKey) {
     return { statusCode: 500, body: JSON.stringify({ error: 'Configurazione server non valida: SUPABASE_SERVICE_ROLE_KEY mancante' }) };
