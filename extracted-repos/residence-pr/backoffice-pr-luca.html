@@ -3,274 +3,139 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Backoffice PR Luca · Impatto</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/js/supabase-client.js"></script>
-  <script src="/js/pr-luca-shared.js"></script>
+  <title>Backoffice Legacy Luca · Modulo dismesso</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
   <style>
     :root{
-      --bg:#f5f1ea;--paper:#fff;--line:#ddd0bc;--text:#1f2835;--muted:#6c7787;--gold:#bb8d3a;--sea:#1f6c83;--rose:#b65f7b;--ok:#1f7a59;--bad:#a53b3b;
-      --shadow:0 18px 50px rgba(31,40,53,.1)
+      --sand:#f6f0e6;
+      --paper:#ffffff;
+      --line:#dfd0ba;
+      --ink:#1f2835;
+      --muted:#6d7685;
+      --gold:#b98b3a;
+      --warn:#8a6217;
+      --warn-bg:#fff7e8;
+      --shadow:0 22px 60px rgba(31,40,53,.12);
     }
-    *{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#f6f1e8 0%,#fbfaf7 46%,#edf4f8 100%);color:var(--text);font-family:'DM Sans',sans-serif}
-    .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-    .login-card,.panel{background:var(--paper);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow)}
-    .login-card{width:min(420px,100%);padding:30px}.brand{font-family:'Cormorant Garamond',serif;font-size:40px;line-height:1;margin:0 0 8px}.sub{font:11px 'DM Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:18px}
-    .field{margin-bottom:14px}.field label{display:block;font:11px 'DM Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}.field input{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:14px;font:inherit}
-    .btn{border:none;border-radius:999px;padding:11px 16px;font:600 14px 'DM Sans',sans-serif;cursor:pointer}.btn-primary{background:linear-gradient(135deg,var(--gold) 0%,#d5a24f 100%);color:#fff}.btn-secondary{background:#fff;border:1px solid var(--line);color:var(--text)}.btn-sea{background:linear-gradient(135deg,var(--sea) 0%,#2c88a4 100%);color:#fff}.btn-ok{background:linear-gradient(135deg,var(--ok) 0%,#28916b 100%);color:#fff}.btn-bad{background:linear-gradient(135deg,var(--bad) 0%,#c84a4a 100%);color:#fff}
-    .err{display:none;background:#fae1e1;color:var(--bad);padding:10px 12px;border-radius:14px;margin-bottom:12px}
-    .page{max-width:1540px;margin:0 auto;padding:22px}.hero{display:grid;grid-template-columns:1.2fr .8fr;gap:18px}.hero-card{padding:24px}.hero h1{font-family:'Cormorant Garamond',serif;font-size:54px;line-height:.95;margin:0 0 10px}.hero p{margin:0;color:var(--muted);line-height:1.6}
-    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.stat{padding:16px;border-radius:22px;background:#fffaf1;border:1px solid var(--line)}.stat strong{display:block;font-family:'Cormorant Garamond',serif;font-size:30px}.stat span{font:10px 'DM Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-    .content{display:grid;grid-template-columns:410px minmax(0,1fr);gap:18px;margin-top:18px}.panel{padding:20px}.panel-title{font-family:'Cormorant Garamond',serif;font-size:34px;margin:0}.panel-sub{font-size:13px;color:var(--muted)}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px}
-    .queue{display:grid;gap:12px;max-height:calc(100vh - 240px);overflow:auto;padding-right:4px}.request{border:1px solid var(--line);border-radius:20px;padding:14px 16px;background:linear-gradient(180deg,#fff 0%,#fbf8f2 100%)}.request strong{display:block}.request small{display:block;color:var(--muted);line-height:1.45;margin-top:4px}.request-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-    .badge{display:inline-flex;align-items:center;border-radius:999px;padding:5px 10px;font:500 10px 'DM Mono',monospace;letter-spacing:.1em;text-transform:uppercase}.pending{background:#f8dfe6;color:var(--rose)}.confirmed{background:#dbf3e7;color:var(--ok)}.rejected{background:#fae1e1;color:var(--bad)}
-    .calendar-shell{overflow:auto;border:1px solid var(--line);border-radius:22px;background:#fff}.calendar-grid{display:grid;gap:0;min-width:1200px;position:relative}
-    .cal-header{background:#f8f4ed;padding:.5rem .25rem;text-align:center;border-bottom:2px solid var(--line);border-right:1px solid #eee2cf;position:sticky;top:0;z-index:2}.cal-header.weekend{background:#dceef4}.cal-header.apt-col{text-align:left;padding:.625rem .875rem;background:#fff;z-index:3;position:sticky;left:0;font-family:'Cormorant Garamond',serif;font-size:14px;font-weight:600;color:var(--text);letter-spacing:.5px;text-transform:uppercase}
-    .cal-day-name{font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-weight:500}.cal-day-label{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:var(--text);margin-top:1px}.cal-header.today{background:#fff3d6}
-    .apt-name{background:#fff;padding:.5rem .875rem;border-bottom:1px solid #eee2cf;border-right:2px solid var(--line);position:sticky;left:0;z-index:1;display:flex;flex-direction:column;justify-content:center;gap:1px;min-height:48px}.apt-name .a-title{font-size:13px;font-weight:600;color:var(--text);line-height:1.2}.apt-name .a-meta{font-size:10px;color:var(--muted);font-weight:400}.apt-name .a-note{font-size:9px;color:#8a6429;font-style:italic;margin-top:1px}.apt-name.blocked{background:linear-gradient(90deg,#f1ebdf 0%,#fff 100%);opacity:.85}.apt-name.external{background:linear-gradient(90deg,#dceef4 0%,#fff 100%);border-left:3px solid var(--sea)}
-    .apt-cell{border-bottom:1px solid #eee2cf;border-right:1px solid #eee2cf;min-height:48px;position:relative;background:#fff}.apt-cell.weekend{background:rgba(220,238,244,.35)}.apt-cell.today{box-shadow:inset 0 0 0 1px rgba(187,141,58,.45)}.apt-cell.unavail{background:repeating-linear-gradient(45deg,#f0ebe0,#f0ebe0 4px,#e8dcc0 4px,#e8dcc0 8px);opacity:.55}
-    .closed-cell-overlay{pointer-events:none;z-index:2;border-top:7px solid rgba(165,59,59,.92);border-bottom:4px solid rgba(165,59,59,.22);background:linear-gradient(180deg,rgba(165,59,59,.12) 0%,rgba(165,59,59,0) 60%)}
-    .closed-cell-overlay::after{content:'X';position:absolute;top:-7px;right:3px;color:#fff;font:700 10px/1 'DM Mono',monospace}
-    .closed-cell-overlay.with-booking{border-top-color:rgba(165,59,59,.88);background:linear-gradient(180deg,rgba(165,59,59,.16) 0%,rgba(165,59,59,.04) 60%,rgba(165,59,59,0) 100%)}
-    .closed-cell-overlay.with-booking::after{content:'•'}
-    .closed-badge{position:absolute;right:4px;top:4px;width:16px;height:16px;border-radius:50%;background:rgba(165,59,59,.92);color:#fff;font:700 10px/16px 'DM Mono',monospace;text-align:center}
-    .group-header{background:linear-gradient(90deg,#efe7da 0%,#f8f4ed 100%);padding:.5rem .875rem;font-family:'Cormorant Garamond',serif;font-size:12px;font-weight:700;color:#8a6429;text-transform:uppercase;letter-spacing:2px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}.group-header.external-group{background:linear-gradient(90deg,#dceef4 0%,#f8f4ed 100%);color:var(--sea)}
-    .booking{position:absolute;border-radius:12px;padding:4px 8px;font-size:11px;font-weight:600;color:#fff;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;z-index:1;display:flex;align-items:center;gap:4px;box-shadow:0 1px 3px rgba(0,0,0,.12)}.booking:hover{z-index:5;box-shadow:0 4px 12px rgba(0,0,0,.18)}
-    .booking.confirmed{background:linear-gradient(135deg,#6a9d80 0%,#4a7d60 100%)}.booking.pending{background:linear-gradient(135deg,#d4a062 0%,#b88040 100%)}.booking.rejected{background:linear-gradient(135deg,#c87862 0%,#a05a48 100%);opacity:.7;text-decoration:line-through}
-    .booking.checco{box-shadow:inset 0 0 0 2px rgba(255,232,194,.95),0 1px 3px rgba(0,0,0,.12)}.booking.confirmed.non-checco{background:linear-gradient(135deg,#607d98 0%,#456079 100%)}.booking.pending.non-checco{background:linear-gradient(135deg,#8d6aa9 0%,#6b4f86 100%)}.booking.non-checco{box-shadow:inset 0 0 0 2px rgba(255,255,255,.72),0 1px 3px rgba(0,0,0,.12);filter:saturate(.88)}.booking.beds24.confirmed{background:linear-gradient(135deg,var(--sea) 0%,#2d88a3 100%)}.booking.luca.confirmed{background:linear-gradient(135deg,#6d5aa8 0%,#8b74c2 100%)}.booking.closed-span{box-shadow:inset 0 0 0 2px rgba(255,255,255,.9),0 1px 3px rgba(0,0,0,.12)}.booking.beds24.closed-span{background:repeating-linear-gradient(45deg,#1f6c83,#1f6c83 5px,#2d88a3 5px,#2d88a3 10px)}.booking.fully-closed{outline:2px solid rgba(165,59,59,.42);outline-offset:1px}
-    .hidden{display:none!important}.warn{margin-top:10px;background:#fff7e8;color:#8a6217;border-radius:16px;padding:10px 12px;font-size:12px}
-    @media (max-width:1180px){.hero,.content{grid-template-columns:1fr}}@media (max-width:720px){.page{padding:14px}.hero h1{font-size:42px}.stats{grid-template-columns:1fr}}
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+      background:linear-gradient(180deg,#f7f1e7 0%,#fcfaf7 48%,#eef5f8 100%);
+      color:var(--ink);
+      font-family:'DM Sans',sans-serif;
+    }
+    .card{
+      width:min(760px,100%);
+      background:var(--paper);
+      border:1px solid var(--line);
+      border-radius:32px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .hero{
+      padding:32px 32px 24px;
+      background:linear-gradient(135deg,#222528 0%,#3d434b 54%,#707985 100%);
+      color:#fff;
+    }
+    .eyebrow{
+      margin:0 0 10px;
+      font-size:11px;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      opacity:.78;
+    }
+    h1{
+      margin:0;
+      font-family:'Cormorant Garamond',serif;
+      font-size:46px;
+      line-height:.95;
+    }
+    .copy{
+      padding:28px 32px 32px;
+    }
+    .copy p{
+      margin:0 0 14px;
+      line-height:1.65;
+      color:var(--muted);
+      font-size:15px;
+    }
+    .notice{
+      margin:18px 0 22px;
+      padding:14px 16px;
+      border-radius:18px;
+      background:var(--warn-bg);
+      color:var(--warn);
+      font-size:14px;
+      line-height:1.55;
+    }
+    .actions{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:22px;
+    }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:46px;
+      padding:0 18px;
+      border-radius:999px;
+      text-decoration:none;
+      font-weight:600;
+      transition:transform .18s ease, box-shadow .18s ease;
+    }
+    .btn:hover{
+      transform:translateY(-1px);
+    }
+    .btn-primary{
+      background:linear-gradient(135deg,var(--gold) 0%,#d4a24d 100%);
+      color:#fff;
+      box-shadow:0 12px 24px rgba(185,139,58,.24);
+    }
+    .btn-secondary{
+      border:1px solid var(--line);
+      color:var(--ink);
+      background:#fff;
+    }
+    .meta{
+      margin-top:18px;
+      font-size:12px;
+      color:var(--muted);
+    }
+    @media (max-width:640px){
+      .hero{padding:28px 22px 22px}
+      .copy{padding:22px}
+      h1{font-size:38px}
+      .actions{flex-direction:column}
+      .btn{width:100%}
+    }
   </style>
 </head>
 <body>
-<div id="loginWrap" class="login-wrap">
-  <div class="login-card">
-    <div class="brand">Backoffice Luca</div>
-    <div class="sub">Approvazioni PR</div>
-    <div id="loginErr" class="err"></div>
-    <div class="field"><label>Email</label><input id="lem" type="email" autocomplete="username"/></div>
-    <div class="field"><label>Password</label><input id="lpw" type="password" autocomplete="current-password"/></div>
-    <button id="loginBtn" class="btn btn-primary" style="width:100%">Entra</button>
-  </div>
-</div>
-
-<div id="app" class="hidden">
-  <div class="page">
+  <main class="card">
     <section class="hero">
-      <div class="panel hero-card">
-        <div class="sub">Backoffice PR Luca × Impatto</div>
-        <h1>Approva e sincronizza</h1>
-        <p>Le richieste Luca restano in attesa finché non le approvi qui. Quelle Residence entrano in `rm_bookings`; quelle Beds24 vengono scritte come blocchi nominativi su Beds24 e quindi compaiono anche nel tuo calendario principale.</p>
-        <div class="actions">
-          <button id="refreshBtn" class="btn btn-sea">Aggiorna</button>
-          <button id="logoutBtn" class="btn btn-secondary">Esci</button>
-        </div>
-        <div id="warnings"></div>
-      </div>
-      <div class="stats">
-        <div class="stat"><span>Pending</span><strong id="statPending">0</strong></div>
-        <div class="stat"><span>Confermate</span><strong id="statConfirmed">0</strong></div>
-        <div class="stat"><span>Residence + Beds24</span><strong id="statRows">0</strong></div>
-      </div>
+      <div class="eyebrow">Il Lupo Affitta · Legacy interno</div>
+      <h1>Backoffice Luca dismesso</h1>
     </section>
-
-    <section class="content">
-      <aside class="panel">
-        <div class="panel-head">
-          <div>
-            <h2 class="panel-title">Coda richieste</h2>
-            <div class="panel-sub">A destra vedi subito il calendario combinato aggiornato.</div>
-          </div>
-        </div>
-        <div id="queue" class="queue"></div>
-      </aside>
-
-      <div class="panel">
-        <div class="panel-head">
-          <div>
-            <h2 class="panel-title" id="calendarTitle">Calendario</h2>
-            <div class="panel-sub">Rosa = richieste Luca pending, viola = richieste Luca già approvate, blu = Beds24, oro = Residence/Kekko.</div>
-          </div>
-          <div class="actions" style="margin-top:0">
-            <button id="prevMonthBtn" class="btn btn-secondary">←</button>
-            <button id="nextMonthBtn" class="btn btn-secondary">→</button>
-          </div>
-        </div>
-        <div class="calendar-shell">
-          <div id="calendarGrid" class="calendar-grid"></div>
-        </div>
+    <section class="copy">
+      <p>Questo pannello non gestisce piu richieste operative. Il canale PR Luca e stato archiviato e la relativa coda non e piu mantenuta come flusso attivo.</p>
+      <p>Gli URL vengono mantenuti vivi solo per non produrre link rotti e per conservare continuita storica nel progetto.</p>
+      <div class="notice">
+        Dal 12 maggio 2026 non vengono piu accettate nuove richieste Luca e la coda legacy e stata sacrificata. Eventuali prenotazioni storiche restano consultabili nel perimetro Residence tramite il filtro <strong>Luca (legacy)</strong>.
       </div>
+      <div class="actions">
+        <a class="btn btn-primary" href="/residence-backoffice.html">Apri backoffice Residence</a>
+        <a class="btn btn-secondary" href="/pr_kekko_riccione.html">Apri PR Kekko</a>
+      </div>
+      <div class="meta">URL legacy mantenuto intenzionalmente per compatibilita e continuita dei collegamenti.</div>
     </section>
-  </div>
-</div>
-
-<script>
-const sb = window.sb;
-const SH = window.prLucaShared;
-const DEFAULT_VIEW_MONTH = '2026-07-01';
-const S = { session: null, viewMonth: DEFAULT_VIEW_MONTH, rows: [], requests: [], loading: false, refreshSeq: 0 };
-
-function showError(message) {
-  const el = document.getElementById('loginErr');
-  el.textContent = message;
-  el.style.display = message ? 'block' : 'none';
-}
-
-function selectedRange() {
-  return { from: S.viewMonth, to: SH.addDays(SH.endOfMonth(S.viewMonth), 1) };
-}
-
-function renderWarnings(warnings) {
-  document.getElementById('warnings').innerHTML = (warnings || []).slice(0, 4).map((msg) => `<div class="warn">${SH.esc(msg)}</div>`).join('');
-}
-
-function setLoadingState(isLoading) {
-  S.loading = isLoading;
-  document.getElementById('refreshBtn').disabled = isLoading;
-  document.getElementById('prevMonthBtn').disabled = isLoading;
-  document.getElementById('nextMonthBtn').disabled = isLoading;
-  document.getElementById('refreshBtn').textContent = isLoading ? 'Aggiorno…' : 'Aggiorna';
-}
-
-function renderQueue() {
-  const queue = document.getElementById('queue');
-  if (!S.requests.length) {
-    queue.innerHTML = `<div class="warn">Nessuna richiesta Luca da gestire.</div>`;
-    return;
-  }
-  queue.innerHTML = S.requests.map((row) => `
-    <div class="request">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-        <strong>${SH.esc(row.customer_name)}</strong>
-        <span class="badge ${SH.esc(row.status)}">${SH.esc(row.status)}</span>
-      </div>
-      <small>${SH.esc(row.apartment_label)} · ${SH.fmtDate(row.checkin)} → ${SH.fmtDate(row.checkout)} · ${SH.esc(row.pax)} pax</small>
-      ${row.notes ? `<small>${SH.esc(row.notes)}</small>` : ''}
-      <small>Scope: ${SH.esc(row.scope)}${row.sync_error ? ` · errore sync: ${SH.esc(row.sync_error)}` : ''}</small>
-      ${row.status === 'pending' ? `
-        <div class="request-actions">
-          <button class="btn btn-ok" data-approve="${row.id}">Approva</button>
-          <button class="btn btn-bad" data-reject="${row.id}">Rifiuta</button>
-        </div>
-      ` : ''}
-    </div>
-  `).join('');
-
-  queue.querySelectorAll('[data-approve]').forEach((btn) => btn.addEventListener('click', () => approveRequest(btn.dataset.approve)));
-  queue.querySelectorAll('[data-reject]').forEach((btn) => btn.addEventListener('click', () => rejectRequest(btn.dataset.reject)));
-}
-
-async function refreshAll() {
-  const seq = ++S.refreshSeq;
-  setLoadingState(true);
-  try {
-    const { from, to } = selectedRange();
-    const snapshot = await SH.fetchSnapshot(sb, from, to);
-    if (seq !== S.refreshSeq) return;
-    S.rows = snapshot.rows;
-    S.requests = snapshot.requests.filter((row) => row.partner === 'luca');
-    SH.renderCalendar(document.getElementById('calendarGrid'), snapshot.rows, snapshot.bookings, from, to, snapshot.closedMap);
-    document.getElementById('calendarTitle').textContent = `Calendario · ${SH.monthLabel(S.viewMonth)}`;
-    document.getElementById('statPending').textContent = S.requests.filter((row) => row.status === 'pending').length;
-    document.getElementById('statConfirmed').textContent = S.requests.filter((row) => row.status === 'confirmed').length;
-    document.getElementById('statRows').textContent = snapshot.rows.filter((row) => !row.disabled).length;
-    renderWarnings(snapshot.beds24Warnings);
-    renderQueue();
-  } catch (error) {
-    if (seq !== S.refreshSeq) return;
-    renderWarnings([error.message]);
-  } finally {
-    if (seq === S.refreshSeq) setLoadingState(false);
-  }
-}
-
-async function approveRequest(id) {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session?.access_token) return;
-  const res = await fetch('/.netlify/functions/approve-partner-booking', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${session.access_token}`,
-    },
-    body: JSON.stringify({ requestId: id, action: 'approve' }),
-  });
-  const payload = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    renderWarnings([payload.error || 'Errore approvazione richiesta']);
-    return;
-  }
-  await refreshAll();
-}
-
-async function rejectRequest(id) {
-  const reason = prompt('Motivo del rifiuto');
-  if (!reason) return;
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session?.access_token) return;
-  const res = await fetch('/.netlify/functions/approve-partner-booking', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${session.access_token}`,
-    },
-    body: JSON.stringify({ requestId: id, action: 'reject', reason }),
-  });
-  const payload = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    renderWarnings([payload.error || 'Errore rifiuto richiesta']);
-    return;
-  }
-  await refreshAll();
-}
-
-async function doLogin() {
-  showError('');
-  const { error } = await sb.auth.signInWithPassword({
-    email: document.getElementById('lem').value.trim(),
-    password: document.getElementById('lpw').value,
-  });
-  if (error) showError(error.message);
-}
-
-function enterApp(session) {
-  S.session = session;
-  document.getElementById('loginWrap').classList.add('hidden');
-  document.getElementById('app').classList.remove('hidden');
-  refreshAll();
-}
-
-document.getElementById('loginBtn').addEventListener('click', doLogin);
-document.getElementById('lpw').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
-document.getElementById('refreshBtn').addEventListener('click', refreshAll);
-document.getElementById('logoutBtn').addEventListener('click', () => sb.auth.signOut());
-document.getElementById('prevMonthBtn').addEventListener('click', async () => {
-  if (S.loading) return;
-  S.viewMonth = SH.shiftMonth(S.viewMonth, -1);
-  await refreshAll();
-});
-document.getElementById('nextMonthBtn').addEventListener('click', async () => {
-  if (S.loading) return;
-  S.viewMonth = SH.shiftMonth(S.viewMonth, 1);
-  await refreshAll();
-});
-
-(async () => {
-  const { data: { session } } = await sb.auth.getSession();
-  if (session) enterApp(session);
-})();
-
-sb.auth.onAuthStateChange((_evt, session) => {
-  if (!session) {
-    S.session = null;
-    document.getElementById('app').classList.add('hidden');
-    document.getElementById('loginWrap').classList.remove('hidden');
-    return;
-  }
-  if (!S.session) enterApp(session);
-});
-</script>
+  </main>
 </body>
 </html>

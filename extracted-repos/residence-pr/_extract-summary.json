@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-10T16:41:42.369Z",
+  "generatedAt": "2026-05-12T12:00:00.000Z",
   "sourceRepo": "/Users/impattosrl/Desktop/fatture-impatto",
   "targetRoot": "/Users/impattosrl/Desktop/fatture-impatto/extracted-repos/residence-pr",
   "copiedFiles": [
@@ -8,13 +8,10 @@
     "pr_luca_riccione.html",
     "residence-backoffice.html",
     "residence-kekko.html",
-    "js/pr-luca-shared.js",
     "js/shared-app-auth.js",
     "js/supabase-client.js",
     "netlify/functions/_lib/shared-auth.js",
-    "netlify/functions/approve-partner-booking.js",
     "netlify/functions/get-calendar.js",
-    "netlify/functions/pr-luca-data.js",
     "netlify/functions/residence-api.js",
     "netlify/functions/shared-app-login.js",
     "setup-supabase.sql",
@@ -23,6 +20,6 @@
     "supabase/migrations/202605100004_harden_residence_and_partner_access.sql"
   ],
   "warnings": [
-    "Copied untracked working-tree file: supabase/migrations/202605100004_harden_residence_and_partner_access.sql"
+    "Legacy Luca runtime removed from snapshot: remaining Luca pages are static tombstones kept for URL compatibility."
   ]
 }

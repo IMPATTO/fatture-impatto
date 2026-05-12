@@ -3,422 +3,140 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>PR Luca Riccione · Il Lupo Affitta</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/js/supabase-client.js"></script>
-  <script src="/js/shared-app-auth.js"></script>
-  <script src="/js/pr-luca-shared.js"></script>
+  <title>PR Luca Riccione · Modulo dismesso</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
   <style>
     :root{
-      --sand-50:#f8f4ed; --sand-100:#efe7da; --sand-200:#dfd0ba; --ink:#1c2736; --muted:#69768a;
-      --gold:#bb8d3a; --gold-soft:#f4ead3; --sea:#1f6c83; --sea-soft:#dceef4; --rose:#aa4d68; --rose-soft:#f8dfe6;
-      --slate:#51657b; --slate-soft:#dde5ee; --success:#1f7a59; --success-soft:#dbf3e7; --danger:#a53b3b; --danger-soft:#fae1e1;
-      --radius:18px; --shadow:0 18px 50px rgba(28,39,54,.10);
+      --sand:#f6f0e6;
+      --paper:#ffffff;
+      --line:#dfd0ba;
+      --ink:#1f2835;
+      --muted:#6d7685;
+      --gold:#b98b3a;
+      --sea:#1f6c83;
+      --warn:#8a6217;
+      --warn-bg:#fff7e8;
+      --shadow:0 22px 60px rgba(31,40,53,.12);
     }
-    *{box-sizing:border-box} body{margin:0;font-family:'DM Sans',sans-serif;background:linear-gradient(180deg,#f7f1e7 0%,#fcfaf7 42%,#f0f5f8 100%);color:var(--ink)}
-    .login-wrap,.modal-backdrop{position:fixed;inset:0;background:rgba(24,32,43,.42);display:flex;align-items:center;justify-content:center;z-index:40;padding:20px}
-    .login-card,.modal{width:min(460px,100%);background:#fff;border-radius:24px;padding:28px;box-shadow:var(--shadow)}
-    .brand{font-family:'Cormorant Garamond',serif;font-size:40px;line-height:1;margin:0 0 8px}
-    .sub{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:18px}
-    .field{margin-bottom:14px}.field label{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;font-family:'DM Mono',monospace}
-    .field input,.field select,.field textarea{width:100%;padding:12px 14px;border:1px solid var(--sand-200);border-radius:14px;font:inherit}
-    .field textarea{min-height:90px;resize:vertical}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .btn{border:none;border-radius:999px;padding:12px 18px;font:600 14px 'DM Sans',sans-serif;cursor:pointer}
-    .btn-primary{background:linear-gradient(135deg,var(--gold) 0%,#d7a855 100%);color:#fff}
-    .btn-secondary{background:#fff;border:1px solid var(--sand-200);color:var(--ink)}
-    .btn-refresh{background:linear-gradient(135deg,var(--sea) 0%,#2f859d 100%);color:#fff}
-    .btn:disabled{opacity:.55;cursor:not-allowed}
-    .err{display:none;background:var(--danger-soft);color:var(--danger);padding:10px 12px;border-radius:14px;margin-bottom:12px}
-    .hero{background:linear-gradient(135deg,#0f4f62 0%,#1f6c83 50%,#56a0b5 100%);color:#fff;position:relative;overflow:hidden;padding:2.5rem 2rem 3rem}
-    .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 80% 20%, rgba(232,197,116,.15) 0%, transparent 40%),radial-gradient(circle at 20% 80%, rgba(255,255,255,.05) 0%, transparent 50%);pointer-events:none}
-    .hero::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:40px;background:linear-gradient(180deg,transparent,#fcfaf7);pointer-events:none}
-    .hero-inner{max-width:1400px;margin:0 auto;position:relative;z-index:2}
-    .hero-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2rem;flex-wrap:wrap;gap:1rem}
-    .hero h1{font-family:'Cormorant Garamond',serif;font-size:54px;line-height:.95;margin:0 0 10px}
-    .hero p{margin:0;color:rgba(255,255,255,.82);line-height:1.6;max-width:760px}
-    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
-    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-top:1.5rem}
-    .stat{background:rgba(255,255,255,.06);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:.875rem 1.125rem}
-    .stat strong{display:block;font-size:30px;font-family:'Cormorant Garamond',serif;color:#f3ddb0}
-    .stat span{font-size:11px;color:rgba(255,255,255,.72);text-transform:uppercase;letter-spacing:.14em;font-family:'DM Mono',monospace}
-    .page{max-width:1400px;margin:-1.5rem auto 0;padding:0 2rem 3rem;position:relative;z-index:3}
-    .user-strip{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid var(--sand-200);border-radius:24px;padding:1rem 1.5rem;margin-bottom:1.25rem;box-shadow:var(--shadow);flex-wrap:wrap;gap:1rem}
-    .user-greeting{display:flex;align-items:center;gap:1rem}
-    .user-avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--gold),#8a6429);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;border:2px solid #fff}
-    .user-greeting .greet{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--ink);line-height:1.2}
-    .user-greeting .role{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-top:2px}
-    .quick-stats{display:flex;gap:1.25rem;align-items:center;flex-wrap:wrap}
-    .quick-stat{text-align:center;padding:0 .75rem;border-right:1px solid var(--sand-200)}
-    .quick-stat:last-child{border-right:none;padding-right:0}
-    .quick-stat .num{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;color:var(--ink);line-height:1}
-    .quick-stat .lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-top:.25rem}
-    .toolbar{background:#fff;border:1px solid var(--sand-200);border-radius:24px;padding:1rem 1.25rem;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;box-shadow:0 8px 24px rgba(28,39,54,.08)}
-    .month-nav{display:flex;align-items:center;gap:.5rem}
-    .month-label{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;margin:0 1rem;min-width:200px;text-align:center;color:var(--ink);letter-spacing:-.3px}
-    .month-label .year{color:#8a6429;font-style:italic}
-    .legend{display:flex;gap:1rem;flex-wrap:wrap;font-size:11px;color:var(--muted);font-weight:500}
-    .legend-item{display:flex;align-items:center;gap:.4rem}
-    .legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
-    .content{display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
-    .requests-section{margin-top:18px}
-    .panel{background:#fff;border:1px solid rgba(223,208,186,.82);border-radius:28px;padding:20px;box-shadow:var(--shadow)}
-    .panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:16px}
-    .panel-title{font-family:'Cormorant Garamond',serif;font-size:34px;margin:0}
-    .panel-sub{font-size:13px;color:var(--muted)}
-    .calendar-shell{overflow:auto;border:1px solid var(--sand-200);border-radius:22px;background:#fff}
-    .calendar-grid{display:grid;gap:0;min-width:1200px;position:relative}
-    .cal-header{background:var(--sand-50);padding:.5rem .25rem;text-align:center;border-bottom:2px solid var(--sand-200);border-right:1px solid var(--sand-100);position:sticky;top:0;z-index:2}
-    .cal-header.weekend{background:var(--sea-soft)}
-    .cal-header.apt-col{text-align:left;padding:.625rem .875rem;background:#fff;z-index:3;position:sticky;left:0;font-family:'Cormorant Garamond',serif;font-size:14px;font-weight:600;color:var(--ink);letter-spacing:.5px;text-transform:uppercase}
-    .cal-day-name{font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-weight:500}
-    .cal-day-label{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:var(--ink);margin-top:1px}
-    .cal-header.today{background:var(--gold-soft)}
-    .apt-name{background:#fff;padding:.5rem .875rem;border-bottom:1px solid var(--sand-100);border-right:2px solid var(--sand-200);position:sticky;left:0;z-index:1;display:flex;flex-direction:column;justify-content:center;gap:1px;min-height:48px}
-    .apt-name .a-title{font-size:13px;font-weight:600;color:var(--ink);line-height:1.2}
-    .apt-name .a-meta{font-size:10px;color:var(--muted);font-weight:400}
-    .apt-name .a-note{font-size:9px;color:#8a6429;font-style:italic;margin-top:1px}
-    .apt-name.blocked{background:linear-gradient(90deg,#f1ebdf 0%,#fff 100%);opacity:.85}
-    .apt-name.external{background:linear-gradient(90deg,var(--sea-soft) 0%,#fff 100%);border-left:3px solid var(--sea)}
-    .apt-cell{border-bottom:1px solid var(--sand-100);border-right:1px solid var(--sand-100);min-height:48px;position:relative;background:#fff}
-    .apt-cell.weekend{background:rgba(220,238,244,.35)}
-    .apt-cell.today{box-shadow:inset 0 0 0 1px rgba(187,141,58,.45)}
-    .apt-cell.unavail{background:repeating-linear-gradient(45deg,#f0ebe0,#f0ebe0 4px,#e8dcc0 4px,#e8dcc0 8px);opacity:.55}
-    .closed-cell-overlay{pointer-events:none;z-index:2;border-top:7px solid rgba(165,59,59,.92);border-bottom:4px solid rgba(165,59,59,.22);background:linear-gradient(180deg,rgba(165,59,59,.12) 0%,rgba(165,59,59,0) 60%)}
-    .closed-cell-overlay::after{content:'X';position:absolute;top:-7px;right:3px;color:#fff;font:700 10px/1 'DM Mono',monospace}
-    .closed-cell-overlay.with-booking{border-top-color:rgba(165,59,59,.88);background:linear-gradient(180deg,rgba(165,59,59,.16) 0%,rgba(165,59,59,.04) 60%,rgba(165,59,59,0) 100%)}
-    .closed-cell-overlay.with-booking::after{content:'•'}
-    .closed-badge{position:absolute;right:4px;top:4px;width:16px;height:16px;border-radius:50%;background:rgba(165,59,59,.92);color:#fff;font:700 10px/16px 'DM Mono',monospace;text-align:center}
-    .group-header{background:linear-gradient(90deg,var(--sand-100) 0%,var(--sand-50) 100%);padding:.5rem .875rem;font-family:'Cormorant Garamond',serif;font-size:12px;font-weight:700;color:#8a6429;text-transform:uppercase;letter-spacing:2px;border-top:1px solid var(--sand-200);border-bottom:1px solid var(--sand-200)}
-    .group-header.external-group{background:linear-gradient(90deg,var(--sea-soft) 0%,var(--sand-50) 100%);color:var(--sea)}
-    .booking{position:absolute;border-radius:12px;padding:4px 8px;font-size:11px;font-weight:600;color:#fff;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;z-index:1;display:flex;align-items:center;gap:4px;box-shadow:0 1px 3px rgba(0,0,0,.12)}
-    .booking:hover{z-index:5;box-shadow:0 4px 12px rgba(0,0,0,.18)}
-    .booking.confirmed{background:linear-gradient(135deg,#6a9d80 0%,#4a7d60 100%)}
-    .booking.pending{background:linear-gradient(135deg,#d4a062 0%,#b88040 100%)}
-    .booking.rejected{background:linear-gradient(135deg,#c87862 0%,#a05a48 100%);opacity:.7;text-decoration:line-through}
-    .booking.checco{box-shadow:inset 0 0 0 2px rgba(255,232,194,.95),0 1px 3px rgba(0,0,0,.12)}
-    .booking.confirmed.non-checco{background:linear-gradient(135deg,#607d98 0%,#456079 100%)}
-    .booking.pending.non-checco{background:linear-gradient(135deg,#8d6aa9 0%,#6b4f86 100%)}
-    .booking.non-checco{box-shadow:inset 0 0 0 2px rgba(255,255,255,.72),0 1px 3px rgba(0,0,0,.12);filter:saturate(.88)}
-    .booking.beds24.confirmed{background:linear-gradient(135deg,var(--sea) 0%,#2d88a3 100%)}
-    .booking.luca.confirmed{background:linear-gradient(135deg,#6d5aa8 0%,#8b74c2 100%)}
-    .booking.closed-span{box-shadow:inset 0 0 0 2px rgba(255,255,255,.9),0 1px 3px rgba(0,0,0,.12)}
-    .booking.beds24.closed-span{background:repeating-linear-gradient(45deg,#1f6c83,#1f6c83 5px,#2d88a3 5px,#2d88a3 10px)}
-    .booking.fully-closed{outline:2px solid rgba(165,59,59,.42);outline-offset:1px}
-    .list{display:grid;gap:10px}
-    .card{border:1px solid var(--sand-200);border-radius:18px;padding:14px 16px;background:linear-gradient(180deg,#fff 0%,#fbf9f3 100%)}
-    .card strong{display:block;font-size:14px}
-    .card small{display:block;color:var(--muted);margin-top:4px;line-height:1.45}
-    .badge{display:inline-flex;align-items:center;border-radius:999px;padding:5px 10px;font:500 10px 'DM Mono',monospace;letter-spacing:.1em;text-transform:uppercase}
-    .badge.pending{background:var(--rose-soft);color:var(--rose)} .badge.confirmed{background:var(--success-soft);color:var(--success)} .badge.rejected{background:var(--danger-soft);color:var(--danger)}
-    .helper{font-size:12px;color:var(--muted);line-height:1.5}
-    .warn{margin-top:10px;background:#fff7e8;color:#8a6217;border-radius:16px;padding:10px 12px;font-size:12px}
-    .hidden{display:none!important}
-    @media (max-width:1100px){.content{grid-template-columns:1fr}}
-    @media (max-width:720px){.page{padding:0 1rem 2rem}.hero{padding:2rem 1.25rem 2.5rem}.hero h1{font-size:42px}.row,.stats{grid-template-columns:1fr}.toolbar{flex-direction:column;align-items:stretch}.month-label{min-width:auto}.user-strip{padding:1rem}}
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+      background:linear-gradient(180deg,#f7f1e7 0%,#fcfaf7 48%,#eef5f8 100%);
+      color:var(--ink);
+      font-family:'DM Sans',sans-serif;
+    }
+    .card{
+      width:min(760px,100%);
+      background:var(--paper);
+      border:1px solid var(--line);
+      border-radius:32px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .hero{
+      padding:32px 32px 24px;
+      background:linear-gradient(135deg,#114e60 0%,#1f6c83 56%,#4ca0b4 100%);
+      color:#fff;
+    }
+    .eyebrow{
+      margin:0 0 10px;
+      font-size:11px;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      opacity:.78;
+    }
+    h1{
+      margin:0;
+      font-family:'Cormorant Garamond',serif;
+      font-size:46px;
+      line-height:.95;
+    }
+    .copy{
+      padding:28px 32px 32px;
+    }
+    .copy p{
+      margin:0 0 14px;
+      line-height:1.65;
+      color:var(--muted);
+      font-size:15px;
+    }
+    .notice{
+      margin:18px 0 22px;
+      padding:14px 16px;
+      border-radius:18px;
+      background:var(--warn-bg);
+      color:var(--warn);
+      font-size:14px;
+      line-height:1.55;
+    }
+    .actions{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:22px;
+    }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:46px;
+      padding:0 18px;
+      border-radius:999px;
+      text-decoration:none;
+      font-weight:600;
+      transition:transform .18s ease, box-shadow .18s ease;
+    }
+    .btn:hover{
+      transform:translateY(-1px);
+    }
+    .btn-primary{
+      background:linear-gradient(135deg,var(--gold) 0%,#d4a24d 100%);
+      color:#fff;
+      box-shadow:0 12px 24px rgba(185,139,58,.24);
+    }
+    .btn-secondary{
+      border:1px solid var(--line);
+      color:var(--ink);
+      background:#fff;
+    }
+    .meta{
+      margin-top:18px;
+      font-size:12px;
+      color:var(--muted);
+    }
+    @media (max-width:640px){
+      .hero{padding:28px 22px 22px}
+      .copy{padding:22px}
+      h1{font-size:38px}
+      .actions{flex-direction:column}
+      .btn{width:100%}
+    }
   </style>
 </head>
 <body>
-<div id="login" class="login-wrap">
-  <div class="login-card">
-    <div class="brand">Luca × Il Lupo Affitta</div>
-    <div class="sub">Pannello Prenotazioni</div>
-    <div id="loginErr" class="err"></div>
-    <div class="field"><label>Password</label><input id="loginPwd" type="password" autocomplete="current-password"/></div>
-    <button id="loginBtn" class="btn btn-primary" style="width:100%">Entra</button>
-  </div>
-</div>
-
-<div id="app" class="hidden">
-  <header class="hero">
-    <div class="hero-inner">
-      <div class="hero-top">
-        <div>
-          <div class="sub" style="color:rgba(255,255,255,.72);margin-bottom:10px">PR Luca Riccione × Il Lupo Affitta</div>
-          <h1>Calendario unificato Residence + Beds24</h1>
-          <p>Qui vedi il Residence Margherita aggiornato con Kekko e gli appartamenti Beds24 selezionati per Luca. Il pulsante <strong>Aggiorna</strong> ricarica lo stato reale del calendario.</p>
-          <div class="actions">
-            <button id="refreshBtn" class="btn btn-refresh">Aggiorna</button>
-            <button id="newReqBtn" class="btn btn-primary">Nuova richiesta</button>
-            <button id="logoutBtn" class="btn btn-secondary">Esci</button>
-          </div>
-        </div>
-      </div>
-      <div class="stats">
-        <div class="stat"><span>Residence</span><strong id="statResidence">0</strong></div>
-        <div class="stat"><span>Beds24</span><strong id="statBeds24">0</strong></div>
-        <div class="stat"><span>In attesa</span><strong id="statPending">0</strong></div>
-      </div>
-    </div>
-  </header>
-
-  <div class="page">
-    <div class="user-strip">
-      <div class="user-greeting">
-        <div class="user-avatar">LU</div>
-        <div>
-          <div class="greet">Benvenuto, <em>Luca</em></div>
-          <div class="role">Residence Margherita + Beds24 selezionati</div>
-        </div>
-      </div>
-      <div class="quick-stats">
-        <div class="quick-stat"><div class="num" id="qsResidence">0</div><div class="lbl">Residence</div></div>
-        <div class="quick-stat"><div class="num" id="qsBeds24">0</div><div class="lbl">Beds24</div></div>
-        <div class="quick-stat"><div class="num" id="qsPending">0</div><div class="lbl">In attesa</div></div>
-      </div>
-    </div>
-    <div id="warnings"></div>
-    <div class="toolbar">
-      <div class="month-nav">
-        <button id="prevMonthBtn" class="btn btn-secondary">←</button>
-        <div class="month-label" id="calendarTitle">Calendario</div>
-        <button id="nextMonthBtn" class="btn btn-secondary">→</button>
-      </div>
-      <div class="legend">
-        <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#6a9d80,#4a7d60)"></div>Residence</div>
-        <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#1f6c83,#2d88a3)"></div>Beds24</div>
-        <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#8d6aa9,#6b4f86)"></div>Richiesta Luca</div>
-      </div>
-    </div>
-    <section class="content">
-      <div class="panel">
-        <div class="panel-head">
-          <div>
-            <h2 class="panel-title">Calendario</h2>
-            <div class="panel-sub">Residence in verde/oro, Beds24 in blu, richieste Luca in viola.</div>
-          </div>
-        </div>
-        <div class="calendar-shell">
-          <div id="calendarGrid" class="calendar-grid"></div>
-        </div>
-      </div>
+  <main class="card">
+    <section class="hero">
+      <div class="eyebrow">Il Lupo Affitta · Archivio Legacy</div>
+      <h1>PR Luca Riccione dismesso</h1>
     </section>
-    <section class="panel requests-section">
-      <div class="panel-head">
-        <div>
-          <h2 class="panel-title" style="font-size:30px">Richieste inviate</h2>
-          <div class="panel-sub">Le nuove richieste restano in attesa finché Marco non approva.</div>
-        </div>
+    <section class="copy">
+      <p>Questo link resta attivo per non generare errori o 404, ma il modulo operativo PR Luca non accetta piu nuove richieste.</p>
+      <p>Le prenotazioni storiche con origine <strong>PR Luca</strong> restano visibili nei sistemi interni di Residence Margherita come storico legacy.</p>
+      <div class="notice">
+        Dal 12 maggio 2026 l'accesso partner e la creazione di nuove richieste Luca sono stati archiviati. Eventuali verifiche residue vanno gestite dal team interno nel perimetro Residence.
       </div>
-      <div id="requestList" class="list"></div>
-      <div class="warn">`Viale d'Annunzio` non è ancora collegato a Beds24 nel database principale, quindi per ora non è prenotabile da questo pannello.</div>
+      <div class="actions">
+        <a class="btn btn-primary" href="/residence-backoffice.html">Apri backoffice Residence</a>
+        <a class="btn btn-secondary" href="/pr_kekko_riccione.html">Apri PR Kekko</a>
+      </div>
+      <div class="meta">URL legacy mantenuto intenzionalmente per compatibilita e continuita dei collegamenti.</div>
     </section>
-  </div>
-</div>
-
-<div id="modalWrap" class="modal-backdrop hidden">
-  <div class="modal">
-    <div class="brand" style="font-size:34px">Nuova richiesta Luca</div>
-    <div class="sub">Richiesta in attesa di approvazione</div>
-    <div id="modalErr" class="err"></div>
-    <div class="field"><label>Cliente</label><input id="reqName" type="text"/></div>
-    <div class="field"><label>Appartamento</label><select id="reqApartment"></select></div>
-    <div class="row">
-      <div class="field"><label>Check-in</label><input id="reqCheckin" type="date"/></div>
-      <div class="field"><label>Check-out</label><input id="reqCheckout" type="date"/></div>
-    </div>
-    <div class="row">
-      <div class="field"><label>Persone</label><input id="reqPax" type="number" min="1" value="2"/></div>
-      <div class="field"><label>Note</label><input id="reqNotes" type="text" placeholder="opzionale"/></div>
-    </div>
-    <div class="actions">
-      <button id="saveReqBtn" class="btn btn-primary">Invia richiesta</button>
-      <button id="closeModalBtn" class="btn btn-secondary">Chiudi</button>
-    </div>
-  </div>
-</div>
-
-<script>
-const SH = window.prLucaShared;
-const AUTH = window.sharedAppAuth;
-const AUTH_APP = 'pr_luca';
-const DEFAULT_VIEW_MONTH = '2026-07-01';
-
-const S = {
-  viewMonth: DEFAULT_VIEW_MONTH,
-  rows: [],
-  requests: [],
-  loading: false,
-  refreshSeq: 0,
-};
-
-function setAuth(on) {
-  document.getElementById('login').classList.toggle('hidden', on);
-  document.getElementById('app').classList.toggle('hidden', !on);
-}
-
-function showError(id, message) {
-  const el = document.getElementById(id);
-  el.textContent = message;
-  el.style.display = message ? 'block' : 'none';
-}
-
-function selectedRange() {
-  const from = S.viewMonth;
-  const to = SH.addDays(SH.endOfMonth(S.viewMonth), 1);
-  return { from, to };
-}
-
-function catalogOptions() {
-  return S.rows
-    .map((row) => `<option value="${SH.esc(row.rowKey)}" ${row.disabled ? 'disabled' : ''}>${SH.esc(row.label)}${row.disabled ? ' · da collegare' : ''}</option>`)
-    .join('');
-}
-
-function renderRequests() {
-  const list = document.getElementById('requestList');
-  if (!S.requests.length) {
-    list.innerHTML = `<div class="helper">Nessuna richiesta Luca ancora presente.</div>`;
-    return;
-  }
-  list.innerHTML = S.requests.slice(0, 18).map((row) => `
-    <div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-        <strong>${SH.esc(row.customer_name)}</strong>
-        <span class="badge ${SH.esc(row.status)}">${SH.esc(row.status)}</span>
-      </div>
-      <small>${SH.esc(row.apartment_label)} · ${SH.fmtDate(row.checkin)} → ${SH.fmtDate(row.checkout)} · ${SH.esc(row.pax)} pax</small>
-      ${row.notes ? `<small>${SH.esc(row.notes)}</small>` : ''}
-    </div>
-  `).join('');
-}
-
-function renderWarnings(warnings) {
-  const wrap = document.getElementById('warnings');
-  wrap.innerHTML = (warnings || []).slice(0, 4).map((msg) => `<div class="warn">${SH.esc(msg)}</div>`).join('');
-}
-
-function setLoadingState(isLoading) {
-  S.loading = isLoading;
-  document.getElementById('refreshBtn').disabled = isLoading;
-  document.getElementById('prevMonthBtn').disabled = isLoading;
-  document.getElementById('nextMonthBtn').disabled = isLoading;
-  document.getElementById('refreshBtn').textContent = isLoading ? 'Aggiorno…' : 'Aggiorna';
-}
-
-async function refreshAll() {
-  const authToken = AUTH.getToken(AUTH_APP);
-  if (!authToken) throw new Error('Sessione non valida');
-  const seq = ++S.refreshSeq;
-  setLoadingState(true);
-  try {
-    const { from, to } = selectedRange();
-    const snapshot = await SH.fetchSnapshot(null, from, to, { authToken });
-    if (seq !== S.refreshSeq) return;
-    S.rows = snapshot.rows;
-    S.requests = snapshot.requests.filter((row) => row.partner === 'luca');
-    SH.renderCalendar(document.getElementById('calendarGrid'), snapshot.rows, snapshot.bookings, from, to, snapshot.closedMap);
-    document.getElementById('calendarTitle').textContent = `Calendario · ${SH.monthLabel(S.viewMonth)}`;
-    document.getElementById('statResidence').textContent = snapshot.residenceRows.length;
-    document.getElementById('statBeds24').textContent = snapshot.beds24Rows.filter((row) => !row.disabled).length;
-    document.getElementById('statPending').textContent = snapshot.requests.filter((row) => row.status === 'pending').length;
-    document.getElementById('qsResidence').textContent = snapshot.residenceRows.length;
-    document.getElementById('qsBeds24').textContent = snapshot.beds24Rows.filter((row) => !row.disabled).length;
-    document.getElementById('qsPending').textContent = snapshot.requests.filter((row) => row.status === 'pending').length;
-    renderWarnings(snapshot.beds24Warnings);
-    renderRequests();
-    document.getElementById('reqApartment').innerHTML = catalogOptions();
-  } catch (error) {
-    if (seq !== S.refreshSeq) return;
-    renderWarnings([error.message]);
-  } finally {
-    if (seq === S.refreshSeq) setLoadingState(false);
-  }
-}
-
-function openModal() {
-  document.getElementById('modalWrap').classList.remove('hidden');
-  showError('modalErr', '');
-  document.getElementById('reqCheckin').value = SH.todayIso();
-  document.getElementById('reqCheckout').value = SH.addDays(SH.todayIso(), 7);
-}
-
-function closeModal() {
-  document.getElementById('modalWrap').classList.add('hidden');
-}
-
-async function saveRequest() {
-  const rowKey = document.getElementById('reqApartment').value;
-  const row = S.rows.find((item) => item.rowKey === rowKey);
-  const customerName = document.getElementById('reqName').value.trim();
-  const checkin = document.getElementById('reqCheckin').value;
-  const checkout = document.getElementById('reqCheckout').value;
-  const pax = Number(document.getElementById('reqPax').value || 0);
-  const notes = document.getElementById('reqNotes').value.trim();
-
-  if (!row || row.disabled) return showError('modalErr', 'Appartamento non disponibile per richieste Luca');
-  if (!customerName || !checkin || !checkout || pax < 1) return showError('modalErr', 'Compila tutti i campi obbligatori');
-  if (checkout <= checkin) return showError('modalErr', 'Il checkout deve essere dopo il check-in');
-
-  const payload = {
-    scope: row.scope,
-    apartment_ref: row.apartmentRef,
-    apartment_label: row.label,
-    beds24_room_id: row.propertyId || null,
-    customer_name: customerName,
-    checkin,
-    checkout,
-    pax,
-    notes: notes || null,
-  };
-
-  try {
-    await AUTH.fetchJson('/.netlify/functions/pr-luca-data', {
-      app: AUTH_APP,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    closeModal();
-    await refreshAll();
-  } catch (error) {
-    return showError('modalErr', error.message);
-  }
-}
-
-async function doLogin() {
-  showError('loginErr', '');
-  const value = document.getElementById('loginPwd').value.trim();
-  if (!value) {
-    showError('loginErr', 'Inserisci la password');
-    return;
-  }
-  try {
-    await AUTH.login(AUTH_APP, value);
-    setAuth(true);
-    await refreshAll();
-  } catch (error) {
-    showError('loginErr', error.message);
-  }
-}
-
-document.getElementById('loginBtn').addEventListener('click', doLogin);
-document.getElementById('loginPwd').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
-document.getElementById('refreshBtn').addEventListener('click', refreshAll);
-document.getElementById('newReqBtn').addEventListener('click', openModal);
-document.getElementById('closeModalBtn').addEventListener('click', closeModal);
-document.getElementById('saveReqBtn').addEventListener('click', saveRequest);
-document.getElementById('logoutBtn').addEventListener('click', () => {
-  AUTH.clearSession(AUTH_APP);
-  location.reload();
-});
-document.getElementById('prevMonthBtn').addEventListener('click', async () => {
-  if (S.loading) return;
-  S.viewMonth = SH.shiftMonth(S.viewMonth, -1);
-  await refreshAll();
-});
-document.getElementById('nextMonthBtn').addEventListener('click', async () => {
-  if (S.loading) return;
-  S.viewMonth = SH.shiftMonth(S.viewMonth, 1);
-  await refreshAll();
-});
-
-if (AUTH.loadSession(AUTH_APP)) {
-  setAuth(true);
-  refreshAll();
-}
-</script>
+  </main>
 </body>
 </html>

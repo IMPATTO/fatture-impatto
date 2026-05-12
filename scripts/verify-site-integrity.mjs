@@ -9,7 +9,7 @@ const trackedFiles = new Set(
     .filter(Boolean),
 );
 
-const filesToScan = [...trackedFiles].filter((file) => /\.(html|js)$/i.test(file));
+const filesToScan = [...trackedFiles].filter((file) => /\.(html|js)$/i.test(file) && fileExists(file));
 const issues = [];
 
 const LOCAL_PATH_RE = /(?:href|src)=["']([^"'#]+)["']|fetch\(\s*["']([^"']+)["']/g;
@@ -28,6 +28,7 @@ const CHECKABLE_EXTENSIONS = new Set([
   '.woff',
   '.woff2',
 ]);
+const siteRootCache = new Map();
 
 function normalizeReference(rawRef) {
   const clean = String(rawRef || '').trim();
@@ -37,6 +38,28 @@ function normalizeReference(rawRef) {
   const withoutQuery = clean.split('?')[0].split('#')[0];
   if (!withoutQuery) return null;
   return withoutQuery;
+}
+
+function findNearestSiteRootDir(sourceFile) {
+  const sourceDir = path.dirname(path.join(repoRoot, sourceFile));
+  if (siteRootCache.has(sourceDir)) {
+    return siteRootCache.get(sourceDir);
+  }
+
+  let currentDir = sourceDir;
+  while (currentDir.startsWith(repoRoot)) {
+    if (fs.existsSync(path.join(currentDir, 'netlify.toml'))) {
+      const relativeRoot = path.relative(repoRoot, currentDir) || '.';
+      siteRootCache.set(sourceDir, relativeRoot);
+      return relativeRoot;
+    }
+    const parentDir = path.dirname(currentDir);
+    if (parentDir === currentDir) break;
+    currentDir = parentDir;
+  }
+
+  siteRootCache.set(sourceDir, '.');
+  return '.';
 }
 
 function resolveRepoTarget(sourceFile, ref) {
@@ -50,7 +73,9 @@ function resolveRepoTarget(sourceFile, ref) {
   if (ext && !CHECKABLE_EXTENSIONS.has(ext.toLowerCase())) return null;
 
   if (ref.startsWith('/')) {
-    return ref.replace(/^\/+/, '');
+    const siteRootDir = findNearestSiteRootDir(sourceFile);
+    const localTarget = ref.replace(/^\/+/, '');
+    return path.normalize(path.join(siteRootDir, localTarget || 'index.html'));
   }
 
   const sourceDir = path.dirname(sourceFile);

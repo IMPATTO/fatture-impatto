@@ -4,7 +4,15 @@ import { fileURLToPath } from 'node:url';
 
 import { createClient } from '@supabase/supabase-js';
 
-import { getAllPageOwners, siteRegistry } from '../sites/site-registry.mjs';
+import {
+  buildCheckinUrl,
+  buildOpenPortalUrl,
+  canonicalSiteUrls,
+  getCanonicalSiteUrl,
+  getKnownSiteUrlPrefixes,
+  getProjectLinkUrls,
+} from '../config/site-links.mjs';
+import { getAllPageOwners } from '../sites/site-registry.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,16 +26,8 @@ if (!SUPABASE_SERVICE_ROLE_KEY) {
   process.exit(1);
 }
 
-const PORTALE_BASE = 'https://checkin.illupoaffitta.com';
-const LEGACY_PORTALE_BASE = 'https://checkinillupoaffitta.netlify.app';
-const KNOWN_SITE_URLS = {
-  'fatt-docs': 'https://fatture.illupoaffitta.com',
-  operativita: 'https://operativita.illupoaffitta.com',
-  portale: PORTALE_BASE,
-  contabilita: 'https://contabilita.illupoaffitta.com',
-  calendario: 'https://calendario.illupoaffitta.com',
-  'residence-pr': PORTALE_BASE,
-};
+const PORTALE_BASE = getCanonicalSiteUrl('portale');
+const KNOWN_SITE_PREFIXES = getKnownSiteUrlPrefixes();
 
 const TEST_GUEST = {
   data_checkin: '2026-06-10',
@@ -144,9 +144,9 @@ async function cleanupCheckinRecord(id) {
 }
 
 async function auditApartmentLink(apartment) {
-  const checkinUrl = `${PORTALE_BASE}/?apt=${encodeURIComponent(apartment.public_checkin_key)}&mode=checkin`;
-  const portalUrl = `${PORTALE_BASE}/portale.html?apt=${encodeURIComponent(apartment.public_checkin_key)}&mode=open`;
-  const apiUrl = `${PORTALE_BASE}/.netlify/functions/get-public-portal-data?apt=${encodeURIComponent(apartment.public_checkin_key)}&lang=IT`;
+  const checkinUrl = buildCheckinUrl(apartment.public_checkin_key);
+  const portalUrl = buildOpenPortalUrl(apartment.public_checkin_key);
+  const apiUrl = joinUrl(PORTALE_BASE, `/.netlify/functions/get-public-portal-data?apt=${encodeURIComponent(apartment.public_checkin_key)}&lang=IT`);
 
   const [checkinPage, portalPage, payloadResponse] = await Promise.all([
     fetchStatus(checkinUrl),
@@ -225,7 +225,7 @@ function resolveRelativeLink(sourceFile, rawUrl) {
 
   const fileName = path.basename(sourceFile);
   const ownerSite = getAllPageOwners().get(fileName) || 'portale';
-  const baseUrl = KNOWN_SITE_URLS[ownerSite] || PORTALE_BASE;
+  const baseUrl = canonicalSiteUrls[ownerSite] || PORTALE_BASE;
   return joinUrl(baseUrl, rawUrl);
 }
 
@@ -236,12 +236,7 @@ async function auditClientClickableLinks() {
   for (const filePath of files) {
     for (const rawUrl of extractClickableUrls(filePath)) {
       const resolved = resolveRelativeLink(filePath, rawUrl);
-      if (!resolved.startsWith('https://checkin.illupoaffitta.com')
-        && !resolved.startsWith('https://operativita.illupoaffitta.com')
-        && !resolved.startsWith('https://fatture.illupoaffitta.com')
-        && !resolved.startsWith('https://contabilita.illupoaffitta.com')
-        && !resolved.startsWith('https://calendario.illupoaffitta.com')
-        && !resolved.startsWith('https://checkinillupoaffitta.netlify.app')) {
+      if (!KNOWN_SITE_PREFIXES.some((prefix) => resolved.startsWith(prefix))) {
         continue;
       }
       if (!seen.has(resolved)) seen.set(resolved, []);
@@ -263,16 +258,7 @@ async function auditClientClickableLinks() {
 }
 
 async function auditCorePages() {
-  const ownerMap = getAllPageOwners();
-  const pages = [];
-  for (const [route, ownerSiteKey] of ownerMap.entries()) {
-    const baseUrl = KNOWN_SITE_URLS[ownerSiteKey] || PORTALE_BASE;
-    pages.push(joinUrl(baseUrl, route));
-  }
-  pages.push(`${LEGACY_PORTALE_BASE}/residence-backoffice.html`);
-  pages.push(`${LEGACY_PORTALE_BASE}/pr_kekko_riccione.html`);
-
-  const uniquePages = [...new Set(pages)];
+  const uniquePages = [...new Set(getProjectLinkUrls())];
   const results = await mapWithConcurrency(uniquePages, async (url) => {
     const response = await fetchStatus(url);
     return { url, status: response.status, ok: isAcceptablePageStatus(response.status) };

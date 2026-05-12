@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Elenco Link Appartamenti</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/supabase-client.js"></script>
+  <script src="/js/site-links.js"></script>
   <style>
     :root {
       --bg: #f5f4f1;
@@ -161,10 +163,7 @@
   </div>
 
   <script>
-    const sb = supabase.createClient(
-      'https://tysxeikqbgebpfyblgeb.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5c3hlaWtxYmdlYnBmeWJsZ2ViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyODczODAsImV4cCI6MjA5MDg2MzM4MH0.yXmS2MFh47eRkCX2voemdBkK5m_tyJiKAFhfyp1YEbw'
-    );
+    const sb = window.sb;
 
     const state = {
       apartments: [],
@@ -180,15 +179,11 @@
     }
 
     function buildCheckinUrl(row) {
-      return row.public_checkin_key
-        ? `https://checkin.illupoaffitta.com/?apt=${encodeURIComponent(row.public_checkin_key)}&mode=checkin`
-        : '';
+      return window.siteLinks?.buildCheckinUrl(row.public_checkin_key) || '';
     }
 
     function buildOpenPortalUrl(row) {
-      return row.public_checkin_key
-        ? `https://checkin.illupoaffitta.com/portale.html?apt=${encodeURIComponent(row.public_checkin_key)}&mode=open`
-        : '';
+      return window.siteLinks?.buildOpenPortalUrl(row.public_checkin_key) || '';
     }
 
     function filteredRows() {

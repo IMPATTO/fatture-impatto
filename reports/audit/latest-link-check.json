@@ -1,0 +1,270 @@
+{
+  "checked_at": "2026-05-12T12:51:36.667Z",
+  "config": "/Users/impattosrl/Desktop/fatture-impatto/config/project-links.json",
+  "results": [
+    {
+      "url": "https://fatture.illupoaffitta.com/backoffice-documenti.html",
+      "finalUrl": "https://fatture.illupoaffitta.com/backoffice-documenti.html",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "ok": true,
+      "issues": [],
+      "notes": []
+    },
+    {
+      "url": "https://fatture.illupoaffitta.com/backoffice.html",
+      "finalUrl": "https://fatture.illupoaffitta.com/backoffice.html",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "ok": true,
+      "issues": [],
+      "notes": []
+    },
+    {
+      "url": "https://operativita.illupoaffitta.com/backoffice-beds24-messaggi.html",
+      "finalUrl": "https://operativita.illupoaffitta.com/backoffice-beds24-messaggi.html",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "ok": true,
+      "issues": [],
+      "notes": []
+    },
+    {
+      "url": "https://operativita.illupoaffitta.com/backoffice-operativita.html",
+      "finalUrl": "https://operativita.illupoaffitta.com/backoffice-operativita.html",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "ok": true,
+      "issues": [],
+      "notes": []
+    },
+    {
+      "url": "https://operativita.illupoaffitta.com/backoffice-richieste.html",
+      "finalUrl": "https://operativita.illupoaffitta.com/backoffice-richieste.html",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "ok": true,
+      "issues": [],
+      "notes": []
+    },
+    {
+      "url": "https://checkin.illupoaffitta.com/backoffice-portale.html",
+      "finalUrl": "https://checkin.illupoaffitta.com/backoffice-portale.html",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "ok": true,
+      "issues": [],
+      "notes": []
+    },
+    {
+      "url": "https://checkin.illupoaffitta.com/carica-documenti-fattura.html",
+      "finalUrl": "https://checkin.illupoaffitta.com/carica-documenti-fattura.html",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "ok": true,
+      "issues": [],
+      "notes": []
+    },
+    {
+      "url": "https://checkin.illupoaffitta.com/index.html",
+      "finalUrl": "https://checkin.illupoaffitta.com/index.html",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "ok": true,
+      "issues": [],
+      "notes": []
+    },
+    {
+      "url": "https://checkin.illupoaffitta.com/manifest.json",
+      "finalUrl": "https://checkin.illupoaffitta.com/manifest.json",
+      "status": 404,
+      "contentType": "text/html; charset=utf-8",
+      "ok": false,
+      "issues": [
+        "HTTP 404",
+        "renders a page-not-found document"
+      ],
+      "notes": []
+    },
+    {
+      "url": "https://checkin.illupoaffitta.com/portale.html",
+      "finalUrl": "https://checkin.illupoaffitta.com/portale.html",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "ok": true,
+      "issues": [],
+      "notes": []
+    },
+    {
+      "url": "https://checkin.illupoaffitta.com/privacy-policy.html",
+      "finalUrl": "https://checkin.illupoaffitta.com/privacy-policy.html",
+      "status": 404,
+      "contentType": "text/html; charset=utf-8",
+      "ok": false,
+      "issues": [
+        "HTTP 404",
+        "renders a page-not-found document"
+      ],
+      "notes": []
+    },
+    {
+      "url": "https://contabilita.illupoaffitta.com/backoffice-amministrazione-appartamenti.html",
+      "finalUrl": "https://contabilita.illupoaffitta.com/backoffice-amministrazione-appartamenti.html",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "ok": true,
+      "issues": [],
+      "notes": []
+    },
+    {
+      "url": "https://contabilita.illupoaffitta.com/backoffice-contabilita.html",
+      "finalUrl": "https://contabilita.illupoaffitta.com/backoffice-contabilita.html",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "ok": true,
+      "issues": [],
+      "notes": []
+    },
+    {
+      "url": "https://calendario.illupoaffitta.com/backoffice-calendario.html",
+      "finalUrl": "https://calendario.illupoaffitta.com/backoffice-calendario.html",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "ok": true,
+      "issues": [],
+      "notes": []
+    },
+    {
+      "url": "https://checkin.illupoaffitta.com/pr_kekko_riccione.html",
+      "finalUrl": "https://checkin.illupoaffitta.com/pr_kekko_riccione.html",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "ok": true,
+      "issues": [],
+      "notes": []
+    },
+    {
+      "url": "https://checkin.illupoaffitta.com/residence-backoffice.html",
+      "finalUrl": "https://checkin.illupoaffitta.com/residence-backoffice.html",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "ok": true,
+      "issues": [],
+      "notes": []
+    },
+    {
+      "url": "https://checkin.illupoaffitta.com/residence-kekko.html",
+      "finalUrl": "https://checkin.illupoaffitta.com/residence-kekko.html",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "ok": true,
+      "issues": [],
+      "notes": []
+    },
+    {
+      "url": "https://checkinillupoaffitta.netlify.app/backoffice-calendario.html",
+      "finalUrl": "https://checkinillupoaffitta.netlify.app/backoffice-calendario.html",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "ok": true,
+      "issues": [],
+      "notes": [
+        "served from legacy host https://checkinillupoaffitta.netlify.app/backoffice-calendario.html"
+      ]
+    },
+    {
+      "url": "https://checkinillupoaffitta.netlify.app/backoffice.html",
+      "finalUrl": "https://checkinillupoaffitta.netlify.app/backoffice.html",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "ok": true,
+      "issues": [],
+      "notes": [
+        "served from legacy host https://checkinillupoaffitta.netlify.app/backoffice.html"
+      ]
+    },
+    {
+      "url": "https://checkinillupoaffitta.netlify.app/portale.html",
+      "finalUrl": "https://checkinillupoaffitta.netlify.app/portale.html",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "ok": true,
+      "issues": [],
+      "notes": [
+        "served from legacy host https://checkinillupoaffitta.netlify.app/portale.html"
+      ]
+    },
+    {
+      "url": "https://checkinillupoaffitta.netlify.app/pr_kekko_riccione.html",
+      "finalUrl": "https://checkinillupoaffitta.netlify.app/pr_kekko_riccione.html",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "ok": true,
+      "issues": [],
+      "notes": []
+    },
+    {
+      "url": "https://checkinillupoaffitta.netlify.app/residence-backoffice.html",
+      "finalUrl": "https://checkinillupoaffitta.netlify.app/residence-backoffice.html",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "ok": true,
+      "issues": [],
+      "notes": []
+    },
+    {
+      "url": "https://villamargheritarimini.com/",
+      "finalUrl": "https://villamargheritarimini.com/",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "ok": true,
+      "issues": [],
+      "notes": []
+    },
+    {
+      "url": "https://villamargheritarimini.com/bilocali-rimini.html",
+      "finalUrl": "https://villamargheritarimini.com/bilocali-rimini.html",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "ok": true,
+      "issues": [],
+      "notes": []
+    },
+    {
+      "url": "https://villamargheritarimini.com/monolocali-rimini.html",
+      "finalUrl": "https://villamargheritarimini.com/monolocali-rimini.html",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "ok": true,
+      "issues": [],
+      "notes": []
+    },
+    {
+      "url": "https://villamargheritarimini.com/offerte-vacanze-rimini.html",
+      "finalUrl": "https://villamargheritarimini.com/offerte-vacanze-rimini.html",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "ok": true,
+      "issues": [],
+      "notes": []
+    },
+    {
+      "url": "https://villamargheritarimini.com/residence-rimini-terme.html",
+      "finalUrl": "https://villamargheritarimini.com/residence-rimini-terme.html",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "ok": true,
+      "issues": [],
+      "notes": []
+    },
+    {
+      "url": "https://villamargheritarimini.com/trilocali-rimini.html",
+      "finalUrl": "https://villamargheritarimini.com/trilocali-rimini.html",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "ok": true,
+      "issues": [],
+      "notes": []
+    }
+  ]
+}

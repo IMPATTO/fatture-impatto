@@ -2,26 +2,74 @@
   publish = "."
 
 [[redirects]]
+  from = "/backoffice.html"
+  to = "https://fatture.illupoaffitta.com/backoffice.html"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/backoffice-documenti.html"
+  to = "https://fatture.illupoaffitta.com/backoffice-documenti.html"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/backoffice-portale.html"
+  to = "https://fatture.illupoaffitta.com/backoffice-portale.html"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/backoffice-calendario.html"
+  to = "https://fatture.illupoaffitta.com/backoffice-calendario.html"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/"
+  to = "https://fatture.illupoaffitta.com/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/index.html"
+  to = "https://fatture.illupoaffitta.com/index.html"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/portale.html"
+  to = "https://fatture.illupoaffitta.com/portale.html"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/carica-documenti-fattura.html"
+  to = "https://fatture.illupoaffitta.com/carica-documenti-fattura.html"
+  status = 302
+  force = true
+
+[[redirects]]
   from = "http://villamargheritarimini.it/*"
-  to = "https://www.residencevillamargherita.com/:splat"
+  to = "https://villamargheritarimini.com/:splat"
   status = 301
   force = true
 
 [[redirects]]
   from = "https://villamargheritarimini.it/*"
-  to = "https://www.residencevillamargherita.com/:splat"
+  to = "https://villamargheritarimini.com/:splat"
   status = 301
   force = true
 
 [[redirects]]
   from = "http://www.villamargheritarimini.it/*"
-  to = "https://www.residencevillamargherita.com/:splat"
+  to = "https://villamargheritarimini.com/:splat"
   status = 301
   force = true
 
 [[redirects]]
   from = "http://residencevillamargherita.com/*"
-  to = "https://www.residencevillamargherita.com/:splat"
+  to = "https://villamargheritarimini.com/:splat"
   status = 301
   force = true
 

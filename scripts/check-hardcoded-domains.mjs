@@ -4,13 +4,14 @@ import path from 'node:path';
 const repoRoot = process.cwd();
 
 const ignoredDirectories = new Set([
-  '.netlify',
   '.git',
+  '.netlify',
   'dist',
   'docs',
   'extracted-repos',
   'node_modules',
   'reports',
+  'villa-margherita',
 ]);
 
 const scannedExtensions = new Set([
@@ -20,27 +21,24 @@ const scannedExtensions = new Set([
   '.mjs',
   '.sql',
   '.toml',
+  '.txt',
+  '.xml',
 ]);
-
-const deprecatedPatterns = [
-  /pr-luca/g,
-  /pr_luca/g,
-  /PR Luca/g,
-  /backoffice-pr-luca\.html/g,
-  /pr_luca_riccione\.html/g,
-];
 
 const allowedFiles = new Set([
-  'backoffice-pr-luca.html',
   'config/project-links-deprecated.json',
+  'config/project-links.json',
   'config/site-links.mjs',
-  'pr_luca_riccione.html',
-  'residence-backoffice.html',
-  'scripts/check-deprecated-references.mjs',
-  'setup-supabase.sql',
+  'js/site-links.js',
+  'scripts/check-hardcoded-domains.mjs',
   'sites/site-registry.mjs',
-  'supabase/migrations/202605120003_archive_legacy_luca_requests.sql',
+  'villa-margherita/netlify.toml',
 ]);
+
+const forbiddenPatterns = [
+  /https:\/\/[a-z0-9.-]*illupoaffitta\.com/gi,
+  /https:\/\/checkinillupoaffitta\.netlify\.app/gi,
+];
 
 function walk(currentPath, results) {
   const stat = fs.statSync(currentPath);
@@ -65,13 +63,16 @@ function findMatches(filePath) {
   const lines = content.split('\n');
 
   lines.forEach((line, index) => {
-    const hasMatch = deprecatedPatterns.some((pattern) => {
+    const matches = [];
+    for (const pattern of forbiddenPatterns) {
       pattern.lastIndex = 0;
-      return pattern.test(line);
-    });
-    if (!hasMatch) return;
+      const found = line.match(pattern) || [];
+      matches.push(...found);
+    }
+    if (!matches.length) return;
     findings.push({
       lineNumber: index + 1,
+      matches: [...new Set(matches)],
       text: line.trim(),
     });
   });
@@ -84,7 +85,6 @@ function main() {
   walk(repoRoot, files);
 
   const violations = [];
-
   for (const filePath of files.sort()) {
     if (allowedFiles.has(filePath)) continue;
     const matches = findMatches(filePath);
@@ -93,15 +93,15 @@ function main() {
   }
 
   if (!violations.length) {
-    console.log('No deprecated pr-luca references found outside the allowed legacy perimeter.');
+    console.log('No forbidden hardcoded project domains found outside the approved config perimeter.');
     return;
   }
 
-  console.error('Deprecated pr-luca references found outside the allowed legacy perimeter:\n');
+  console.error('Forbidden hardcoded project domains found outside the approved config perimeter:\n');
   for (const violation of violations) {
     console.error(`- ${violation.filePath}`);
     for (const match of violation.matches) {
-      console.error(`  ${match.lineNumber}: ${match.text}`);
+      console.error(`  ${match.lineNumber}: [${match.matches.join(', ')}] ${match.text}`);
     }
   }
 

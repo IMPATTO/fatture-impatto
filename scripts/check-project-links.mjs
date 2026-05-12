@@ -8,6 +8,7 @@ const defaultConfigPath = path.join(repoRoot, 'config', 'project-links.json');
 const inputPath = process.argv[2] ? path.resolve(repoRoot, process.argv[2]) : defaultConfigPath;
 const timeoutMs = 15000;
 const maxRedirects = 5;
+const maxAttempts = 2;
 const canonicalPortaleBase = getCanonicalSiteUrl('portale');
 const legacyCheckinBase = legacySiteUrls.checkinNetlify;
 const legacyCheckinHostPattern = new URL(legacyCheckinBase).host.replace(/\./g, '\\.');
@@ -67,6 +68,41 @@ async function fetchText(url) {
   } finally {
     clear();
   }
+}
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchTextWithRetry(url) {
+  let lastError = null;
+  let lastResponse = null;
+  let lastBody = '';
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const { response, body } = await fetchText(url);
+      lastResponse = response;
+      lastBody = body;
+
+      if (response.status < 500 || attempt === maxAttempts) {
+        return { response, body, attempts: attempt };
+      }
+    } catch (error) {
+      lastError = error;
+      if (attempt === maxAttempts) break;
+    }
+
+    await wait(400 * attempt);
+  }
+
+  if (lastResponse) {
+    return { response: lastResponse, body: lastBody, attempts: maxAttempts };
+  }
+
+  throw Object.assign(lastError || new Error('Unknown link check error'), {
+    attempts: maxAttempts,
+  });
 }
 
 function classify(url, response, body) {
@@ -156,8 +192,12 @@ async function main() {
 
   for (const url of urls) {
     try {
-      const { response, body } = await fetchText(url);
-      results.push(classify(url, response, body));
+      const { response, body, attempts } = await fetchTextWithRetry(url);
+      const classified = classify(url, response, body);
+      if (attempts > 1) {
+        classified.notes.push(`recovered after ${attempts} attempts`);
+      }
+      results.push(classified);
     } catch (error) {
       results.push({
         url,
@@ -166,7 +206,7 @@ async function main() {
         contentType: '',
         ok: false,
         issues: [error.name === 'AbortError' ? 'request timeout' : error.message],
-        notes: [],
+        notes: error.attempts > 1 ? [`failed after ${error.attempts} attempts`] : [],
       });
     }
   }

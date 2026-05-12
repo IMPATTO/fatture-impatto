@@ -2,7 +2,7 @@
 -- Calendar days: cache prezzi/min-stay/availability da Beds24
 -- ============================================================
 -- Una riga per (apartment_unit_id, date). Aggiornata da
--- sync-beds24-calendar Netlify function al click di "Aggiorna".
+-- sync-beds24-calendar-background Netlify function al click di "Aggiorna".
 -- ============================================================
 
 create table if not exists public.calendar_days (
@@ -37,4 +37,4 @@ create policy "authenticated_read_calendar_days"
 grant select on public.calendar_days to authenticated;
 
 comment on table public.calendar_days is
-  'Cache prezzi/min-stay/availability sync da Beds24 /offers endpoint. Aggiornata da sync-beds24-calendar.';
+  'Cache prezzi/min-stay/availability sync da Beds24 /offers endpoint. Aggiornata da sync-beds24-calendar-background.';

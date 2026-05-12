@@ -3,7 +3,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-import { getAllPageOwners, siteRegistry } from '../sites/site-registry.mjs';
+import { assertValidSiteRegistry, getAllPageOwners, siteRegistry } from '../sites/site-registry.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,6 +15,8 @@ if (!targetSiteKey || !siteRegistry[targetSiteKey]) {
   console.error(`Missing or invalid SITE_KEY. Available values: ${available}`);
   process.exit(1);
 }
+
+assertValidSiteRegistry();
 
 const trackedFiles = new Set(
   execFileSync('git', ['ls-files', '-z'], { cwd: repoRoot, encoding: 'utf8' })
@@ -39,43 +41,6 @@ function ensureDir(dirPath) {
 
 function unique(items) {
   return [...new Set(items.filter(Boolean))];
-}
-
-function resolveSiteBundle(siteKey, seen = new Set()) {
-  if (seen.has(siteKey)) {
-    return { siteKeys: [], pages: [], assets: [], functions: [], includedFiles: [] };
-  }
-  seen.add(siteKey);
-
-  const currentSite = siteRegistry[siteKey];
-  const nestedSiteKeys = unique(currentSite.includeSites || []);
-  const bundle = {
-    siteKeys: [siteKey],
-    pages: [...(currentSite.pages || [])],
-    assets: [...(currentSite.assets || [])],
-    functions: [...(currentSite.functions || [])],
-    includedFiles: [...(currentSite.includedFiles || [])],
-  };
-
-  for (const nestedSiteKey of nestedSiteKeys) {
-    if (!siteRegistry[nestedSiteKey]) {
-      throw new Error(`Unknown included site "${nestedSiteKey}" referenced by "${siteKey}"`);
-    }
-    const nestedBundle = resolveSiteBundle(nestedSiteKey, seen);
-    bundle.siteKeys.push(...nestedBundle.siteKeys);
-    bundle.pages.push(...nestedBundle.pages);
-    bundle.assets.push(...nestedBundle.assets);
-    bundle.functions.push(...nestedBundle.functions);
-    bundle.includedFiles.push(...nestedBundle.includedFiles);
-  }
-
-  return {
-    siteKeys: unique(bundle.siteKeys),
-    pages: unique(bundle.pages),
-    assets: unique(bundle.assets),
-    functions: unique(bundle.functions),
-    includedFiles: unique(bundle.includedFiles),
-  };
 }
 
 function copyFile(relativePath) {
@@ -183,15 +148,14 @@ function writeLocalEntryRedirect(route, localRoute) {
 }
 
 function writeSiteSummary() {
-  const buildBundle = resolveSiteBundle(targetSiteKey);
   const summary = {
     siteKey: targetSiteKey,
     label: site.label,
     envVar: site.envVar,
-    includedSites: buildBundle.siteKeys.filter((siteKey) => siteKey !== targetSiteKey),
-    pages: buildBundle.pages,
-    assets: buildBundle.assets,
-    functions: buildBundle.functions,
+    pages: [...(site.pages || [])],
+    assets: [...(site.assets || [])],
+    functions: [...(site.functions || [])],
+    includedFiles: [...(site.includedFiles || [])],
   };
   fs.writeFileSync(path.join(outputRoot, '_site-build.json'), `${JSON.stringify(summary, null, 2)}\n`, 'utf8');
 }
@@ -200,13 +164,16 @@ fs.rmSync(outputRoot, { recursive: true, force: true });
 ensureDir(outputRoot);
 ensureDir(outputFunctionsRoot);
 
-const buildBundle = resolveSiteBundle(targetSiteKey);
-const includedPages = new Set(buildBundle.pages);
+const sitePages = unique(site.pages || []);
+const siteAssets = unique(site.assets || []);
+const siteIncludedFiles = unique(site.includedFiles || []);
+const siteFunctions = unique(site.functions || []);
+const includedPages = new Set(sitePages);
 
-for (const relativePath of buildBundle.pages) copyFile(relativePath);
-for (const relativePath of buildBundle.assets) copyAssetFile(relativePath);
-for (const relativePath of buildBundle.includedFiles) copyFile(relativePath);
-for (const functionName of buildBundle.functions) {
+for (const relativePath of sitePages) copyFile(relativePath);
+for (const relativePath of siteAssets) copyAssetFile(relativePath);
+for (const relativePath of siteIncludedFiles) copyFile(relativePath);
+for (const functionName of siteFunctions) {
   copyFunctionFile(path.join('netlify', 'functions', `${functionName}.js`));
 }
 

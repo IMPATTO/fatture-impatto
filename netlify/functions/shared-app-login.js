@@ -24,11 +24,6 @@ const APP_CONFIG = {
     envName: 'RESIDENCE_ADMIN_PASSWORDS',
     subject: 'residence-admin',
   },
-  pr_luca: {
-    role: 'pr_luca',
-    envName: 'PR_LUCA_PASSWORDS',
-    subject: 'pr-luca',
-  },
 };
 
 exports.handler = async (event) => {
@@ -57,6 +52,9 @@ exports.handler = async (event) => {
   const config = APP_CONFIG[app];
   if (!config) {
     return respond(400, { error: 'App non valida' });
+  }
+  if (config.deprecated) {
+    return respond(410, { error: config.error || 'Modulo dismesso' });
   }
   if (!password) {
     return respond(400, { error: 'Password obbligatoria' });

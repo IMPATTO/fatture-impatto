@@ -146,12 +146,9 @@ export const siteRegistry = {
     assets: [
       'js/supabase-client.js',
       'js/shared-app-auth.js',
-      'js/pr-luca-shared.js',
     ],
     functions: [
-      'approve-partner-booking',
       'get-calendar',
-      'pr-luca-data',
       'residence-api',
       'shared-app-login',
     ],

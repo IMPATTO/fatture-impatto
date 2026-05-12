@@ -8,9 +8,9 @@
   <meta name="keywords" content="residence rimini lungomare, appartamenti rimini mare, affitto rimini estate, residence villa margherita, vacanze rimini">
   <meta property="og:title" content="Residence Villa Margherita Rimini">
   <meta property="og:description" content="Appartamenti sul lungomare di Rimini. Spiaggia di fronte, terme a fianco, aeroporto a 1km. Pet friendly. Prenota direttamente.">
-  <meta property="og:url" content="https://www.residencevillamargherita.com/">
+  <meta property="og:url" content="https://villamargheritarimini.com/">
   <meta property="og:type" content="website">
-  <link rel="canonical" href="https://www.residencevillamargherita.com/">
+  <link rel="canonical" href="https://villamargheritarimini.com/">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
@@ -20,7 +20,7 @@
     "@context": "https://schema.org",
     "@type": "LodgingBusiness",
     "name": "Residence Villa Margherita Rimini",
-    "url": "https://www.residencevillamargherita.com",
+    "url": "https://villamargheritarimini.com",
     "telephone": "+393501258030",
     "email": "info@villamargheritarimini.it",
     "address": {
@@ -580,6 +580,25 @@
     .review-stars { color: var(--ambra); font-size: 18px; margin-bottom: 12px; }
 
     .events-grid { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+    .seo-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 20px;
+      margin-top: 28px;
+    }
+    .seo-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 26px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(26,107,138,.08);
+    }
+    .seo-card h3 { margin-bottom: 10px; }
+    .seo-card a {
+      color: var(--blu-dark);
+      font-weight: 700;
+    }
+    .seo-card a:hover { text-decoration: underline; }
     .event-card { padding: 22px; }
     .event-meta {
       display: flex;
@@ -707,6 +726,7 @@
       .booking-grid,
       .location-grid,
       .reviews-grid,
+      .seo-grid,
       .footer-grid,
       .tab-panel,
       .gallery-grid { grid-template-columns: 1fr; }
@@ -922,6 +942,7 @@
               <li>Parcheggio privato</li>
             </ul>
             <a class="btn btn-primary" href="#prenota">Richiedi disponibilità</a>
+            <p style="margin-top:16px"><a href="/monolocali-rimini.html">Approfondisci i monolocali a Rimini</a></p>
           </div>
         </section>
 
@@ -957,6 +978,7 @@
               <li>Parcheggio privato</li>
             </ul>
             <a class="btn btn-primary" href="#prenota">Richiedi disponibilità</a>
+            <p style="margin-top:16px"><a href="/bilocali-rimini.html">Scopri i bilocali a Rimini</a></p>
           </div>
         </section>
 
@@ -992,8 +1014,47 @@
               <li>Parcheggio privato</li>
             </ul>
             <a class="btn btn-primary" href="#prenota">Richiedi disponibilità</a>
+            <p style="margin-top:16px"><a href="/trilocali-rimini.html">Guarda i trilocali a Rimini</a></p>
           </div>
         </section>
+      </div>
+    </section>
+
+    <section class="section section-sand" id="guide">
+      <div class="container">
+        <div class="section-head fade-in">
+          <div>
+            <span class="eyebrow">Guide utili</span>
+            <h2>Pagine utili per scegliere meglio la vacanza.</h2>
+          </div>
+          <p>Abbiamo creato pagine dedicate per chi cerca una tipologia precisa o vuole capire subito i vantaggi della posizione a Miramare.</p>
+        </div>
+        <div class="seo-grid">
+          <article class="seo-card fade-in">
+            <h3><a href="/monolocali-rimini.html">Monolocali a Rimini sul mare</a></h3>
+            <p>Per coppie e piccoli nuclei che cercano una soluzione pratica sul lungomare.</p>
+          </article>
+          <article class="seo-card fade-in">
+            <h3><a href="/bilocali-rimini.html">Bilocali a Rimini vicino al mare</a></h3>
+            <p>Più spazio e più comfort per soggiorni medi o vacanze in famiglia.</p>
+          </article>
+          <article class="seo-card fade-in">
+            <h3><a href="/trilocali-rimini.html">Trilocali a Rimini per famiglie</a></h3>
+            <p>La soluzione migliore per gruppi o nuclei fino a 6 persone.</p>
+          </article>
+          <article class="seo-card fade-in">
+            <h3><a href="/residence-rimini-terme.html">Residence vicino Rimini Terme</a></h3>
+            <p>La pagina dedicata alla posizione più forte della struttura.</p>
+          </article>
+          <article class="seo-card fade-in">
+            <h3><a href="/offerte-vacanze-rimini.html">Offerte vacanze Rimini sul mare</a></h3>
+            <p>Una pagina pensata per ricerche stagionali, eventi e richieste dirette.</p>
+          </article>
+          <article class="seo-card fade-in">
+            <h3><a href="#prenota">Richiesta disponibilità diretta</a></h3>
+            <p>Invia le tue date e ricevi una risposta veloce senza passare da portali.</p>
+          </article>
+        </div>
       </div>
     </section>
 
@@ -1219,6 +1280,8 @@
             <li><a href="#posizione">Posizione</a></li>
             <li><a href="#recensioni">Recensioni</a></li>
             <li><a href="#eventi">Eventi 2026</a></li>
+            <li><a href="/residence-rimini-terme.html">Rimini Terme</a></li>
+            <li><a href="/offerte-vacanze-rimini.html">Offerte</a></li>
           </ul>
         </div>
         <div>

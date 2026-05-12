@@ -482,17 +482,20 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 
 <div class="toast" id="toast"></div>
 
+<script src="/js/site-links.js"></script>
 <script>
-var CANONICAL_PORTAL_BASE_URL='https://checkin.illupoaffitta.com';
 function getPortalBaseUrl(){
   var configured=String(window.CHECKIN_PORTAL_BASE_URL||'').trim();
   if(configured)return configured.replace(/\/+$/,'');
+  var canonical=String(window.siteLinks?.getCanonicalSiteUrl?.('portale')||'').trim().replace(/\/+$/,'');
+  var canonicalHost=String(window.siteLinks?.getCanonicalSiteHost?.('portale')||'').trim().toLowerCase();
+  var legacyNetlifyHost=String(window.siteLinks?.getLegacySiteHost?.('checkinNetlify')||'').trim().toLowerCase();
   var origin=window.location.origin.replace(/\/+$/,'');
   var host=String(window.location.hostname||'').toLowerCase();
   if(host==='localhost'||host==='127.0.0.1')return origin;
-  if(host.endsWith('.netlify.app')&&host!=='checkinillupoaffitta.netlify.app')return origin;
-  if(host==='checkin.illupoaffitta.com')return origin;
-  return CANONICAL_PORTAL_BASE_URL;
+  if(host.endsWith('.netlify.app')&&host!==legacyNetlifyHost)return origin;
+  if(canonicalHost&&host===canonicalHost)return origin;
+  return canonical||origin;
 }
 var PORTAL_BASE_URL = getPortalBaseUrl();
 var T={

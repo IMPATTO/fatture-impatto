@@ -70,6 +70,26 @@ function buildBrowserHelper() {
     return payload.canonicalSiteUrls[siteKey] || payload.canonicalSiteUrls.portale || '';
   }
 
+  function getLegacySiteUrl(siteKey) {
+    return payload.legacySiteUrls[siteKey] || '';
+  }
+
+  function getHostname(url) {
+    try {
+      return new URL(String(url || '')).hostname.toLowerCase();
+    } catch (_error) {
+      return '';
+    }
+  }
+
+  function getCanonicalSiteHost(siteKey) {
+    return getHostname(getCanonicalSiteUrl(siteKey));
+  }
+
+  function getLegacySiteHost(siteKey) {
+    return getHostname(getLegacySiteUrl(siteKey));
+  }
+
   function buildCheckinUrl(publicCheckinKey, siteKey = 'portale') {
     if (!publicCheckinKey) return '';
     const params = new URLSearchParams({
@@ -99,6 +119,9 @@ function buildBrowserHelper() {
     canonicalSiteUrls: payload.canonicalSiteUrls,
     legacySiteUrls: payload.legacySiteUrls,
     getCanonicalSiteUrl,
+    getCanonicalSiteHost,
+    getLegacySiteUrl,
+    getLegacySiteHost,
     buildCheckinUrl,
     buildOpenPortalUrl,
     buildPortalTokenUrl,

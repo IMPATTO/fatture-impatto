@@ -7,7 +7,7 @@ const DEFAULT_SUPABASE_URL = 'https://tysxeikqbgebpfyblgeb.supabase.co';
 const SUPABASE_URL = process.env.SUPABASE_URL || DEFAULT_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const PUBLIC_PORTAL_BASE_URL = process.env.PUBLIC_PORTAL_BASE_URL || '';
-const DEFAULT_PUBLIC_PORTAL_BASE_URL = 'https://checkin.illupoaffitta.com';
+let siteLinksConfigPromise = null;
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -220,7 +220,7 @@ exports.handler = async (event) => {
     ok: true,
     record: inserted,
     child_records: childRecords,
-    portal_url: buildPortalUrl(resolvePortalBaseUrl(event), inserted.portale_token, apartment.public_checkin_key),
+    portal_url: buildPortalUrl(await resolvePortalBaseUrl(event), inserted.portale_token, apartment.public_checkin_key),
   });
 };
 
@@ -515,11 +515,11 @@ async function buildAdditionalGuestInsertPayloads(supabase, payload, columnSuppo
   return records;
 }
 
-function resolvePortalBaseUrl(event) {
+async function resolvePortalBaseUrl(event) {
   if (PUBLIC_PORTAL_BASE_URL) return PUBLIC_PORTAL_BASE_URL;
   if (event.headers.origin) return event.headers.origin;
   if (event.headers.host) return `https://${event.headers.host}`;
-  return DEFAULT_PUBLIC_PORTAL_BASE_URL;
+  return getConfiguredPortalBaseUrl();
 }
 
 function buildPortalUrl(baseUrl, token, publicCheckinKey) {
@@ -991,7 +991,7 @@ async function loadOfficialStatesCsv() {
   const localCsv = loadOfficialStatesCsvFromFile();
   if (localCsv) return localCsv;
 
-  const baseUrl = (PUBLIC_PORTAL_BASE_URL || DEFAULT_PUBLIC_PORTAL_BASE_URL).replace(/\/+$/, '');
+  const baseUrl = (await getConfiguredPortalBaseUrl()).replace(/\/+$/, '');
   try {
     const response = await fetch(`${baseUrl}/stati.csv`);
     if (!response.ok) {
@@ -1003,6 +1003,37 @@ async function loadOfficialStatesCsv() {
     console.warn('submit-public-checkin unable to load stati.csv:', error.message);
     return '';
   }
+}
+
+async function getConfiguredPortalBaseUrl() {
+  if (PUBLIC_PORTAL_BASE_URL) {
+    return String(PUBLIC_PORTAL_BASE_URL).replace(/\/+$/, '');
+  }
+
+  try {
+    const siteLinks = await loadSiteLinksConfig();
+    const configured = String(siteLinks?.getCanonicalSiteUrl?.('portale') || '').trim();
+    if (configured) {
+      return configured.replace(/\/+$/, '');
+    }
+  } catch (_error) {
+    // fall through to final static fallback
+  }
+
+  const envFallback = String(
+    process.env.SITE_URL_PORTALE
+      || process.env.URL
+      || process.env.DEPLOY_PRIME_URL
+      || 'http://localhost:8888',
+  ).trim();
+  return envFallback.replace(/\/+$/, '');
+}
+
+async function loadSiteLinksConfig() {
+  if (!siteLinksConfigPromise) {
+    siteLinksConfigPromise = import('../../config/site-links.mjs');
+  }
+  return siteLinksConfigPromise;
 }
 
 function loadOfficialStatesCsvFromFile() {

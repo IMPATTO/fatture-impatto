@@ -24,11 +24,6 @@ const APP_CONFIG = {
     envName: 'RESIDENCE_ADMIN_PASSWORDS',
     subject: 'residence-admin',
   },
-  pr_luca: {
-    role: 'pr_luca',
-    envName: 'PR_LUCA_PASSWORDS',
-    subject: 'pr-luca',
-  },
 };
 
 exports.handler = async (event) => {

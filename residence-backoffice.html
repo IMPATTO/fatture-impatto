@@ -212,7 +212,6 @@
   </div>
   <div style="display:flex;gap:.75rem;align-items:center;">
     <a href="pr_kekko_riccione.html" target="_blank" style="color:rgba(255,255,255,.7);font-size:12px;text-decoration:none;border-bottom:1px dashed rgba(255,255,255,.3);">→ Vista Kekko</a>
-    <a href="backoffice-pr-luca.html" target="_blank" style="color:rgba(255,255,255,.7);font-size:12px;text-decoration:none;border-bottom:1px dashed rgba(255,255,255,.3);">→ PR Luca</a>
     <button class="btn-logout" onclick="doLogout()">Esci</button>
   </div>
 </header>
@@ -234,7 +233,7 @@
       <button class="filter-pill active" data-filter="source" data-value="all" onclick="setFilter('source','all')">Tutte</button>
       <button class="filter-pill" data-filter="source" data-value="checco" onclick="setFilter('source','checco')">Kekko</button>
       <button class="filter-pill" data-filter="source" data-value="pr-serena" onclick="setFilter('source','pr-serena')">Serena</button>
-      <button class="filter-pill" data-filter="source" data-value="pr-luca" onclick="setFilter('source','pr-luca')">Luca</button>
+      <button class="filter-pill" data-filter="source" data-value="pr-luca" onclick="setFilter('source','pr-luca')">Luca legacy</button>
       <button class="filter-pill" data-filter="source" data-value="esterno" onclick="setFilter('source','esterno')">Esterni</button>
     </div>
     <input type="text" class="search-input" id="search" placeholder="Cerca nome cliente..." oninput="render()">
@@ -479,7 +478,7 @@ function sourceLabel(source) {
   return ({
     checco: 'Kekko',
     'pr-serena': 'Serena',
-    'pr-luca': 'Luca',
+    'pr-luca': 'Luca (legacy)',
     esterno: 'Esterno',
     system: 'Sistema'
   })[source] || source;

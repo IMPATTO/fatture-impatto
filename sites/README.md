@@ -1,17 +1,30 @@
 # Siti separati
 
-Questo repo ora puo produrre 5 pacchetti di deploy distinti:
+Questo repo ora puo produrre 6 pacchetti di deploy distinti:
 
 - `fatt-docs`: fatturazione + documenti
 - `operativita`
 - `portale`
 - `contabilita`
 - `calendario`
+- `residence-pr` (PR Kekko + Residence)
+
+Progetti monitorati ma non ancora dentro al builder condiviso:
+
+- `villa-margherita`
+  - sito standalone con dominio proprio
+  - link ufficiali monitorati in `config/project-links.json`
+  - tenuto fuori dal builder multi-sito finche non esiste un supporto pulito ai namespace route per domini separati
 
 Ogni sito viene costruito con:
 
 ```bash
 SITE_KEY=fatt-docs npm run build:site
+SITE_KEY=operativita npm run build:site
+SITE_KEY=portale npm run build:site
+SITE_KEY=contabilita npm run build:site
+SITE_KEY=calendario npm run build:site
+SITE_KEY=residence-pr npm run build:site
 ```
 
 L'output finisce in `dist/<site-key>`.
@@ -21,6 +34,7 @@ L'output finisce in `dist/<site-key>`.
 - ogni deploy pubblica solo i file e le function dichiarate per quell'area
 - i link verso le altre aree continuano a funzionare grazie a pagine redirect generate in build
 - la comunicazione dati resta via Supabase e Netlify Functions, ma il deploy non trascina piu tutto il repo insieme
+- il builder non supporta piu inclusioni implicite: ogni pagina deve avere un owner unico
 
 ## Variabili URL consigliate
 
@@ -31,5 +45,6 @@ Ogni sito dovrebbe conoscere gli URL degli altri tramite env vars:
 - `SITE_URL_PORTALE`
 - `SITE_URL_CONTABILITA`
 - `SITE_URL_CALENDARIO`
+- `SITE_URL_RESIDENCE_PR`
 
 Se una env var manca, il redirect usa il path relativo. Va bene solo finche i siti restano sullo stesso dominio.

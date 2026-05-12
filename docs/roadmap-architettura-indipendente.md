@@ -84,7 +84,13 @@ Esempi da eliminare:
 
 ### 4. Moduli speciali fuori standard
 
-`villa-margherita` ha una sua configurazione Netlify e il suo sito, ma oggi non e integrato nel registry dei siti principali e ha avuto link locali mancanti durante le verifiche.
+`villa-margherita` ha una sua configurazione Netlify e il suo sito. Ora le sue pagine SEO e i suoi link ufficiali sono monitorati nei controlli del repo, ma non e ancora dentro al builder multi-sito condiviso.
+
+Motivo:
+
+- il builder attuale assume una singola namespace di route globale
+- `villa-margherita` ha un dominio proprio e una root `index.html` che collide semanticamente con `portale`
+- per integrarlo nel builder serve un supporto esplicito ai namespace route per dominio
 
 `extracted-repos/residence-pr` e una copia autonoma dichiarata del blocco Residence + PR e introduce rischio di drift.
 
@@ -190,8 +196,8 @@ Config:
 
 Decisione richiesta:
 
-- o entra come progetto esplicito nel registry generale
-- oppure viene considerato progetto esterno e rimosso dal perimetro dei check del repo principale
+- oggi scelta provvisoria chiusa: progetto standalone monitorato nei check link
+- scelta futura: entra nel builder solo dopo supporto a namespace route per dominio
 
 ### `pr-kekko`
 
@@ -205,11 +211,10 @@ Functions candidate owner:
 
 - `residence-api`
 - `shared-app-login`
-- `approve-partner-booking`
 
 Note:
 
-- oggi e intrecciato con `pr-luca`; la separazione va fatta prima di dichiararlo davvero indipendente
+- il perimetro Luca e stato sacrificato; restano solo URL legacy statici e storico dati
 
 ### `calendario`
 
@@ -220,7 +225,7 @@ Pagine:
 Functions candidate owner:
 
 - `get-calendar`
-- `sync-beds24-calendar`
+- `sync-beds24-calendar-background`
 - `beds24-sync-bookings`
 - `update-calendar-inventory`
 - `populate-pms-mappings-and-units`
@@ -246,9 +251,14 @@ Function da dismettere:
 
 Altri riferimenti da pulire:
 
-- `js/pr-luca-shared.js`
-- `shared-app-login` role `pr_luca`
 - record e source `pr-luca` nei seed SQL e nei dati residence
+
+Stato attuale:
+
+- accesso partner dismesso
+- nuova creazione richieste disattivata
+- URL legacy mantenuti vivi per non rompere collegamenti storici
+- coda legacy sacrificata e archiviata
 
 ## Decisioni strutturali da prendere
 
@@ -281,10 +291,10 @@ Raccomandazione:
 Raccomandazione:
 
 - trattarlo come progetto separato da subito
-- o dentro un sesto registry esplicito
-- o fuori dal repo principale dei siti applicativi
+- monitorarlo come standalone finche il builder non supporta namespace route per dominio
+- integrarlo nel builder solo dopo quella estensione infrastrutturale
 
-Lasciarlo a meta e il caso peggiore.
+Lo stato ibrido iniziale e stato ridotto: oggi non e piu fuori controllo, ma non e ancora un sito di prima classe nel builder condiviso.
 
 ## Fase 0 - Congelamento e inventario
 
@@ -304,6 +314,7 @@ Exit criteria:
 
 - tabella owner pagina/function completa
 - nessuna ambiguita sui 7 progetti target
+- `villa-margherita` classificato in modo esplicito come standalone o come sito builder-ready
 
 ## Fase 1 - Ripulire il registry e il builder
 
@@ -363,6 +374,7 @@ Exit criteria:
 - il check non segnala falsi positivi strutturali
 - i problemi veri emergono prima del deploy
 - i riferimenti legacy a `pr-luca` restano confinati nel loro perimetro
+- i link check tollerano transienti di rete ma non nascondono errori persistenti
 
 ## Fase 4 - Separazione dei moduli speciali
 
@@ -390,16 +402,17 @@ Obiettivo:
 
 Task:
 
-1. togliere pagine dal registry
+1. mantenere solo le pagine tombstone nel registry
 2. togliere function e ruolo auth
 3. rimuovere link dalle UI Residence
 4. rimuovere riferimenti da docs, config e audit
-5. pulire seed e riferimenti SQL se non piu necessari
+5. archiviare la coda legacy anche a livello dati
+6. pulire seed e riferimenti SQL se non piu necessari
 
 Exit criteria:
 
-- nessun file applicativo punta piu a `pr-luca`
-- nessun controllo include piu `pr-luca`
+- nessun file applicativo eseguibile punta piu a `pr-luca`
+- `pr-luca` sopravvive solo come storico dati e URL legacy statici
 
 ## Fase 6 - Solo dopo: valutare multi-repo
 

@@ -4,6 +4,11 @@
   "scripts": {
     "audit:client-flows": "node scripts/audit-client-flows.mjs",
     "build:site": "node scripts/build-site.mjs",
+    "check:deprecated-refs": "node scripts/check-deprecated-references.mjs",
+    "check:hardcoded-domains": "node scripts/check-hardcoded-domains.mjs",
+    "check:links": "node scripts/check-project-links.mjs",
+    "check:links:deprecated": "node scripts/check-project-links.mjs config/project-links-deprecated.json",
+    "sync:project-links": "node scripts/sync-project-links.mjs",
     "verify:integrity": "node scripts/verify-site-integrity.mjs"
   },
   "dependencies": {

@@ -5,7 +5,7 @@ Snapshot autonoma estratta da `fatture-impatto`.
 ## Include
 
 - Residence Margherita lato partner e backoffice
-- calendario e richieste PR Luca
+- storico legacy Luca servito con URL statici compatibili
 - Netlify Functions minime collegate
 - migration SQL minime per `rm_*` e `partner_booking_requests`
 
@@ -18,7 +18,6 @@ Snapshot autonoma estratta da `fatture-impatto`.
 - `APP_SESSION_SECRET`
 - `RESIDENCE_KEKKO_PASSWORDS`
 - `RESIDENCE_ADMIN_PASSWORDS`
-- `PR_LUCA_PASSWORDS`
 - `BEDS24_API_KEY`
 
 ## Avvio locale

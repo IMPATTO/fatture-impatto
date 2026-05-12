@@ -7,6 +7,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/supabase-client.js"></script>
+  <script src="/js/site-links.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 
@@ -376,13 +377,11 @@ function syncPreviewVarsWithApartment(apartment = getSelectedApartment()) {
 }
 
 function buildCheckinLink(apartment) {
-  if (!apartment?.public_checkin_key) return '';
-  return `https://checkin.illupoaffitta.com/?apt=${encodeURIComponent(apartment.public_checkin_key)}&mode=checkin`;
+  return window.siteLinks?.buildCheckinUrl(apartment?.public_checkin_key) || '';
 }
 
 function buildPortalLink(apartment) {
-  if (!apartment?.public_checkin_key) return '';
-  return `https://checkin.illupoaffitta.com/portale.html?apt=${encodeURIComponent(apartment.public_checkin_key)}&mode=open`;
+  return window.siteLinks?.buildOpenPortalUrl(apartment?.public_checkin_key) || '';
 }
 
 function getRenderVars() {
