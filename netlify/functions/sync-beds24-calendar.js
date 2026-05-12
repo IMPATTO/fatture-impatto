@@ -96,7 +96,7 @@ exports.handler = async (event) => {
           apartment_unit_id: unit.id,
           date,
           price: normalizeNumber(offerEntry?.price ?? calendarEntry?.price),
-          min_stay: normalizeInteger(calendarEntry?.minStay),
+          min_stay: normalizeInteger(offerEntry?.minStay ?? calendarEntry?.minStay),
           available: available == null ? null : Boolean(available),
           closed,
           source_updated_at: sourceUpdatedAt,
@@ -254,37 +254,57 @@ async function loadOfferPrices(accessToken, roomIds, from, to) {
   const map = new Map();
   const today = new Date().toISOString().slice(0, 10);
   const eligibleDates = eachDate(from, to).filter((date) => date >= today);
+  const strategies = [
+    { endpoint: '/inventory/rooms/offers', guestParams: { numAdult: '2', numChild: '0' } },
+    { endpoint: '/inventory/offers', guestParams: { numAdult: '2', numChild: '0' } },
+    { endpoint: '/inventory/rooms/offers', guestParams: { numAdults: '2' } },
+    { endpoint: '/inventory/offers', guestParams: { numAdults: '2' } },
+  ];
 
   for (const date of eligibleDates) {
     const departure = addDaysUtc(parseIsoDateUtc(date), 1);
-    const params = new URLSearchParams();
-    roomIds.forEach((id) => params.append('roomId', id));
-    params.set('arrival', date);
-    params.set('departure', formatIsoDateUtc(departure));
-    params.set('numAdults', '2');
+    let pricedRows = [];
+    let lastError = null;
 
-    const response = await fetch(`${BEDS24_URL}/inventory/offers?${params.toString()}`, {
-      headers: {
-        accept: 'application/json',
-        token: accessToken,
-      },
-    });
+    for (const strategy of strategies) {
+      const params = new URLSearchParams();
+      roomIds.forEach((id) => params.append('roomId', id));
+      params.set('arrival', date);
+      params.set('departure', formatIsoDateUtc(departure));
+      Object.entries(strategy.guestParams).forEach(([key, value]) => params.set(key, value));
 
-    if (!response.ok) {
-      const detail = await safeReadText(response);
-      throw new Error(`Beds24 offers failed: ${response.status}${detail ? ` ${detail}` : ''}`);
+      const response = await fetch(`${BEDS24_URL}${strategy.endpoint}?${params.toString()}`, {
+        headers: {
+          accept: 'application/json',
+          token: accessToken,
+        },
+      });
+
+      if (!response.ok) {
+        const detail = await safeReadText(response);
+        lastError = `Beds24 offers failed: ${response.status}${detail ? ` ${detail}` : ''}`;
+        continue;
+      }
+
+      const payload = await response.json();
+      pricedRows = extractOfferRows(payload);
+      if (pricedRows.some((row) => normalizeNumber(firstDefined(row.price, row.totalPrice, row.roomPrice, row.amount)) !== null)) {
+        break;
+      }
     }
 
-    const payload = await response.json();
-    const rows = payload?.data || payload || [];
-    rows.forEach((row) => {
-      const roomKey = String(row.roomId || '');
-      const price = normalizeNumber(firstDefined(row.price, row.totalPrice, row.roomPrice, row.amount));
+    if (!pricedRows.length && lastError && date === eligibleDates[0]) {
+      console.warn('sync-beds24-calendar offers warning', lastError);
+    }
+
+    pricedRows.forEach((row) => {
+      const roomKey = String(firstDefined(row.roomId, row.roomTypeId, row.id, '') || '');
+      const price = normalizeNumber(firstDefined(row.price, row.totalPrice, row.roomPrice, row.amount, row.rackRate));
       if (roomKey && price !== null) {
         map.set(`${roomKey}:${date}`, {
           price,
-          unitsAvailable: normalizeInteger(row.unitsAvailable),
-          minStay: normalizeInteger(firstDefined(row.minStay, row.minimumStay)),
+          unitsAvailable: normalizeInteger(firstDefined(row.unitsAvailable, row.availableUnits)),
+          minStay: normalizeInteger(firstDefined(row.minStay, row.minimumStay, row.minimumStayDays)),
         });
       }
     });
@@ -398,6 +418,38 @@ function chunk(items, size) {
 
 function unique(items) {
   return [...new Set(items)];
+}
+
+function extractOfferRows(payload) {
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload)) return payload;
+
+  const queue = [payload];
+  while (queue.length) {
+    const current = queue.shift();
+    if (!current || typeof current !== 'object') continue;
+    for (const value of Object.values(current)) {
+      if (Array.isArray(value)) {
+        const hasRelevant = value.some((item) => item && typeof item === 'object' && (
+          'price' in item ||
+          'totalPrice' in item ||
+          'roomPrice' in item ||
+          'amount' in item ||
+          'roomId' in item ||
+          'roomTypeId' in item ||
+          'offerId' in item
+        ));
+        if (hasRelevant) return value;
+        value.forEach((item) => {
+          if (item && typeof item === 'object') queue.push(item);
+        });
+      } else if (value && typeof value === 'object') {
+        queue.push(value);
+      }
+    }
+  }
+
+  return [];
 }
 
 async function safeReadText(response) {

@@ -787,8 +787,8 @@ input {
 
 .section-row {
   position: sticky;
-  top: 68px;
-  z-index: 10;
+  top: calc(var(--timeline-sticky-top, 48px) + 68px);
+  z-index: 19;
   padding: 10px 16px;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);

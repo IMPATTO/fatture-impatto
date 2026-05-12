@@ -186,11 +186,12 @@ export function buildTimelineHeader(monthDays) {
           ${monthDays.map((date) => {
             const weekend = isWeekend(date) ? ' weekend' : '';
             const today = isSameDate(date, new Date()) ? ' today' : '';
+            const weekday = formatWeekday(date);
             return `
               <div class="day-header${weekend}${today}">
-                <div class="day-name">${esc(formatWeekday(date))}</div>
+                <div class="day-name">${esc(weekday)}</div>
                 <div class="day-num">${esc(String(date.getDate()))}</div>
-                <div class="day-subname">${esc(formatWeekday(date))}</div>
+                <div class="day-subname">${esc(weekday.slice(0, 2))}</div>
               </div>
             `;
           }).join('')}
