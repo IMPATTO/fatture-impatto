@@ -696,6 +696,14 @@ function getOrderedGroupRows(row) {
   return [root, ...children];
 }
 
+function getLocalDateKey() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function getRowsForQuesturaAction(row) {
   return getGroupSize(row) > 1 ? getOrderedGroupRows(row) : (row ? [row] : []);
 }
@@ -1187,7 +1195,7 @@ function renderDrawer() {
   const acc = f._account;
   const isArchiveRow = ALLOGGIATI_ARCHIVE_STATI.includes(r.alloggiati_stato);
   const checkinValue = String(f.data_checkin || r.data_checkin || '').trim().slice(0, 10);
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayKey = getLocalDateKey();
   const isFutureCheckin = /^\d{4}-\d{2}-\d{2}$/.test(checkinValue) && checkinValue > todayKey;
   const shouldHideOldArrivalError = isFutureCheckin && /data di arrivo errata/i.test(r.alloggiati_errore || '');
   const parentRow = getParentRow(r);
@@ -1437,7 +1445,7 @@ function getSchedinaValidationState(row, formOverride = {}, rowsToValidate = nul
   const account = formOverride?._account || getAccountForApt(row?.apartment_id);
   const f = buildQuesturaDraft(row, formOverride);
   const checkinValue = String(f.data_checkin || '').trim().slice(0, 10);
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayKey = getLocalDateKey();
   const isFutureCheckin = /^\d{4}-\d{2}-\d{2}$/.test(checkinValue) && checkinValue > todayKey;
   const overrides = new Map();
   if (row) overrides.set(String(row.id), formOverride);
@@ -2661,7 +2669,7 @@ function renderConfig() {
   const pan = document.getElementById('panConfig');
   pan.innerHTML = `
   <div style="padding:16px 24px;background:var(--white);border-bottom:1px solid var(--border)">
-    <div style="font-size:13px;color:var(--text2)">Collega ogni appartamento all'account AlloggiatiWeb del proprietario. Le schedine verranno inviate con le credenziali dell'account collegato. Se attivi <strong>Invio auto</strong>, il job automatico prova l'invio ogni giorno alle 22:00 (Europe/Rome).</div>
+    <div style="font-size:13px;color:var(--text2)">Collega ogni appartamento all'account AlloggiatiWeb del proprietario. Le schedine verranno inviate con le credenziali dell'account collegato. Se attivi <strong>Invio auto</strong>, il job automatico prova l'invio ogni giorno alle 23:30 (Europe/Rome).</div>
   </div>
   <div style="padding:24px;overflow-y:auto">
     <table>

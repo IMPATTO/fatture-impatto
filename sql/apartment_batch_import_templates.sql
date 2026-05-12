@@ -202,9 +202,9 @@ with staged as (
     nullif(trim(id_appartamento_portale), '') as id_appartamento_portale,
     coalesce(nullif(lower(trim(invio_automatico)), '') in ('true', 't', '1', 'yes', 'y'), false) as invio_automatico,
     case
-      when nullif(trim(orario_invio), '') is null then '22:00:00'::time
+      when nullif(trim(orario_invio), '') is null then '23:30:00'::time
       when trim(orario_invio) ~ '^[0-9]{2}:[0-9]{2}(:[0-9]{2})?$' then trim(orario_invio)::time
-      else '22:00:00'::time
+      else '23:30:00'::time
     end as orario_invio,
     nullif(trim(istat_codice_struttura_override), '') as istat_codice_struttura_override
   from staging_apartment_alloggiati
@@ -236,9 +236,9 @@ with staged as (
     nullif(trim(id_appartamento_portale), '') as id_appartamento_portale,
     coalesce(nullif(lower(trim(invio_automatico)), '') in ('true', 't', '1', 'yes', 'y'), false) as invio_automatico,
     case
-      when nullif(trim(orario_invio), '') is null then '22:00:00'::time
+      when nullif(trim(orario_invio), '') is null then '23:30:00'::time
       when trim(orario_invio) ~ '^[0-9]{2}:[0-9]{2}(:[0-9]{2})?$' then trim(orario_invio)::time
-      else '22:00:00'::time
+      else '23:30:00'::time
     end as orario_invio,
     nullif(trim(istat_codice_struttura_override), '') as istat_codice_struttura_override
   from staging_apartment_alloggiati
@@ -268,9 +268,9 @@ begin
         nullif(trim(id_appartamento_portale), '') as id_appartamento_portale,
         coalesce(nullif(lower(trim(invio_automatico)), '') in ('true', 't', '1', 'yes', 'y'), false) as invio_automatico,
         case
-          when nullif(trim(orario_invio), '') is null then '22:00:00'::time
+          when nullif(trim(orario_invio), '') is null then '23:30:00'::time
           when trim(orario_invio) ~ '^[0-9]{2}:[0-9]{2}(:[0-9]{2})?$' then trim(orario_invio)::time
-          else '22:00:00'::time
+          else '23:30:00'::time
         end as orario_invio,
         nullif(trim(istat_codice_struttura_override), '') as istat_codice_struttura_override
       from staging_apartment_alloggiati
@@ -301,9 +301,9 @@ with staged as (
     nullif(trim(id_appartamento_portale), '') as id_appartamento_portale,
     coalesce(nullif(lower(trim(invio_automatico)), '') in ('true', 't', '1', 'yes', 'y'), false) as invio_automatico,
     case
-      when nullif(trim(orario_invio), '') is null then '22:00:00'::time
+      when nullif(trim(orario_invio), '') is null then '23:30:00'::time
       when trim(orario_invio) ~ '^[0-9]{2}:[0-9]{2}(:[0-9]{2})?$' then trim(orario_invio)::time
-      else '22:00:00'::time
+      else '23:30:00'::time
     end as orario_invio,
     nullif(trim(istat_codice_struttura_override), '') as istat_codice_struttura_override
   from staging_apartment_alloggiati
@@ -333,9 +333,9 @@ begin
         nullif(trim(id_appartamento_portale), '') as id_appartamento_portale,
         coalesce(nullif(lower(trim(invio_automatico)), '') in ('true', 't', '1', 'yes', 'y'), false) as invio_automatico,
         case
-          when nullif(trim(orario_invio), '') is null then '22:00:00'::time
+          when nullif(trim(orario_invio), '') is null then '23:30:00'::time
           when trim(orario_invio) ~ '^[0-9]{2}:[0-9]{2}(:[0-9]{2})?$' then trim(orario_invio)::time
-          else '22:00:00'::time
+          else '23:30:00'::time
         end as orario_invio,
         nullif(trim(istat_codice_struttura_override), '') as istat_codice_struttura_override
       from staging_apartment_alloggiati
@@ -366,9 +366,9 @@ with staged as (
     nullif(trim(id_appartamento_portale), '') as id_appartamento_portale,
     coalesce(nullif(lower(trim(invio_automatico)), '') in ('true', 't', '1', 'yes', 'y'), false) as invio_automatico,
     case
-      when nullif(trim(orario_invio), '') is null then '22:00:00'::time
+      when nullif(trim(orario_invio), '') is null then '23:30:00'::time
       when trim(orario_invio) ~ '^[0-9]{2}:[0-9]{2}(:[0-9]{2})?$' then trim(orario_invio)::time
-      else '22:00:00'::time
+      else '23:30:00'::time
     end as orario_invio,
     nullif(trim(istat_codice_struttura_override), '') as istat_codice_struttura_override
   from staging_apartment_alloggiati
@@ -405,9 +405,9 @@ begin
         nullif(trim(id_appartamento_portale), '') as id_appartamento_portale,
         coalesce(nullif(lower(trim(invio_automatico)), '') in ('true', 't', '1', 'yes', 'y'), false) as invio_automatico,
         case
-          when nullif(trim(orario_invio), '') is null then '22:00:00'::time
+          when nullif(trim(orario_invio), '') is null then '23:30:00'::time
           when trim(orario_invio) ~ '^[0-9]{2}:[0-9]{2}(:[0-9]{2})?$' then trim(orario_invio)::time
-          else '22:00:00'::time
+          else '23:30:00'::time
         end as orario_invio,
         nullif(trim(istat_codice_struttura_override), '') as istat_codice_struttura_override
       from staging_apartment_alloggiati
@@ -445,9 +445,9 @@ with staged as (
     nullif(trim(id_appartamento_portale), '') as id_appartamento_portale,
     coalesce(nullif(lower(trim(invio_automatico)), '') in ('true', 't', '1', 'yes', 'y'), false) as invio_automatico,
     case
-      when nullif(trim(orario_invio), '') is null then '22:00:00'::time
+      when nullif(trim(orario_invio), '') is null then '23:30:00'::time
       when trim(orario_invio) ~ '^[0-9]{2}:[0-9]{2}(:[0-9]{2})?$' then trim(orario_invio)::time
-      else '22:00:00'::time
+      else '23:30:00'::time
     end as orario_invio,
     nullif(trim(istat_codice_struttura_override), '') as istat_codice_struttura_override
   from staging_apartment_alloggiati

@@ -4,24 +4,16 @@ const crypto = require('crypto');
 const ENDPOINT = 'https://alloggiatiweb.poliziadistato.it/service/service.asmx';
 const ITALIA_CODE = '100000100';
 const ROME_TIMEZONE = 'Europe/Rome';
-const AUTO_SEND_HOUR = '22';
 const ELIGIBLE_STATI = ['APPROVATA', 'CREDENZIALI_INVIATE', 'BOZZA_CREATA', 'CHECK_IN_COMPLETATO'];
 const ELIGIBLE_ALLOGGIATI_STATI = ['DA_INVIARE', 'ERRORE'];
 
 exports.config = {
-  schedule: '0 * * * *',
+  schedule: '30 23 * * *',
 };
 
 exports.handler = async () => {
   const now = new Date();
   const romeNow = getRomeDateParts(now);
-  if (romeNow.hour !== AUTO_SEND_HOUR) {
-    return json(200, {
-      ok: true,
-      skipped: true,
-      reason: `Outside auto-send window (${romeNow.date} ${romeNow.hour}:${romeNow.minute} Europe/Rome)`,
-    });
-  }
 
   const supabase = createClient(
     process.env.SUPABASE_URL,
