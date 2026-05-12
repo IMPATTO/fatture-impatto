@@ -226,10 +226,11 @@ async function processApartmentSend(supabase, link, ospiti, actorEmail) {
     apartmentPortalId: link.id_appartamento_portale,
   });
   let result = await soapSendOrTest(soapRequest);
+  let fallbackResult = null;
   if (isAlloggiatiMethodMismatch(result.error)) {
     const fallbackSoapRequest = flipSoapRequestMode(soapRequest);
     if (fallbackSoapRequest) {
-      const fallbackResult = await soapSendOrTest(fallbackSoapRequest);
+      fallbackResult = await soapSendOrTest(fallbackSoapRequest);
       if (!fallbackResult.error || fallbackResult.schedineValide > 0) {
         console.info('[auto-send-alloggiati] method fallback applied', {
           from: soapRequest.action,
@@ -240,6 +241,11 @@ async function processApartmentSend(supabase, link, ospiti, actorEmail) {
       }
     }
   }
+  result = resolveAlloggiatiMethodError({
+    result,
+    fallbackResult,
+    apartmentPortalId: link.id_appartamento_portale,
+  });
   const fullSuccess = !result.error && result.schedineValide === ospiti.length;
   const partialSuccess = !result.error && result.schedineValide > 0 && result.schedineValide < ospiti.length;
   const partialMessage = partialSuccess
@@ -461,6 +467,25 @@ function isAlloggiatiMethodMismatch(errorMessage) {
   const message = String(errorMessage || '').toLowerCase();
   return message.includes('utilizzare i metodi appropriati')
     || message.includes('utente gestore di appartamenti');
+}
+
+function resolveAlloggiatiMethodError({ result, fallbackResult, apartmentPortalId }) {
+  if (!isAlloggiatiMethodMismatch(result?.error) && !isAlloggiatiMethodMismatch(fallbackResult?.error)) {
+    return result;
+  }
+
+  const normalizedApartmentPortalId = String(apartmentPortalId || '').trim();
+  if (!normalizedApartmentPortalId) {
+    return {
+      ...result,
+      error: 'Account Alloggiati di tipo Gestore Appartamenti: manca ID portale Alloggiati nel collegamento appartamento. Apri "Collega Appartamenti" e inserisci l\'ID portale corretto.',
+    };
+  }
+
+  return {
+    ...result,
+    error: 'Account Alloggiati di tipo Gestore Appartamenti: ID portale Alloggiati mancante o non valido per questo appartamento. Verifica il collegamento in "Collega Appartamenti".',
+  };
 }
 
 function flipSoapRequestMode({ action, username, token, schedine, apartmentPortalId }) {
