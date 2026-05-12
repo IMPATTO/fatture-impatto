@@ -241,7 +241,7 @@ export async function syncPricesWeek() {
     const token = S.session?.access_token;
     if (!token) throw new Error('Sessione non valida');
 
-    const url = '/.netlify/functions/sync-beds24-calendar-background?days=7';
+    const url = '/.netlify/functions/sync-beds24-calendar-background?days=60';
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -254,7 +254,7 @@ export async function syncPricesWeek() {
       throw new Error(payload.error || `Sync prezzi failed: ${response.status}`);
     }
 
-    alert('Sync prezzi avviato in background. Tra 1-2 minuti aggiorna la pagina per vedere i nuovi prezzi.');
+    alert('Sync prezzi avviato in background. Tra 2-3 minuti aggiorna la pagina per vedere i prezzi dei prossimi 60 giorni.');
   } catch (error) {
     console.error('sync prezzi error', error);
     alert(error.message || 'Sync prezzi non riuscito');

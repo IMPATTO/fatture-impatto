@@ -208,7 +208,7 @@ function expandRangeToDays(range) {
   const start = parseIsoDateUtc(range.from);
   const end = parseIsoDateUtc(range.to);
 
-  for (let d = new Date(start); d < end; d = addDaysUtc(d, 1)) {
+  for (let d = new Date(start); d <= end; d = addDaysUtc(d, 1)) {
     days.push({
       date: formatIsoDateUtc(d),
       price: range.price1,
