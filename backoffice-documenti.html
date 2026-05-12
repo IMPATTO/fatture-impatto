@@ -2669,7 +2669,7 @@ function renderConfig() {
   const pan = document.getElementById('panConfig');
   pan.innerHTML = `
   <div style="padding:16px 24px;background:var(--white);border-bottom:1px solid var(--border)">
-    <div style="font-size:13px;color:var(--text2)">Collega ogni appartamento all'account AlloggiatiWeb del proprietario. Le schedine verranno inviate con le credenziali dell'account collegato. Se attivi <strong>Invio auto</strong>, il job automatico prova l'invio ogni giorno alle 23:30 (Europe/Rome).</div>
+    <div style="font-size:13px;color:var(--text2)">Collega ogni appartamento all'account AlloggiatiWeb del proprietario. Le schedine verranno inviate con le credenziali dell'account collegato. <strong>ID portale</strong> serve solo per gli appartamenti sotto SCIA aziendale / account di tipo Gestore Appartamenti; per gli altri puo restare vuoto. Se attivi <strong>Invio auto</strong>, il job automatico prova l'invio ogni giorno alle 23:30 (Europe/Rome).</div>
   </div>
   <div style="padding:24px;overflow-y:auto">
     <table>
@@ -2698,7 +2698,7 @@ function renderConfigRows() {
           ${S.accounts.map(a=>`<option value="${a.id}" ${accId===a.id?'selected':''}>${esc(a.nome_account)} (${esc(a.questura)})</option>`).join('')}
         </select>
       </td>
-      <td><input class="cfg-idp" data-apt="${apt.id}" value="${esc(idPortale)}" placeholder="000001" style="width:80px;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:var(--mono);text-align:center"/></td>
+      <td><input class="cfg-idp" data-apt="${apt.id}" value="${esc(idPortale)}" placeholder="solo SCIA aziendale" title="Compila solo per appartamenti sotto SCIA aziendale / account Gestore Appartamenti" style="width:160px;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:var(--mono);text-align:center"/></td>
       <td style="text-align:center"><input type="checkbox" class="cfg-auto" data-apt="${apt.id}" ${autoInvio?'checked':''} style="width:16px;height:16px;cursor:pointer;accent-color:var(--teal)"/></td>
       <td><button class="btn btn-ghost btn-sm cfg-save" data-apt="${apt.id}">Salva</button></td>
     </tr>`;
