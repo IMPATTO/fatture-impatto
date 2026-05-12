@@ -1,8 +1,4 @@
-export const sharedFunctionSites = {
-  'create-fattura-fic': ['contabilita', 'fatt-docs'],
-  'get-calendar': ['calendario', 'residence-pr'],
-  'save-istat-config': ['fatt-docs', 'portale'],
-};
+export const sharedFunctionSites = {};
 
 export const siteRegistry = {
   'fatt-docs': {
@@ -21,11 +17,11 @@ export const siteRegistry = {
     ],
     functions: [
       'build-istat-monthly',
-      'create-fattura-fic',
+      'create-fattura-fic-fatt-docs',
       'create-fattura-from-text',
       'export-alloggiati-report',
       'export-istat-marche-xml',
-      'save-istat-config',
+      'save-istat-config-fatt-docs',
       'send-alloggiati',
       'transcribe-invoice-audio',
     ],
@@ -75,7 +71,7 @@ export const siteRegistry = {
       'audit-apartment-links',
       'get-backoffice-portale-data',
       'get-public-portal-data',
-      'save-istat-config',
+      'save-istat-config-portale',
       'submit-public-checkin',
       'submit-public-invoice-documents',
       'translate-apartment-info',
@@ -99,7 +95,7 @@ export const siteRegistry = {
     ],
     functions: [
       'create-contract-registration-accounting',
-      'create-fattura-fic',
+      'create-fattura-fic-contabilita',
       'create-owner-payment-accounting',
       'inbound-bollette-email',
       'inbound-bollette-telegram',
@@ -125,7 +121,7 @@ export const siteRegistry = {
       'beds24-inspect',
       'beds24-rate-diagnostics',
       'beds24-sync-bookings',
-      'get-calendar',
+      'get-calendar-calendario',
       'populate-pms-mappings-and-units',
       'sync-beds24-calendar-background',
       'update-calendar-inventory',
@@ -148,7 +144,7 @@ export const siteRegistry = {
       'js/shared-app-auth.js',
     ],
     functions: [
-      'get-calendar',
+      'get-calendar-residence-pr',
       'residence-api',
       'shared-app-login',
     ],

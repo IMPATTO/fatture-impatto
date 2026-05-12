@@ -47,7 +47,7 @@ I problemi reali oggi sono questi:
 2. alcune route e domini sono ancora hardcodati
 3. esistono copie vive e snapshot parallele (`extracted-repos/residence-pr`)
 4. alcuni moduli sono fuori perimetro o ibridi (`villa-margherita`)
-5. `pr-luca` e ancora intrecciato in UI, functions, auth e dati
+5. il deploy e il modello multi-sito non sono ancora allineati al 100% con i moduli standalone e con le snapshot estratte
 
 ## Stato attuale da correggere prima di tutto
 
@@ -106,7 +106,7 @@ Pagine:
 Functions candidate owner:
 
 - `build-istat-monthly`
-- `create-fattura-fic`
+- `create-fattura-fic-fatt-docs`
 - `create-fattura-from-text`
 - `export-alloggiati-report`
 - `export-istat-marche-xml`
@@ -121,7 +121,7 @@ Asset:
 
 Note:
 
-- `save-istat-config` oggi e cross-cutting e va deciso separatamente
+- `save-istat-config` e stato separato in endpoint distinti per `fatt-docs` e `portale`; la logica resta condivisa solo a livello libreria
 
 ### `contabilita`
 
@@ -133,6 +133,7 @@ Pagine:
 Functions candidate owner:
 
 - `create-contract-registration-accounting`
+- `create-fattura-fic-contabilita`
 - `create-owner-payment-accounting`
 - `inbound-bollette-email`
 - `inbound-bollette-telegram`
@@ -224,7 +225,7 @@ Pagine:
 
 Functions candidate owner:
 
-- `get-calendar`
+- `get-calendar-calendario`
 - `sync-beds24-calendar-background`
 - `beds24-sync-bookings`
 - `update-calendar-inventory`
@@ -237,6 +238,7 @@ Note:
 
 - il calendario deve diventare il proprietario unico delle sync PMS/inventory
 - gli altri moduli devono consumare dati persistiti, non chiamarlo come dipendenza bloccante
+- il runtime `get-calendar` e stato separato in wrapper distinti per `calendario` e `residence-pr`
 
 ### `pr-luca`
 
@@ -264,19 +266,16 @@ Stato attuale:
 
 ### Decisione A: chi possiede `save-istat-config`
 
-Opzioni pratiche:
+Stato attuale:
 
-1. owner `fatt-docs`
-   - `portale` smette di amministrare questa configurazione
-2. owner `portale`
-   - `fatt-docs` consuma la configurazione ma non la modifica
-3. service shared dedicato
-   - scelta piu pulita ma piu costosa
+- l'endpoint deployato non e piu shared
+- `fatt-docs` usa `save-istat-config-fatt-docs`
+- `portale` usa `save-istat-config-portale`
+- la logica condivisa vive solo in `netlify/functions/_lib/istat-config.js`
 
-Raccomandazione:
+Passo futuro possibile:
 
-- tenere `save-istat-config` in `portale` solo se il dominio portale resta owner della configurazione appartamento
-- altrimenti spostarlo a `contabilita` o a un futuro modulo admin condiviso
+- se si vuole arrivare a separazione ancora piu netta, uno dei due moduli deve smettere di modificare la configurazione ISTAT e diventare solo consumer
 
 ### Decisione B: chi possiede i dati PMS/Beds24
 

@@ -762,7 +762,7 @@ async function saveApartmentIstat(apartmentId, form) {
     deadline_rule: getDeadlineRuleByRegion(regione) || null,
     note: cleanVal(form.istat_note) || null,
   };
-  const res = await fetch('/.netlify/functions/save-istat-config', {
+  const res = await fetch('/.netlify/functions/save-istat-config-portale', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
     body: JSON.stringify(payload),

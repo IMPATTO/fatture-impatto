@@ -12,6 +12,7 @@
 const { createClient } = require('@supabase/supabase-js');
 
 const BEDS24_URL = 'https://api.beds24.com/v2';
+const SUPABASE_PROJECT_URL = 'https://tysxeikqbgebpfyblgeb.supabase.co';
 const OCCUPYING_STATUSES = new Set(['confirmed', 'new', 'request', 'black']);
 
 const CORS = {
@@ -51,7 +52,7 @@ exports.handler = async (event) => {
   const modifiedSince = normalizeIsoString(query.modifiedSince);
 
   const env = {
-    SUPABASE_URL: process.env.SUPABASE_URL || 'https://tysxeikqbgebpfyblgeb.supabase.co',
+    SUPABASE_URL: SUPABASE_PROJECT_URL,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY,
     BEDS24_API_KEY: process.env.BEDS24_API_KEY,
   };

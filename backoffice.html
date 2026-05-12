@@ -1746,7 +1746,7 @@ async function creaFattura() {
   try {
     const session = await sb.auth.getSession();
 
-    const res = await fetch('/.netlify/functions/create-fattura-fic', {
+    const res = await fetch('/.netlify/functions/create-fattura-fic-fatt-docs', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

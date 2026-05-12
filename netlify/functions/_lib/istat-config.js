@@ -8,14 +8,14 @@ const REGION_SYSTEMS = {
   'valle-daosta': 'vit_albergatori',
 };
 
-exports.handler = async (event) => {
+async function handleSaveIstatConfig(event) {
   if (event.httpMethod !== 'POST') {
     return jsonResponse(405, { error: 'Method not allowed' });
   }
 
   const supabase = createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
   );
 
   const authHeader = event.headers.authorization || event.headers.Authorization;
@@ -49,7 +49,10 @@ exports.handler = async (event) => {
       .maybeSingle();
 
     if (existingErr) {
-      return jsonResponse(500, { error: 'Errore lettura configurazione esistente', detail: existingErr.message });
+      return jsonResponse(500, {
+        error: 'Errore lettura configurazione esistente',
+        detail: existingErr.message,
+      });
     }
 
     let passwordUpdated = false;
@@ -59,7 +62,9 @@ exports.handler = async (event) => {
     if (rawPassword) {
       const encryptionValidation = validateEncryptionKey(process.env.ENCRYPTION_KEY);
       if (!encryptionValidation.ok) {
-        return jsonResponse(500, { error: 'Configurazione server non valida: ENCRYPTION_KEY mancante o non valida' });
+        return jsonResponse(500, {
+          error: 'Configurazione server non valida: ENCRYPTION_KEY mancante o non valida',
+        });
       }
       passwordEncrypted = encrypt(rawPassword);
       passwordUpdated = true;
@@ -92,7 +97,10 @@ exports.handler = async (event) => {
         .select('id')
         .single();
       if (error) {
-        return jsonResponse(500, { error: 'Errore aggiornamento configurazione ISTAT', detail: error.message });
+        return jsonResponse(500, {
+          error: 'Errore aggiornamento configurazione ISTAT',
+          detail: error.message,
+        });
       }
       result = data;
     } else {
@@ -102,7 +110,10 @@ exports.handler = async (event) => {
         .select('id')
         .single();
       if (error) {
-        return jsonResponse(500, { error: 'Errore creazione configurazione ISTAT', detail: error.message });
+        return jsonResponse(500, {
+          error: 'Errore creazione configurazione ISTAT',
+          detail: error.message,
+        });
       }
       result = data;
     }
@@ -116,7 +127,7 @@ exports.handler = async (event) => {
     console.error('[save-istat-config] error:', err);
     return jsonResponse(500, { error: 'Errore interno', detail: err.message });
   }
-};
+}
 
 function validatePayload(body) {
   if (!body || typeof body !== 'object') return 'Payload non valido';
@@ -163,3 +174,7 @@ function jsonResponse(statusCode, body) {
     body: JSON.stringify(body),
   };
 }
+
+module.exports = {
+  handleSaveIstatConfig,
+};

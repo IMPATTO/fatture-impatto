@@ -2,6 +2,7 @@
   "name": "fatture-impatto",
   "version": "1.0.0",
   "scripts": {
+    "architecture:review": "node scripts/architecture-review.mjs",
     "audit:client-flows": "node scripts/audit-client-flows.mjs",
     "build:site": "node scripts/build-site.mjs",
     "check:deprecated-refs": "node scripts/check-deprecated-references.mjs",

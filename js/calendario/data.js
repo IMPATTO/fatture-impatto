@@ -58,7 +58,7 @@ export async function loadStaticData() {
 
 export async function loadMonthData() {
   const { start, end } = getMonthBounds(S.monthDate);
-  const inventoryUrl = `/.netlify/functions/get-calendar?dateFrom=${encodeURIComponent(start)}&dateTo=${encodeURIComponent(end)}`;
+  const inventoryUrl = `/.netlify/functions/get-calendar-calendario?dateFrom=${encodeURIComponent(start)}&dateTo=${encodeURIComponent(end)}`;
 
   const bookingsQuery = window.sb
     .from('bookings')

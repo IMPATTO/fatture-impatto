@@ -1296,7 +1296,7 @@ async function loadCalendarData(roomId = null, force = false) {
     const token = APP.session?.access_token;
     const qs = new URLSearchParams({ dateFrom: from, dateTo: to });
     if (roomId) qs.set('roomId', roomId);
-    const res = await fetch(`/.netlify/functions/get-calendar?${qs.toString()}`, {
+    const res = await fetch(`/.netlify/functions/get-calendar-residence-pr?${qs.toString()}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
