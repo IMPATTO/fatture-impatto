@@ -71,6 +71,7 @@ export const siteRegistry = {
       'audit-apartment-links',
       'get-backoffice-portale-data',
       'get-public-portal-data',
+      'revenue-optimizer',
       'save-istat-config-portale',
       'submit-public-checkin',
       'submit-public-invoice-documents',
@@ -79,6 +80,7 @@ export const siteRegistry = {
     includedFiles: [
       'manifest.json',
       'privacy-policy.html',
+      'scripts/revenue-optimizer.mjs',
     ],
   },
   contabilita: {
@@ -121,6 +123,7 @@ export const siteRegistry = {
       'beds24-inspect',
       'beds24-rate-diagnostics',
       'beds24-sync-bookings',
+      'beds24-write-diagnose',
       'get-calendar-calendario',
       'populate-pms-mappings-and-units',
       'sync-beds24-calendar-background',
@@ -149,6 +152,40 @@ export const siteRegistry = {
       'shared-app-login',
     ],
   },
+  'villa-margherita': {
+    label: 'Villa Margherita',
+    envVar: 'SITE_URL_VILLA_MARGHERITA',
+    fallbackUrl: 'https://villamargheritarimini.com',
+    sourceRoot: 'villa-margherita',
+    participatesInGlobalRouting: false,
+    generateCrossSiteRedirects: false,
+    entryPage: 'index.html',
+    linkRoutes: [
+      '/',
+      'monolocali-rimini.html',
+      'bilocali-rimini.html',
+      'trilocali-rimini.html',
+      'residence-rimini-terme.html',
+      'offerte-vacanze-rimini.html',
+    ],
+    pages: [
+      'index.html',
+      'monolocali-rimini.html',
+      'bilocali-rimini.html',
+      'trilocali-rimini.html',
+      'residence-rimini-terme.html',
+      'offerte-vacanze-rimini.html',
+    ],
+    assets: [
+      'seo-pages.css',
+    ],
+    includedFiles: [
+      'robots.txt',
+      'sitemap.xml',
+      'netlify.toml',
+    ],
+    functions: [],
+  },
 };
 
 function unique(items) {
@@ -160,9 +197,14 @@ function formatDuplicateMap(title, duplicates) {
   return `${title}\n${lines.join('\n')}`;
 }
 
+function siteParticipatesInGlobalRouting(site) {
+  return site.participatesInGlobalRouting !== false;
+}
+
 function collectOwners(field) {
   const owners = new Map();
   for (const [siteKey, site] of Object.entries(siteRegistry)) {
+    if (field === 'pages' && !siteParticipatesInGlobalRouting(site)) continue;
     for (const value of unique(site[field])) {
       const currentOwners = owners.get(value) || [];
       currentOwners.push(siteKey);
@@ -191,6 +233,10 @@ export function assertValidSiteRegistry() {
       errors.push(`- ${siteKey}: entryPage mancante`);
     } else if (!(site.pages || []).includes(site.entryPage)) {
       errors.push(`- ${siteKey}: entryPage "${site.entryPage}" non inclusa nelle pages`);
+    }
+
+    if (site.participatesInGlobalRouting === false && !(site.linkRoutes || []).length) {
+      errors.push(`- ${siteKey}: linkRoutes obbligatorio quando participatesInGlobalRouting e false`);
     }
   }
 
