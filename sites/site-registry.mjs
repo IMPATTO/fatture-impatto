@@ -123,7 +123,6 @@ export const siteRegistry = {
       'beds24-inspect',
       'beds24-rate-diagnostics',
       'beds24-sync-bookings',
-      'beds24-write-diagnose',
       'get-calendar-calendario',
       'populate-pms-mappings-and-units',
       'sync-beds24-calendar-background',
