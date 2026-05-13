@@ -15,6 +15,7 @@ const ROOM_ID = 674231;
 const PROPERTY_ID = 324764;
 const TEST_PRICE = 999;
 const TEST_MIN_STAY = 7;
+let beds24TokenCache = null;
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -32,12 +33,14 @@ exports.handler = async (event) => {
     return respond(401, { error: 'Unauthorized' });
   }
 
-  if (!process.env.BEDS24_REFRESH_TOKEN) {
-    return respond(500, { error: 'BEDS24_REFRESH_TOKEN mancante' });
+  if (!process.env.BEDS24_API_KEY) {
+    return respond(500, { error: 'BEDS24_API_KEY mancante' });
   }
 
   try {
-    const accessToken = await getBeds24AccessToken();
+    const accessToken = await getBeds24AccessToken({
+      BEDS24_API_KEY: process.env.BEDS24_API_KEY,
+    });
     const tests = [];
 
     tests.push(await runCalendarWriteTest({
@@ -138,12 +141,16 @@ exports.handler = async (event) => {
   }
 };
 
-async function getBeds24AccessToken() {
+async function getBeds24AccessToken(env) {
+  if (beds24TokenCache && beds24TokenCache.expiresAt > Date.now() + 15 * 1000) {
+    return beds24TokenCache.token;
+  }
+
   const response = await fetch(`${BASE_URL}/authentication/token`, {
-    method: 'POST',
+    method: 'GET',
     headers: {
-      'Content-Type': 'application/json',
-      refreshToken: String(process.env.BEDS24_REFRESH_TOKEN || '').trim(),
+      Accept: 'application/json',
+      refreshToken: String(env.BEDS24_API_KEY || '').trim(),
     },
   });
 
@@ -158,11 +165,22 @@ async function getBeds24AccessToken() {
   console.log('[AUTH] status=', response.status);
   console.log('[AUTH] body=', typeof parsed === 'string' ? parsed : JSON.stringify(parsed, null, 2));
 
-  if (!response.ok || !parsed?.token) {
-    throw new Error(`Beds24 auth failed: ${response.status}`);
+  if (!response.ok) {
+    throw new Error(`Beds24 auth failed: ${response.status} ${typeof parsed === 'string' ? parsed : JSON.stringify(parsed)}`);
   }
 
-  return parsed.token;
+  const token = String(parsed?.token || parsed?.data?.token || '').trim();
+  if (!token) {
+    throw new Error('Beds24 auth failed: token missing');
+  }
+
+  const expiresInSeconds = Number(parsed?.expiresIn || parsed?.data?.expiresIn || 3600);
+  beds24TokenCache = {
+    token,
+    expiresAt: Date.now() + Math.max(60, expiresInSeconds - 60) * 1000,
+  };
+
+  return beds24TokenCache.token;
 }
 
 async function runCalendarWriteTest({ testNumber, accessToken, requestBody }) {
