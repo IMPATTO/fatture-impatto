@@ -121,6 +121,7 @@ export const siteRegistry = {
     ],
     functions: [
       'beds24-inspect',
+      'beds24-push-calendar',
       'beds24-rate-diagnostics',
       'beds24-sync-bookings',
       'get-calendar-calendario',
