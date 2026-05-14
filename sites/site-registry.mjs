@@ -11,6 +11,7 @@ export const siteRegistry = {
       'backoffice-documenti.html',
     ],
     assets: [
+      'js/legacy-host-redirect.js',
       'js/supabase-client.js',
       'comuni.csv',
       'stati.csv',
@@ -62,6 +63,7 @@ export const siteRegistry = {
       'carica-documenti-fattura.html',
     ],
     assets: [
+      'js/legacy-host-redirect.js',
       'js/site-links.js',
       'js/supabase-client.js',
       'stati.csv',
@@ -115,12 +117,14 @@ export const siteRegistry = {
       'backoffice-calendario.html',
     ],
     assets: [
+      'js/legacy-host-redirect.js',
       'js/supabase-client.js',
       'js/calendario.js',
       'css/calendario.css',
     ],
     functions: [
       'beds24-inspect',
+      'beds24-minstay-diagnose',
       'beds24-push-calendar',
       'beds24-rate-diagnostics',
       'beds24-sync-bookings',
@@ -143,6 +147,7 @@ export const siteRegistry = {
       'backoffice-pr-luca.html',
     ],
     assets: [
+      'js/legacy-host-redirect.js',
       'js/supabase-client.js',
       'js/shared-app-auth.js',
     ],
