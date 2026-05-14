@@ -149,7 +149,7 @@ async function getApartmentUnits(env) {
 }
 
 async function getCalendarForRoom(accessToken, roomId, startDate, endDate) {
-  const url = `${BASE_URL}/inventory/rooms/calendar?roomId=${encodeURIComponent(roomId)}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&includePrices=true`;
+  const url = `${BASE_URL}/inventory/rooms/calendar?roomId=${encodeURIComponent(roomId)}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&includePrices=true&includeMinStay=true`;
 
   let response = await fetch(url, {
     method: 'GET',
@@ -198,6 +198,7 @@ function parseCalendarResponse(parsed) {
     from: r.from,
     to: r.to,
     price1: typeof r.price1 === 'number' ? r.price1 : null,
+    minStay: typeof r.minStay === 'number' ? r.minStay : null,
     raw: r,
   }));
   return { ranges };
@@ -212,6 +213,7 @@ function expandRangeToDays(range) {
     days.push({
       date: formatIsoDateUtc(d),
       price: range.price1,
+      minStay: range.minStay,
       raw_range: range.raw,
     });
   }
@@ -272,7 +274,7 @@ async function syncCalendarPrices(accessToken, units, daysToSync) {
             apartment_unit_id: unit.id,
             date: dateStr,
             price: dayData?.price ?? null,
-            min_stay: null,
+            min_stay: dayData?.minStay ?? null,
             available: dayData ? true : null,
             closed: false,
             source_updated_at: sourceUpdatedAt,
