@@ -258,6 +258,7 @@ export function buildDayCells(row, monthDays) {
     const today = isSameDate(date, new Date()) ? ' today' : '';
     const unavailable = state.closed ? ' unavail' : '';
     const booked = state.hasBooking ? ' has-booking' : '';
+    const editable = (!state.hasBooking && S.isPmsEditor) ? ' editable' : '';
     let content = '';
     if (state.closed) {
       content = `<span class="cell-badge" aria-hidden="true">${state.hasBooking ? '•' : '×'}</span>`;
@@ -279,7 +280,7 @@ export function buildDayCells(row, monthDays) {
     }
     return `
       <div
-        class="day-cell${weekend}${today}${unavailable}${booked}"
+        class="day-cell${weekend}${today}${unavailable}${booked}${editable}"
         data-date="${esc(isoDateLocal(date))}"
         data-apartment-id="${esc(row.apartment.id)}"
         data-unit-id="${esc(row.unit?.id || '')}"
@@ -356,6 +357,33 @@ export function bindTimelineEvents() {
     bar.addEventListener('blur', hideTooltip);
     bar.addEventListener('click', () => openDrawer(bar.getAttribute('data-booking-id')));
   });
+
+  if (S.isPmsEditor) {
+    const editableCells = ELS.timelineBody.querySelectorAll('.day-cell.editable');
+    editableCells.forEach((cell) => {
+      cell.addEventListener('click', () => {
+        if (cell.classList.contains('has-booking')) return;
+
+        const apartmentUnitId = cell.getAttribute('data-unit-id');
+        const date = cell.getAttribute('data-date');
+        const apartmentId = cell.getAttribute('data-apartment-id');
+        if (!apartmentUnitId || !date) return;
+
+        const cached = S.calendarDayByUnitDate.get(`${apartmentUnitId}:${date}`);
+        const apartment = S.apartmentMap.get(String(apartmentId));
+        const apartmentLabel = apartment?.displayName || '—';
+
+        window._calendarioEditModal?.open?.({
+          apartmentUnitId,
+          date,
+          currentPrice: cached?.price ?? null,
+          currentMinStay: cached?.min_stay ?? null,
+          currentClosed: cached?.closed === true,
+          apartmentLabel,
+        });
+      });
+    });
+  }
 }
 
 export function renderMobileList() {

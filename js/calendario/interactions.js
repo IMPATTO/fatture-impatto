@@ -4,7 +4,7 @@ import {
   loadMonthData,
   loadStaticData,
 } from './data.js';
-import { ELS, S, SIDEBAR_STORAGE_KEY } from './state.js';
+import { ELS, PMS_EDITOR_EMAILS, S, SIDEBAR_STORAGE_KEY } from './state.js';
 import {
   nightsBetween,
   startOfMonth,
@@ -46,6 +46,9 @@ export function cacheElements() {
     'bookingDrawer', 'drawerBackdrop', 'drawerCloseBtn', 'drawerCloseBtnFooter',
     'drawerTitle', 'drawerBody', 'orphanModal', 'orphanModalBody', 'orphanModalTitle', 'todayMarker',
     'orphanModalClose', 'orphanModalCloseFooter', 'tooltip',
+    'editCellModal', 'editCellTitle', 'editCellClose', 'editCellCancel',
+    'editCellSubmit', 'editCellForm', 'editCellApartmentLabel', 'editCellDateLabel',
+    'editCellPrice', 'editCellMinStay', 'editCellStatus', 'editCellError',
   ].forEach((id) => {
     ELS[id] = document.getElementById(id);
   });
@@ -81,10 +84,17 @@ export function bindShellEvents() {
   ELS.orphanModal?.addEventListener('click', (event) => {
     if (event.target === ELS.orphanModal) RENDER.closeOrphanModal?.();
   });
+  ELS.editCellClose?.addEventListener('click', closeEditModal);
+  ELS.editCellCancel?.addEventListener('click', closeEditModal);
+  ELS.editCellForm?.addEventListener('submit', handleEditCellSubmit);
+  ELS.editCellModal?.addEventListener('click', (event) => {
+    if (event.target === ELS.editCellModal) closeEditModal();
+  });
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
       RENDER.closeDrawer?.();
       RENDER.closeOrphanModal?.();
+      closeEditModal();
       closeMenu();
     }
   });
@@ -108,6 +118,8 @@ export async function initializeSession() {
 export function applySession(session) {
   S.session = session || null;
   S.authReady = true;
+  const email = (session?.user?.email || '').toLowerCase();
+  S.isPmsEditor = PMS_EDITOR_EMAILS.has(email);
   if (!session) {
     ELS.app.classList.add('hidden');
     ELS.loginOverlay.classList.remove('hidden');
@@ -332,6 +344,147 @@ export function handleRetryClick() {
   void ensureDataLoaded({ monthOnly: true });
 }
 
+export function openEditModal({
+  apartmentUnitId,
+  date,
+  currentPrice,
+  currentMinStay,
+  currentClosed,
+  apartmentLabel,
+}) {
+  if (!S.isPmsEditor) {
+    console.warn('[EDIT] User not PMS editor');
+    return;
+  }
+
+  S.editing.open = true;
+  S.editing.apartment_unit_id = apartmentUnitId;
+  S.editing.date = date;
+  S.editing.initialPrice = currentPrice;
+  S.editing.initialMinStay = currentMinStay;
+  S.editing.initialClosed = currentClosed;
+  S.editing.submitting = false;
+  S.editing.error = '';
+
+  if (ELS.editCellApartmentLabel) ELS.editCellApartmentLabel.textContent = apartmentLabel || '—';
+  if (ELS.editCellDateLabel) ELS.editCellDateLabel.textContent = date;
+  if (ELS.editCellPrice) ELS.editCellPrice.value = '';
+  if (ELS.editCellMinStay) ELS.editCellMinStay.value = '';
+  if (ELS.editCellStatus) ELS.editCellStatus.value = 'unchanged';
+  if (ELS.editCellError) {
+    ELS.editCellError.classList.add('hidden');
+    ELS.editCellError.textContent = '';
+  }
+  if (ELS.editCellSubmit) {
+    ELS.editCellSubmit.disabled = false;
+    ELS.editCellSubmit.textContent = 'Salva su Beds24';
+  }
+
+  ELS.editCellModal?.classList.remove('hidden');
+  ELS.editCellModal?.setAttribute('aria-hidden', 'false');
+
+  setTimeout(() => ELS.editCellPrice?.focus(), 50);
+}
+
+export function closeEditModal() {
+  S.editing.open = false;
+  ELS.editCellModal?.classList.add('hidden');
+  ELS.editCellModal?.setAttribute('aria-hidden', 'true');
+}
+
+export async function handleEditCellSubmit(event) {
+  event.preventDefault();
+  if (!S.isPmsEditor || !S.editing.apartment_unit_id || !S.editing.date) return;
+  if (S.editing.submitting) return;
+
+  const priceRaw = ELS.editCellPrice?.value?.trim();
+  const minStayRaw = ELS.editCellMinStay?.value?.trim();
+  const statusRaw = ELS.editCellStatus?.value;
+
+  const change = {
+    apartment_unit_id: S.editing.apartment_unit_id,
+    date_from: S.editing.date,
+    date_to: S.editing.date,
+  };
+
+  if (priceRaw !== '' && priceRaw !== undefined) {
+    const price = Number(priceRaw);
+    if (Number.isFinite(price) && price >= 0) change.price = price;
+  }
+  if (minStayRaw !== '' && minStayRaw !== undefined) {
+    const minStay = Number(minStayRaw);
+    if (Number.isFinite(minStay) && minStay >= 1) change.min_stay = minStay;
+  }
+  if (statusRaw === 'open') change.closed = false;
+  else if (statusRaw === 'closed') change.closed = true;
+
+  if (change.price === undefined && change.min_stay === undefined && change.closed === undefined) {
+    showEditError('Inserisci almeno un valore da modificare');
+    return;
+  }
+
+  S.editing.submitting = true;
+  if (ELS.editCellSubmit) {
+    ELS.editCellSubmit.disabled = true;
+    ELS.editCellSubmit.textContent = 'Salvando…';
+  }
+  if (ELS.editCellError) ELS.editCellError.classList.add('hidden');
+
+  try {
+    const token = S.session?.access_token;
+    if (!token) throw new Error('Sessione non valida');
+
+    const response = await fetch('/.netlify/functions/beds24-push-calendar', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ changes: [change] }),
+    });
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      const errMsg = payload.error || `Errore ${response.status}`;
+      const details = Array.isArray(payload.details) ? `: ${payload.details.join(', ')}` : '';
+      throw new Error(errMsg + details);
+    }
+    if (!payload.success) {
+      throw new Error('Salvataggio non riuscito');
+    }
+
+    const cacheKey = `${change.apartment_unit_id}:${change.date_from}`;
+    const existing = S.calendarDayByUnitDate.get(cacheKey) || {};
+    const updated = {
+      ...existing,
+      apartment_unit_id: change.apartment_unit_id,
+      date: change.date_from,
+    };
+    if (change.price !== undefined) updated.price = change.price;
+    if (change.min_stay !== undefined) updated.min_stay = change.min_stay;
+    if (change.closed !== undefined) updated.closed = change.closed;
+    S.calendarDayByUnitDate.set(cacheKey, updated);
+
+    closeEditModal();
+    RENDER.renderAll?.();
+  } catch (error) {
+    console.error('[EDIT-FAIL]', error);
+    showEditError(error.message || 'Errore di rete');
+    if (ELS.editCellSubmit) {
+      ELS.editCellSubmit.disabled = false;
+      ELS.editCellSubmit.textContent = 'Salva su Beds24';
+    }
+  } finally {
+    S.editing.submitting = false;
+  }
+}
+
+function showEditError(message) {
+  if (!ELS.editCellError) return;
+  ELS.editCellError.textContent = message;
+  ELS.editCellError.classList.remove('hidden');
+}
+
 function updatePricesSyncBtn() {
   const btn = ELS.syncPricesBtn;
   if (!btn) return;
@@ -397,4 +550,8 @@ function handleTimelineScroll() {
   const baseLeft = Number(marker.dataset.baseLeft || 0);
   const scrollLeft = ELS.timelineScroll?.scrollLeft || 0;
   marker.style.left = `${baseLeft - scrollLeft}px`;
+}
+
+if (typeof window !== 'undefined') {
+  window._calendarioEditModal = { open: openEditModal };
 }

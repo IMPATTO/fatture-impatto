@@ -1374,3 +1374,173 @@ input {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
 }
+
+#editCellModal.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 25, 20, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+#editCellModal.modal-overlay.hidden {
+  display: none;
+}
+
+#editCellModal .modal-card {
+  background: var(--panel, #fff);
+  border-radius: 8px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 12px 48px rgba(28, 25, 20, 0.25);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  animation: modal-fade-in 0.15s ease-out;
+}
+
+@keyframes modal-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+#editCellModal .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--line);
+}
+
+#editCellModal .modal-header h2 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 22px;
+  color: var(--ink);
+}
+
+#editCellModal .modal-close {
+  background: transparent;
+  border: 0;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--ink);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  transition: background 0.15s;
+}
+
+#editCellModal .modal-close:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+#editCellModal .modal-body {
+  display: block;
+  padding: 20px 22px;
+  overflow: visible;
+}
+
+#editCellModal .modal-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 16px;
+  margin-bottom: 18px;
+  border-bottom: 1px dashed rgba(190, 175, 145, 0.4);
+}
+
+#editCellModal .meta-label {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+#editCellModal .meta-date {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: rgba(78, 68, 50, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+#editCellModal .form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+#editCellModal .form-row label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+#editCellModal .form-row input,
+#editCellModal .form-row select {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  background: #fff;
+  transition: border-color 0.15s;
+}
+
+#editCellModal .form-row input:focus,
+#editCellModal .form-row select:focus {
+  outline: none;
+  border-color: var(--gold, #b08b44);
+  box-shadow: 0 0 0 3px rgba(176, 139, 68, 0.15);
+}
+
+#editCellModal .form-hint {
+  font-size: 11px;
+  color: rgba(78, 68, 50, 0.55);
+  margin-top: 2px;
+}
+
+#editCellModal .form-error {
+  padding: 10px 12px;
+  background: rgba(214, 76, 76, 0.08);
+  border: 1px solid rgba(214, 76, 76, 0.3);
+  border-radius: 6px;
+  color: rgba(170, 50, 50, 0.95);
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+#editCellModal .form-error.hidden {
+  display: none;
+}
+
+#editCellModal .modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  padding: 16px 22px;
+  margin: 20px -22px -20px;
+  background: rgba(251, 248, 241, 0.6);
+}
+
+.day-cell.editable {
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.day-cell.editable:hover:not(.has-booking) {
+  background: rgba(255, 248, 220, 0.6);
+}

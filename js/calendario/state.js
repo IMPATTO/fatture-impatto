@@ -54,6 +54,15 @@ export const CHANNEL_CONFIG = {
 
 export const SIDEBAR_STORAGE_KEY = 'calendario:sidebar:collapsed';
 
+export const PMS_EDITOR_EMAILS = new Set([
+  'fatturazione@illupoaffitta.com',
+  'contabilita@illupoaffitta.com',
+  'info@marcovenzon.com',
+  'veronica.dieta@gmail.com',
+  'jessica.appartamenticaldari@gmail.com',
+  'cerulliserena@gmail.com',
+]);
+
 const now = new Date();
 
 export const S = {
@@ -63,6 +72,7 @@ export const S = {
   loading: false,
   syncing: false,
   syncingPrices: false,
+  isPmsEditor: false,
   monthDate: new Date(now.getFullYear(), now.getMonth(), 1),
   apartments: [],
   apartmentMap: new Map(),
@@ -84,6 +94,16 @@ export const S = {
   expandedResidences: new Set(),
   selectedBookingId: null,
   errorMessage: '',
+  editing: {
+    open: false,
+    apartment_unit_id: null,
+    date: null,
+    initialPrice: null,
+    initialMinStay: null,
+    initialClosed: false,
+    submitting: false,
+    error: '',
+  },
   filters: {
     cities: new Set(),
     channels: new Set(),

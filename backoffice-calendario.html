@@ -178,6 +178,64 @@
 
   <div id="tooltip" class="floating-tooltip hidden" role="tooltip"></div>
 
+  <div id="editCellModal" class="modal-overlay hidden" aria-hidden="true" role="dialog" aria-labelledby="editCellTitle">
+    <div class="modal-card" role="document">
+      <header class="modal-header">
+        <h2 id="editCellTitle">Modifica cella</h2>
+        <button type="button" class="modal-close" id="editCellClose" aria-label="Chiudi">×</button>
+      </header>
+      <form id="editCellForm" class="modal-body">
+        <div class="modal-meta">
+          <span id="editCellApartmentLabel" class="meta-label"></span>
+          <span id="editCellDateLabel" class="meta-date"></span>
+        </div>
+
+        <div class="form-row">
+          <label for="editCellPrice">Prezzo (€)</label>
+          <input
+            type="number"
+            id="editCellPrice"
+            name="price"
+            min="0"
+            step="1"
+            placeholder="Lascia vuoto per non modificare"
+          >
+          <small class="form-hint">Vuoto = non modificare. 0+ = imposta prezzo.</small>
+        </div>
+
+        <div class="form-row">
+          <label for="editCellMinStay">Min-stay (notti)</label>
+          <input
+            type="number"
+            id="editCellMinStay"
+            name="min_stay"
+            min="1"
+            max="30"
+            step="1"
+            placeholder="Lascia vuoto per non modificare"
+          >
+          <small class="form-hint">Vuoto = non modificare. 1+ = imposta min-stay.</small>
+        </div>
+
+        <div class="form-row">
+          <label for="editCellStatus">Disponibilità</label>
+          <select id="editCellStatus" name="status">
+            <option value="unchanged">Non modificare</option>
+            <option value="open">Apri (disponibile)</option>
+            <option value="closed">Chiudi (non vendibile)</option>
+          </select>
+        </div>
+
+        <div id="editCellError" class="form-error hidden" role="alert"></div>
+
+        <footer class="modal-footer">
+          <button type="button" class="btn btn-ghost" id="editCellCancel">Annulla</button>
+          <button type="submit" class="btn btn-primary" id="editCellSubmit">Salva su Beds24</button>
+        </footer>
+      </form>
+    </div>
+  </div>
+
   <script type="module" src="/js/calendario.js?v=20260510b"></script>
 </body>
 </html>
