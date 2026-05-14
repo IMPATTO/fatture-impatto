@@ -29,6 +29,10 @@ const outputRoot = path.join(repoRoot, 'dist', targetSiteKey);
 const outputFunctionsRoot = path.join(outputRoot, 'netlify', 'functions');
 const allPageOwners = getAllPageOwners();
 
+function getSiteSourceRoot(currentSite = site) {
+  return path.normalize(currentSite.sourceRoot || '.');
+}
+
 function ensureTracked(relativePath) {
   if (!trackedFiles.has(relativePath)) {
     throw new Error(`Required file is not tracked by git: ${relativePath}`);
@@ -43,9 +47,15 @@ function unique(items) {
   return [...new Set(items.filter(Boolean))];
 }
 
-function copyFile(relativePath) {
-  ensureTracked(relativePath);
-  const source = path.join(repoRoot, relativePath);
+function resolveSourceRelativePath(relativePath, currentSite = site) {
+  const sourceRoot = getSiteSourceRoot(currentSite);
+  return path.normalize(path.join(sourceRoot, relativePath));
+}
+
+function copyFile(relativePath, currentSite = site) {
+  const sourceRelativePath = resolveSourceRelativePath(relativePath, currentSite);
+  ensureTracked(sourceRelativePath);
+  const source = path.join(repoRoot, sourceRelativePath);
   const destination = path.join(outputRoot, relativePath);
   ensureDir(path.dirname(destination));
   fs.copyFileSync(source, destination);
@@ -68,23 +78,24 @@ function findRelativeDependencies(relativePath, code) {
   }
 
   return [...refs]
+    .map((rawRef) => rawRef.replace(/[?#].*$/, ''))
     .flatMap((rawRef) => [rawRef, `${rawRef}.js`, `${rawRef}.mjs`, `${rawRef}.cjs`, `${rawRef}.css`])
     .map((candidate) => path.normalize(path.join(dir, candidate)))
     .filter((candidate, index, list) => list.indexOf(candidate) === index);
 }
 
-function copyAssetFile(relativePath, seen = new Set()) {
+function copyAssetFile(relativePath, seen = new Set(), currentSite = site) {
   if (seen.has(relativePath)) return;
   seen.add(relativePath);
-  copyFile(relativePath);
+  copyFile(relativePath, currentSite);
 
-  const source = path.join(repoRoot, relativePath);
+  const source = path.join(repoRoot, resolveSourceRelativePath(relativePath, currentSite));
   const code = fs.readFileSync(source, 'utf8');
   const dependencies = findRelativeDependencies(relativePath, code)
-    .filter((candidate) => trackedFiles.has(candidate));
+    .filter((candidate) => trackedFiles.has(resolveSourceRelativePath(candidate, currentSite)));
 
   for (const dependency of dependencies) {
-    copyAssetFile(dependency, seen);
+    copyAssetFile(dependency, seen, currentSite);
   }
 }
 
@@ -152,6 +163,7 @@ function writeSiteSummary() {
     siteKey: targetSiteKey,
     label: site.label,
     envVar: site.envVar,
+    sourceRoot: site.sourceRoot || '.',
     pages: [...(site.pages || [])],
     assets: [...(site.assets || [])],
     functions: [...(site.functions || [])],
@@ -170,17 +182,19 @@ const siteIncludedFiles = unique(site.includedFiles || []);
 const siteFunctions = unique(site.functions || []);
 const includedPages = new Set(sitePages);
 
-for (const relativePath of sitePages) copyFile(relativePath);
-for (const relativePath of siteAssets) copyAssetFile(relativePath);
-for (const relativePath of siteIncludedFiles) copyFile(relativePath);
+for (const relativePath of sitePages) copyFile(relativePath, site);
+for (const relativePath of siteAssets) copyAssetFile(relativePath, new Set(), site);
+for (const relativePath of siteIncludedFiles) copyFile(relativePath, site);
 for (const functionName of siteFunctions) {
   copyFunctionFile(path.join('netlify', 'functions', `${functionName}.js`));
 }
 
-for (const [route, ownerSiteKey] of allPageOwners.entries()) {
-  if (ownerSiteKey === targetSiteKey) continue;
-  if (includedPages.has(route)) continue;
-  writeRedirectPage(route, ownerSiteKey);
+if (site.generateCrossSiteRedirects !== false) {
+  for (const [route, ownerSiteKey] of allPageOwners.entries()) {
+    if (ownerSiteKey === targetSiteKey) continue;
+    if (includedPages.has(route)) continue;
+    writeRedirectPage(route, ownerSiteKey);
+  }
 }
 
 if (!includedPages.has('index.html')) {
