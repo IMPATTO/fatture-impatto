@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Backoffice Calendario · Impatto</title>
+  <script src="/js/legacy-host-redirect.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/supabase-client.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -74,6 +75,7 @@
           <button type="button" class="btn btn-ghost" disabled title="Disponibile in Fase 3">+ Nuova prenotazione</button>
           <button id="refreshBtn" type="button" class="btn btn-primary">Aggiorna da Beds24</button>
           <button id="syncPricesBtn" type="button" class="btn btn-ghost" title="Sincronizza prezzi prossimi 7 giorni da Beds24">Sync prezzi</button>
+          <button type="button" class="btn btn-ghost" id="bulkEditBtn" title="Modifica massiva prezzi e disponibilità" style="display:none">Modifica massiva</button>
           <button id="exportBtn" type="button" class="btn btn-ghost">Esporta CSV</button>
         </div>
 
@@ -234,6 +236,116 @@
         </footer>
       </form>
     </div>
+  </div>
+
+  <div id="bulkModal" class="modal-overlay hidden" aria-hidden="true" role="dialog">
+    <div class="modal-card bulk-modal-card" role="document">
+      <header class="modal-header">
+        <h2>Modifica massiva</h2>
+        <button type="button" class="modal-close" id="bulkClose" aria-label="Chiudi">×</button>
+      </header>
+
+      <div class="modal-body bulk-body">
+        <section class="bulk-section">
+          <h3>Apartments</h3>
+          <div class="bulk-apartment-controls">
+            <input type="text" id="bulkApartmentFilter" placeholder="Filtra apartments…">
+            <button type="button" class="btn btn-ghost btn-small" id="bulkSelectAll">Seleziona tutti</button>
+            <button type="button" class="btn btn-ghost btn-small" id="bulkDeselectAll">Deseleziona tutti</button>
+          </div>
+          <div class="bulk-apartment-list" id="bulkApartmentList"></div>
+          <small class="form-hint" id="bulkApartmentsCount">0 apartments selezionati</small>
+        </section>
+
+        <section class="bulk-section">
+          <h3>Periodo</h3>
+          <div class="bulk-date-row">
+            <div class="form-row">
+              <label for="bulkDateFrom">Da</label>
+              <input type="date" id="bulkDateFrom">
+            </div>
+            <div class="form-row">
+              <label for="bulkDateTo">A</label>
+              <input type="date" id="bulkDateTo">
+            </div>
+          </div>
+          <label class="check-inline">
+            <input type="checkbox" id="bulkOnlyWeekends">
+            <span>Solo weekend (sab + dom)</span>
+          </label>
+          <small class="form-hint" id="bulkDatesCount">0 giorni</small>
+        </section>
+
+        <section class="bulk-section">
+          <h3>Modifica</h3>
+
+          <div class="form-row">
+            <label>Prezzo</label>
+            <div class="bulk-radio-group">
+              <label class="radio-inline">
+                <input type="radio" name="bulkPriceMode" value="none" checked>
+                <span>Non modificare</span>
+              </label>
+              <label class="radio-inline">
+                <input type="radio" name="bulkPriceMode" value="set">
+                <span>Imposta a €</span>
+                <input type="number" id="bulkPriceSet" min="0" step="1" disabled>
+              </label>
+              <label class="radio-inline">
+                <input type="radio" name="bulkPriceMode" value="delta">
+                <span>+/- €</span>
+                <input type="number" id="bulkPriceDelta" step="1" disabled placeholder="es. -10 oppure 15">
+              </label>
+              <label class="radio-inline">
+                <input type="radio" name="bulkPriceMode" value="percent">
+                <span>Modifica del %</span>
+                <input type="number" id="bulkPricePercent" step="1" disabled placeholder="es. -10 oppure 15">
+              </label>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label>Min-stay</label>
+            <div class="bulk-inline-row">
+              <select id="bulkMinStayMode">
+                <option value="none">Non modificare</option>
+                <option value="set">Imposta a</option>
+              </select>
+              <input type="number" id="bulkMinStayValue" min="1" max="30" placeholder="notti" disabled>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label>Disponibilità</label>
+            <select id="bulkAvailabilityMode">
+              <option value="none">Non modificare</option>
+              <option value="open">Apri (disponibile)</option>
+              <option value="closed">Chiudi (non vendibile)</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="bulk-section bulk-preview">
+          <h3>Anteprima</h3>
+          <div id="bulkPreview" class="bulk-preview-content">
+            <p class="bulk-preview-empty">Compila i campi sopra per vedere l'anteprima</p>
+          </div>
+        </section>
+
+        <div id="bulkError" class="form-error hidden" role="alert"></div>
+      </div>
+
+      <footer class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="bulkCancel">Annulla</button>
+        <button type="button" class="btn btn-primary" id="bulkSubmit" disabled>Applica modifica</button>
+      </footer>
+    </div>
+  </div>
+
+  <div id="dragSelectToolbar" class="drag-select-toolbar hidden">
+    <span id="dragSelectCount">0 celle selezionate</span>
+    <button type="button" class="btn btn-primary btn-small" id="dragSelectEdit">Modifica selezione</button>
+    <button type="button" class="btn btn-ghost btn-small" id="dragSelectClear">Annulla</button>
   </div>
 
   <script type="module" src="/js/calendario.js?v=20260510b"></script>

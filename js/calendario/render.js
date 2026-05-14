@@ -1,6 +1,7 @@
 import {
   handleRetryClick,
   registerRenderBindings,
+  syncDragSelectionToolbar,
   toggleCityFilter,
   toggleSetValue,
 } from './interactions.js';
@@ -41,6 +42,10 @@ import {
   nightsBetween,
   titleCase,
 } from './utils.js';
+
+let dragMouseUpBound = false;
+let dragStartCell = null;
+let suppressEditableClickUntil = 0;
 
 export function renderStaticShell() {
   ELS.monthPickerBtn.textContent = formatMonthLabel(S.monthDate);
@@ -254,11 +259,13 @@ export function buildHeatCells(row, monthDays) {
 export function buildDayCells(row, monthDays) {
   return monthDays.map((date) => {
     const state = getDayAvailabilityState(row, date);
+    const cellKey = `${row.unit?.id || ''}:${isoDateLocal(date)}`;
     const weekend = isWeekend(date) ? ' weekend' : '';
     const today = isSameDate(date, new Date()) ? ' today' : '';
     const unavailable = state.closed ? ' unavail' : '';
     const booked = state.hasBooking ? ' has-booking' : '';
     const editable = (!state.hasBooking && S.isPmsEditor) ? ' editable' : '';
+    const dragSelected = S.dragSelection.selectedCells.has(cellKey) ? ' drag-selected' : '';
     let content = '';
     if (state.closed) {
       content = `<span class="cell-badge" aria-hidden="true">${state.hasBooking ? '•' : '×'}</span>`;
@@ -280,7 +287,7 @@ export function buildDayCells(row, monthDays) {
     }
     return `
       <div
-        class="day-cell${weekend}${today}${unavailable}${booked}${editable}"
+        class="day-cell${weekend}${today}${unavailable}${booked}${editable}${dragSelected}"
         data-date="${esc(isoDateLocal(date))}"
         data-apartment-id="${esc(row.apartment.id)}"
         data-unit-id="${esc(row.unit?.id || '')}"
@@ -359,15 +366,63 @@ export function bindTimelineEvents() {
   });
 
   if (S.isPmsEditor) {
+    ensureDragMouseUpBinding();
     const editableCells = ELS.timelineBody.querySelectorAll('.day-cell.editable');
     editableCells.forEach((cell) => {
+      cell.addEventListener('mousedown', (event) => {
+        if (cell.classList.contains('has-booking')) return;
+        event.preventDefault();
+        const unitId = cell.getAttribute('data-unit-id');
+        const date = cell.getAttribute('data-date');
+        if (!unitId || !date) return;
+        dragStartCell = { unitId, date };
+        S.dragSelection.active = true;
+        S.dragSelection.startCell = { unitId, date };
+        S.dragSelection.endCell = { unitId, date };
+        S.dragSelection.selectedCells.clear();
+        document.querySelectorAll('.day-cell.drag-selected').forEach((selectedCell) => {
+          selectedCell.classList.remove('drag-selected');
+        });
+        cell.classList.add('drag-selected');
+        S.dragSelection.selectedCells.add(`${unitId}:${date}`);
+        syncDragSelectionToolbar();
+      });
+
+      cell.addEventListener('mouseenter', () => {
+        if (!S.dragSelection.active || !dragStartCell) return;
+        const unitId = cell.getAttribute('data-unit-id');
+        const date = cell.getAttribute('data-date');
+        if (!unitId || !date || unitId !== dragStartCell.unitId) return;
+
+        const minDate = dragStartCell.date < date ? dragStartCell.date : date;
+        const maxDate = dragStartCell.date < date ? date : dragStartCell.date;
+        S.dragSelection.endCell = { unitId, date };
+        S.dragSelection.selectedCells.clear();
+        document.querySelectorAll('.day-cell.drag-selected').forEach((selectedCell) => {
+          selectedCell.classList.remove('drag-selected');
+        });
+        ELS.timelineBody
+          .querySelectorAll(`.day-cell.editable[data-unit-id="${unitId}"]`)
+          .forEach((rowCell) => {
+            const cellDate = rowCell.getAttribute('data-date');
+            if (!cellDate || rowCell.classList.contains('has-booking')) return;
+            if (cellDate >= minDate && cellDate <= maxDate) {
+              rowCell.classList.add('drag-selected');
+              S.dragSelection.selectedCells.add(`${unitId}:${cellDate}`);
+            }
+          });
+        syncDragSelectionToolbar();
+      });
+
       cell.addEventListener('click', () => {
+        if (Date.now() < suppressEditableClickUntil) return;
         if (cell.classList.contains('has-booking')) return;
 
         const apartmentUnitId = cell.getAttribute('data-unit-id');
         const date = cell.getAttribute('data-date');
         const apartmentId = cell.getAttribute('data-apartment-id');
         if (!apartmentUnitId || !date) return;
+        if (S.dragSelection.selectedCells.size > 1) return;
 
         const cached = S.calendarDayByUnitDate.get(`${apartmentUnitId}:${date}`);
         const apartment = S.apartmentMap.get(String(apartmentId));
@@ -383,6 +438,8 @@ export function bindTimelineEvents() {
         });
       });
     });
+  } else {
+    syncDragSelectionToolbar();
   }
 }
 
@@ -581,4 +638,23 @@ function updateTodayMarker(monthDays) {
   marker.dataset.baseLeft = String(baseLeft);
   marker.style.left = `${baseLeft - scrollLeft}px`;
   marker.classList.add('visible');
+}
+
+function ensureDragMouseUpBinding() {
+  if (dragMouseUpBound) return;
+  dragMouseUpBound = true;
+  document.addEventListener('mouseup', () => {
+    if (!S.dragSelection.active) return;
+    S.dragSelection.active = false;
+    dragStartCell = null;
+    if (S.dragSelection.selectedCells.size > 1) {
+      suppressEditableClickUntil = Date.now() + 200;
+    } else if (S.dragSelection.selectedCells.size <= 1) {
+      S.dragSelection.selectedCells.clear();
+      document.querySelectorAll('.day-cell.drag-selected').forEach((selectedCell) => {
+        selectedCell.classList.remove('drag-selected');
+      });
+    }
+    syncDragSelectionToolbar();
+  });
 }

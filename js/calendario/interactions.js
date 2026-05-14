@@ -4,7 +4,7 @@ import {
   loadMonthData,
   loadStaticData,
 } from './data.js';
-import { ELS, PMS_EDITOR_EMAILS, S, SIDEBAR_STORAGE_KEY } from './state.js';
+import { CITY_PRIORITY, ELS, PMS_EDITOR_EMAILS, S, SIDEBAR_STORAGE_KEY } from './state.js';
 import {
   nightsBetween,
   startOfMonth,
@@ -49,6 +49,15 @@ export function cacheElements() {
     'editCellModal', 'editCellTitle', 'editCellClose', 'editCellCancel',
     'editCellSubmit', 'editCellForm', 'editCellApartmentLabel', 'editCellDateLabel',
     'editCellPrice', 'editCellMinStay', 'editCellStatus', 'editCellError',
+    'bulkEditBtn', 'bulkModal', 'bulkClose', 'bulkCancel', 'bulkSubmit',
+    'bulkApartmentFilter', 'bulkApartmentList', 'bulkApartmentsCount',
+    'bulkSelectAll', 'bulkDeselectAll',
+    'bulkDateFrom', 'bulkDateTo', 'bulkOnlyWeekends', 'bulkDatesCount',
+    'bulkPriceSet', 'bulkPriceDelta', 'bulkPricePercent',
+    'bulkMinStayMode', 'bulkMinStayValue',
+    'bulkAvailabilityMode',
+    'bulkPreview', 'bulkError',
+    'dragSelectToolbar', 'dragSelectCount', 'dragSelectEdit', 'dragSelectClear',
   ].forEach((id) => {
     ELS[id] = document.getElementById(id);
   });
@@ -90,11 +99,36 @@ export function bindShellEvents() {
   ELS.editCellModal?.addEventListener('click', (event) => {
     if (event.target === ELS.editCellModal) closeEditModal();
   });
+  ELS.bulkEditBtn?.addEventListener('click', openBulkModal);
+  ELS.bulkClose?.addEventListener('click', closeBulkModal);
+  ELS.bulkCancel?.addEventListener('click', closeBulkModal);
+  ELS.bulkSubmit?.addEventListener('click', handleBulkSubmit);
+  ELS.bulkSelectAll?.addEventListener('click', () => bulkToggleAll(true));
+  ELS.bulkDeselectAll?.addEventListener('click', () => bulkToggleAll(false));
+  ELS.bulkApartmentFilter?.addEventListener('input', updateBulkApartmentList);
+  ELS.bulkDateFrom?.addEventListener('change', updateBulkPreview);
+  ELS.bulkDateTo?.addEventListener('change', updateBulkPreview);
+  ELS.bulkOnlyWeekends?.addEventListener('change', updateBulkPreview);
+  document.querySelectorAll('input[name="bulkPriceMode"]').forEach((radio) => {
+    radio.addEventListener('change', updateBulkPriceMode);
+  });
+  ELS.bulkPriceSet?.addEventListener('input', updateBulkPreview);
+  ELS.bulkPriceDelta?.addEventListener('input', updateBulkPreview);
+  ELS.bulkPricePercent?.addEventListener('input', updateBulkPreview);
+  ELS.bulkMinStayMode?.addEventListener('change', updateBulkMinStayMode);
+  ELS.bulkMinStayValue?.addEventListener('input', updateBulkPreview);
+  ELS.bulkAvailabilityMode?.addEventListener('change', updateBulkPreview);
+  ELS.bulkModal?.addEventListener('click', (event) => {
+    if (event.target === ELS.bulkModal) closeBulkModal();
+  });
+  ELS.dragSelectEdit?.addEventListener('click', openBulkFromSelection);
+  ELS.dragSelectClear?.addEventListener('click', clearDragSelection);
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
       RENDER.closeDrawer?.();
       RENDER.closeOrphanModal?.();
       closeEditModal();
+      closeBulkModal();
       closeMenu();
     }
   });
@@ -120,7 +154,11 @@ export function applySession(session) {
   S.authReady = true;
   const email = (session?.user?.email || '').toLowerCase();
   S.isPmsEditor = PMS_EDITOR_EMAILS.has(email);
+  if (ELS.bulkEditBtn) {
+    ELS.bulkEditBtn.style.display = S.isPmsEditor ? '' : 'none';
+  }
   if (!session) {
+    clearDragSelection();
     ELS.app.classList.add('hidden');
     ELS.loginOverlay.classList.remove('hidden');
     ELS.loginOverlay.setAttribute('aria-hidden', 'false');
@@ -485,11 +523,487 @@ function showEditError(message) {
   ELS.editCellError.classList.remove('hidden');
 }
 
+export function openBulkModal() {
+  if (!S.isPmsEditor) return;
+
+  S.bulk.open = true;
+  S.bulk.selectedApartmentIds = new Set();
+  S.bulk.dateFrom = null;
+  S.bulk.dateTo = null;
+  S.bulk.onlyWeekends = false;
+  S.bulk.priceMode = 'none';
+  S.bulk.priceValue = '';
+  S.bulk.minStayMode = 'none';
+  S.bulk.minStayValue = '';
+  S.bulk.availabilityMode = 'none';
+  S.bulk.submitting = false;
+  S.bulk.error = '';
+  S.bulk.apartmentFilter = '';
+
+  updateBulkApartmentList();
+
+  if (ELS.bulkApartmentFilter) ELS.bulkApartmentFilter.value = '';
+  if (ELS.bulkDateFrom) ELS.bulkDateFrom.value = '';
+  if (ELS.bulkDateTo) ELS.bulkDateTo.value = '';
+  if (ELS.bulkOnlyWeekends) ELS.bulkOnlyWeekends.checked = false;
+  document.querySelectorAll('input[name="bulkPriceMode"]').forEach((radio) => {
+    radio.checked = radio.value === 'none';
+  });
+  if (ELS.bulkPriceSet) {
+    ELS.bulkPriceSet.value = '';
+    ELS.bulkPriceSet.disabled = true;
+  }
+  if (ELS.bulkPriceDelta) {
+    ELS.bulkPriceDelta.value = '';
+    ELS.bulkPriceDelta.disabled = true;
+  }
+  if (ELS.bulkPricePercent) {
+    ELS.bulkPricePercent.value = '';
+    ELS.bulkPricePercent.disabled = true;
+  }
+  if (ELS.bulkMinStayMode) ELS.bulkMinStayMode.value = 'none';
+  if (ELS.bulkMinStayValue) {
+    ELS.bulkMinStayValue.value = '';
+    ELS.bulkMinStayValue.disabled = true;
+  }
+  if (ELS.bulkAvailabilityMode) ELS.bulkAvailabilityMode.value = 'none';
+  if (ELS.bulkError) {
+    ELS.bulkError.classList.add('hidden');
+    ELS.bulkError.textContent = '';
+  }
+  if (ELS.bulkSubmit) {
+    ELS.bulkSubmit.disabled = true;
+    ELS.bulkSubmit.textContent = 'Applica modifica';
+  }
+
+  updateBulkPreview();
+  ELS.bulkModal?.classList.remove('hidden');
+  ELS.bulkModal?.setAttribute('aria-hidden', 'false');
+}
+
+export function closeBulkModal() {
+  S.bulk.open = false;
+  ELS.bulkModal?.classList.add('hidden');
+  ELS.bulkModal?.setAttribute('aria-hidden', 'true');
+}
+
+export function updateBulkApartmentList() {
+  if (!ELS.bulkApartmentList) return;
+  const filter = (ELS.bulkApartmentFilter?.value || '').toLowerCase().trim();
+  S.bulk.apartmentFilter = filter;
+
+  const byCity = new Map();
+  for (const apartment of getFilteredBulkApartments(filter)) {
+    const city = apartment.city || 'Altre';
+    if (!byCity.has(city)) byCity.set(city, []);
+    byCity.get(city).push(apartment);
+  }
+
+  const cities = [...byCity.keys()].sort(compareCityNames);
+  let html = '';
+  for (const city of cities) {
+    html += `<div class="bulk-apartment-city">${escapeHtml(city)}</div>`;
+    const apartments = byCity
+      .get(city)
+      .slice()
+      .sort((a, b) => String(a.displayName || '').localeCompare(String(b.displayName || ''), 'it'));
+    for (const apartment of apartments) {
+      const apartmentId = String(apartment.id);
+      const checked = S.bulk.selectedApartmentIds.has(apartmentId) ? 'checked' : '';
+      html += `
+        <label class="bulk-apartment-item">
+          <input type="checkbox" data-apartment-id="${escapeHtml(apartmentId)}" ${checked}>
+          <span>${escapeHtml(apartment.displayName || '—')}</span>
+        </label>
+      `;
+    }
+  }
+  ELS.bulkApartmentList.innerHTML = html || '<p class="bulk-preview-empty">Nessun apartment trovato.</p>';
+
+  ELS.bulkApartmentList.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+    input.addEventListener('change', () => {
+      const apartmentId = input.getAttribute('data-apartment-id');
+      if (!apartmentId) return;
+      if (input.checked) S.bulk.selectedApartmentIds.add(apartmentId);
+      else S.bulk.selectedApartmentIds.delete(apartmentId);
+      updateBulkApartmentsCount();
+      updateBulkPreview();
+    });
+  });
+
+  updateBulkApartmentsCount();
+}
+
+function updateBulkApartmentsCount() {
+  if (!ELS.bulkApartmentsCount) return;
+  const count = S.bulk.selectedApartmentIds.size;
+  ELS.bulkApartmentsCount.textContent = `${count} apartment${count === 1 ? '' : 's'} selezionati`;
+}
+
+function bulkToggleAll(checked) {
+  S.bulk.selectedApartmentIds.clear();
+  if (checked) {
+    const filter = (ELS.bulkApartmentFilter?.value || '').toLowerCase().trim();
+    getFilteredBulkApartments(filter).forEach((apartment) => {
+      S.bulk.selectedApartmentIds.add(String(apartment.id));
+    });
+  }
+  updateBulkApartmentList();
+  updateBulkPreview();
+}
+
+function updateBulkPriceMode(event) {
+  const mode = event?.target?.value
+    || document.querySelector('input[name="bulkPriceMode"]:checked')?.value
+    || 'none';
+  S.bulk.priceMode = mode;
+  if (ELS.bulkPriceSet) ELS.bulkPriceSet.disabled = mode !== 'set';
+  if (ELS.bulkPriceDelta) ELS.bulkPriceDelta.disabled = mode !== 'delta';
+  if (ELS.bulkPricePercent) ELS.bulkPricePercent.disabled = mode !== 'percent';
+  updateBulkPreview();
+}
+
+function updateBulkMinStayMode(event) {
+  const mode = event?.target?.value || ELS.bulkMinStayMode?.value || 'none';
+  S.bulk.minStayMode = mode;
+  if (ELS.bulkMinStayValue) ELS.bulkMinStayValue.disabled = mode !== 'set';
+  updateBulkPreview();
+}
+
+function computeBulkSelection() {
+  const apartmentIds = [...S.bulk.selectedApartmentIds];
+  const dateFromStr = ELS.bulkDateFrom?.value || '';
+  const dateToStr = ELS.bulkDateTo?.value || '';
+  const onlyWeekends = !!ELS.bulkOnlyWeekends?.checked;
+
+  if (!apartmentIds.length || !dateFromStr || !dateToStr || dateFromStr > dateToStr) {
+    return { cells: [], skippedBookings: 0, units: [], dates: [] };
+  }
+
+  const dates = [];
+  for (let cursor = parseIsoDateUtc(dateFromStr), end = parseIsoDateUtc(dateToStr); cursor <= end; cursor = addDaysUtc(cursor, 1)) {
+    const dayIdx = cursor.getUTCDay();
+    if (onlyWeekends && dayIdx !== 0 && dayIdx !== 6) continue;
+    dates.push(formatIsoDateUtc(cursor));
+  }
+
+  const units = [];
+  apartmentIds.forEach((apartmentId) => {
+    const apartmentUnits = S.unitsByApartment.get(String(apartmentId)) || [];
+    units.push(...apartmentUnits);
+  });
+
+  const cells = [];
+  let skippedBookings = 0;
+  for (const unit of units) {
+    const unitBookings = S.bookingsByUnit.get(String(unit.id)) || [];
+    for (const date of dates) {
+      const hasBooking = unitBookings.some((booking) => booking.check_in <= date && booking.check_out > date);
+      if (hasBooking) {
+        skippedBookings += 1;
+        continue;
+      }
+      cells.push({ unit, date });
+    }
+  }
+
+  return { cells, skippedBookings, units, dates };
+}
+
+function updateBulkPreview() {
+  if (!ELS.bulkPreview) return;
+
+  const { cells, skippedBookings, dates } = computeBulkSelection();
+  S.bulk.dateFrom = ELS.bulkDateFrom?.value || null;
+  S.bulk.dateTo = ELS.bulkDateTo?.value || null;
+  S.bulk.onlyWeekends = !!ELS.bulkOnlyWeekends?.checked;
+  if (ELS.bulkDatesCount) {
+    ELS.bulkDatesCount.textContent = `${dates.length} giorn${dates.length === 1 ? 'o' : 'i'}`;
+  }
+
+  const priceMode = S.bulk.priceMode;
+  let priceConfigured = false;
+  let priceVal = null;
+  if (priceMode === 'set') {
+    priceVal = Number(ELS.bulkPriceSet?.value);
+    priceConfigured = Number.isFinite(priceVal) && priceVal >= 0;
+  } else if (priceMode === 'delta') {
+    priceVal = Number(ELS.bulkPriceDelta?.value);
+    priceConfigured = Number.isFinite(priceVal) && priceVal !== 0;
+  } else if (priceMode === 'percent') {
+    priceVal = Number(ELS.bulkPricePercent?.value);
+    priceConfigured = Number.isFinite(priceVal) && priceVal !== 0;
+  }
+
+  const minStayMode = ELS.bulkMinStayMode?.value || 'none';
+  let minStayVal = null;
+  let minStayConfigured = false;
+  if (minStayMode === 'set') {
+    minStayVal = Number(ELS.bulkMinStayValue?.value);
+    minStayConfigured = Number.isFinite(minStayVal) && minStayVal >= 1;
+  }
+
+  const availMode = ELS.bulkAvailabilityMode?.value || 'none';
+  const availConfigured = availMode === 'open' || availMode === 'closed';
+  const anyAction = priceConfigured || minStayConfigured || availConfigured;
+
+  if (!cells.length || !anyAction) {
+    ELS.bulkPreview.innerHTML = '<p class="bulk-preview-empty">Compila i campi sopra per vedere l\'anteprima</p>';
+    ELS.bulkPreview.classList.remove('over-limit');
+    if (ELS.bulkSubmit) {
+      ELS.bulkSubmit.disabled = true;
+      ELS.bulkSubmit.textContent = 'Applica modifica';
+    }
+    return;
+  }
+
+  const overLimit = cells.length > 500;
+  let avgInfo = '';
+  if (priceConfigured) {
+    const samples = cells
+      .slice(0, 100)
+      .map(({ unit, date }) => S.calendarDayByUnitDate.get(`${unit.id}:${date}`)?.price)
+      .filter((value) => value != null);
+    if (samples.length) {
+      const avgCurrent = samples.reduce((sum, value) => sum + Number(value), 0) / samples.length;
+      let newAvg = null;
+      if (priceMode === 'set') newAvg = priceVal;
+      else if (priceMode === 'delta') newAvg = avgCurrent + priceVal;
+      else if (priceMode === 'percent') newAvg = avgCurrent * (1 + priceVal / 100);
+      if (newAvg != null) {
+        avgInfo = `
+          <div class="bulk-preview-stat"><span>Prezzo medio attuale:</span><strong>€${avgCurrent.toFixed(2)}</strong></div>
+          <div class="bulk-preview-stat"><span>Prezzo medio stimato:</span><strong>€${newAvg.toFixed(2)}</strong></div>
+        `;
+      }
+    }
+  }
+
+  ELS.bulkPreview.innerHTML = `
+    <div class="bulk-preview-stat"><span>Apartment selezionati:</span><strong>${S.bulk.selectedApartmentIds.size}</strong></div>
+    <div class="bulk-preview-stat"><span>Giorni nel range:</span><strong>${dates.length}</strong></div>
+    <div class="bulk-preview-stat"><span>Celle da modificare:</span><strong>${cells.length}</strong></div>
+    <div class="bulk-preview-stat"><span>Celle con booking (skip):</span><strong>${skippedBookings}</strong></div>
+    ${avgInfo}
+    ${overLimit ? '<p style="color:#a32; font-weight:600; margin-top:10px;">Troppe celle. Massimo 500 per operazione. Riduci la selezione.</p>' : ''}
+  `;
+  ELS.bulkPreview.classList.toggle('over-limit', overLimit);
+  if (ELS.bulkSubmit) {
+    ELS.bulkSubmit.disabled = overLimit;
+    ELS.bulkSubmit.textContent = 'Applica modifica';
+  }
+}
+
+export async function handleBulkSubmit() {
+  if (S.bulk.submitting) return;
+
+  const { cells } = computeBulkSelection();
+  if (!cells.length || cells.length > 500) return;
+
+  const priceMode = S.bulk.priceMode;
+  const priceVal = priceMode === 'set'
+    ? Number(ELS.bulkPriceSet?.value)
+    : priceMode === 'delta'
+      ? Number(ELS.bulkPriceDelta?.value)
+      : priceMode === 'percent'
+        ? Number(ELS.bulkPricePercent?.value)
+        : null;
+  const minStayMode = ELS.bulkMinStayMode?.value || 'none';
+  const minStayVal = minStayMode === 'set' ? Number(ELS.bulkMinStayValue?.value) : null;
+  const availMode = ELS.bulkAvailabilityMode?.value || 'none';
+
+  const changes = cells.map(({ unit, date }) => {
+    const cached = S.calendarDayByUnitDate.get(`${unit.id}:${date}`);
+    const change = {
+      apartment_unit_id: unit.id,
+      date_from: date,
+      date_to: date,
+    };
+    if (priceMode === 'set' && Number.isFinite(priceVal) && priceVal >= 0) {
+      change.price = priceVal;
+    } else if (priceMode === 'delta' && Number.isFinite(priceVal) && cached?.price != null) {
+      change.price = Math.max(0, Number(cached.price) + priceVal);
+    } else if (priceMode === 'percent' && Number.isFinite(priceVal) && cached?.price != null) {
+      change.price = Math.max(0, Math.round(Number(cached.price) * (1 + priceVal / 100) * 100) / 100);
+    }
+    if (minStayMode === 'set' && Number.isFinite(minStayVal) && minStayVal >= 1) {
+      change.min_stay = minStayVal;
+    }
+    if (availMode === 'open') change.closed = false;
+    else if (availMode === 'closed') change.closed = true;
+    return change;
+  });
+
+  const validChanges = changes.filter((change) => (
+    change.price !== undefined
+    || change.min_stay !== undefined
+    || change.closed !== undefined
+  ));
+  if (!validChanges.length) {
+    showBulkError('Nessuna modifica valida (le celle selezionate potrebbero non avere prezzo per applicare delta/%)');
+    return;
+  }
+
+  S.bulk.submitting = true;
+  if (ELS.bulkSubmit) {
+    ELS.bulkSubmit.disabled = true;
+    ELS.bulkSubmit.textContent = `Salvando ${validChanges.length} celle…`;
+  }
+  if (ELS.bulkError) ELS.bulkError.classList.add('hidden');
+
+  try {
+    const token = S.session?.access_token;
+    if (!token) throw new Error('Sessione non valida');
+
+    const response = await fetch('/.netlify/functions/beds24-push-calendar', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ changes: validChanges }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const errMsg = payload.error || `Errore ${response.status}`;
+      const details = Array.isArray(payload.details) ? `: ${payload.details.join(', ')}` : '';
+      throw new Error(errMsg + details);
+    }
+    if (!payload.success) {
+      throw new Error('Salvataggio non riuscito');
+    }
+
+    validChanges.forEach((change) => {
+      const key = `${change.apartment_unit_id}:${change.date_from}`;
+      const existing = S.calendarDayByUnitDate.get(key) || {};
+      const updated = {
+        ...existing,
+        apartment_unit_id: change.apartment_unit_id,
+        date: change.date_from,
+      };
+      if (change.price !== undefined) updated.price = change.price;
+      if (change.min_stay !== undefined) updated.min_stay = change.min_stay;
+      if (change.closed !== undefined) updated.closed = change.closed;
+      S.calendarDayByUnitDate.set(key, updated);
+    });
+
+    closeBulkModal();
+    clearDragSelection();
+    alert(`Modifica massiva completata: ${validChanges.length} celle aggiornate.`);
+    RENDER.renderAll?.();
+  } catch (error) {
+    console.error('[BULK-FAIL]', error);
+    showBulkError(error.message || 'Errore di rete');
+    if (ELS.bulkSubmit) {
+      ELS.bulkSubmit.disabled = false;
+      ELS.bulkSubmit.textContent = 'Applica modifica';
+    }
+  } finally {
+    S.bulk.submitting = false;
+  }
+}
+
+function showBulkError(message) {
+  if (!ELS.bulkError) return;
+  ELS.bulkError.textContent = message;
+  ELS.bulkError.classList.remove('hidden');
+}
+
+export function clearDragSelection() {
+  S.dragSelection.selectedCells.clear();
+  S.dragSelection.active = false;
+  S.dragSelection.startCell = null;
+  S.dragSelection.endCell = null;
+  document.querySelectorAll('.day-cell.drag-selected').forEach((cell) => cell.classList.remove('drag-selected'));
+  syncDragSelectionToolbar();
+}
+
+export function syncDragSelectionToolbar() {
+  const count = S.dragSelection.selectedCells.size;
+  if (count > 0) {
+    ELS.dragSelectToolbar?.classList.remove('hidden');
+    if (ELS.dragSelectCount) {
+      ELS.dragSelectCount.textContent = `${count} cell${count === 1 ? 'a' : 'e'} selezionat${count === 1 ? 'a' : 'e'}`;
+    }
+  } else {
+    ELS.dragSelectToolbar?.classList.add('hidden');
+  }
+}
+
+function openBulkFromSelection() {
+  if (!S.dragSelection.selectedCells.size) return;
+
+  const apartmentIds = new Set();
+  let minDate = null;
+  let maxDate = null;
+  for (const cellKey of S.dragSelection.selectedCells) {
+    const separator = cellKey.indexOf(':');
+    const unitId = cellKey.slice(0, separator);
+    const date = cellKey.slice(separator + 1);
+    const unit = S.unitMap.get(unitId);
+    if (unit) apartmentIds.add(String(unit.apartment_id));
+    if (!minDate || date < minDate) minDate = date;
+    if (!maxDate || date > maxDate) maxDate = date;
+  }
+
+  openBulkModal();
+  S.bulk.selectedApartmentIds = apartmentIds;
+  if (ELS.bulkDateFrom) ELS.bulkDateFrom.value = minDate || '';
+  if (ELS.bulkDateTo) ELS.bulkDateTo.value = maxDate || '';
+  updateBulkApartmentList();
+  updateBulkPreview();
+  clearDragSelection();
+}
+
 function updatePricesSyncBtn() {
   const btn = ELS.syncPricesBtn;
   if (!btn) return;
   btn.disabled = !!S.syncingPrices;
   btn.textContent = S.syncingPrices ? 'Sync in corso…' : 'Sync prezzi';
+}
+
+function getFilteredBulkApartments(filter) {
+  return S.apartments.filter((apartment) => {
+    const units = S.unitsByApartment.get(String(apartment.id)) || [];
+    if (!units.length) return false;
+    if (!filter) return true;
+    return String(apartment.displayName || '').toLowerCase().includes(filter)
+      || String(apartment.city || '').toLowerCase().includes(filter);
+  });
+}
+
+function compareCityNames(a, b) {
+  const aIndex = CITY_PRIORITY.indexOf(a);
+  const bIndex = CITY_PRIORITY.indexOf(b);
+  if (aIndex !== -1 || bIndex !== -1) {
+    if (aIndex === -1) return 1;
+    if (bIndex === -1) return -1;
+    if (aIndex !== bIndex) return aIndex - bIndex;
+  }
+  return a.localeCompare(b, 'it');
+}
+
+function parseIsoDateUtc(value) {
+  return new Date(`${value}T00:00:00Z`);
+}
+
+function addDaysUtc(date, days) {
+  const next = new Date(date);
+  next.setUTCDate(next.getUTCDate() + days);
+  return next;
+}
+
+function formatIsoDateUtc(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 export function handleScrollHeaderToggle() {
