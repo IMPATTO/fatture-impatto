@@ -4,8 +4,8 @@ import {
   syncDragSelectionToolbar,
   toggleCityFilter,
   toggleSetValue,
-} from './interactions.js';
-import { CHANNEL_CONFIG, ELS, S, STATUS_LABELS } from './state.js';
+} from './interactions.js?v=20260514d';
+import { CHANNEL_CONFIG, ELS, S, STATUS_LABELS } from './state.js?v=20260514d';
 import {
   buildDayCellLabel,
   countBookingsByChannel,
@@ -21,7 +21,7 @@ import {
   getVisibleBookings,
   groupVisibleBookingsForMobile,
   groupVisibleRowsByCity,
-} from './data.js';
+} from './data.js?v=20260514d';
 import {
   addDays,
   bookingSpanWithinMonth,
@@ -41,7 +41,7 @@ import {
   minutesAgoLabel,
   nightsBetween,
   titleCase,
-} from './utils.js';
+} from './utils.js?v=20260514d';
 
 let dragMouseUpBound = false;
 let dragStartCell = null;

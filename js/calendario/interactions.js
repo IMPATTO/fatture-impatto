@@ -4,12 +4,13 @@ import {
   loadMonthData,
   loadStaticData,
 } from './data.js';
-import { CITY_PRIORITY, ELS, PMS_EDITOR_EMAILS, S, SIDEBAR_STORAGE_KEY } from './state.js';
+} from './data.js?v=20260514d';
+import { CITY_PRIORITY, ELS, PMS_EDITOR_EMAILS, S, SIDEBAR_STORAGE_KEY } from './state.js?v=20260514d';
 import {
   nightsBetween,
   startOfMonth,
   toMonthInputValue,
-} from './utils.js';
+} from './utils.js?v=20260514d';
 
 const RENDER = {
   renderAll: null,
@@ -23,7 +24,7 @@ const RENDER = {
 
 export async function init() {
   cacheElements();
-  await import('./render.js');
+  await import('./render.js?v=20260514d');
   bindShellEvents();
   restoreSidebarState();
   handleScrollHeaderToggle();

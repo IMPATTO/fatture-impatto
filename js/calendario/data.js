@@ -5,7 +5,7 @@ import {
   OCCUPYING_STATUSES,
   S,
   STATUS_LABELS,
-} from './state.js';
+} from './state.js?v=20260514d';
 import {
   formatDate,
   formatPrice,
@@ -18,7 +18,7 @@ import {
   unique,
   compareBookingsForRender,
   compareOrphans,
-} from './utils.js';
+} from './utils.js?v=20260514d';
 
 export async function loadStaticData() {
   const apartmentsQuery = window.sb
