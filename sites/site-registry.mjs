@@ -73,6 +73,7 @@ export const siteRegistry = {
       'audit-apartment-links',
       'get-backoffice-portale-data',
       'get-public-portal-data',
+      'ocr',
       'revenue-optimizer',
       'save-istat-config-portale',
       'submit-public-checkin',
@@ -123,6 +124,7 @@ export const siteRegistry = {
       'css/calendario.css',
     ],
     functions: [
+      'beds24-booking-diagnose',
       'beds24-inspect',
       'beds24-push-calendar',
       'beds24-rate-diagnostics',
@@ -171,6 +173,7 @@ export const siteRegistry = {
       'trilocali-rimini.html',
       'residence-rimini-terme.html',
       'offerte-vacanze-rimini.html',
+      'regolamento-residence-margherita.html',
     ],
     pages: [
       'index.html',
@@ -179,6 +182,7 @@ export const siteRegistry = {
       'trilocali-rimini.html',
       'residence-rimini-terme.html',
       'offerte-vacanze-rimini.html',
+      'regolamento-residence-margherita.html',
     ],
     assets: [
       'seo-pages.css',
