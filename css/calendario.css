@@ -512,7 +512,7 @@ input {
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.96);
   box-shadow: var(--shadow-md);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .today-marker {
@@ -534,13 +534,14 @@ input {
 }
 
 .timeline-scroll {
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: visible;
 }
 
 .timeline-header {
   position: sticky;
   top: var(--timeline-sticky-top, 48px);
-  z-index: 20;
+  z-index: 30;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.99) 0%, rgba(248, 244, 236, 0.98) 100%);
   border-bottom: 1px solid rgba(190, 175, 145, 0.72);
   backdrop-filter: blur(8px);
