@@ -1021,14 +1021,15 @@ export function handleScrollHeaderToggle() {
     nextVisible = false;
   }
 
-  if (nextVisible === _miniHeaderVisible) return;
-  _miniHeaderVisible = nextVisible;
+  if (nextVisible !== _miniHeaderVisible) {
+    _miniHeaderVisible = nextVisible;
 
-  ELS.pageHeader?.classList.toggle('compact', nextVisible);
-  ELS.miniHeader?.classList.toggle('visible', nextVisible);
-  ELS.miniHeader?.setAttribute('aria-hidden', String(!nextVisible));
-  if (nextVisible && ELS.miniMonthLabel && S.monthDate) {
-    ELS.miniMonthLabel.textContent = ELS.monthPickerBtn?.textContent || '';
+    ELS.pageHeader?.classList.toggle('compact', nextVisible);
+    ELS.miniHeader?.classList.toggle('visible', nextVisible);
+    ELS.miniHeader?.setAttribute('aria-hidden', String(!nextVisible));
+    if (nextVisible && ELS.miniMonthLabel && S.monthDate) {
+      ELS.miniMonthLabel.textContent = ELS.monthPickerBtn?.textContent || '';
+    }
   }
 
   const headerHeight = nextVisible ? 88 : 48;
