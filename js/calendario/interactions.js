@@ -1033,6 +1033,7 @@ export function handleScrollHeaderToggle() {
 
   const headerHeight = nextVisible ? 88 : 48;
   document.documentElement.style.setProperty('--timeline-sticky-top', `${headerHeight}px`);
+  syncStickyTimelineHeader();
 }
 
 export function toggleCityFilter(city, callbacks = {}) {
@@ -1074,11 +1075,57 @@ function syncMiniHeaderLabel() {
 }
 
 function handleTimelineScroll() {
+  syncStickyTimelineHeader();
   const marker = ELS.todayMarker;
   if (!marker || !marker.classList.contains('visible')) return;
   const baseLeft = Number(marker.dataset.baseLeft || 0);
   const scrollLeft = ELS.timelineScroll?.scrollLeft || 0;
   marker.style.left = `${baseLeft - scrollLeft}px`;
+}
+
+export function syncStickyTimelineHeader() {
+  const timelineHeader = ELS.timelineHeader;
+  const timelineShell = ELS.timelineShell;
+  const timelineScroll = ELS.timelineScroll;
+  const timelineBody = ELS.timelineBody;
+  if (!timelineHeader || !timelineShell || !timelineScroll || !timelineBody) return;
+  if (!timelineHeader.firstElementChild) return;
+
+  const stickyTop = Number.parseInt(
+    getComputedStyle(document.documentElement).getPropertyValue('--timeline-sticky-top').trim(),
+    10,
+  ) || 48;
+  const shellRect = timelineShell.getBoundingClientRect();
+  const scrollRect = timelineScroll.getBoundingClientRect();
+  const headerHeight = timelineHeader.offsetHeight || 68;
+  const shouldFix = shellRect.top <= stickyTop && shellRect.bottom > (stickyTop + headerHeight + 24);
+
+  if (!shouldFix) {
+    timelineHeader.classList.remove('is-fixed');
+    timelineHeader.style.top = '';
+    timelineHeader.style.left = '';
+    timelineHeader.style.width = '';
+    timelineHeader.style.height = '';
+    timelineHeader.style.transform = '';
+    timelineBody.style.paddingTop = '';
+    const grid = timelineHeader.firstElementChild;
+    if (grid) {
+      grid.style.transform = '';
+    }
+    return;
+  }
+
+  timelineHeader.classList.add('is-fixed');
+  timelineHeader.style.top = `${stickyTop}px`;
+  timelineHeader.style.left = `${scrollRect.left}px`;
+  timelineHeader.style.width = `${scrollRect.width}px`;
+  timelineHeader.style.height = `${headerHeight}px`;
+  timelineBody.style.paddingTop = `${headerHeight}px`;
+
+  const grid = timelineHeader.firstElementChild;
+  if (grid) {
+    grid.style.transform = `translateX(-${timelineScroll.scrollLeft || 0}px)`;
+  }
 }
 
 if (typeof window !== 'undefined') {

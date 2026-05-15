@@ -547,6 +547,17 @@ input {
   backdrop-filter: blur(8px);
 }
 
+.timeline-header.is-fixed {
+  position: fixed;
+  overflow: hidden;
+  z-index: 60;
+  box-shadow: 0 8px 20px rgba(28, 25, 20, 0.08);
+}
+
+.timeline-header.is-fixed > .timeline-grid {
+  will-change: transform;
+}
+
 .timeline-grid {
   min-width: calc(var(--label-width) + (var(--days-count) * var(--day-width)));
 }

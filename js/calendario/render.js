@@ -1,6 +1,7 @@
 import {
   handleRetryClick,
   registerRenderBindings,
+  syncStickyTimelineHeader,
   syncDragSelectionToolbar,
   toggleCityFilter,
   toggleSetValue,
@@ -184,6 +185,7 @@ export function renderTimeline() {
 
   bindTimelineEvents();
   updateTodayMarker(monthDays);
+  syncStickyTimelineHeader();
 }
 
 export function buildTimelineHeader(monthDays) {
