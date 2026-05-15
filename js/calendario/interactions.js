@@ -141,9 +141,9 @@ export function bindShellEvents() {
   ELS.timelineScroll?.addEventListener('scroll', handleTimelineScroll, { passive: true });
 }
 
-const MINI_HEADER_SHOW_THRESHOLD = 140;
-const MINI_HEADER_HIDE_THRESHOLD = 90;
-let miniHeaderVisible = false;
+const SCROLL_THRESHOLD_SHOW = 200;
+const SCROLL_THRESHOLD_HIDE = 80;
+let _miniHeaderVisible = false;
 
 export async function initializeSession() {
   const { data: { session } } = await window.sb.auth.getSession();
@@ -1012,17 +1012,27 @@ function escapeHtml(value) {
 }
 
 export function handleScrollHeaderToggle() {
-  const scrollY = window.scrollY;
-  if (!miniHeaderVisible && scrollY > MINI_HEADER_SHOW_THRESHOLD) {
-    miniHeaderVisible = true;
-  } else if (miniHeaderVisible && scrollY < MINI_HEADER_HIDE_THRESHOLD) {
-    miniHeaderVisible = false;
+  const y = window.scrollY;
+  let nextVisible = _miniHeaderVisible;
+
+  if (!_miniHeaderVisible && y > SCROLL_THRESHOLD_SHOW) {
+    nextVisible = true;
+  } else if (_miniHeaderVisible && y < SCROLL_THRESHOLD_HIDE) {
+    nextVisible = false;
   }
-  ELS.pageHeader?.classList.toggle('compact', miniHeaderVisible);
-  ELS.miniHeader?.classList.toggle('visible', miniHeaderVisible);
-  ELS.miniHeader?.setAttribute('aria-hidden', String(!miniHeaderVisible));
-  document.documentElement.style.setProperty('--timeline-sticky-top', miniHeaderVisible ? '88px' : '48px');
-  syncMiniHeaderLabel();
+
+  if (nextVisible === _miniHeaderVisible) return;
+  _miniHeaderVisible = nextVisible;
+
+  ELS.pageHeader?.classList.toggle('compact', nextVisible);
+  ELS.miniHeader?.classList.toggle('visible', nextVisible);
+  ELS.miniHeader?.setAttribute('aria-hidden', String(!nextVisible));
+  if (nextVisible && ELS.miniMonthLabel && S.monthDate) {
+    ELS.miniMonthLabel.textContent = ELS.monthPickerBtn?.textContent || '';
+  }
+
+  const headerHeight = nextVisible ? 88 : 48;
+  document.documentElement.style.setProperty('--timeline-sticky-top', `${headerHeight}px`);
 }
 
 export function toggleCityFilter(city, callbacks = {}) {
