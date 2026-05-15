@@ -118,8 +118,13 @@ export function bindShellEvents() {
   ELS.bulkMinStayMode?.addEventListener('change', updateBulkMinStayMode);
   ELS.bulkMinStayValue?.addEventListener('input', updateBulkPreview);
   ELS.bulkAvailabilityMode?.addEventListener('change', updateBulkPreview);
-  ELS.bulkModal?.addEventListener('click', (event) => {
-    if (event.target === ELS.bulkModal) closeBulkModal();
+  document.addEventListener('click', (event) => {
+    if (!S.bulk?.open) return;
+    if (!ELS.bulkModal) return;
+    if (ELS.bulkModal.contains(event.target)) return;
+    if (ELS.bulkEditBtn && ELS.bulkEditBtn.contains(event.target)) return;
+    if (ELS.dragSelectEdit && ELS.dragSelectEdit.contains(event.target)) return;
+    closeBulkModal();
   });
   ELS.dragSelectEdit?.addEventListener('click', openBulkFromSelection);
   ELS.dragSelectClear?.addEventListener('click', clearDragSelection);
