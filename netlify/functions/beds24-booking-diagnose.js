@@ -286,8 +286,16 @@ function extractBookingId(payload) {
   for (const item of candidates) {
     const direct = item?.id ?? item?.bookingId ?? item?.booking_id;
     if (direct != null && String(direct).trim()) return String(direct).trim();
+    const created = item?.new?.id ?? item?.new?.bookingId ?? item?.new?.booking_id;
+    if (created != null && String(created).trim()) return String(created).trim();
     const nested = item?.data?.id ?? item?.data?.bookingId ?? item?.data?.booking_id;
     if (nested != null && String(nested).trim()) return String(nested).trim();
+    if (Array.isArray(item?.info)) {
+      for (const infoRow of item.info) {
+        const infoId = infoRow?.id ?? infoRow?.bookingId ?? infoRow?.booking_id;
+        if (infoId != null && String(infoId).trim()) return String(infoId).trim();
+      }
+    }
   }
   return null;
 }
