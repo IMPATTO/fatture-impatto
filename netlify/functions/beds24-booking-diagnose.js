@@ -92,7 +92,10 @@ exports.handler = async (event) => {
     token,
     requestBody: createBody,
   });
-  createdBookingId = extractBookingId(createResult.responseBody);
+  createdBookingId = extractBookingId(createResult.responseBody)
+    || extractBookingId(createResult.response_body)
+    || String(createResult.responseBody?.[0]?.new?.id || createResult.responseBody?.[0]?.info?.[0]?.id || '').trim()
+    || null;
   if (createdBookingId) {
     createResult.booking_id_created = createdBookingId;
   }
@@ -160,7 +163,10 @@ exports.handler = async (event) => {
       },
     ],
   });
-  const conflictBookingId = extractBookingId(conflictResult.responseBody);
+  const conflictBookingId = extractBookingId(conflictResult.responseBody)
+    || extractBookingId(conflictResult.response_body)
+    || String(conflictResult.responseBody?.[0]?.new?.id || conflictResult.responseBody?.[0]?.info?.[0]?.id || '').trim()
+    || null;
   if (conflictBookingId) {
     conflictResult.booking_id_created = conflictBookingId;
   }
