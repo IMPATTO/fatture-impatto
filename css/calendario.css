@@ -2109,3 +2109,15 @@ input {
   color: var(--ink);
   border-color: var(--gold, #b08b44);
 }
+
+.drag-select-toolbar .btn-secondary {
+  background: rgba(255, 243, 214, 0.14);
+  color: #fff;
+  border-color: rgba(232, 193, 104, 0.9);
+}
+
+.drag-select-toolbar .btn-secondary:hover {
+  background: rgba(232, 193, 104, 0.2);
+  color: #fff;
+  border-color: rgba(245, 209, 128, 1);
+}
