@@ -92,6 +92,7 @@ export const S = {
   lastSync: null,
   _skipWarningLogged: false,
   expandedResidences: new Set(),
+  collapsedCities: new Set(),
   selectedBookingId: null,
   errorMessage: '',
   editing: {

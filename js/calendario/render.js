@@ -177,9 +177,12 @@ export function renderTimeline() {
   const grouped = groupVisibleRowsByCity();
   const rowsHtml = [];
   for (const group of grouped) {
-    rowsHtml.push(`<div class="section-row">${esc(group.city)}</div>`);
-    for (const row of group.rows) {
-      rowsHtml.push(buildTimelineRow(row, monthDays));
+    const isCollapsed = S.collapsedCities.has(String(group.city));
+    rowsHtml.push(buildSectionRow(group, isCollapsed));
+    if (!isCollapsed) {
+      for (const row of group.rows) {
+        rowsHtml.push(buildTimelineRow(row, monthDays));
+      }
     }
   }
   ELS.timelineBody.innerHTML = rowsHtml.join('');
@@ -188,6 +191,26 @@ export function renderTimeline() {
   updateTodayMarker(monthDays);
   syncInitialHorizontalViewport(monthDays);
   syncStickyTimelineHeader();
+}
+
+export function buildSectionRow(group, isCollapsed) {
+  const rowsCount = group.rows.length;
+  const toggleLabel = isCollapsed ? '+' : '−';
+  return `
+    <div class="section-row" data-city-section="${esc(group.city)}">
+      <button
+        type="button"
+        class="city-toggle"
+        data-toggle-city="${esc(group.city)}"
+        aria-expanded="${String(!isCollapsed)}"
+        aria-label="${isCollapsed ? 'Espandi' : 'Chiudi'} ${esc(group.city)}"
+      >${toggleLabel}</button>
+      <div class="section-row-copy">
+        <span class="section-row-title">${esc(group.city)}</span>
+        <span class="section-row-meta">${esc(String(rowsCount))} strutture</span>
+      </div>
+    </div>
+  `;
 }
 
 export function buildTimelineHeader(monthDays) {
@@ -346,6 +369,20 @@ export function buildBookingTooltip(booking) {
 }
 
 export function bindTimelineEvents() {
+  ELS.timelineBody.querySelectorAll('[data-toggle-city]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const city = button.getAttribute('data-toggle-city');
+      if (!city) return;
+      if (S.collapsedCities.has(city)) {
+        S.collapsedCities.delete(city);
+      } else {
+        S.collapsedCities.add(city);
+      }
+      renderTimeline();
+      syncStickyTimelineHeader();
+    });
+  });
+
   ELS.timelineBody.querySelectorAll('[data-toggle-residence]').forEach((button) => {
     button.addEventListener('click', () => {
       const apartmentId = button.getAttribute('data-toggle-residence');
