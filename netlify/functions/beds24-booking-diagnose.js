@@ -101,9 +101,9 @@ exports.handler = async (event) => {
   }
   tests.push(createResult);
 
-  let updatePriceResult = null;
+  let updatePricePatchResult = null;
   if (createdBookingId) {
-    updatePriceResult = await runTest({
+    updatePricePatchResult = await runTest({
       testNumber: 2,
       method: 'PATCH',
       path: '/bookings',
@@ -117,14 +117,54 @@ exports.handler = async (event) => {
       ],
     });
   } else {
-    updatePriceResult = skippedTest(2, 'PATCH', `${BEDS24_URL}/bookings`, 'bookingId non disponibile dal Test 1');
+    updatePricePatchResult = skippedTest(2, 'PATCH', `${BEDS24_URL}/bookings`, 'bookingId non disponibile dal Test 1');
   }
-  tests.push(updatePriceResult);
+  tests.push(updatePricePatchResult);
 
-  let updateDatesResult = null;
+  let updatePricePutResult = null;
   if (createdBookingId) {
-    updateDatesResult = await runTest({
+    updatePricePutResult = await runTest({
       testNumber: 3,
+      method: 'PUT',
+      path: '/bookings',
+      token,
+      requestBody: [
+        {
+          id: createdBookingId,
+          price: 260,
+          notes: 'Booking aggiornata via PUT',
+        },
+      ],
+    });
+  } else {
+    updatePricePutResult = skippedTest(3, 'PUT', `${BEDS24_URL}/bookings`, 'bookingId non disponibile dal Test 1');
+  }
+  tests.push(updatePricePutResult);
+
+  let updatePricePostResult = null;
+  if (createdBookingId) {
+    updatePricePostResult = await runTest({
+      testNumber: 4,
+      method: 'POST',
+      path: '/bookings',
+      token,
+      requestBody: [
+        {
+          id: createdBookingId,
+          price: 270,
+          notes: 'Booking aggiornata via POST',
+        },
+      ],
+    });
+  } else {
+    updatePricePostResult = skippedTest(4, 'POST', `${BEDS24_URL}/bookings`, 'bookingId non disponibile dal Test 1');
+  }
+  tests.push(updatePricePostResult);
+
+  let updateDatesPatchResult = null;
+  if (createdBookingId) {
+    updateDatesPatchResult = await runTest({
+      testNumber: 5,
       method: 'PATCH',
       path: '/bookings',
       token,
@@ -137,12 +177,52 @@ exports.handler = async (event) => {
       ],
     });
   } else {
-    updateDatesResult = skippedTest(3, 'PATCH', `${BEDS24_URL}/bookings`, 'bookingId non disponibile dal Test 1');
+    updateDatesPatchResult = skippedTest(5, 'PATCH', `${BEDS24_URL}/bookings`, 'bookingId non disponibile dal Test 1');
   }
-  tests.push(updateDatesResult);
+  tests.push(updateDatesPatchResult);
+
+  let updateDatesPutResult = null;
+  if (createdBookingId) {
+    updateDatesPutResult = await runTest({
+      testNumber: 6,
+      method: 'PUT',
+      path: '/bookings',
+      token,
+      requestBody: [
+        {
+          id: createdBookingId,
+          arrival: TEST_UPDATED_ARRIVAL,
+          departure: TEST_UPDATED_DEPARTURE,
+        },
+      ],
+    });
+  } else {
+    updateDatesPutResult = skippedTest(6, 'PUT', `${BEDS24_URL}/bookings`, 'bookingId non disponibile dal Test 1');
+  }
+  tests.push(updateDatesPutResult);
+
+  let updateDatesPostResult = null;
+  if (createdBookingId) {
+    updateDatesPostResult = await runTest({
+      testNumber: 7,
+      method: 'POST',
+      path: '/bookings',
+      token,
+      requestBody: [
+        {
+          id: createdBookingId,
+          arrival: TEST_UPDATED_ARRIVAL,
+          departure: TEST_UPDATED_DEPARTURE,
+        },
+      ],
+    });
+  } else {
+    updateDatesPostResult = skippedTest(7, 'POST', `${BEDS24_URL}/bookings`, 'bookingId non disponibile dal Test 1');
+  }
+  tests.push(updateDatesPostResult);
 
   const conflictResult = await runTest({
-    testNumber: 5,
+    testNumber: 8,
     method: 'POST',
     path: '/bookings',
     token,
@@ -175,19 +255,19 @@ exports.handler = async (event) => {
   let deleteResult = null;
   if (createdBookingId) {
     deleteResult = await runTest({
-      testNumber: 4,
+      testNumber: 9,
       method: 'DELETE',
       path: `/bookings/${encodeURIComponent(createdBookingId)}`,
       token,
     });
   } else {
-    deleteResult = skippedTest(4, 'DELETE', `${BEDS24_URL}/bookings/<bookingId>`, 'bookingId non disponibile dal Test 1');
+    deleteResult = skippedTest(9, 'DELETE', `${BEDS24_URL}/bookings/<bookingId>`, 'bookingId non disponibile dal Test 1');
   }
   tests.push(deleteResult);
 
   if (conflictBookingId) {
     const cleanupResult = await runTest({
-      testNumber: 6,
+      testNumber: 10,
       method: 'DELETE',
       path: `/bookings/${encodeURIComponent(conflictBookingId)}`,
       token,
