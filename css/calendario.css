@@ -1795,3 +1795,77 @@ input {
     width: auto;
   }
 }
+
+.booking-modal-card {
+  max-width: 600px !important;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.booking-modal-body {
+  overflow-y: auto;
+  max-height: calc(92vh - 140px);
+}
+
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.form-grid-2 .form-row {
+  margin-bottom: 0;
+}
+
+.form-conflict {
+  padding: 12px 14px;
+  background: rgba(214, 76, 76, 0.06);
+  border: 1px solid rgba(214, 76, 76, 0.3);
+  border-radius: 6px;
+  color: rgba(150, 30, 30, 0.95);
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+
+.form-conflict.hidden {
+  display: none;
+}
+
+.form-conflict ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.form-conflict li {
+  margin-bottom: 4px;
+}
+
+.drawer-booking-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.drawer-booking-actions .btn {
+  flex: 1;
+}
+
+.btn-danger {
+  background: rgba(214, 76, 76, 0.1);
+  color: rgba(150, 30, 30, 0.95);
+  border-color: rgba(214, 76, 76, 0.4);
+}
+
+.btn-danger:hover {
+  background: rgba(214, 76, 76, 0.2);
+}
+
+.btn-secondary {
+  background: rgba(176, 139, 68, 0.15);
+  color: var(--ink);
+  border-color: var(--gold, #b08b44);
+}

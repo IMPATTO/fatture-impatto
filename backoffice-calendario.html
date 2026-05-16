@@ -154,8 +154,6 @@
     </div>
     <div id="drawerBody" class="drawer-body"></div>
     <div class="drawer-foot">
-      <button type="button" class="btn btn-ghost" disabled title="Disponibile in Fase 3">Modifica</button>
-      <button type="button" class="btn btn-ghost" disabled title="Disponibile in Fase 3">Cancella</button>
       <button id="drawerCloseBtnFooter" type="button" class="btn btn-primary">Chiudi</button>
     </div>
   </aside>
@@ -342,9 +340,99 @@
     </div>
   </div>
 
+  <div id="bookingFormModal" class="modal-overlay hidden" aria-hidden="true" role="dialog">
+    <div class="modal-card booking-modal-card" role="document">
+      <header class="modal-header">
+        <h2 id="bookingFormTitle">Nuova booking</h2>
+        <button type="button" class="modal-close" id="bookingFormClose" aria-label="Chiudi">×</button>
+      </header>
+      <form id="bookingFormForm" class="modal-body booking-modal-body">
+        <div class="form-row">
+          <label for="bookingFormApartment">Apartment unit</label>
+          <select id="bookingFormApartment" required></select>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label for="bookingFormArrival">Check-in</label>
+            <input type="date" id="bookingFormArrival" required>
+          </div>
+          <div class="form-row">
+            <label for="bookingFormDeparture">Check-out</label>
+            <input type="date" id="bookingFormDeparture" required>
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label for="bookingFormAdults">Adulti</label>
+            <input type="number" id="bookingFormAdults" min="1" max="20" value="2" required>
+          </div>
+          <div class="form-row">
+            <label for="bookingFormChildren">Bambini</label>
+            <input type="number" id="bookingFormChildren" min="0" max="10" value="0">
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label for="bookingFormFirstName">Nome</label>
+            <input type="text" id="bookingFormFirstName" required>
+          </div>
+          <div class="form-row">
+            <label for="bookingFormLastName">Cognome</label>
+            <input type="text" id="bookingFormLastName" required>
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-row">
+            <label for="bookingFormEmail">Email</label>
+            <input type="email" id="bookingFormEmail">
+          </div>
+          <div class="form-row">
+            <label for="bookingFormPhone">Telefono</label>
+            <input type="tel" id="bookingFormPhone">
+          </div>
+        </div>
+
+        <div class="form-row" id="bookingFormStatusRow">
+          <label for="bookingFormStatus">Stato</label>
+          <select id="bookingFormStatus">
+            <option value="confirmed">confirmed</option>
+            <option value="new">new</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label for="bookingFormPrice">Prezzo totale (€)</label>
+          <input type="number" id="bookingFormPrice" min="0" step="1">
+        </div>
+
+        <div class="form-row">
+          <label for="bookingFormNotes">Note</label>
+          <textarea id="bookingFormNotes" rows="2"></textarea>
+        </div>
+
+        <div id="bookingFormConflict" class="form-conflict hidden" role="alert">
+          <strong>Le date selezionate sono già occupate.</strong>
+          <ul id="bookingFormConflictList"></ul>
+        </div>
+
+        <div id="bookingFormError" class="form-error hidden" role="alert"></div>
+
+        <footer class="modal-footer">
+          <button type="button" class="btn btn-ghost" id="bookingFormCancel">Annulla</button>
+          <button type="submit" class="btn btn-primary" id="bookingFormSubmit">Crea booking</button>
+        </footer>
+      </form>
+    </div>
+  </div>
+
   <div id="dragSelectToolbar" class="drag-select-toolbar hidden">
     <span id="dragSelectCount">0 celle selezionate</span>
-    <button type="button" class="btn btn-primary btn-small" id="dragSelectEdit">Modifica selezione</button>
+    <button type="button" class="btn btn-primary btn-small" id="dragSelectEdit">Modifica prezzi</button>
+    <button type="button" class="btn btn-secondary btn-small" id="dragSelectBooking">Crea booking</button>
     <button type="button" class="btn btn-ghost btn-small" id="dragSelectClear">Annulla</button>
   </div>
 

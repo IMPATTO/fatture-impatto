@@ -104,6 +104,14 @@ export const S = {
     submitting: false,
     error: '',
   },
+  bookingForm: {
+    open: false,
+    mode: 'create',
+    bookingId: null,
+    submitting: false,
+    error: '',
+    conflictDetails: null,
+  },
   bulk: {
     open: false,
     selectedApartmentIds: new Set(),

@@ -57,7 +57,14 @@ export function cacheElements() {
     'bulkMinStayMode', 'bulkMinStayValue',
     'bulkAvailabilityMode',
     'bulkPreview', 'bulkError',
-    'dragSelectToolbar', 'dragSelectCount', 'dragSelectEdit', 'dragSelectClear',
+    'dragSelectToolbar', 'dragSelectCount', 'dragSelectEdit', 'dragSelectBooking', 'dragSelectClear',
+    'bookingFormModal', 'bookingFormTitle', 'bookingFormClose', 'bookingFormCancel',
+    'bookingFormSubmit', 'bookingFormForm',
+    'bookingFormApartment', 'bookingFormArrival', 'bookingFormDeparture',
+    'bookingFormAdults', 'bookingFormChildren',
+    'bookingFormFirstName', 'bookingFormLastName', 'bookingFormEmail', 'bookingFormPhone',
+    'bookingFormPrice', 'bookingFormNotes', 'bookingFormStatus', 'bookingFormStatusRow',
+    'bookingFormConflict', 'bookingFormConflictList', 'bookingFormError',
   ].forEach((id) => {
     ELS[id] = document.getElementById(id);
   });
@@ -124,16 +131,25 @@ export function bindShellEvents() {
     if (ELS.bulkModal.contains(event.target)) return;
     if (ELS.bulkEditBtn && ELS.bulkEditBtn.contains(event.target)) return;
     if (ELS.dragSelectEdit && ELS.dragSelectEdit.contains(event.target)) return;
+    if (ELS.dragSelectBooking && ELS.dragSelectBooking.contains(event.target)) return;
     closeBulkModal();
   });
   ELS.dragSelectEdit?.addEventListener('click', openBulkFromSelection);
+  ELS.dragSelectBooking?.addEventListener('click', openBookingFromSelection);
   ELS.dragSelectClear?.addEventListener('click', clearDragSelection);
+  ELS.bookingFormClose?.addEventListener('click', closeBookingForm);
+  ELS.bookingFormCancel?.addEventListener('click', closeBookingForm);
+  ELS.bookingFormForm?.addEventListener('submit', handleBookingFormSubmit);
+  ELS.bookingFormModal?.addEventListener('click', (event) => {
+    if (event.target === ELS.bookingFormModal) closeBookingForm();
+  });
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
       RENDER.closeDrawer?.();
       RENDER.closeOrphanModal?.();
       closeEditModal();
       closeBulkModal();
+      closeBookingForm();
       closeMenu();
     }
   });
@@ -435,6 +451,152 @@ export function closeEditModal() {
   ELS.editCellModal?.setAttribute('aria-hidden', 'true');
 }
 
+export function openBookingFormCreate({ apartmentUnitId, arrival, departure } = {}) {
+  if (!S.isPmsEditor) return;
+
+  S.bookingForm = {
+    open: true,
+    mode: 'create',
+    bookingId: null,
+    submitting: false,
+    error: '',
+    conflictDetails: null,
+  };
+
+  populateApartmentDropdown();
+  if (ELS.bookingFormApartment) {
+    ELS.bookingFormApartment.disabled = false;
+    ELS.bookingFormApartment.value = apartmentUnitId || '';
+  }
+  if (ELS.bookingFormArrival) ELS.bookingFormArrival.value = arrival || '';
+  if (ELS.bookingFormDeparture) ELS.bookingFormDeparture.value = departure || '';
+  if (ELS.bookingFormAdults) ELS.bookingFormAdults.value = '2';
+  if (ELS.bookingFormChildren) ELS.bookingFormChildren.value = '0';
+  if (ELS.bookingFormFirstName) ELS.bookingFormFirstName.value = '';
+  if (ELS.bookingFormLastName) ELS.bookingFormLastName.value = '';
+  if (ELS.bookingFormEmail) ELS.bookingFormEmail.value = '';
+  if (ELS.bookingFormPhone) ELS.bookingFormPhone.value = '';
+  if (ELS.bookingFormPrice) ELS.bookingFormPrice.value = '';
+  if (ELS.bookingFormNotes) ELS.bookingFormNotes.value = '';
+  if (ELS.bookingFormStatusRow) ELS.bookingFormStatusRow.classList.remove('hidden');
+  if (ELS.bookingFormStatus) ELS.bookingFormStatus.value = 'confirmed';
+  if (ELS.bookingFormTitle) ELS.bookingFormTitle.textContent = 'Nuova booking';
+  if (ELS.bookingFormSubmit) {
+    ELS.bookingFormSubmit.textContent = 'Crea booking';
+    ELS.bookingFormSubmit.disabled = false;
+  }
+
+  hideBookingErrors();
+  ELS.bookingFormModal?.classList.remove('hidden');
+  ELS.bookingFormModal?.setAttribute('aria-hidden', 'false');
+  setTimeout(() => ELS.bookingFormFirstName?.focus(), 50);
+}
+
+export function openBookingFormUpdate(booking) {
+  if (!S.isPmsEditor || !booking) return;
+
+  S.bookingForm = {
+    open: true,
+    mode: 'update',
+    bookingId: booking.beds24_booking_id,
+    submitting: false,
+    error: '',
+    conflictDetails: null,
+  };
+
+  populateApartmentDropdown();
+  if (ELS.bookingFormApartment) {
+    ELS.bookingFormApartment.value = booking.apartment_unit_id || '';
+    ELS.bookingFormApartment.disabled = true;
+  }
+  if (ELS.bookingFormArrival) ELS.bookingFormArrival.value = booking.check_in?.slice(0, 10) || '';
+  if (ELS.bookingFormDeparture) ELS.bookingFormDeparture.value = booking.check_out?.slice(0, 10) || '';
+  if (ELS.bookingFormAdults) ELS.bookingFormAdults.value = String(booking.num_adults || 2);
+  if (ELS.bookingFormChildren) ELS.bookingFormChildren.value = String(booking.num_children || 0);
+  if (ELS.bookingFormFirstName) ELS.bookingFormFirstName.value = booking.guest_first_name || '';
+  if (ELS.bookingFormLastName) ELS.bookingFormLastName.value = booking.guest_last_name || '';
+  if (ELS.bookingFormEmail) ELS.bookingFormEmail.value = booking.guest_email || '';
+  if (ELS.bookingFormPhone) ELS.bookingFormPhone.value = booking.guest_phone || '';
+  if (ELS.bookingFormPrice) ELS.bookingFormPrice.value = booking.total_price != null ? String(booking.total_price) : '';
+  if (ELS.bookingFormNotes) {
+    ELS.bookingFormNotes.value = booking.raw_payload?.last_manual_request?.notes
+      || booking.raw_payload?.manual_request?.notes
+      || booking.raw_payload?.notes
+      || '';
+  }
+  if (ELS.bookingFormStatusRow) ELS.bookingFormStatusRow.classList.add('hidden');
+  if (ELS.bookingFormTitle) ELS.bookingFormTitle.textContent = `Modifica booking #${booking.beds24_booking_id}`;
+  if (ELS.bookingFormSubmit) {
+    ELS.bookingFormSubmit.textContent = 'Salva modifiche';
+    ELS.bookingFormSubmit.disabled = false;
+  }
+
+  hideBookingErrors();
+  ELS.bookingFormModal?.classList.remove('hidden');
+  ELS.bookingFormModal?.setAttribute('aria-hidden', 'false');
+  setTimeout(() => ELS.bookingFormFirstName?.focus(), 50);
+}
+
+export function closeBookingForm() {
+  S.bookingForm.open = false;
+  ELS.bookingFormModal?.classList.add('hidden');
+  ELS.bookingFormModal?.setAttribute('aria-hidden', 'true');
+}
+
+function populateApartmentDropdown() {
+  if (!ELS.bookingFormApartment) return;
+
+  const byCity = new Map();
+  for (const apartment of S.apartments) {
+    const units = S.unitsByApartment.get(String(apartment.id)) || [];
+    for (const unit of units) {
+      const city = apartment.city || 'Altre';
+      if (!byCity.has(city)) byCity.set(city, []);
+      byCity.get(city).push({ apartment, unit });
+    }
+  }
+
+  const cities = [...byCity.keys()].sort(compareCityNames);
+  let html = '<option value="">Seleziona apartment unit…</option>';
+  for (const city of cities) {
+    html += `<optgroup label="${escapeHtml(city)}">`;
+    const items = byCity.get(city).slice().sort((a, b) => {
+      const left = `${a.apartment.displayName || ''} ${a.unit.unit_label || ''}`;
+      const right = `${b.apartment.displayName || ''} ${b.unit.unit_label || ''}`;
+      return left.localeCompare(right, 'it');
+    });
+    for (const item of items) {
+      const label = `${item.apartment.displayName || '—'}${item.unit.unit_label ? ` — ${item.unit.unit_label}` : ''}`;
+      html += `<option value="${escapeHtml(item.unit.id)}">${escapeHtml(label)}</option>`;
+    }
+    html += '</optgroup>';
+  }
+  ELS.bookingFormApartment.innerHTML = html;
+}
+
+function hideBookingErrors() {
+  if (ELS.bookingFormConflict) ELS.bookingFormConflict.classList.add('hidden');
+  if (ELS.bookingFormConflictList) ELS.bookingFormConflictList.innerHTML = '';
+  if (ELS.bookingFormError) {
+    ELS.bookingFormError.classList.add('hidden');
+    ELS.bookingFormError.textContent = '';
+  }
+}
+
+function showBookingError(message) {
+  if (!ELS.bookingFormError) return;
+  ELS.bookingFormError.textContent = message;
+  ELS.bookingFormError.classList.remove('hidden');
+}
+
+function showBookingConflict(conflicts) {
+  if (!ELS.bookingFormConflict || !ELS.bookingFormConflictList) return;
+  ELS.bookingFormConflictList.innerHTML = conflicts.map((conflict) => (
+    `<li>Booking #${escapeHtml(conflict.beds24_booking_id)}: ${escapeHtml(conflict.arrival)} → ${escapeHtml(conflict.departure)}</li>`
+  )).join('');
+  ELS.bookingFormConflict.classList.remove('hidden');
+}
+
 export async function handleEditCellSubmit(event) {
   event.preventDefault();
   if (!S.isPmsEditor || !S.editing.apartment_unit_id || !S.editing.date) return;
@@ -526,6 +688,137 @@ function showEditError(message) {
   if (!ELS.editCellError) return;
   ELS.editCellError.textContent = message;
   ELS.editCellError.classList.remove('hidden');
+}
+
+export async function handleBookingFormSubmit(event) {
+  event.preventDefault();
+  if (S.bookingForm.submitting) return;
+
+  hideBookingErrors();
+
+  const apartmentUnitId = ELS.bookingFormApartment?.value || '';
+  const arrival = ELS.bookingFormArrival?.value || '';
+  const departure = ELS.bookingFormDeparture?.value || '';
+  const numAdult = Number(ELS.bookingFormAdults?.value) || 0;
+  const numChild = Number(ELS.bookingFormChildren?.value) || 0;
+  const firstName = (ELS.bookingFormFirstName?.value || '').trim();
+  const lastName = (ELS.bookingFormLastName?.value || '').trim();
+  const email = (ELS.bookingFormEmail?.value || '').trim();
+  const phone = (ELS.bookingFormPhone?.value || '').trim();
+  const priceRaw = ELS.bookingFormPrice?.value || '';
+  const price = priceRaw !== '' ? Number(priceRaw) : null;
+  const notes = (ELS.bookingFormNotes?.value || '').trim();
+  const status = (ELS.bookingFormStatus?.value || 'confirmed').trim();
+
+  if (S.bookingForm.mode === 'create' && !apartmentUnitId) {
+    showBookingError('Seleziona un apartment');
+    return;
+  }
+  if (!arrival || !departure) {
+    showBookingError('Inserisci date check-in e check-out');
+    return;
+  }
+  if (arrival >= departure) {
+    showBookingError('Check-in deve essere precedente al check-out');
+    return;
+  }
+  if (numAdult < 1) {
+    showBookingError('Almeno 1 adulto richiesto');
+    return;
+  }
+  if (!firstName || !lastName) {
+    showBookingError('Nome e cognome obbligatori');
+    return;
+  }
+  if (price != null && (!Number.isFinite(price) || price < 0)) {
+    showBookingError('Prezzo non valido');
+    return;
+  }
+
+  S.bookingForm.submitting = true;
+  if (ELS.bookingFormSubmit) {
+    ELS.bookingFormSubmit.disabled = true;
+    ELS.bookingFormSubmit.textContent = S.bookingForm.mode === 'create' ? 'Creando…' : 'Salvando…';
+  }
+
+  try {
+    const token = S.session?.access_token;
+    if (!token) throw new Error('Sessione non valida');
+
+    const booking = {
+      apartment_unit_id: apartmentUnitId,
+      arrival,
+      departure,
+      num_adult: numAdult,
+      num_child: numChild,
+      first_name: firstName,
+      last_name: lastName,
+    };
+    if (email) booking.email = email;
+    if (phone) booking.phone = phone;
+    if (price != null) booking.price = price;
+    if (notes) booking.notes = notes;
+
+    if (S.bookingForm.mode === 'create') {
+      booking.status = status || 'confirmed';
+    } else {
+      booking.beds24_booking_id = S.bookingForm.bookingId;
+    }
+
+    const response = await fetch('/.netlify/functions/beds24-push-booking', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        operation: S.bookingForm.mode,
+        booking,
+      }),
+    });
+    const result = await response.json().catch(() => ({}));
+
+    if (response.status === 409 && Array.isArray(result.conflicting_bookings)) {
+      showBookingConflict(result.conflicting_bookings);
+      showBookingError('Le date selezionate si sovrappongono ad altre booking esistenti');
+      return;
+    }
+    if (!response.ok) {
+      const errMsg = result.error || `Errore ${response.status}`;
+      const details = Array.isArray(result.details) ? `: ${result.details.join(', ')}` : '';
+      throw new Error(errMsg + details);
+    }
+    if (!result.success) {
+      throw new Error('Salvataggio non riuscito');
+    }
+
+    await reloadCurrentMonth();
+    closeBookingForm();
+    alert(
+      S.bookingForm.mode === 'create'
+        ? `Booking creata. ID Beds24: ${result.beds24_booking_id}`
+        : 'Modifiche salvate',
+    );
+  } catch (error) {
+    console.error('[BOOKING-FORM-FAIL]', error);
+    showBookingError(error.message || 'Errore di rete');
+  } finally {
+    S.bookingForm.submitting = false;
+    if (ELS.bookingFormSubmit) {
+      ELS.bookingFormSubmit.disabled = false;
+      ELS.bookingFormSubmit.textContent = S.bookingForm.mode === 'create' ? 'Crea booking' : 'Salva modifiche';
+    }
+  }
+}
+
+async function reloadCurrentMonth() {
+  try {
+    await ensureDataLoaded({ monthOnly: true });
+    RENDER.renderAll?.();
+    RENDER.closeDrawer?.();
+  } catch (error) {
+    console.warn('[RELOAD-FAIL]', error);
+  }
 }
 
 export function openBulkModal() {
@@ -960,6 +1253,33 @@ function openBulkFromSelection() {
   clearDragSelection();
 }
 
+function openBookingFromSelection() {
+  if (!S.dragSelection.selectedCells.size) return;
+
+  let apartmentUnitId = null;
+  let minDate = null;
+  let maxDate = null;
+  for (const cellKey of S.dragSelection.selectedCells) {
+    const separator = cellKey.indexOf(':');
+    const unitId = cellKey.slice(0, separator);
+    const date = cellKey.slice(separator + 1);
+    if (!apartmentUnitId) apartmentUnitId = unitId;
+    if (!minDate || date < minDate) minDate = date;
+    if (!maxDate || date > maxDate) maxDate = date;
+  }
+
+  const departure = maxDate
+    ? formatIsoDateUtc(addDaysUtc(parseIsoDateUtc(maxDate), 1))
+    : '';
+
+  clearDragSelection();
+  openBookingFormCreate({
+    apartmentUnitId,
+    arrival: minDate,
+    departure,
+  });
+}
+
 function updatePricesSyncBtn() {
   const btn = ELS.syncPricesBtn;
   if (!btn) return;
@@ -1131,4 +1451,7 @@ export function syncStickyTimelineHeader() {
 
 if (typeof window !== 'undefined') {
   window._calendarioEditModal = { open: openEditModal };
+  window._calendarioBookingForm = window._calendarioBookingForm || {};
+  window._calendarioBookingForm.openUpdate = openBookingFormUpdate;
+  window._calendarioBookingForm.reloadAndCloseDrawer = reloadCurrentMonth;
 }

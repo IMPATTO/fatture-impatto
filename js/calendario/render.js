@@ -471,6 +471,18 @@ export function renderMobileList() {
 export function renderDrawer() {
   const booking = S.bookingMap.get(String(S.selectedBookingId));
   if (!booking) return;
+  const actionsHtml = S.isPmsEditor && booking?.beds24_booking_id
+    ? `
+      <div class="drawer-booking-actions">
+        <button type="button" class="btn btn-primary" data-action="edit-booking" data-booking-id="${esc(booking.beds24_booking_id)}">
+          Modifica
+        </button>
+        <button type="button" class="btn btn-danger" data-action="cancel-booking" data-booking-id="${esc(booking.beds24_booking_id)}">
+          Cancella
+        </button>
+      </div>
+    `
+    : '';
 
   ELS.drawerTitle.textContent = booking.guest_last_name || booking.guest_first_name || booking.beds24_booking_id;
   ELS.drawerBody.innerHTML = `
@@ -517,11 +529,63 @@ export function renderDrawer() {
           ${detailRow('Creato sorgente', formatDateTime(booking.source_created_at))}
           ${detailRow('Aggiornato sorgente', formatDateTime(booking.source_updated_at))}
           ${detailRow('Sincronizzato', formatDateTime(booking.synced_at))}
-          ${detailRow('Note', booking.notes || '—')}
+          ${detailRow('Note', booking.raw_payload?.last_manual_request?.notes || booking.raw_payload?.manual_request?.notes || booking.raw_payload?.notes || '—')}
         </dl>
       </section>
     </div>
+    ${actionsHtml}
   `;
+
+  ELS.drawerBody.querySelectorAll('[data-action="edit-booking"]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const bookingId = button.getAttribute('data-booking-id');
+      const targetBooking = S.bookings.find((item) => String(item.beds24_booking_id) === String(bookingId));
+      if (!targetBooking) {
+        alert('Booking non trovata');
+        return;
+      }
+      window._calendarioBookingForm?.openUpdate?.(targetBooking);
+    });
+  });
+
+  ELS.drawerBody.querySelectorAll('[data-action="cancel-booking"]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const bookingId = button.getAttribute('data-booking-id');
+      const targetBooking = S.bookings.find((item) => String(item.beds24_booking_id) === String(bookingId));
+      if (!targetBooking) return;
+
+      const confirmed = confirm(
+        `Cancellare booking di ${targetBooking.guest_first_name || ''} ${targetBooking.guest_last_name || ''}\n`
+        + `dal ${targetBooking.check_in?.slice(0, 10)} al ${targetBooking.check_out?.slice(0, 10)}?\n\n`
+        + 'Questa operazione non è reversibile.',
+      );
+      if (!confirmed) return;
+
+      try {
+        const token = S.session?.access_token;
+        const response = await fetch('/.netlify/functions/beds24-push-booking', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            operation: 'delete',
+            booking: { beds24_booking_id: bookingId },
+          }),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Cancellazione fallita');
+        }
+        alert('Booking cancellata');
+        await window._calendarioBookingForm?.reloadAndCloseDrawer?.();
+      } catch (error) {
+        console.error('[BOOKING-CANCEL-FAIL]', error);
+        alert(`Errore: ${error.message}`);
+      }
+    });
+  });
 
   ELS.bookingDrawer.classList.add('open');
   ELS.bookingDrawer.setAttribute('aria-hidden', 'false');
