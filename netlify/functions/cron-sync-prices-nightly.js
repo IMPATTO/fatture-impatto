@@ -1,4 +1,3 @@
-const { schedule } = require('@netlify/functions');
 const { normalizeSupabaseUrl } = require('./_lib/shared-auth');
 
 const BEDS24_URL = 'https://api.beds24.com/v2';
@@ -81,7 +80,11 @@ async function nightlySyncHandler() {
   }
 }
 
-exports.handler = schedule(CRON_EXPRESSION, nightlySyncHandler);
+exports.config = {
+  schedule: CRON_EXPRESSION,
+};
+
+exports.handler = nightlySyncHandler;
 
 async function getBeds24AccessToken(env) {
   if (beds24TokenCache && beds24TokenCache.expiresAt > Date.now() + 15 * 1000) {
