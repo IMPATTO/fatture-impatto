@@ -2095,15 +2095,38 @@ input {
   color: var(--ink);
 }
 
+#bulkModal .bulk-radio-group {
+  gap: 12px;
+}
+
 #bulkModal .radio-inline {
-  align-items: flex-start;
-  gap: 10px;
-  padding: 10px 0;
+  display: grid;
+  grid-template-columns: 20px minmax(140px, 220px) minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(190, 175, 145, 0.38);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+#bulkModal .radio-inline:hover {
+  background: rgba(255, 248, 220, 0.5);
+  border-color: rgba(176, 139, 68, 0.32);
+}
+
+#bulkModal .radio-inline input[type="radio"] {
+  margin: 0;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--gold, #b08b44);
 }
 
 #bulkModal .radio-inline span {
-  flex: 0 0 auto;
-  padding-top: 12px;
+  display: block;
+  font-weight: 600;
+  color: var(--ink);
+  padding-top: 0;
 }
 
 #bulkModal .bulk-inline-row {
@@ -2207,6 +2230,15 @@ input {
 
   #bulkModal .bulk-date-row {
     grid-template-columns: 1fr;
+  }
+
+  #bulkModal .radio-inline {
+    grid-template-columns: 20px 1fr;
+    gap: 10px;
+  }
+
+  #bulkModal .radio-inline input[type="number"] {
+    grid-column: 1 / -1;
   }
 
   #bulkModal .bulk-apartment-controls,
