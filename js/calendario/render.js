@@ -1,6 +1,7 @@
 import {
   handleRetryClick,
   registerRenderBindings,
+  syncTimelineScrollChrome,
   syncStickyTimelineHeader,
   syncDragSelectionToolbar,
   toggleCityFilter,
@@ -185,6 +186,7 @@ export function renderTimeline() {
 
   bindTimelineEvents();
   updateTodayMarker(monthDays);
+  syncInitialHorizontalViewport(monthDays);
   syncStickyTimelineHeader();
 }
 
@@ -704,6 +706,43 @@ function updateTodayMarker(monthDays) {
   marker.dataset.baseLeft = String(baseLeft);
   marker.style.left = `${baseLeft - scrollLeft}px`;
   marker.classList.add('visible');
+}
+
+function syncInitialHorizontalViewport(monthDays) {
+  const timelineScroll = ELS.timelineScroll;
+  const timelineHeader = ELS.timelineHeader;
+  if (!timelineScroll || !timelineHeader) return;
+
+  const grid = timelineHeader.querySelector('.timeline-grid');
+  const contentWidth = grid?.scrollWidth || timelineScroll.scrollWidth || 0;
+  const monthKey = `${S.monthDate.getFullYear()}-${String(S.monthDate.getMonth() + 1).padStart(2, '0')}`;
+  const previousKey = timelineScroll.dataset.monthKey || '';
+  let desiredScrollLeft;
+
+  const today = new Date();
+  const isCurrentMonth = (
+    S.monthDate.getFullYear() === today.getFullYear()
+    && S.monthDate.getMonth() === today.getMonth()
+  );
+
+  if (previousKey !== monthKey) {
+    timelineScroll.dataset.monthKey = monthKey;
+    if (isCurrentMonth) {
+      const todayIndex = monthDays.findIndex((date) => isSameDate(date, today));
+      if (todayIndex >= 0) {
+        desiredScrollLeft = Math.max(0, (todayIndex - 3) * getDayWidth());
+      } else {
+        desiredScrollLeft = 0;
+      }
+    } else {
+      desiredScrollLeft = 0;
+    }
+  }
+
+  requestAnimationFrame(() => {
+    syncTimelineScrollChrome({ contentWidth, desiredScrollLeft });
+    updateTodayMarker(monthDays);
+  });
 }
 
 function ensureDragMouseUpBinding() {

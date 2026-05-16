@@ -42,6 +42,7 @@ export function cacheElements() {
     'refreshBtn', 'syncPricesBtn', 'exportBtn', 'lastSyncLabel', 'sidebarToggle', 'pageBody', 'pageHeader', 'sidebar', 'cityFilters', 'channelFilters',
     'miniHeader', 'miniMonthLabel', 'miniPrevMonth', 'miniNextMonth', 'miniRefreshBtn',
     'statusFilters', 'timelineHeader', 'timelineBody', 'timelineShell', 'timelineScroll',
+    'timelineTopScrollbar', 'timelineTopScrollbarInner',
     'mobileList', 'loadingState', 'emptyState', 'errorState', 'orphanBanner',
     'bookingDrawer', 'drawerBackdrop', 'drawerCloseBtn', 'drawerCloseBtnFooter',
     'drawerTitle', 'drawerBody', 'orphanModal', 'orphanModalBody', 'orphanModalTitle', 'todayMarker',
@@ -155,6 +156,11 @@ export function bindShellEvents() {
   });
   window.addEventListener('scroll', handleScrollHeaderToggle, { passive: true });
   ELS.timelineScroll?.addEventListener('scroll', handleTimelineScroll, { passive: true });
+  ELS.timelineTopScrollbar?.addEventListener('scroll', handleTopTimelineScrollbarScroll, { passive: true });
+  window.addEventListener('resize', () => {
+    syncStickyTimelineHeader();
+    syncTimelineScrollChrome();
+  }, { passive: true });
 }
 
 const SCROLL_THRESHOLD_SHOW = 200;
@@ -1397,11 +1403,52 @@ function syncMiniHeaderLabel() {
 
 function handleTimelineScroll() {
   syncStickyTimelineHeader();
+  syncTimelineScrollChrome();
   const marker = ELS.todayMarker;
   if (!marker || !marker.classList.contains('visible')) return;
   const baseLeft = Number(marker.dataset.baseLeft || 0);
   const scrollLeft = ELS.timelineScroll?.scrollLeft || 0;
   marker.style.left = `${baseLeft - scrollLeft}px`;
+}
+
+let timelineScrollSyncLocked = false;
+
+function handleTopTimelineScrollbarScroll() {
+  if (timelineScrollSyncLocked) return;
+  if (!ELS.timelineScroll || !ELS.timelineTopScrollbar) return;
+  timelineScrollSyncLocked = true;
+  ELS.timelineScroll.scrollLeft = ELS.timelineTopScrollbar.scrollLeft;
+  handleTimelineScroll();
+  requestAnimationFrame(() => {
+    timelineScrollSyncLocked = false;
+  });
+}
+
+export function syncTimelineScrollChrome({ contentWidth, desiredScrollLeft } = {}) {
+  const main = ELS.timelineScroll;
+  const top = ELS.timelineTopScrollbar;
+  const inner = ELS.timelineTopScrollbarInner;
+  if (!main || !top || !inner) return;
+
+  const width = Math.max(
+    Number(contentWidth || 0),
+    Number(main.scrollWidth || 0),
+  );
+  inner.style.width = `${width}px`;
+
+  const shouldShow = width > (main.clientWidth + 6);
+  top.classList.toggle('hidden', !shouldShow);
+  if (!shouldShow) return;
+
+  const nextScrollLeft = Number.isFinite(desiredScrollLeft) ? desiredScrollLeft : main.scrollLeft;
+  timelineScrollSyncLocked = true;
+  if (Number.isFinite(desiredScrollLeft)) {
+    main.scrollLeft = desiredScrollLeft;
+  }
+  top.scrollLeft = nextScrollLeft;
+  requestAnimationFrame(() => {
+    timelineScrollSyncLocked = false;
+  });
 }
 
 export function syncStickyTimelineHeader() {
