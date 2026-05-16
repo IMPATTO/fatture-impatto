@@ -124,7 +124,6 @@ export const siteRegistry = {
       'css/calendario.css',
     ],
     functions: [
-      'beds24-booking-diagnose',
       'beds24-inspect',
       'beds24-push-booking',
       'beds24-push-calendar',
