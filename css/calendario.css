@@ -1899,32 +1899,26 @@ input {
   box-shadow: inset 0 0 0 2px rgba(176, 139, 68, 0.6) !important;
 }
 
-/* Bulk modal come popover ancorato al bottone */
-#bulkModal {
-  position: fixed !important;
-  top: 110px;
-  right: 24px;
-  bottom: auto;
-  left: auto;
-  width: 560px;
-  max-width: calc(100vw - 48px);
-  z-index: 200;
-  background: transparent;
-  pointer-events: auto;
+#bulkModal.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 25, 20, 0.52);
+  backdrop-filter: blur(6px);
+  z-index: 240;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
 }
 
-#bulkModal.hidden {
-  display: none !important;
-}
-
-#bulkModal:not(.hidden) {
-  display: block !important;
+#bulkModal.modal-overlay.hidden {
+  display: none;
 }
 
 #bulkModal .bulk-modal-card {
-  max-width: 100% !important;
-  max-height: calc(100vh - 140px);
-  width: 100%;
+  width: min(860px, 100%);
+  max-width: min(860px, 100%) !important;
+  max-height: min(92vh, 960px);
   margin: 0;
   box-shadow: 0 24px 70px rgba(28, 25, 20, 0.26);
   border: 1px solid rgba(190, 175, 145, 0.65);
@@ -1951,7 +1945,7 @@ input {
 #bulkModal .modal-header h2 {
   margin: 0;
   font-family: var(--font-serif);
-  font-size: 32px;
+  font-size: 34px;
   line-height: 1;
   letter-spacing: -0.02em;
   color: var(--ink);
@@ -2091,6 +2085,10 @@ input {
   gap: 14px;
 }
 
+#bulkModal .bulk-apartment-controls .btn {
+  white-space: nowrap;
+}
+
 #bulkModal .check-inline,
 #bulkModal .radio-inline {
   font-size: 14px;
@@ -2098,9 +2096,14 @@ input {
 }
 
 #bulkModal .radio-inline {
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   padding: 10px 0;
+}
+
+#bulkModal .radio-inline span {
+  flex: 0 0 auto;
+  padding-top: 12px;
 }
 
 #bulkModal .bulk-inline-row {
@@ -2173,21 +2176,28 @@ input {
 }
 
 @media (max-width: 700px) {
-  #bulkModal {
-    top: 8px;
-    right: 8px;
-    left: 8px;
-    width: auto;
+  #bulkModal.modal-overlay {
+    align-items: flex-start;
+    padding: 12px;
   }
 
   #bulkModal .bulk-modal-card {
-    max-height: calc(100vh - 16px);
+    width: 100%;
+    max-height: calc(100vh - 24px);
     border-radius: 16px;
+  }
+
+  #bulkModal .modal-header {
+    padding: 16px 18px 14px;
+  }
+
+  #bulkModal .modal-header h2 {
+    font-size: 30px;
   }
 
   #bulkModal .bulk-body {
     padding: 18px 18px 22px;
-    max-height: calc(100vh - 110px);
+    max-height: calc(100vh - 120px);
   }
 
   #bulkModal .bulk-section {

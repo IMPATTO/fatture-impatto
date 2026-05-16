@@ -111,6 +111,9 @@ export function bindShellEvents() {
   ELS.bulkClose?.addEventListener('click', closeBulkModal);
   ELS.bulkCancel?.addEventListener('click', closeBulkModal);
   ELS.bulkSubmit?.addEventListener('click', handleBulkSubmit);
+  ELS.bulkModal?.addEventListener('click', (event) => {
+    if (event.target === ELS.bulkModal) closeBulkModal();
+  });
   ELS.bulkSelectAll?.addEventListener('click', () => bulkToggleAll(true));
   ELS.bulkDeselectAll?.addEventListener('click', () => bulkToggleAll(false));
   ELS.bulkApartmentFilter?.addEventListener('input', updateBulkApartmentList);
