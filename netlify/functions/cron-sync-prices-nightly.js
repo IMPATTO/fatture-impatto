@@ -124,7 +124,7 @@ async function nightlySyncHandler() {
 
 exports.handler = nightlySyncHandler;
 exports.config = {
-  schedule: CRON_EXPRESSION,
+  schedule: '0 2 * * *',
 };
 
 async function getBeds24AccessToken(env) {
