@@ -39,7 +39,7 @@ export function cacheElements() {
     'loginOverlay', 'loginForm', 'loginEmail', 'loginPassword', 'loginError', 'loginSubmit',
     'app', 'navUser', 'logoutBtn', 'navbarToggle', 'navbarMenu', 'rangeInfo',
     'prevMonthBtn', 'nextMonthBtn', 'monthPickerBtn', 'monthPickerInput',
-    'refreshBtn', 'syncPricesBtn', 'exportBtn', 'lastSyncLabel', 'sidebarToggle', 'pageBody', 'pageHeader', 'sidebar', 'cityFilters', 'channelFilters',
+    'refreshBtn', 'syncPricesBtn', 'exportBtn', 'lastSyncLabel', 'lastSyncBadge', 'sidebarToggle', 'pageBody', 'pageHeader', 'sidebar', 'cityFilters', 'channelFilters',
     'miniHeader', 'miniMonthLabel', 'miniPrevMonth', 'miniNextMonth', 'miniRefreshBtn',
     'statusFilters', 'timelineHeader', 'timelineBody', 'timelineShell', 'timelineScroll',
     'timelineTopScrollbar', 'timelineTopScrollbarInner',
@@ -188,6 +188,8 @@ export function applySession(session) {
     ELS.bulkEditBtn.style.display = S.isPmsEditor ? '' : 'none';
   }
   if (!session) {
+    S.lastNightlySync = null;
+    renderSyncBadge();
     clearDragSelection();
     ELS.app.classList.add('hidden');
     ELS.loginOverlay.classList.remove('hidden');
@@ -201,6 +203,7 @@ export function applySession(session) {
   ELS.app.classList.remove('hidden');
   ELS.navUser.textContent = session.user?.email || 'Operatore';
   RENDER.renderStaticShell?.();
+  void loadLastSyncStatus();
   void ensureDataLoaded();
 }
 
@@ -280,6 +283,7 @@ export async function ensureDataLoaded({ monthOnly = false } = {}) {
   } finally {
     setLoading(false);
     RENDER.renderAll?.();
+    void loadLastSyncStatus();
   }
 }
 
@@ -310,6 +314,7 @@ export async function refreshFromBeds24() {
   } finally {
     S.syncing = false;
     RENDER.renderSyncMeta?.();
+    void loadLastSyncStatus();
   }
 }
 
@@ -341,7 +346,118 @@ export async function syncPricesWeek() {
   } finally {
     S.syncingPrices = false;
     updatePricesSyncBtn();
+    void loadLastSyncStatus();
   }
+}
+
+async function loadLastSyncStatus() {
+  if (!S.session || !window.sb) return;
+
+  try {
+    const modern = await window.sb
+      .from('sync_jobs')
+      .select('status, completed_at, error_message')
+      .eq('job_type', 'cron_calendar_prices')
+      .order('completed_at', { ascending: false })
+      .limit(2);
+
+    if (!modern.error) {
+      applyLastSyncRows(
+        (modern.data || []).map((row) => ({
+          status: row.status,
+          completed_at: row.completed_at,
+          error_message: row.error_message || '',
+        }))
+      );
+      return;
+    }
+
+    const legacy = await window.sb
+      .from('sync_jobs')
+      .select('status, finished_at, error_message, scope')
+      .eq('scope', 'cron_calendar_prices')
+      .order('finished_at', { ascending: false })
+      .limit(2);
+
+    if (legacy.error) {
+      throw legacy.error;
+    }
+
+    applyLastSyncRows(
+      (legacy.data || []).map((row) => ({
+        status: row.status,
+        completed_at: row.finished_at,
+        error_message: row.error_message || '',
+      }))
+    );
+  } catch (error) {
+    console.warn('[SYNC-BADGE-LOAD-FAIL]', error);
+    S.lastNightlySync = null;
+    renderSyncBadge();
+  }
+}
+
+function applyLastSyncRows(rows) {
+  if (!rows.length) {
+    S.lastNightlySync = null;
+    renderSyncBadge();
+    return;
+  }
+
+  const last = rows[0];
+  const prev = rows[1];
+  const completedAt = last.completed_at ? new Date(last.completed_at) : null;
+  const ageHours = completedAt ? (Date.now() - completedAt.getTime()) / 3600000 : null;
+
+  S.lastNightlySync = {
+    status: last.status,
+    completed_at: last.completed_at,
+    error_message: last.error_message || '',
+    ageHours,
+    consecutiveFailures: (last.status === 'failed' && prev?.status === 'failed') ? 2 : (last.status === 'failed' ? 1 : 0),
+  };
+
+  renderSyncBadge();
+}
+
+function renderSyncBadge() {
+  if (!ELS.lastSyncBadge) return;
+
+  if (!S.lastNightlySync) {
+    ELS.lastSyncBadge.classList.add('hidden');
+    ELS.lastSyncBadge.textContent = '';
+    return;
+  }
+
+  const { status, completed_at, ageHours, consecutiveFailures } = S.lastNightlySync;
+  const dateStr = completed_at
+    ? new Date(completed_at).toLocaleString('it-IT', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+    : '—';
+
+  let label = `Sync ${dateStr}`;
+  let cls = '';
+
+  if (consecutiveFailures >= 2) {
+    label = `Sync FALLITO ${dateStr}`;
+    cls = 'error';
+  } else if (status === 'failed') {
+    label = `Sync fallito ${dateStr}`;
+    cls = 'warn';
+  } else if (status === 'running') {
+    label = 'Sync in corso';
+    cls = 'warn';
+  } else if (ageHours != null && ageHours > 26) {
+    label = `Sync vecchio ${dateStr}`;
+    cls = 'warn';
+  }
+
+  ELS.lastSyncBadge.textContent = label;
+  ELS.lastSyncBadge.className = `last-sync-badge${cls ? ` ${cls}` : ''}`;
 }
 
 export function exportVisibleCsv() {

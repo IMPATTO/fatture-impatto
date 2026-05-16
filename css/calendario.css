@@ -2512,3 +2512,38 @@ input {
   color: #fff;
   border-color: rgba(245, 209, 128, 1);
 }
+
+.last-sync-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 14px;
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  background: rgba(80, 160, 80, 0.08);
+  color: rgba(40, 100, 40, 0.95);
+  border: 1px solid rgba(80, 160, 80, 0.3);
+  white-space: nowrap;
+}
+
+.last-sync-badge.warn {
+  background: rgba(220, 150, 50, 0.1);
+  color: rgba(160, 90, 20, 0.95);
+  border-color: rgba(220, 150, 50, 0.3);
+}
+
+.last-sync-badge.error {
+  background: rgba(214, 76, 76, 0.1);
+  color: rgba(150, 30, 30, 0.95);
+  border-color: rgba(214, 76, 76, 0.3);
+}
+
+.last-sync-badge.hidden {
+  display: none;
+}
+
+.last-sync-badge::before {
+  content: "●";
+  font-size: 10px;
+}

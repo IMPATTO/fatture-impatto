@@ -1,3 +1,4 @@
+const { createClient } = require('@supabase/supabase-js');
 const { normalizeSupabaseUrl } = require('./_lib/shared-auth');
 
 const BEDS24_URL = 'https://api.beds24.com/v2';
@@ -22,7 +23,19 @@ async function runNightlySync() {
     throw new Error('BEDS24_REFRESH_TOKEN mancante');
   }
 
+  const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
   const startedAt = Date.now();
+  const startedAtIso = new Date().toISOString();
+  let recordsProcessed = 0;
+  let errorsCount = 0;
+  let jobHandle = null;
+
+  try {
+    jobHandle = await createSyncJobStart(supabase, startedAtIso);
+  } catch (error) {
+    console.warn('[CRON-SYNC][SYNC-JOBS-START-FAIL]', error.message);
+  }
+
   const accessToken = await getBeds24AccessToken(env);
   const units = await getApartmentUnits(env);
   if (!units.length) {
@@ -36,12 +49,22 @@ async function runNightlySync() {
       duration_ms: Date.now() - startedAt,
       cron_expression_utc: CRON_EXPRESSION,
     };
+    await finalizeSyncJobSafe(supabase, jobHandle, {
+      status: 'success',
+      completedAt: new Date().toISOString(),
+      recordsProcessed: 0,
+      errorMessage: null,
+      rawPayload: result,
+    });
     console.log('[CRON-SYNC] No units to sync', JSON.stringify(result));
     return result;
   }
 
-  const { rows, processedUnits, errorsCount } = await syncCalendarPrices(accessToken, units, DAYS_TO_SYNC);
+  const syncResult = await syncCalendarPrices(accessToken, units, DAYS_TO_SYNC);
+  const { rows, processedUnits } = syncResult;
+  errorsCount = syncResult.errorsCount;
   const upsertedCount = await upsertCalendarDays(env, rows);
+  recordsProcessed = upsertedCount;
 
   const result = {
     success: true,
@@ -53,6 +76,14 @@ async function runNightlySync() {
     duration_ms: Date.now() - startedAt,
     cron_expression_utc: CRON_EXPRESSION,
   };
+
+  await finalizeSyncJobSafe(supabase, jobHandle, {
+    status: 'success',
+    completedAt: new Date().toISOString(),
+    recordsProcessed,
+    errorMessage: null,
+    rawPayload: result,
+  });
 
   console.log('[CRON-SYNC] Completed successfully', JSON.stringify(result));
   return result;
@@ -67,6 +98,19 @@ async function nightlySyncHandler() {
       body: JSON.stringify(payload),
     };
   } catch (error) {
+    try {
+      const env = {
+        SUPABASE_URL: normalizeSupabaseUrl(process.env.SUPABASE_RUNTIME_URL || process.env.SUPABASE_URL),
+        SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY,
+      };
+      if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
+        const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
+        const completedAt = new Date().toISOString();
+        await insertSyncJobFallbackFailure(supabase, completedAt, error.message || 'Nightly cron sync failed');
+      }
+    } catch (logError) {
+      console.warn('[CRON-SYNC][SYNC-JOBS-FAIL-LOG-FAIL]', logError.message);
+    }
     console.error('[CRON-SYNC] FAILED', error);
     return {
       statusCode: 500,
@@ -138,6 +182,131 @@ async function getApartmentUnits(env) {
 
   const rows = await response.json();
   return Array.isArray(rows) ? rows : [];
+}
+
+async function createSyncJobStart(supabase, startedAt) {
+  const modernPayload = {
+    job_type: 'cron_calendar_prices',
+    status: 'running',
+    started_at: startedAt,
+    raw_payload: {
+      days_synced: DAYS_TO_SYNC,
+      cron_expression_utc: CRON_EXPRESSION,
+    },
+  };
+
+  const modernResult = await supabase
+    .from('sync_jobs')
+    .insert(modernPayload)
+    .select('id')
+    .single();
+
+  if (!modernResult.error && modernResult.data?.id) {
+    return { id: modernResult.data.id, mode: 'modern' };
+  }
+
+  const legacyPayload = {
+    scope: 'cron_calendar_prices',
+    trigger: 'cron',
+    status: 'running',
+    started_at: startedAt,
+    rows_read: 0,
+    rows_upserted: 0,
+    rows_skipped_stale: 0,
+    rows_orphaned: 0,
+    error_message: null,
+  };
+
+  const legacyResult = await supabase
+    .from('sync_jobs')
+    .insert(legacyPayload)
+    .select('id')
+    .single();
+
+  if (legacyResult.error || !legacyResult.data?.id) {
+    throw new Error(legacyResult.error?.message || modernResult.error?.message || 'sync_jobs insert failed');
+  }
+
+  return { id: legacyResult.data.id, mode: 'legacy' };
+}
+
+async function finalizeSyncJobSafe(supabase, jobHandle, {
+  status,
+  completedAt,
+  recordsProcessed,
+  errorMessage,
+  rawPayload,
+}) {
+  if (!jobHandle?.id) {
+    return;
+  }
+
+  if (jobHandle.mode === 'modern') {
+    const { error } = await supabase
+      .from('sync_jobs')
+      .update({
+        status,
+        completed_at: completedAt,
+        records_processed: recordsProcessed,
+        error_message: errorMessage,
+        raw_payload: rawPayload,
+      })
+      .eq('id', jobHandle.id);
+
+    if (!error) return;
+    console.warn('[CRON-SYNC][SYNC-JOBS-MODERN-UPDATE-FAIL]', error.message);
+  }
+
+  const { error } = await supabase
+    .from('sync_jobs')
+    .update({
+      status,
+      finished_at: completedAt,
+      rows_upserted: recordsProcessed,
+      rows_read: recordsProcessed,
+      error_message: errorMessage,
+    })
+    .eq('id', jobHandle.id);
+
+  if (error) {
+    console.warn('[CRON-SYNC][SYNC-JOBS-LEGACY-UPDATE-FAIL]', error.message);
+  }
+}
+
+async function insertSyncJobFallbackFailure(supabase, completedAt, errorMessage) {
+  const modernPayload = {
+    job_type: 'cron_calendar_prices',
+    status: 'failed',
+    started_at: completedAt,
+    completed_at: completedAt,
+    records_processed: 0,
+    error_message: String(errorMessage || '').slice(0, 500),
+    raw_payload: {
+      cron_expression_utc: CRON_EXPRESSION,
+      days_synced: DAYS_TO_SYNC,
+    },
+  };
+
+  const modernResult = await supabase
+    .from('sync_jobs')
+    .insert(modernPayload);
+
+  if (!modernResult.error) return;
+
+  await supabase
+    .from('sync_jobs')
+    .insert({
+      scope: 'cron_calendar_prices',
+      trigger: 'cron',
+      status: 'failed',
+      started_at: completedAt,
+      finished_at: completedAt,
+      rows_read: 0,
+      rows_upserted: 0,
+      rows_skipped_stale: 0,
+      rows_orphaned: 0,
+      error_message: String(errorMessage || '').slice(0, 500),
+    });
 }
 
 async function getCalendarForRoom(accessToken, roomId, startDate, endDate) {

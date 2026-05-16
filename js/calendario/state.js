@@ -90,6 +90,7 @@ export const S = {
   orphanRows: [],
   orphanCount: 0,
   lastSync: null,
+  lastNightlySync: null,
   _skipWarningLogged: false,
   expandedResidences: new Set(),
   collapsedCities: new Set(),
