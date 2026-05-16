@@ -128,6 +128,7 @@ export const siteRegistry = {
       'beds24-push-booking',
       'beds24-push-calendar',
       'beds24-rate-diagnostics',
+      'cron-sync-prices-nightly',
       'beds24-sync-bookings',
       'get-calendar-calendario',
       'populate-pms-mappings-and-units',
