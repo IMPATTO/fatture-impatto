@@ -508,7 +508,7 @@ input {
 
 .timeline-top-scrollbar {
   position: sticky;
-  top: calc(var(--timeline-sticky-top, 48px) + 2px);
+  top: calc(var(--timeline-sticky-top, 48px) + 68px);
   z-index: 58;
   margin: 0 0 10px;
   padding: 8px 14px 6px;

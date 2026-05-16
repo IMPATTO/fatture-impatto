@@ -1456,6 +1456,7 @@ export function syncStickyTimelineHeader() {
   const timelineShell = ELS.timelineShell;
   const timelineScroll = ELS.timelineScroll;
   const timelineBody = ELS.timelineBody;
+  const timelineTopScrollbar = ELS.timelineTopScrollbar;
   if (!timelineHeader || !timelineShell || !timelineScroll || !timelineBody) return;
   if (!timelineHeader.firstElementChild) return;
 
@@ -1466,6 +1467,9 @@ export function syncStickyTimelineHeader() {
   const shellRect = timelineShell.getBoundingClientRect();
   const scrollRect = timelineScroll.getBoundingClientRect();
   const headerHeight = timelineHeader.offsetHeight || 68;
+  const topScrollbarOffset = (!timelineTopScrollbar || timelineTopScrollbar.classList.contains('hidden'))
+    ? 0
+    : Math.ceil(timelineTopScrollbar.offsetHeight || 0);
   const shouldFix = shellRect.top <= stickyTop && shellRect.bottom > (stickyTop + headerHeight + 24);
 
   if (!shouldFix) {
@@ -1488,7 +1492,7 @@ export function syncStickyTimelineHeader() {
   timelineHeader.style.left = `${scrollRect.left}px`;
   timelineHeader.style.width = `${scrollRect.width}px`;
   timelineHeader.style.height = `${headerHeight}px`;
-  timelineBody.style.paddingTop = `${headerHeight}px`;
+  timelineBody.style.paddingTop = `${headerHeight + topScrollbarOffset}px`;
 
   const grid = timelineHeader.firstElementChild;
   if (grid) {
