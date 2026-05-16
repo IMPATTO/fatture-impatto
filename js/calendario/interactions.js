@@ -354,27 +354,9 @@ async function loadLastSyncStatus() {
   if (!S.session || !window.sb) return;
 
   try {
-    const modern = await window.sb
-      .from('sync_jobs')
-      .select('status, completed_at, error_message')
-      .eq('job_type', 'cron_calendar_prices')
-      .order('completed_at', { ascending: false })
-      .limit(2);
-
-    if (!modern.error) {
-      applyLastSyncRows(
-        (modern.data || []).map((row) => ({
-          status: row.status,
-          completed_at: row.completed_at,
-          error_message: row.error_message || '',
-        }))
-      );
-      return;
-    }
-
     const legacy = await window.sb
       .from('sync_jobs')
-      .select('status, finished_at, error_message, scope')
+      .select('status, finished_at, error_message')
       .eq('scope', 'cron_calendar_prices')
       .order('finished_at', { ascending: false })
       .limit(2);
@@ -386,7 +368,7 @@ async function loadLastSyncStatus() {
     applyLastSyncRows(
       (legacy.data || []).map((row) => ({
         status: row.status,
-        completed_at: row.finished_at,
+        finished_at: row.finished_at,
         error_message: row.error_message || '',
       }))
     );
@@ -406,12 +388,12 @@ function applyLastSyncRows(rows) {
 
   const last = rows[0];
   const prev = rows[1];
-  const completedAt = last.completed_at ? new Date(last.completed_at) : null;
-  const ageHours = completedAt ? (Date.now() - completedAt.getTime()) / 3600000 : null;
+  const finishedAt = last.finished_at ? new Date(last.finished_at) : null;
+  const ageHours = finishedAt ? (Date.now() - finishedAt.getTime()) / 3600000 : null;
 
   S.lastNightlySync = {
     status: last.status,
-    completed_at: last.completed_at,
+    finished_at: last.finished_at,
     error_message: last.error_message || '',
     ageHours,
     consecutiveFailures: (last.status === 'failed' && prev?.status === 'failed') ? 2 : (last.status === 'failed' ? 1 : 0),
@@ -429,9 +411,9 @@ function renderSyncBadge() {
     return;
   }
 
-  const { status, completed_at, ageHours, consecutiveFailures } = S.lastNightlySync;
-  const dateStr = completed_at
-    ? new Date(completed_at).toLocaleString('it-IT', {
+  const { status, finished_at, ageHours, consecutiveFailures } = S.lastNightlySync;
+  const dateStr = finished_at
+    ? new Date(finished_at).toLocaleString('it-IT', {
       day: '2-digit',
       month: '2-digit',
       hour: '2-digit',

@@ -51,10 +51,9 @@ async function runNightlySync() {
     };
     await finalizeSyncJobSafe(supabase, jobHandle, {
       status: 'success',
-      completedAt: new Date().toISOString(),
-      recordsProcessed: 0,
+      finishedAt: new Date().toISOString(),
+      rowsUpserted: 0,
       errorMessage: null,
-      rawPayload: result,
     });
     console.log('[CRON-SYNC] No units to sync', JSON.stringify(result));
     return result;
@@ -79,10 +78,9 @@ async function runNightlySync() {
 
   await finalizeSyncJobSafe(supabase, jobHandle, {
     status: 'success',
-    completedAt: new Date().toISOString(),
-    recordsProcessed,
+    finishedAt: new Date().toISOString(),
+    rowsUpserted: recordsProcessed,
     errorMessage: null,
-    rawPayload: result,
   });
 
   console.log('[CRON-SYNC] Completed successfully', JSON.stringify(result));
@@ -105,8 +103,8 @@ async function nightlySyncHandler() {
       };
       if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
         const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
-        const completedAt = new Date().toISOString();
-        await insertSyncJobFallbackFailure(supabase, completedAt, error.message || 'Nightly cron sync failed');
+        const finishedAt = new Date().toISOString();
+        await insertSyncJobFailure(supabase, finishedAt, error.message || 'Nightly cron sync failed');
       }
     } catch (logError) {
       console.warn('[CRON-SYNC][SYNC-JOBS-FAIL-LOG-FAIL]', logError.message);
@@ -124,11 +122,10 @@ async function nightlySyncHandler() {
   }
 }
 
+exports.handler = nightlySyncHandler;
 exports.config = {
   schedule: CRON_EXPRESSION,
 };
-
-exports.handler = nightlySyncHandler;
 
 async function getBeds24AccessToken(env) {
   if (beds24TokenCache && beds24TokenCache.expiresAt > Date.now() + 15 * 1000) {
@@ -185,26 +182,6 @@ async function getApartmentUnits(env) {
 }
 
 async function createSyncJobStart(supabase, startedAt) {
-  const modernPayload = {
-    job_type: 'cron_calendar_prices',
-    status: 'running',
-    started_at: startedAt,
-    raw_payload: {
-      days_synced: DAYS_TO_SYNC,
-      cron_expression_utc: CRON_EXPRESSION,
-    },
-  };
-
-  const modernResult = await supabase
-    .from('sync_jobs')
-    .insert(modernPayload)
-    .select('id')
-    .single();
-
-  if (!modernResult.error && modernResult.data?.id) {
-    return { id: modernResult.data.id, mode: 'modern' };
-  }
-
   const legacyPayload = {
     scope: 'cron_calendar_prices',
     trigger: 'cron',
@@ -224,83 +201,47 @@ async function createSyncJobStart(supabase, startedAt) {
     .single();
 
   if (legacyResult.error || !legacyResult.data?.id) {
-    throw new Error(legacyResult.error?.message || modernResult.error?.message || 'sync_jobs insert failed');
+    throw new Error(legacyResult.error?.message || 'sync_jobs insert failed');
   }
 
-  return { id: legacyResult.data.id, mode: 'legacy' };
+  return { id: legacyResult.data.id };
 }
 
 async function finalizeSyncJobSafe(supabase, jobHandle, {
   status,
-  completedAt,
-  recordsProcessed,
+  finishedAt,
+  rowsUpserted,
   errorMessage,
-  rawPayload,
 }) {
   if (!jobHandle?.id) {
     return;
-  }
-
-  if (jobHandle.mode === 'modern') {
-    const { error } = await supabase
-      .from('sync_jobs')
-      .update({
-        status,
-        completed_at: completedAt,
-        records_processed: recordsProcessed,
-        error_message: errorMessage,
-        raw_payload: rawPayload,
-      })
-      .eq('id', jobHandle.id);
-
-    if (!error) return;
-    console.warn('[CRON-SYNC][SYNC-JOBS-MODERN-UPDATE-FAIL]', error.message);
   }
 
   const { error } = await supabase
     .from('sync_jobs')
     .update({
       status,
-      finished_at: completedAt,
-      rows_upserted: recordsProcessed,
-      rows_read: recordsProcessed,
+      finished_at: finishedAt,
+      rows_upserted: rowsUpserted,
+      rows_read: rowsUpserted,
       error_message: errorMessage,
     })
     .eq('id', jobHandle.id);
 
   if (error) {
-    console.warn('[CRON-SYNC][SYNC-JOBS-LEGACY-UPDATE-FAIL]', error.message);
+    console.warn('[CRON-SYNC][SYNC-JOBS-UPDATE-FAIL]', error.message);
   }
 }
 
-async function insertSyncJobFallbackFailure(supabase, completedAt, errorMessage) {
-  const modernPayload = {
-    job_type: 'cron_calendar_prices',
-    status: 'failed',
-    started_at: completedAt,
-    completed_at: completedAt,
-    records_processed: 0,
-    error_message: String(errorMessage || '').slice(0, 500),
-    raw_payload: {
-      cron_expression_utc: CRON_EXPRESSION,
-      days_synced: DAYS_TO_SYNC,
-    },
-  };
-
-  const modernResult = await supabase
-    .from('sync_jobs')
-    .insert(modernPayload);
-
-  if (!modernResult.error) return;
-
+async function insertSyncJobFailure(supabase, finishedAt, errorMessage) {
   await supabase
     .from('sync_jobs')
     .insert({
       scope: 'cron_calendar_prices',
       trigger: 'cron',
       status: 'failed',
-      started_at: completedAt,
-      finished_at: completedAt,
+      started_at: finishedAt,
+      finished_at: finishedAt,
       rows_read: 0,
       rows_upserted: 0,
       rows_skipped_stale: 0,
