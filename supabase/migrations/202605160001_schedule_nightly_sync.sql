@@ -28,6 +28,3 @@ SELECT cron.schedule(
   ) AS request_id;
   $$
 );
-
-COMMENT ON FUNCTION cron.schedule(text, text, text) IS
-'Schedulato sync notturno Beds24 prezzi 90gg da pg_cron alle 02:00 UTC';
