@@ -3,13 +3,13 @@ import {
   initializeFilterDefaults,
   loadMonthData,
   loadStaticData,
-} from './data.js?v=20260514d';
-import { CITY_PRIORITY, ELS, PMS_EDITOR_EMAILS, S, SIDEBAR_STORAGE_KEY } from './state.js?v=20260514d';
+} from './data.js?v=20260518a';
+import { CITY_PRIORITY, ELS, PMS_EDITOR_EMAILS, S, SIDEBAR_STORAGE_KEY } from './state.js?v=20260518a';
 import {
   nightsBetween,
   startOfMonth,
   toMonthInputValue,
-} from './utils.js?v=20260514d';
+} from './utils.js?v=20260518a';
 
 const RENDER = {
   renderAll: null,
@@ -23,7 +23,7 @@ const RENDER = {
 
 export async function init() {
   cacheElements();
-  await import('./render.js?v=20260514d');
+  await import('./render.js?v=20260518a');
   bindShellEvents();
   restoreSidebarState();
   handleScrollHeaderToggle();
@@ -41,7 +41,7 @@ export function cacheElements() {
     'prevMonthBtn', 'nextMonthBtn', 'monthPickerBtn', 'monthPickerInput',
     'refreshBtn', 'syncPricesBtn', 'exportBtn', 'lastSyncLabel', 'lastSyncBadge', 'sidebarToggle', 'pageBody', 'pageHeader', 'sidebar', 'cityFilters', 'channelFilters',
     'miniHeader', 'miniMonthLabel', 'miniPrevMonth', 'miniNextMonth', 'miniRefreshBtn',
-    'statusFilters', 'timelineHeader', 'timelineBody', 'timelineShell', 'timelineScroll',
+    'statusFilters', 'availabilityFilter', 'timelineHeader', 'timelineBody', 'timelineShell', 'timelineScroll',
     'timelineTopScrollbar', 'timelineTopScrollbarInner',
     'mobileList', 'loadingState', 'emptyState', 'errorState', 'orphanBanner',
     'bookingDrawer', 'drawerBackdrop', 'drawerCloseBtn', 'drawerCloseBtnFooter',
@@ -86,6 +86,10 @@ export function bindShellEvents() {
   ELS.syncPricesBtn?.addEventListener('click', syncPricesWeek);
   ELS.miniRefreshBtn?.addEventListener('click', refreshFromBeds24);
   ELS.exportBtn?.addEventListener('click', exportVisibleCsv);
+  ELS.availabilityFilter?.addEventListener('change', () => {
+    S.filters.availableNights = Number(ELS.availabilityFilter.value) || 0;
+    RENDER.renderAll?.();
+  });
   ELS.orphanBanner?.addEventListener('click', () => RENDER.openOrphanModal?.());
   ELS.orphanBanner?.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' || event.key === ' ') {
@@ -1539,6 +1543,10 @@ export function syncTimelineScrollChrome({ contentWidth, desiredScrollLeft } = {
 
   const shouldShow = width > (main.clientWidth + 6);
   top.classList.toggle('hidden', !shouldShow);
+  document.documentElement.style.setProperty(
+    '--timeline-top-scrollbar-height',
+    shouldShow ? `${Math.ceil(top.offsetHeight || 0)}px` : '0px',
+  );
   if (!shouldShow) return;
 
   const nextScrollLeft = Number.isFinite(desiredScrollLeft) ? desiredScrollLeft : main.scrollLeft;
@@ -1568,9 +1576,6 @@ export function syncStickyTimelineHeader() {
   const shellRect = timelineShell.getBoundingClientRect();
   const scrollRect = timelineScroll.getBoundingClientRect();
   const headerHeight = timelineHeader.offsetHeight || 68;
-  const topScrollbarOffset = (!timelineTopScrollbar || timelineTopScrollbar.classList.contains('hidden'))
-    ? 0
-    : Math.ceil(timelineTopScrollbar.offsetHeight || 0);
   const shouldFix = shellRect.top <= stickyTop && shellRect.bottom > (stickyTop + headerHeight + 24);
 
   if (!shouldFix) {
@@ -1593,7 +1598,7 @@ export function syncStickyTimelineHeader() {
   timelineHeader.style.left = `${scrollRect.left}px`;
   timelineHeader.style.width = `${scrollRect.width}px`;
   timelineHeader.style.height = `${headerHeight}px`;
-  timelineBody.style.paddingTop = `${headerHeight + topScrollbarOffset}px`;
+  timelineBody.style.paddingTop = `${headerHeight}px`;
 
   const grid = timelineHeader.firstElementChild;
   if (grid) {

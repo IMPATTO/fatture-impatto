@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/calendario.css?v=20260514c" />
+  <link rel="stylesheet" href="/css/calendario.css?v=20260519a" />
 </head>
 <body>
   <div id="loginOverlay" class="login-overlay hidden" aria-hidden="true">
@@ -118,6 +118,22 @@
           <h2>Stato</h2>
           <p class="filter-copy">Mostra solo i booking che contano per l'occupazione.</p>
           <div id="statusFilters" class="check-stack"></div>
+        </section>
+
+        <section class="filter-card">
+          <h2>Disponibilita</h2>
+          <p class="filter-copy">Mostra solo gli apartment con almeno una unita libera da oggi per il periodo selezionato.</p>
+          <div class="sidebar-filter">
+            <label for="availabilityFilter">Disponibilita</label>
+            <select id="availabilityFilter">
+              <option value="0">Mostra tutti</option>
+              <option value="1">Liberi oggi</option>
+              <option value="2">Liberi 2 notti</option>
+              <option value="3">Liberi 3 notti</option>
+              <option value="7">Liberi 7 notti</option>
+              <option value="14">Liberi 14 notti</option>
+            </select>
+          </div>
         </section>
       </aside>
 
@@ -441,6 +457,6 @@
     <button type="button" class="btn btn-ghost btn-small" id="dragSelectClear">Annulla</button>
   </div>
 
-  <script type="module" src="/js/calendario.js?v=20260514c"></script>
+  <script type="module" src="/js/calendario.js?v=20260519a"></script>
 </body>
 </html>

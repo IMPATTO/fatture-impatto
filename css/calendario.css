@@ -16,6 +16,7 @@
   --shadow-sm: 0 4px 16px rgba(30, 23, 15, 0.05);
   --shadow-md: 0 14px 32px rgba(30, 23, 15, 0.08);
   --timeline-sticky-top: 48px;
+  --timeline-top-scrollbar-height: 0px;
   --radius: 16px;
   --radius-sm: 10px;
   --label-width: 320px;
@@ -502,6 +503,30 @@ input {
   font-size: 11px;
 }
 
+.sidebar-filter {
+  margin-top: 14px;
+}
+
+.sidebar-filter label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sidebar-filter select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(221, 212, 192, 0.8);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fffdfa 0%, #f7f2e9 100%);
+  color: var(--ink);
+  font-size: 13px;
+}
+
 .calendar-panel {
   min-width: 0;
 }
@@ -840,9 +865,9 @@ input {
 }
 
 .section-row {
-  position: sticky;
-  top: calc(var(--timeline-sticky-top, 48px) + 68px);
-  z-index: 19;
+  position: relative;
+  top: auto;
+  z-index: 5;
   display: flex;
   align-items: center;
   gap: 14px;

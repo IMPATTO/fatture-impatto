@@ -139,6 +139,7 @@ export const S = {
     cities: new Set(),
     channels: new Set(),
     statuses: new Set(OCCUPYING_STATUSES),
+    availableNights: 0,
   },
 };
 

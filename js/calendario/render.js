@@ -6,8 +6,8 @@ import {
   syncDragSelectionToolbar,
   toggleCityFilter,
   toggleSetValue,
-} from './interactions.js?v=20260514d';
-import { CHANNEL_CONFIG, ELS, S, STATUS_LABELS } from './state.js?v=20260514d';
+} from './interactions.js?v=20260518a';
+import { CHANNEL_CONFIG, ELS, S, STATUS_LABELS } from './state.js?v=20260518a';
 import {
   buildDayCellLabel,
   countBookingsByChannel,
@@ -23,7 +23,7 @@ import {
   getVisibleBookings,
   groupVisibleBookingsForMobile,
   groupVisibleRowsByCity,
-} from './data.js?v=20260514d';
+} from './data.js?v=20260518a';
 import {
   addDays,
   bookingSpanWithinMonth,
@@ -43,11 +43,86 @@ import {
   minutesAgoLabel,
   nightsBetween,
   titleCase,
-} from './utils.js?v=20260514d';
+} from './utils.js?v=20260518a';
 
 let dragMouseUpBound = false;
 let dragStartCell = null;
 let suppressEditableClickUntil = 0;
+
+function getAvailabilityRangeDates(nights) {
+  const dates = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  for (let index = 0; index < nights; index += 1) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + index);
+    dates.push(isoDateLocal(date));
+  }
+  return dates;
+}
+
+function isApartmentAvailableForNights(apartment, nights) {
+  if (!nights || nights <= 0) return true;
+
+  const dates = getAvailabilityRangeDates(nights);
+  const units = S.unitsByApartment.get(String(apartment.id)) || [];
+  if (!units.length) return false;
+
+  return units.some((unit) => {
+    const unitBookings = S.bookingsByUnit.get(String(unit.id)) || [];
+    return dates.every((date) => !unitBookings.some((booking) => (
+      booking.status !== 'cancelled'
+      && booking.check_in <= date
+      && booking.check_out > date
+    )));
+  });
+}
+
+function getAvailableApartmentIdsByFilter() {
+  const nights = Number(S.filters?.availableNights || 0);
+  if (!nights) {
+    return new Set(S.apartments.map((apartment) => String(apartment.id)));
+  }
+
+  return new Set(
+    S.apartments
+      .filter((apartment) => isApartmentAvailableForNights(apartment, nights))
+      .map((apartment) => String(apartment.id))
+  );
+}
+
+function getFilteredVisibleApartmentRows() {
+  const allowedApartmentIds = getAvailableApartmentIdsByFilter();
+  return getVisibleApartmentRows().filter((row) => allowedApartmentIds.has(String(row.apartment.id)));
+}
+
+function groupFilteredVisibleRowsByCity() {
+  const rows = getFilteredVisibleApartmentRows();
+  const groups = new Map();
+  for (const row of rows) {
+    if (!groups.has(row.apartment.city)) groups.set(row.apartment.city, []);
+    groups.get(row.apartment.city).push(row);
+  }
+  return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0], 'it')).map(([city, cityRows]) => ({
+    city,
+    rows: cityRows.sort((left, right) => {
+      const nameCompare = left.apartment.displayName.localeCompare(right.apartment.displayName, 'it');
+      if (nameCompare !== 0) return nameCompare;
+      if (left.unit && right.unit) {
+        return String(left.unit.unit_label || '').localeCompare(String(right.unit.unit_label || ''), 'it');
+      }
+      return 0;
+    }),
+  }));
+}
+
+function countFilteredVisibleApartmentsByCity(city) {
+  return S.apartments.filter((apartment) => (
+    apartment.city === city
+    && (S.unitsByApartment.get(String(apartment.id)) || []).length > 0
+    && isApartmentAvailableForNights(apartment, S.filters?.availableNights || 0)
+  )).length;
+}
 
 export function renderStaticShell() {
   ELS.monthPickerBtn.textContent = formatMonthLabel(S.monthDate);
@@ -75,12 +150,16 @@ export function renderAll() {
 }
 
 export function renderFilters() {
+  if (ELS.availabilityFilter) {
+    ELS.availabilityFilter.value = String(S.filters.availableNights || 0);
+  }
+
   renderCheckboxGroup({
     target: ELS.cityFilters,
     options: getAvailableCities().map((city) => ({
       value: city,
       label: city,
-      count: countVisibleApartmentsByCity(city),
+      count: countFilteredVisibleApartmentsByCity(city),
       checked: S.filters.cities.has(city),
       onChange: () => toggleCityFilter(city, {
         onLimitOrSame: renderFilters,
@@ -162,7 +241,7 @@ export function renderStates() {
   ` : '';
   ELS.errorState.querySelector('#retryBtn')?.addEventListener('click', handleRetryClick);
 
-  const visibleRows = getVisibleApartmentRows();
+  const visibleRows = getFilteredVisibleApartmentRows();
   const shouldShowEmpty = !S.loading && !S.errorMessage && !visibleRows.length;
   ELS.emptyState.classList.toggle('hidden', !shouldShowEmpty);
   ELS.timelineShell.classList.toggle('hidden', shouldShowEmpty || !!S.errorMessage);
@@ -174,7 +253,7 @@ export function renderTimeline() {
   document.documentElement.style.setProperty('--days-count', String(monthDays.length));
   ELS.timelineHeader.innerHTML = buildTimelineHeader(monthDays);
 
-  const grouped = groupVisibleRowsByCity();
+  const grouped = groupFilteredVisibleRowsByCity();
   const rowsHtml = [];
   for (const group of grouped) {
     const isCollapsed = S.collapsedCities.has(String(group.city));
@@ -465,16 +544,16 @@ export function bindTimelineEvents() {
         if (!apartmentUnitId || !date) return;
         if (S.dragSelection.selectedCells.size > 1) return;
 
-        const cached = S.calendarDayByUnitDate.get(`${apartmentUnitId}:${date}`);
         const apartment = S.apartmentMap.get(String(apartmentId));
         const apartmentLabel = apartment?.displayName || '—';
+        const state = getDayAvailabilityState(row, date);
 
         window._calendarioEditModal?.open?.({
           apartmentUnitId,
           date,
-          currentPrice: cached?.price ?? null,
-          currentMinStay: cached?.min_stay ?? null,
-          currentClosed: cached?.closed === true,
+          currentPrice: state.price ?? null,
+          currentMinStay: state.minStay ?? null,
+          currentClosed: state.closed === true,
           apartmentLabel,
         });
       });
@@ -485,7 +564,8 @@ export function bindTimelineEvents() {
 }
 
 export function renderMobileList() {
-  const groups = groupVisibleBookingsForMobile();
+  const allowedApartmentIds = getAvailableApartmentIdsByFilter();
+  const groups = groupVisibleBookingsForMobile().filter((group) => allowedApartmentIds.has(String(group.apartment.id)));
   ELS.mobileList.innerHTML = groups.length ? groups.map((group) => `
     <article class="mobile-card">
       <h3>${esc(group.apartment.displayName)}</h3>
