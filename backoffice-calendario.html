@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/calendario.css?v=20260519a" />
+  <link rel="stylesheet" href="/css/calendario.css?v=20260519i" />
 </head>
 <body>
   <div id="loginOverlay" class="login-overlay hidden" aria-hidden="true">
@@ -143,12 +143,17 @@
           <div class="spinner"></div>
           <p>Caricamento calendario in corso…</p>
         </div>
+        <section id="monthNotice" class="month-notice hidden" aria-live="polite"></section>
         <div id="emptyState" class="state-card hidden">
           <h2>Nessuna prenotazione nel mese selezionato</h2>
           <p>Prova a cambiare mese o ad allargare i filtri per visualizzare altre strutture.</p>
         </div>
 
-        <div id="timelineTopScrollbar" class="timeline-top-scrollbar hidden" aria-label="Scorrimento orizzontale calendario">
+        <div id="timelineTopScrollbarUpper" class="timeline-top-scrollbar timeline-top-scrollbar-upper hidden" aria-label="Scorrimento orizzontale calendario">
+          <div id="timelineTopScrollbarUpperInner" class="timeline-top-scrollbar-inner"></div>
+        </div>
+
+        <div id="timelineTopScrollbar" class="timeline-top-scrollbar timeline-top-scrollbar-lower hidden" aria-label="Scorrimento orizzontale calendario">
           <div id="timelineTopScrollbarInner" class="timeline-top-scrollbar-inner"></div>
         </div>
 
@@ -457,6 +462,6 @@
     <button type="button" class="btn btn-ghost btn-small" id="dragSelectClear">Annulla</button>
   </div>
 
-  <script type="module" src="/js/calendario.js?v=20260519a"></script>
+  <script type="module" src="/js/calendario.js?v=20260519i"></script>
 </body>
 </html>

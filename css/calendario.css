@@ -588,6 +588,7 @@ input {
 
 .timeline-top-scrollbar-lower {
   top: calc(var(--timeline-sticky-top, 48px) + var(--timeline-top-scrollbar-height, 0px) + 68px);
+  display: none !important;
 }
 
 .timeline-top-scrollbar.hidden {
@@ -1038,6 +1039,7 @@ input {
   height: calc(100% - 12px);
   display: flex;
   align-items: center;
+  gap: 6px;
   padding: 0 8px;
   border-radius: 8px;
   border: 1px solid rgba(0, 0, 0, 0.15);
@@ -1108,13 +1110,39 @@ input {
   color: #fff;
 }
 
+.booking-bar.source-kekko {
+  background:
+    linear-gradient(180deg, rgba(74, 148, 80, 0.96) 0%, rgba(45, 110, 59, 0.98) 100%);
+  border: 1px solid rgba(28, 72, 38, 0.85);
+  border-left: 3px solid #c59d45;
+  box-shadow:
+    inset 0 0 0 1px rgba(225, 198, 126, 0.35),
+    0 2px 6px rgba(28, 25, 20, 0.12);
+}
+
 .booking-bar.channel-default {
   background: rgba(80, 75, 65, 0.78);
   border-left: 3px solid #4e4432;
   color: #fff;
 }
 
+.bar-segment {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
 .bar-label {
+  min-width: 0;
+  flex: 1 1 auto;
   overflow: hidden;
   text-overflow: ellipsis;
 }
