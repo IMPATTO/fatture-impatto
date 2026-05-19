@@ -1,4 +1,5 @@
 import {
+  jumpToNextMonthWithBookings,
   handleRetryClick,
   registerRenderBindings,
   syncTimelineScrollChrome,
@@ -6,10 +7,11 @@ import {
   syncDragSelectionToolbar,
   toggleCityFilter,
   toggleSetValue,
-} from './interactions.js?v=20260518a';
-import { CHANNEL_CONFIG, ELS, S, STATUS_LABELS } from './state.js?v=20260518a';
+} from './interactions.js?v=20260519f';
+import { CHANNEL_CONFIG, ELS, S, STATUS_LABELS } from './state.js?v=20260519e';
 import {
   buildDayCellLabel,
+  countVisibleBookingsForApartment,
   countBookingsByChannel,
   countBookingsByStatus,
   countOccupiedUnitsForDate,
@@ -23,7 +25,8 @@ import {
   getVisibleBookings,
   groupVisibleBookingsForMobile,
   groupVisibleRowsByCity,
-} from './data.js?v=20260518a';
+  isKekkoImportedBooking,
+} from './data.js?v=20260519f';
 import {
   addDays,
   bookingSpanWithinMonth,
@@ -43,11 +46,32 @@ import {
   minutesAgoLabel,
   nightsBetween,
   titleCase,
-} from './utils.js?v=20260518a';
+} from './utils.js?v=20260519e';
 
 let dragMouseUpBound = false;
 let dragStartCell = null;
 let suppressEditableClickUntil = 0;
+
+function bookingChannelClass(booking) {
+  const raw = String(
+    booking.channel_normalized
+    || booking.channel
+    || booking.source
+    || ''
+  ).toLowerCase();
+
+  if (raw.includes('booking')) return 'channel-booking';
+  if (raw.includes('airbnb')) return 'channel-airbnb';
+  if (raw.includes('expedia') || raw.includes('vrbo')) return 'channel-other-ota';
+  if (raw.includes('manual') || raw.includes('direct') || raw.includes('pms')) return 'channel-direct';
+  if (raw.includes('block') || raw.includes('owner') || raw.includes('internal')) return 'channel-block';
+  if (raw.includes('api')) return 'channel-api';
+  if (raw.includes('jessica')) return 'channel-jessica_caldari';
+  if (raw.includes('serena')) return 'channel-serena_cerulli';
+  if (raw.includes('lupo')) return 'channel-il_lupo_affitta';
+  if (raw.includes('app')) return 'channel-app';
+  return 'channel-default';
+}
 
 function getAvailabilityRangeDates(nights) {
   const dates = [];
@@ -108,10 +132,12 @@ function groupFilteredVisibleRowsByCity() {
     rows: cityRows.sort((left, right) => {
       const nameCompare = left.apartment.displayName.localeCompare(right.apartment.displayName, 'it');
       if (nameCompare !== 0) return nameCompare;
-      if (left.unit && right.unit) {
-        return String(left.unit.unit_label || '').localeCompare(String(right.unit.unit_label || ''), 'it');
-      }
-      return 0;
+      const orderCompare = Number(left.displayOrder || 0) - Number(right.displayOrder || 0);
+      if (orderCompare !== 0) return orderCompare;
+      return String(left.displayTitle || left.unit?.unit_label || '').localeCompare(
+        String(right.displayTitle || right.unit?.unit_label || ''),
+        'it',
+      );
     }),
   }));
 }
@@ -138,6 +164,7 @@ export function renderAll() {
   renderFilters();
   renderSyncMeta();
   renderOrphanBanner();
+  renderMonthNotice();
   renderStates();
   renderTimeline();
   renderMobileList();
@@ -231,6 +258,33 @@ export function renderOrphanBanner() {
   ELS.orphanBanner.innerHTML = `<strong>${S.orphanCount}</strong> prenotazioni in conflitto da risolvere su Beds24`;
 }
 
+export function renderMonthNotice() {
+  if (!ELS.monthNotice) return;
+
+  const visibleRows = getFilteredVisibleApartmentRows();
+  const visibleBookings = getVisibleBookings();
+  const shouldShow = !S.loading && !S.errorMessage && visibleRows.length > 0 && visibleBookings.length === 0;
+
+  ELS.monthNotice.classList.toggle('hidden', !shouldShow);
+  if (!shouldShow) {
+    ELS.monthNotice.innerHTML = '';
+    return;
+  }
+
+  ELS.monthNotice.innerHTML = `
+    <div class="month-notice-copy">
+      <strong>Nessuna prenotazione visibile in ${esc(formatMonthLabel(S.monthDate))}</strong>
+      <p>Le celle chiuse non significano che le booking mancano: con i filtri attuali questo mese e vuoto. Se vuoi, cerco io il primo mese utile con prenotazioni.</p>
+    </div>
+    <button
+      type="button"
+      class="btn btn-primary btn-small"
+      data-month-jump="next-bookings"
+      ${S.findingNextBookingMonth ? 'disabled' : ''}
+    >${esc(S.findingNextBookingMonth ? 'Cerco il prossimo mese…' : 'Vai al prossimo mese con prenotazioni')}</button>
+  `;
+}
+
 export function renderStates() {
   ELS.loadingState.classList.toggle('hidden', !S.loading);
   ELS.errorState.classList.toggle('hidden', !S.errorMessage);
@@ -318,14 +372,16 @@ export function buildTimelineHeader(monthDays) {
 
 export function buildTimelineRow(row, monthDays) {
   const isResidence = row.kind === 'residence';
+  const residenceBookingCount = isResidence ? countVisibleBookingsForApartment(row.apartment.id) : 0;
+  const showResidenceJump = isResidence && residenceBookingCount === 0;
   const labelTitle = isResidence
     ? `<strong>${esc(row.apartment.displayName)}</strong>`
-    : esc(row.apartment.displayName);
+    : esc(row.displayTitle || row.unit?.unit_label || row.apartment.displayName);
   const meta = isResidence
     ? `${row.apartment.city} · ${row.units.length} unita`
-    : `${row.apartment.city} · ${row.maxGuests || '—'} ospiti max`;
+    : (row.displayMeta || `${row.apartment.city} · ${row.maxGuests || '—'} ospiti max`);
   const note = row.kind === 'unit'
-    ? esc(row.unit.room_type_label || row.unit.unit_label || '')
+    ? esc(row.displayNote || row.unit?.room_type_label || row.unit?.unit_label || '')
     : (isResidence ? 'Heatmap occupazione giornaliera' : '');
 
   return `
@@ -337,6 +393,15 @@ export function buildTimelineRow(row, monthDays) {
             <p class="label-title">${labelTitle}</p>
             <p class="label-meta">${esc(meta)}</p>
             ${note ? `<p class="label-note">${note}</p>` : ''}
+            ${showResidenceJump ? `<p class="label-hint">Nessuna booking in ${esc(formatMonthLabel(S.monthDate))} per questo residence.</p>` : ''}
+            ${showResidenceJump ? `
+              <button
+                type="button"
+                class="btn btn-ghost btn-small residence-jump-btn"
+                data-month-jump="apartment"
+                data-apartment-id="${esc(row.apartment.id)}"
+              >Vai alle prossime booking</button>
+            ` : ''}
           </div>
         </div>
         <div class="timeline-days">
@@ -412,24 +477,27 @@ export function buildBookingBars(bookings, monthDays) {
     const dayWidth = getDayWidth();
     const left = span.startIndex * dayWidth + 2;
     const width = Math.max(span.days * dayWidth - 4, dayWidth - 8);
-    const channelKey = booking.channel_normalized || 'fallback';
-    const channelClass = CHANNEL_CONFIG[channelKey]?.className || 'channel-fallback';
+    const channelClass = bookingChannelClass(booking);
+    const kekkoClass = booking.isKekkoImported || isKekkoImportedBooking(booking) ? ' source-kekko' : '';
     const soft = ['new', 'request'].includes(booking.status) ? ' is-soft' : '';
-    const label = booking.channel_normalized === 'block_or_internal'
-      ? 'BLOCCO'
-      : `${booking.guest_last_name || booking.guest_first_name || 'Ospite'} · ${Math.max(booking.guestCount || 0, 0)}p`;
+    const guestLabel = booking.displayGuestName || booking.guest_last_name || booking.guest_first_name || '';
+    const segment = booking.displaySegment ? `<span class="bar-segment">⇄ ${esc(booking.displaySegment)}</span>` : '';
+    const label = guestLabel
+      ? `${guestLabel} · ${Math.max(booking.guestCount || 0, 0)}p`
+      : (booking.channel_normalized === 'block_or_internal' ? 'BLOCCO' : `Ospite · ${Math.max(booking.guestCount || 0, 0)}p`);
     const tooltip = buildBookingTooltip(booking);
     const beforeMark = span.continuesBefore ? '<span class="bar-chevron bar-chevron-left">‹</span>' : '';
     const afterMark = span.continuesAfter ? '<span class="bar-chevron bar-chevron-right">›</span>' : '';
     return `
       <button
         type="button"
-        class="booking-bar ${channelClass}${soft}${span.continuesBefore ? ' continues-before' : ''}${span.continuesAfter ? ' continues-after' : ''}"
+        class="booking-bar ${channelClass}${kekkoClass}${soft}${span.continuesBefore ? ' continues-before' : ''}${span.continuesAfter ? ' continues-after' : ''}"
         data-booking-id="${esc(booking.beds24_booking_id)}"
         data-tooltip="${esc(tooltip)}"
         style="left:${left}px;width:${width}px;"
       >
         ${beforeMark}
+        ${segment}
         <span class="bar-label">${esc(label)}</span>
         ${afterMark}
       </button>
@@ -439,10 +507,14 @@ export function buildBookingBars(bookings, monthDays) {
 
 export function buildBookingTooltip(booking) {
   const price = booking.total_price != null ? `${formatPrice(booking.total_price)} ${booking.currency || 'EUR'}` : 'Prezzo non disponibile';
+  const guestLabel = booking.displayGuestName || booking.guest_last_name || booking.guest_first_name || 'Prenotazione';
+  const channelText = booking.isKekkoImported || isKekkoImportedBooking(booking)
+    ? 'Kekko / interno'
+    : channelLabel(booking.channel_normalized, CHANNEL_CONFIG);
   return [
-    `${booking.guest_last_name || booking.guest_first_name || 'Prenotazione'}`,
+    `${guestLabel}${booking.displaySegment ? ` · ${booking.displaySegment}` : ''}`,
     `${formatDate(booking.check_in)} → ${formatDate(booking.check_out)} · ${nightsBetween(booking.check_in, booking.check_out)} notti`,
-    `${channelLabel(booking.channel_normalized, CHANNEL_CONFIG)} · ${STATUS_LABELS[booking.status] || booking.status}`,
+    `${channelText} · ${STATUS_LABELS[booking.status] || booking.status}`,
     price,
   ].join('\n');
 }
@@ -465,12 +537,16 @@ export function bindTimelineEvents() {
   ELS.timelineBody.querySelectorAll('[data-toggle-residence]').forEach((button) => {
     button.addEventListener('click', () => {
       const apartmentId = button.getAttribute('data-toggle-residence');
+      const willExpand = !S.expandedResidences.has(apartmentId);
       if (S.expandedResidences.has(apartmentId)) {
         S.expandedResidences.delete(apartmentId);
       } else {
         S.expandedResidences.add(apartmentId);
       }
       renderTimeline();
+      if (willExpand && countVisibleBookingsForApartment(apartmentId) === 0) {
+        void jumpToNextMonthWithBookings({ apartmentId });
+      }
     });
   });
 

@@ -420,6 +420,42 @@ input {
   background: #f3e5ba;
 }
 
+.month-notice {
+  margin: 0 0 14px;
+  padding: 16px 18px;
+  border: 1px solid rgba(180, 139, 68, 0.34);
+  border-radius: 18px;
+  background: linear-gradient(90deg, rgba(243, 234, 210, 0.98) 0%, rgba(255, 250, 240, 0.98) 100%);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.month-notice.hidden {
+  display: none;
+}
+
+.month-notice-copy {
+  min-width: 0;
+}
+
+.month-notice strong {
+  display: block;
+  font-family: var(--font-serif);
+  font-size: 26px;
+  line-height: 1.02;
+  color: var(--ink);
+}
+
+.month-notice p {
+  margin: 8px 0 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .page-body {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
@@ -533,7 +569,6 @@ input {
 
 .timeline-top-scrollbar {
   position: sticky;
-  top: calc(var(--timeline-sticky-top, 48px) + 68px);
   z-index: 58;
   margin: 0 0 10px;
   padding: 8px 14px 6px;
@@ -544,6 +579,15 @@ input {
   box-shadow: 0 8px 22px rgba(28, 25, 20, 0.08);
   overflow-x: auto;
   overflow-y: hidden;
+}
+
+.timeline-top-scrollbar-upper {
+  top: var(--timeline-sticky-top, 48px);
+  z-index: 59;
+}
+
+.timeline-top-scrollbar-lower {
+  top: calc(var(--timeline-sticky-top, 48px) + var(--timeline-top-scrollbar-height, 0px) + 68px);
 }
 
 .timeline-top-scrollbar.hidden {
@@ -611,7 +655,7 @@ input {
 
 .timeline-header {
   position: sticky;
-  top: var(--timeline-sticky-top, 48px);
+  top: calc(var(--timeline-sticky-top, 48px) + var(--timeline-top-scrollbar-height, 0px));
   z-index: 30;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.99) 0%, rgba(248, 244, 236, 0.98) 100%);
   border-bottom: 1px solid rgba(190, 175, 145, 0.72);
@@ -698,6 +742,17 @@ input {
   color: var(--gold-deep);
 }
 
+.label-hint {
+  margin: 5px 0 0;
+  color: rgba(118, 78, 18, 0.92);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.residence-jump-btn {
+  margin-top: 8px;
+}
+
 .residence-toggle {
   width: 28px;
   height: 28px;
@@ -750,6 +805,45 @@ input {
   background: rgba(205, 36, 36, 0.12);
   box-shadow: inset 1px 0 0 rgba(205, 36, 36, 0.28),
               inset -1px 0 0 rgba(205, 36, 36, 0.28);
+}
+
+.day-header.today,
+.day-cell.today {
+  position: relative;
+}
+
+.day-header.today::before,
+.day-cell.today::before,
+.day-header.today::after,
+.day-cell.today::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 3px;
+  height: 100%;
+  background: rgba(214, 76, 76, 0.85);
+  z-index: 4;
+  pointer-events: none;
+}
+
+.day-header.today::before,
+.day-cell.today::before {
+  left: 0;
+}
+
+.day-header.today::after,
+.day-cell.today::after {
+  right: 0;
+}
+
+.day-header.today .day-name,
+.day-header.today .day-num,
+.day-header.today .day-subname {
+  color: rgba(150, 30, 30, 0.95);
+}
+
+.day-header.today .day-num {
+  font-weight: 700;
 }
 
 .day-name {
@@ -831,17 +925,25 @@ input {
 }
 
 .cell-price {
-  font-size: 10px;
-  font-weight: 600;
-  color: rgba(60, 50, 30, 0.92);
-  line-height: 1;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.1;
 }
 
 .cell-stay {
-  font-size: 8.5px;
-  color: rgba(140, 120, 90, 0.55);
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 400;
+  color: rgba(78, 68, 50, 0.55);
   line-height: 1;
   letter-spacing: 0.02em;
+  font-family: var(--font-mono);
+}
+
+.day-cell.today .cell-price {
+  color: #1c1914;
+  font-weight: 700;
 }
 
 .day-cell.has-booking .cell-info {
@@ -966,17 +1068,51 @@ input {
   background-size: 10px 10px;
 }
 
-.booking-bar.channel-booking { background: linear-gradient(135deg, #214f87 0%, var(--channel-booking) 100%); }
-.booking-bar.channel-airbnb { background: linear-gradient(135deg, #e87d8c 0%, var(--channel-airbnb) 100%); }
-.booking-bar.channel-expedia { background: linear-gradient(135deg, #ca9a26 0%, var(--channel-expedia) 100%); }
-.booking-bar.channel-direct { background: linear-gradient(135deg, #3a6c4a 0%, var(--channel-direct) 100%); }
-.booking-bar.channel-api { background: linear-gradient(135deg, #66707b 0%, var(--channel-api) 100%); }
-.booking-bar.channel-block_or_internal { background: linear-gradient(135deg, #898989 0%, var(--channel-block) 100%); }
-.booking-bar.channel-il_lupo_affitta { background: linear-gradient(135deg, #7f313b 0%, var(--channel-il-lupo-affitta) 100%); }
-.booking-bar.channel-jessica_caldari { background: linear-gradient(135deg, #8a63c8 0%, var(--channel-jessica-caldari) 100%); }
-.booking-bar.channel-serena_cerulli { background: linear-gradient(135deg, #7d8751 0%, var(--channel-serena-cerulli) 100%); }
-.booking-bar.channel-app { background: linear-gradient(135deg, #2d908d 0%, var(--channel-app) 100%); }
-.booking-bar.channel-fallback { background: linear-gradient(135deg, #878d98 0%, var(--channel-fallback) 100%); }
+.booking-bar.channel-booking {
+  background: rgba(43, 99, 191, 0.88);
+  border-left: 3px solid #1e4ba0;
+  color: #fff;
+}
+
+.booking-bar.channel-airbnb {
+  background: rgba(255, 90, 95, 0.88);
+  border-left: 3px solid #d04449;
+  color: #fff;
+}
+
+.booking-bar.channel-other-ota {
+  background: rgba(140, 80, 200, 0.88);
+  border-left: 3px solid #6a3da0;
+  color: #fff;
+}
+
+.booking-bar.channel-direct,
+.booking-bar.channel-il_lupo_affitta,
+.booking-bar.channel-serena_cerulli,
+.booking-bar.channel-jessica_caldari {
+  background: rgba(70, 160, 90, 0.88);
+  border-left: 3px solid #2d7d44;
+  color: #fff;
+}
+
+.booking-bar.channel-api,
+.booking-bar.channel-app {
+  background: rgba(80, 75, 65, 0.78);
+  border-left: 3px solid #4e4432;
+  color: #fff;
+}
+
+.booking-bar.channel-block {
+  background: rgba(110, 110, 110, 0.88);
+  border-left: 3px solid #4a4a4a;
+  color: #fff;
+}
+
+.booking-bar.channel-default {
+  background: rgba(80, 75, 65, 0.78);
+  border-left: 3px solid #4e4432;
+  color: #fff;
+}
 
 .bar-label {
   overflow: hidden;
@@ -1363,6 +1499,11 @@ input {
 
   .page-headline h1 {
     font-size: 36px;
+  }
+
+  .month-notice {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .sidebar {
@@ -1897,8 +2038,8 @@ input {
 
 .drag-select-toolbar {
   position: fixed;
-  top: 100px;
-  right: 24px;
+  top: var(--drag-select-toolbar-top, 100px);
+  right: var(--drag-select-toolbar-right, 24px);
   z-index: 100;
   background: var(--ink);
   color: #fff;
@@ -1906,7 +2047,9 @@ input {
   border-radius: 6px;
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
   align-items: center;
+  max-width: min(calc(100vw - 32px), 720px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
   font-size: 13px;
 }
