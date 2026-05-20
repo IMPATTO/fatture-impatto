@@ -1,3 +1,5 @@
+export const CALENDAR_VISIBLE_DAYS = 60;
+
 export function formatMonthLabel(date) {
   return date.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' }).replace(/^\w/, (c) => c.toUpperCase());
 }
@@ -49,7 +51,7 @@ export function nightsBetween(checkIn, checkOut) {
 
 export function getMonthBounds(date) {
   const startDate = startOfMonth(date);
-  const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
+  const endDate = addDays(startDate, CALENDAR_VISIBLE_DAYS - 1);
   return {
     start: isoDateLocal(startDate),
     end: isoDateLocal(endDate),
@@ -60,7 +62,7 @@ export function getMonthDays(date) {
   const first = startOfMonth(date);
   const days = [];
   const cursor = new Date(first);
-  while (cursor.getMonth() === first.getMonth()) {
+  while (days.length < CALENDAR_VISIBLE_DAYS) {
     days.push(new Date(cursor));
     cursor.setDate(cursor.getDate() + 1);
   }

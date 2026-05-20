@@ -18,7 +18,7 @@ import {
   unique,
   compareBookingsForRender,
   compareOrphans,
-} from './utils.js?v=20260519e';
+} from './utils.js?v=20260520e';
 
 const KEKKO_UNIT_CATALOG = [
   { sourceId: 'M1', title: '104', floor: 'PT', capacity: 3, groupName: 'Monolocali', note: 'il migliore', sortOrder: 1, aliases: ['104'] },
