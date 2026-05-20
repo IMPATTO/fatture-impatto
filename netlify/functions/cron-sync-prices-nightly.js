@@ -2,7 +2,7 @@ const { createClient } = require('@supabase/supabase-js');
 const { normalizeSupabaseUrl } = require('./_lib/shared-auth');
 
 const BEDS24_URL = 'https://api.beds24.com/v2';
-const DAYS_TO_SYNC = 90;
+const DAYS_TO_SYNC = 60;
 const CRON_EXPRESSION = '0 2 * * *';
 
 let beds24TokenCache = null;
@@ -286,6 +286,42 @@ async function getCalendarForRoom(accessToken, roomId, startDate, endDate) {
   return parseCalendarResponse(data);
 }
 
+async function getAvailabilityForRoom(accessToken, roomId, startDate, endDate) {
+  const url = `${BEDS24_URL}/inventory/rooms/availability?roomId=${encodeURIComponent(roomId)}&dateFrom=${encodeURIComponent(startDate)}&dateTo=${encodeURIComponent(endDate)}`;
+
+  let response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      token: accessToken,
+      Accept: 'application/json',
+    },
+  });
+
+  if (response.status === 429) {
+    await delay(5000);
+    response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        token: accessToken,
+        Accept: 'application/json',
+      },
+    });
+    if (!response.ok) {
+      return { availability: new Map(), error: '429-after-retry' };
+    }
+    const retryData = await response.json();
+    return parseAvailabilityResponse(retryData);
+  }
+
+  if (!response.ok) {
+    console.warn(`[CRON-SYNC][AVAILABILITY-FAIL] room=${roomId} status=${response.status}`);
+    return { availability: new Map(), error: String(response.status) };
+  }
+
+  const data = await response.json();
+  return parseAvailabilityResponse(data);
+}
+
 function parseCalendarResponse(parsed) {
   if (!parsed?.success || !Array.isArray(parsed.data)) {
     return { ranges: [], error: 'no-data' };
@@ -301,10 +337,26 @@ function parseCalendarResponse(parsed) {
     to: range.to,
     price1: typeof range.price1 === 'number' ? range.price1 : null,
     minStay: typeof range.minStay === 'number' ? range.minStay : null,
+    closed: normalizeCalendarClosed(range),
+    available: normalizeCalendarAvailable(range),
     raw: range,
   }));
 
   return { ranges };
+}
+
+function parseAvailabilityResponse(parsed) {
+  if (!parsed?.success || !Array.isArray(parsed.data)) {
+    return { availability: new Map(), error: 'no-data' };
+  }
+
+  const roomData = parsed.data[0];
+  const availability = new Map();
+  Object.entries(roomData?.availability || {}).forEach(([date, value]) => {
+    availability.set(date, value === null ? null : Boolean(value));
+  });
+
+  return { availability };
 }
 
 function expandRangeToDays(range) {
@@ -317,6 +369,8 @@ function expandRangeToDays(range) {
       date: formatIsoDateUtc(date),
       price: range.price1,
       minStay: range.minStay,
+      closed: range.closed,
+      available: range.available,
       raw_range: range.raw,
     });
   }
@@ -361,9 +415,20 @@ async function syncCalendarPrices(accessToken, units, daysToSync) {
           startDateStr,
           endDateStr
         );
+        const availabilityResult = await getAvailabilityForRoom(
+          accessToken,
+          unit.beds24_room_id,
+          startDateStr,
+          endDateStr
+        );
 
         if (result.error) {
           console.warn(`[CRON-SYNC][UNIT-ERR] unit=${unit.id} room=${unit.beds24_room_id} err=${result.error}`);
+          errorsCount += 1;
+          return [];
+        }
+        if (availabilityResult.error) {
+          console.warn(`[CRON-SYNC][UNIT-AVAIL-ERR] unit=${unit.id} room=${unit.beds24_room_id} err=${availabilityResult.error}`);
           errorsCount += 1;
           return [];
         }
@@ -375,13 +440,16 @@ async function syncCalendarPrices(accessToken, units, daysToSync) {
         for (let date = new Date(startDate); date < endDate; date = addDaysUtc(date, 1)) {
           const dateStr = formatIsoDateUtc(date);
           const dayData = dayMap.get(dateStr);
+          const available = availabilityResult.availability.has(dateStr)
+            ? availabilityResult.availability.get(dateStr)
+            : null;
           unitRows.push({
             apartment_unit_id: unit.id,
             date: dateStr,
             price: dayData?.price ?? null,
             min_stay: dayData?.minStay ?? null,
-            available: dayData ? true : null,
-            closed: false,
+            available,
+            closed: dayData?.closed === true || available === false,
             source_updated_at: sourceUpdatedAt,
             updated_at: sourceUpdatedAt,
             raw_payload: dayData?.raw_range ? { range: dayData.raw_range } : null,
@@ -473,6 +541,36 @@ function chunk(items, size) {
     result.push(items.slice(index, index + size));
   }
   return result;
+}
+
+function normalizeCalendarClosed(entry) {
+  if (!entry || typeof entry !== 'object') return undefined;
+  if (entry.closed !== undefined && entry.closed !== null) return Boolean(entry.closed);
+  if (entry.bookable !== undefined && entry.bookable !== null) return !Boolean(entry.bookable);
+
+  const inventoryValue = normalizeCalendarNumber(
+    firstDefined(entry.numAvail, entry.num_available, entry.inventory, entry.quantity)
+  );
+  if (inventoryValue !== null) {
+    return inventoryValue <= 0;
+  }
+
+  return undefined;
+}
+
+function normalizeCalendarAvailable(entry) {
+  const closed = normalizeCalendarClosed(entry);
+  if (closed !== undefined) return !closed;
+  return undefined;
+}
+
+function normalizeCalendarNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function firstDefined(...values) {
+  return values.find((value) => value !== undefined && value !== null);
 }
 
 function delay(ms) {
