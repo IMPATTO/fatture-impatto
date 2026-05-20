@@ -1,15 +1,16 @@
 import {
+  countVisibleBookingsForApartment,
   getVisibleBookings,
   initializeFilterDefaults,
   loadMonthData,
   loadStaticData,
-} from './data.js?v=20260518a';
-import { CITY_PRIORITY, ELS, PMS_EDITOR_EMAILS, S, SIDEBAR_STORAGE_KEY } from './state.js?v=20260518a';
+} from './data.js?v=20260519g';
+import { CITY_PRIORITY, ELS, PMS_EDITOR_EMAILS, S, SIDEBAR_STORAGE_KEY } from './state.js?v=20260519e';
 import {
   nightsBetween,
   startOfMonth,
   toMonthInputValue,
-} from './utils.js?v=20260518a';
+} from './utils.js?v=20260519e';
 
 const RENDER = {
   renderAll: null,
@@ -23,7 +24,7 @@ const RENDER = {
 
 export async function init() {
   cacheElements();
-  await import('./render.js?v=20260518a');
+  await import('./render.js?v=20260520a');
   bindShellEvents();
   restoreSidebarState();
   handleScrollHeaderToggle();
@@ -42,8 +43,9 @@ export function cacheElements() {
     'refreshBtn', 'syncPricesBtn', 'exportBtn', 'lastSyncLabel', 'lastSyncBadge', 'sidebarToggle', 'pageBody', 'pageHeader', 'sidebar', 'cityFilters', 'channelFilters',
     'miniHeader', 'miniMonthLabel', 'miniPrevMonth', 'miniNextMonth', 'miniRefreshBtn',
     'statusFilters', 'availabilityFilter', 'timelineHeader', 'timelineBody', 'timelineShell', 'timelineScroll',
+    'timelineTopScrollbarUpper', 'timelineTopScrollbarUpperInner',
     'timelineTopScrollbar', 'timelineTopScrollbarInner',
-    'mobileList', 'loadingState', 'emptyState', 'errorState', 'orphanBanner',
+    'mobileList', 'loadingState', 'monthNotice', 'emptyState', 'errorState', 'orphanBanner',
     'bookingDrawer', 'drawerBackdrop', 'drawerCloseBtn', 'drawerCloseBtnFooter',
     'drawerTitle', 'drawerBody', 'orphanModal', 'orphanModalBody', 'orphanModalTitle', 'todayMarker',
     'orphanModalClose', 'orphanModalCloseFooter', 'tooltip',
@@ -96,6 +98,18 @@ export function bindShellEvents() {
       event.preventDefault();
       RENDER.openOrphanModal?.();
     }
+  });
+  ELS.monthNotice?.addEventListener('click', (event) => {
+    const jumpButton = event.target.closest('[data-month-jump="next-bookings"]');
+    if (!jumpButton) return;
+    void jumpToNextMonthWithBookings();
+  });
+  ELS.timelineBody?.addEventListener('click', (event) => {
+    const jumpButton = event.target.closest('[data-month-jump="apartment"]');
+    if (!jumpButton) return;
+    const apartmentId = jumpButton.getAttribute('data-apartment-id');
+    if (!apartmentId) return;
+    void jumpToNextMonthWithBookings({ apartmentId });
   });
   ELS.drawerBackdrop?.addEventListener('click', () => RENDER.closeDrawer?.());
   ELS.drawerCloseBtn?.addEventListener('click', () => RENDER.closeDrawer?.());
@@ -163,6 +177,7 @@ export function bindShellEvents() {
   });
   window.addEventListener('scroll', handleScrollHeaderToggle, { passive: true });
   ELS.timelineScroll?.addEventListener('scroll', handleTimelineScroll, { passive: true });
+  ELS.timelineTopScrollbarUpper?.addEventListener('scroll', handleTopTimelineScrollbarScroll, { passive: true });
   ELS.timelineTopScrollbar?.addEventListener('scroll', handleTopTimelineScrollbarScroll, { passive: true });
   window.addEventListener('resize', () => {
     syncStickyTimelineHeader();
@@ -500,6 +515,55 @@ export function handleMonthPicker() {
   S.monthDate = startOfMonth(new Date(year, month - 1, 1));
   syncMiniHeaderLabel();
   void ensureDataLoaded({ monthOnly: true });
+}
+
+export async function jumpToNextMonthWithBookings({ apartmentId = null } = {}) {
+  if (!S.session || S.findingNextBookingMonth) return;
+
+  const originalMonth = startOfMonth(new Date(S.monthDate));
+  S.findingNextBookingMonth = true;
+  setLoading(true);
+  RENDER.renderAll?.();
+
+  try {
+    for (let step = 1; step <= 18; step += 1) {
+      S.monthDate = startOfMonth(new Date(originalMonth.getFullYear(), originalMonth.getMonth() + step, 1));
+      ELS.monthPickerInput.value = toMonthInputValue(S.monthDate);
+      syncMiniHeaderLabel();
+      await loadMonthData();
+      initializeFilterDefaults();
+      const matchesTarget = apartmentId
+        ? countVisibleBookingsForApartment(apartmentId) > 0
+        : getVisibleBookings().length > 0;
+      if (matchesTarget) {
+        return;
+      }
+    }
+
+    S.monthDate = originalMonth;
+    ELS.monthPickerInput.value = toMonthInputValue(S.monthDate);
+    syncMiniHeaderLabel();
+    await loadMonthData();
+    initializeFilterDefaults();
+    alert('Nessuna prenotazione trovata nei prossimi 18 mesi con i filtri attuali.');
+  } catch (error) {
+    console.error('jump to next bookings month error', error);
+    S.monthDate = originalMonth;
+    ELS.monthPickerInput.value = toMonthInputValue(S.monthDate);
+    syncMiniHeaderLabel();
+    try {
+      await loadMonthData();
+      initializeFilterDefaults();
+    } catch (reloadError) {
+      console.error('restore month after jump error', reloadError);
+    }
+    alert(error.message || 'Ricerca del prossimo mese con prenotazioni non riuscita');
+  } finally {
+    S.findingNextBookingMonth = false;
+    setLoading(false);
+    RENDER.renderAll?.();
+    void loadLastSyncStatus();
+  }
 }
 
 export function setLoading(value) {
@@ -1328,14 +1392,16 @@ export function clearDragSelection() {
 }
 
 export function syncDragSelectionToolbar() {
+  const toolbar = ELS.dragSelectToolbar;
   const count = S.dragSelection.selectedCells.size;
   if (count > 0) {
-    ELS.dragSelectToolbar?.classList.remove('hidden');
+    toolbar?.classList.remove('hidden');
     if (ELS.dragSelectCount) {
       ELS.dragSelectCount.textContent = `${count} cell${count === 1 ? 'a' : 'e'} selezionat${count === 1 ? 'a' : 'e'}`;
     }
+    positionDragSelectionToolbar();
   } else {
-    ELS.dragSelectToolbar?.classList.add('hidden');
+    toolbar?.classList.add('hidden');
   }
 }
 
@@ -1520,9 +1586,11 @@ let timelineScrollSyncLocked = false;
 
 function handleTopTimelineScrollbarScroll() {
   if (timelineScrollSyncLocked) return;
-  if (!ELS.timelineScroll || !ELS.timelineTopScrollbar) return;
+  if (!ELS.timelineScroll) return;
+  const activeScrollbar = this;
+  if (!activeScrollbar) return;
   timelineScrollSyncLocked = true;
-  ELS.timelineScroll.scrollLeft = ELS.timelineTopScrollbar.scrollLeft;
+  ELS.timelineScroll.scrollLeft = activeScrollbar.scrollLeft;
   handleTimelineScroll();
   requestAnimationFrame(() => {
     timelineScrollSyncLocked = false;
@@ -1531,33 +1599,77 @@ function handleTopTimelineScrollbarScroll() {
 
 export function syncTimelineScrollChrome({ contentWidth, desiredScrollLeft } = {}) {
   const main = ELS.timelineScroll;
-  const top = ELS.timelineTopScrollbar;
-  const inner = ELS.timelineTopScrollbarInner;
-  if (!main || !top || !inner) return;
+  const auxiliaryScrollbars = [
+    [ELS.timelineTopScrollbarUpper, ELS.timelineTopScrollbarUpperInner],
+    [ELS.timelineTopScrollbar, ELS.timelineTopScrollbarInner],
+  ].filter(([scrollbar, inner]) => scrollbar && inner);
+  if (!main || !auxiliaryScrollbars.length) return;
 
   const width = Math.max(
     Number(contentWidth || 0),
     Number(main.scrollWidth || 0),
   );
-  inner.style.width = `${width}px`;
+  auxiliaryScrollbars.forEach(([, inner]) => {
+    inner.style.width = `${width}px`;
+  });
 
   const shouldShow = width > (main.clientWidth + 6);
-  top.classList.toggle('hidden', !shouldShow);
+  auxiliaryScrollbars.forEach(([scrollbar]) => {
+    scrollbar.classList.toggle('hidden', !shouldShow);
+  });
   document.documentElement.style.setProperty(
     '--timeline-top-scrollbar-height',
-    shouldShow ? `${Math.ceil(top.offsetHeight || 0)}px` : '0px',
+    shouldShow ? `${Math.ceil(ELS.timelineTopScrollbarUpper?.offsetHeight || 0)}px` : '0px',
   );
-  if (!shouldShow) return;
+  if (!shouldShow) {
+    positionDragSelectionToolbar();
+    return;
+  }
 
   const nextScrollLeft = Number.isFinite(desiredScrollLeft) ? desiredScrollLeft : main.scrollLeft;
   timelineScrollSyncLocked = true;
   if (Number.isFinite(desiredScrollLeft)) {
     main.scrollLeft = desiredScrollLeft;
   }
-  top.scrollLeft = nextScrollLeft;
+  auxiliaryScrollbars.forEach(([scrollbar]) => {
+    scrollbar.scrollLeft = nextScrollLeft;
+  });
   requestAnimationFrame(() => {
     timelineScrollSyncLocked = false;
   });
+  positionDragSelectionToolbar();
+}
+
+function positionDragSelectionToolbar() {
+  const toolbar = ELS.dragSelectToolbar;
+  if (!toolbar || toolbar.classList.contains('hidden')) return;
+
+  const viewportPadding = window.innerWidth <= 900 ? 12 : 24;
+  const gap = 12;
+  const stickyTop = Number.parseInt(
+    getComputedStyle(document.documentElement).getPropertyValue('--timeline-sticky-top').trim(),
+    10,
+  ) || 48;
+
+  let top = stickyTop + gap;
+  [ELS.timelineTopScrollbarUpper, ELS.timelineHeader, ELS.timelineTopScrollbar].forEach((element) => {
+    if (!element || element.classList.contains('hidden')) return;
+    const rect = element.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+    if (rect.bottom <= 0 || rect.top >= window.innerHeight) return;
+    top = Math.max(top, rect.bottom + gap);
+  });
+
+  toolbar.style.top = `${Math.round(top)}px`;
+
+  const scrollRect = ELS.timelineScroll?.getBoundingClientRect();
+  if (scrollRect && scrollRect.width > 0) {
+    const right = Math.max(viewportPadding, window.innerWidth - scrollRect.right + viewportPadding);
+    toolbar.style.right = `${Math.round(right)}px`;
+    return;
+  }
+
+  toolbar.style.right = `${viewportPadding}px`;
 }
 
 export function syncStickyTimelineHeader() {
@@ -1565,14 +1677,14 @@ export function syncStickyTimelineHeader() {
   const timelineShell = ELS.timelineShell;
   const timelineScroll = ELS.timelineScroll;
   const timelineBody = ELS.timelineBody;
-  const timelineTopScrollbar = ELS.timelineTopScrollbar;
   if (!timelineHeader || !timelineShell || !timelineScroll || !timelineBody) return;
   if (!timelineHeader.firstElementChild) return;
 
-  const stickyTop = Number.parseInt(
+  const fallbackStickyTop = Number.parseInt(
     getComputedStyle(document.documentElement).getPropertyValue('--timeline-sticky-top').trim(),
     10,
   ) || 48;
+  const stickyTop = Number.parseInt(getComputedStyle(timelineHeader).top.trim(), 10) || fallbackStickyTop;
   const shellRect = timelineShell.getBoundingClientRect();
   const scrollRect = timelineScroll.getBoundingClientRect();
   const headerHeight = timelineHeader.offsetHeight || 68;
@@ -1590,6 +1702,7 @@ export function syncStickyTimelineHeader() {
     if (grid) {
       grid.style.transform = '';
     }
+    positionDragSelectionToolbar();
     return;
   }
 
@@ -1604,6 +1717,7 @@ export function syncStickyTimelineHeader() {
   if (grid) {
     grid.style.transform = `translateX(-${timelineScroll.scrollLeft || 0}px)`;
   }
+  positionDragSelectionToolbar();
 }
 
 if (typeof window !== 'undefined') {

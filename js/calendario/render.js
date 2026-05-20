@@ -7,7 +7,7 @@ import {
   syncDragSelectionToolbar,
   toggleCityFilter,
   toggleSetValue,
-} from './interactions.js?v=20260519f';
+} from './interactions.js?v=20260520a';
 import { CHANNEL_CONFIG, ELS, S, STATUS_LABELS } from './state.js?v=20260519e';
 import {
   buildDayCellLabel,
@@ -26,7 +26,7 @@ import {
   groupVisibleBookingsForMobile,
   groupVisibleRowsByCity,
   isKekkoImportedBooking,
-} from './data.js?v=20260519f';
+} from './data.js?v=20260519g';
 import {
   addDays,
   bookingSpanWithinMonth,
@@ -478,13 +478,19 @@ export function buildBookingBars(bookings, monthDays) {
     const left = span.startIndex * dayWidth + 2;
     const width = Math.max(span.days * dayWidth - 4, dayWidth - 8);
     const channelClass = bookingChannelClass(booking);
-    const kekkoClass = booking.isKekkoImported || isKekkoImportedBooking(booking) ? ' source-kekko' : '';
+    const isKekko = booking.isKekkoImported || isKekkoImportedBooking(booking);
+    const kekkoClass = isKekko ? ' source-kekko' : '';
     const soft = ['new', 'request'].includes(booking.status) ? ' is-soft' : '';
-    const guestLabel = booking.displayGuestName || booking.guest_last_name || booking.guest_first_name || '';
-    const segment = booking.displaySegment ? `<span class="bar-segment">⇄ ${esc(booking.displaySegment)}</span>` : '';
+    const canUseGuestLabel = isKekko || booking.channel_normalized !== 'block_or_internal';
+    const guestLabel = canUseGuestLabel
+      ? (booking.displayGuestName || booking.guest_last_name || booking.guest_first_name || '')
+      : '';
+    const segment = isKekko && booking.displaySegment ? `<span class="bar-segment">⇄ ${esc(booking.displaySegment)}</span>` : '';
     const label = guestLabel
       ? `${guestLabel} · ${Math.max(booking.guestCount || 0, 0)}p`
-      : (booking.channel_normalized === 'block_or_internal' ? 'BLOCCO' : `Ospite · ${Math.max(booking.guestCount || 0, 0)}p`);
+      : (booking.channel_normalized === 'block_or_internal'
+        ? `${booking.status === 'black' ? 'CHIUSURA' : 'BLOCCO'}`
+        : `Ospite · ${Math.max(booking.guestCount || 0, 0)}p`);
     const tooltip = buildBookingTooltip(booking);
     const beforeMark = span.continuesBefore ? '<span class="bar-chevron bar-chevron-left">‹</span>' : '';
     const afterMark = span.continuesAfter ? '<span class="bar-chevron bar-chevron-right">›</span>' : '';
@@ -648,10 +654,10 @@ export function renderMobileList() {
       <p class="mobile-meta">${esc(group.apartment.city)} · ${esc(group.meta)}</p>
       ${group.bookings.map((booking) => `
         <div class="mobile-booking">
-          <span class="pill">${esc(channelLabel(booking.channel_normalized, CHANNEL_CONFIG))}</span>
-          <h4>${esc(booking.guest_last_name || booking.guest_first_name || 'BLOCCO')}</h4>
+          <span class="pill">${esc(booking.isKekkoImported ? 'Kekko' : channelLabel(booking.channel_normalized, CHANNEL_CONFIG))}</span>
+          <h4>${esc(booking.displayGuestName || booking.guest_last_name || booking.guest_first_name || 'BLOCCO')}</h4>
           <p class="mobile-meta">${formatDate(booking.check_in)} → ${formatDate(booking.check_out)} · ${nightsBetween(booking.check_in, booking.check_out)} notti</p>
-          <p class="mobile-meta">${esc(STATUS_LABELS[booking.status] || booking.status)} · ${esc(booking.unit?.unit_label || '—')}</p>
+          <p class="mobile-meta">${esc(STATUS_LABELS[booking.status] || booking.status)} · ${esc(booking.unitPresentation?.title || booking.unit?.unit_label || '—')}</p>
           <button type="button" class="btn btn-ghost btn-small" data-mobile-booking="${esc(booking.beds24_booking_id)}">Apri dettagli</button>
         </div>
       `).join('')}
@@ -666,6 +672,7 @@ export function renderMobileList() {
 export function renderDrawer() {
   const booking = S.bookingMap.get(String(S.selectedBookingId));
   if (!booking) return;
+  const guestLabel = booking.displayGuestName || [booking.guest_first_name, booking.guest_last_name].filter(Boolean).join(' ') || booking.beds24_booking_id;
   const actionsHtml = S.isPmsEditor && booking?.beds24_booking_id
     ? `
       <div class="drawer-booking-actions">
@@ -679,14 +686,14 @@ export function renderDrawer() {
     `
     : '';
 
-  ELS.drawerTitle.textContent = booking.guest_last_name || booking.guest_first_name || booking.beds24_booking_id;
+  ELS.drawerTitle.textContent = booking.displaySegment ? `${guestLabel} · ${booking.displaySegment}` : guestLabel;
   ELS.drawerBody.innerHTML = `
     <div class="detail-grid">
       <section class="detail-block">
         <h3>Identita</h3>
         <dl class="detail-list">
           ${detailRow('Booking ID', booking.beds24_booking_id)}
-          ${detailRow('Ospite', [booking.guest_first_name, booking.guest_last_name].filter(Boolean).join(' ') || '—')}
+          ${detailRow('Ospite', guestLabel || '—')}
           ${detailRow('Email', booking.guest_email || '—')}
           ${detailRow('Telefono', booking.guest_phone || '—')}
         </dl>
@@ -704,7 +711,7 @@ export function renderDrawer() {
         <h3>Canale e stato</h3>
         <dl class="detail-list">
           ${detailRow('Canale raw', booking.channel || '—')}
-          ${detailRow('Canale normalizzato', channelLabel(booking.channel_normalized, CHANNEL_CONFIG))}
+          ${detailRow('Canale normalizzato', booking.isKekkoImported ? 'Kekko / interno' : channelLabel(booking.channel_normalized, CHANNEL_CONFIG))}
           ${detailRow('Stato', STATUS_LABELS[booking.status] || booking.status)}
           ${detailRow('Totale', booking.total_price != null ? `${formatPrice(booking.total_price)} ${booking.currency || 'EUR'}` : '—')}
         </dl>
@@ -714,7 +721,7 @@ export function renderDrawer() {
         <dl class="detail-list">
           ${detailRow('Apartment', booking.apartment?.displayName || '—')}
           ${detailRow('Apartment ID', booking.apartment_id || '—')}
-          ${detailRow('Unita', booking.unit?.unit_label || '—')}
+          ${detailRow('Unita', booking.unitPresentation?.title || booking.unit?.unit_label || '—')}
           ${detailRow('Apartment unit ID', booking.apartment_unit_id || '—')}
         </dl>
       </section>
