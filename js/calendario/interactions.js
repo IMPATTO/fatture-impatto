@@ -24,7 +24,7 @@ const RENDER = {
 
 export async function init() {
   cacheElements();
-  await import('./render.js?v=20260520b');
+  await import('./render.js?v=20260520c');
   bindShellEvents();
   restoreSidebarState();
   handleScrollHeaderToggle();
@@ -1133,6 +1133,9 @@ function updateBulkPriceMode(event) {
   if (ELS.bulkPriceSet) ELS.bulkPriceSet.disabled = mode !== 'set';
   if (ELS.bulkPriceDelta) ELS.bulkPriceDelta.disabled = mode !== 'delta';
   if (ELS.bulkPricePercent) ELS.bulkPricePercent.disabled = mode !== 'percent';
+  if (mode === 'percent' && ELS.bulkPricePercent && !String(ELS.bulkPricePercent.value || '').trim()) {
+    ELS.bulkPricePercent.value = '-10';
+  }
   updateBulkPreview();
 }
 

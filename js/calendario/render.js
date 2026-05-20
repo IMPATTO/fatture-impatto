@@ -7,7 +7,7 @@ import {
   syncDragSelectionToolbar,
   toggleCityFilter,
   toggleSetValue,
-} from './interactions.js?v=20260520b';
+} from './interactions.js?v=20260520c';
 import { CHANNEL_CONFIG, ELS, S, STATUS_LABELS } from './state.js?v=20260519e';
 import {
   buildDayCellLabel,
