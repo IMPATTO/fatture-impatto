@@ -626,9 +626,18 @@ export function bindTimelineEvents() {
         if (!apartmentUnitId || !date) return;
         if (S.dragSelection.selectedCells.size > 1) return;
 
+        const unit = S.unitMap.get(String(apartmentUnitId));
+        if (!unit) return;
+
         const apartment = S.apartmentMap.get(String(apartmentId));
         const apartmentLabel = apartment?.displayName || '—';
-        const state = getDayAvailabilityState(row, date);
+        const state = getDayAvailabilityState(
+          {
+            unit,
+            bookings: S.bookingsByUnit.get(String(apartmentUnitId)) || [],
+          },
+          new Date(`${date}T12:00:00`),
+        );
 
         window._calendarioEditModal?.open?.({
           apartmentUnitId,
