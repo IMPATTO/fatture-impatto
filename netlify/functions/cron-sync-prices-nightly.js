@@ -251,7 +251,7 @@ async function insertSyncJobFailure(supabase, finishedAt, errorMessage) {
 }
 
 async function getCalendarForRoom(accessToken, roomId, startDate, endDate) {
-  const url = `${BEDS24_URL}/inventory/rooms/calendar?roomId=${encodeURIComponent(roomId)}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&includePrices=true&includeMinStay=true`;
+  const url = `${BEDS24_URL}/inventory/rooms/calendar?roomId=${encodeURIComponent(roomId)}&from=${encodeURIComponent(startDate)}&to=${encodeURIComponent(endDate)}&includePrices=true&includeMinStay=true`;
 
   let response = await fetch(url, {
     method: 'GET',
