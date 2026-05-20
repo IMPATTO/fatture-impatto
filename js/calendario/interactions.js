@@ -4,7 +4,7 @@ import {
   initializeFilterDefaults,
   loadMonthData,
   loadStaticData,
-} from './data.js?v=20260519g';
+} from './data.js?v=20260520d';
 import { CITY_PRIORITY, ELS, PMS_EDITOR_EMAILS, S, SIDEBAR_STORAGE_KEY } from './state.js?v=20260519e';
 import {
   nightsBetween,
@@ -24,7 +24,7 @@ const RENDER = {
 
 export async function init() {
   cacheElements();
-  await import('./render.js?v=20260520c');
+  await import('./render.js?v=20260520d');
   bindShellEvents();
   restoreSidebarState();
   handleScrollHeaderToggle();

@@ -5,7 +5,7 @@ import {
   OCCUPYING_STATUSES,
   S,
   STATUS_LABELS,
-} from './state.js?v=20260514d';
+} from './state.js?v=20260519e';
 import {
   formatDate,
   formatPrice,
@@ -18,7 +18,210 @@ import {
   unique,
   compareBookingsForRender,
   compareOrphans,
-} from './utils.js?v=20260514d';
+} from './utils.js?v=20260519e';
+
+const KEKKO_UNIT_CATALOG = [
+  { sourceId: 'M1', title: '104', floor: 'PT', capacity: 3, groupName: 'Monolocali', note: 'il migliore', sortOrder: 1, aliases: ['104'] },
+  { sourceId: 'M2', title: 'Mono 1° A', floor: '1°', capacity: 2, groupName: 'Monolocali', note: '', sortOrder: 2, aliases: ['Mono 1° A'] },
+  { sourceId: 'M3', title: 'Mono 1° B', floor: '1°', capacity: 2, groupName: 'Monolocali', note: '', sortOrder: 3, aliases: ['Mono 1° B'] },
+  { sourceId: 'M4', title: 'Mono 3°', floor: '3°', capacity: 2, groupName: 'Monolocali', note: 'standard base', sortOrder: 4, aliases: ['Mono 3°'] },
+  { sourceId: 'BD1', title: 'Dependance 1', floor: 'Dep', capacity: 5, groupName: 'Bilocali · Dependance', note: '', sortOrder: 10, aliases: ['Dependance 1'] },
+  { sourceId: 'BD2', title: 'Dependance 2', floor: 'Dep', capacity: 5, groupName: 'Bilocali · Dependance', note: '', sortOrder: 11, aliases: ['Dependance 2'] },
+  { sourceId: 'BPT1', title: 'Bilo PT 1', floor: 'PT', capacity: 6, groupName: 'Bilocali · Piano Terra', note: '', sortOrder: 20, aliases: ['Bilo PT 1'] },
+  { sourceId: 'BPT2', title: 'Bilo PT 2', floor: 'PT', capacity: 6, groupName: 'Bilocali · Piano Terra', note: '', sortOrder: 21, aliases: ['Bilo PT 2'] },
+  { sourceId: 'BPT3', title: 'Bilo PT 3', floor: 'PT', capacity: 6, groupName: 'Bilocali · Piano Terra', note: 'app.5', sortOrder: 22, aliases: ['Bilo PT 3'] },
+  { sourceId: 'BPT4', title: 'Bilo PT 4', floor: 'PT', capacity: 6, groupName: 'Bilocali · Piano Terra', note: '', sortOrder: 23, aliases: ['Bilo PT 4'] },
+  { sourceId: 'B1A', title: 'Bilo 1° A', floor: '1°', capacity: 6, groupName: 'Bilocali · Primo Piano', note: '', sortOrder: 30, aliases: ['Bilo 1° A'] },
+  { sourceId: 'B1B', title: 'Bilo 1° B', floor: '1°', capacity: 6, groupName: 'Bilocali · Primo Piano', note: '', sortOrder: 31, aliases: ['Bilo 1° B'] },
+  { sourceId: 'B1C', title: 'Bilo 1° C', floor: '1°', capacity: 6, groupName: 'Bilocali · Primo Piano', note: '', sortOrder: 32, aliases: ['Bilo 1° C'] },
+  { sourceId: 'B202', title: '202 ★', floor: '1°', capacity: 7, groupName: 'Bilocali · Primo Piano', note: 'vista mare', sortOrder: 33, aliases: ['202'] },
+  { sourceId: 'T1', title: 'Trilo 1° ★', floor: '1°', capacity: 6, groupName: 'Trilocali', note: 'vista mare', sortOrder: 40, aliases: ['Trilo 1°'] },
+  { sourceId: 'T3A', title: 'Trilo 3° A', floor: '3°', capacity: 8, groupName: 'Trilocali', note: '', sortOrder: 41, aliases: ['Trilo 3° A'] },
+  { sourceId: 'T3B', title: 'Trilo 3° B', floor: '3°', capacity: 8, groupName: 'Trilocali', note: '', sortOrder: 42, aliases: ['Trilo 3° B'] },
+  { sourceId: 'T3C_FAMILY', title: 'Trilo 3° C', floor: '3°', capacity: 8, groupName: 'Trilocali', note: 'Family Hotel · stagione', sortOrder: 43, aliases: ['Trilo 3° C', 'Trilo 3° C Family'] },
+  { sourceId: 'T3D_STAFF', title: 'Trilo 3° D', floor: '3°', capacity: 8, groupName: 'Trilocali', note: 'Staff · stagione', sortOrder: 44, aliases: ['Trilo 3° D'] },
+];
+
+const KEKKO_IMPORT_NOTE_PATTERN = /import manuale da calendario kekko/i;
+const KEKKO_REF_PATTERN = /Riferimento calendario Kekko:\s*([A-Z0-9_]+)\s*\//i;
+const VILLA_MARGHERITA_PROPERTY_ID = '324753';
+const KEKKO_UNIT_BY_SOURCE_ID = new Map(KEKKO_UNIT_CATALOG.map((item) => [item.sourceId, item]));
+const KEKKO_UNIT_BY_LABEL = new Map();
+
+for (const item of KEKKO_UNIT_CATALOG) {
+  for (const label of [item.title, ...(item.aliases || [])]) {
+    KEKKO_UNIT_BY_LABEL.set(normalizeKekkoKey(label), item);
+  }
+}
+
+function normalizeKekkoKey(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ');
+}
+
+function isMontefeltroApartment(apartment) {
+  const source = `${apartment?.nome_appartamento || ''} ${apartment?.struttura_nome || ''}`.toLowerCase();
+  return source.includes('montefeltro');
+}
+
+function extractLeadingUnitNumber(value) {
+  const match = String(value || '').trim().match(/^(\d{1,2})\b/);
+  return match ? Number(match[1]) : null;
+}
+
+function isVillaMargheritaApartment(apartment) {
+  if (!apartment) return false;
+  if (String(apartment.beds24_property_id || '').trim() === VILLA_MARGHERITA_PROPERTY_ID) return true;
+  const source = `${apartment?.nome_appartamento || ''} ${apartment?.struttura_nome || ''}`.toLowerCase();
+  return source.includes('villa margherita') || source.includes('principe di piemonte');
+}
+
+function resolveApartmentContext(unit, row = null, apartment = null) {
+  if (apartment) return apartment;
+  if (row?.apartment) return row.apartment;
+  if (row?.apartment_id) return S.apartmentMap.get(String(row.apartment_id)) || null;
+  if (unit?.apartment_id) return S.apartmentMap.get(String(unit.apartment_id)) || null;
+  return null;
+}
+
+function isGenericUnitLabel(value) {
+  const normalized = normalizeKekkoKey(value);
+  return !normalized
+    || normalized === 'default'
+    || normalized.startsWith('default ')
+    || normalized === 'room'
+    || normalized === 'unit';
+}
+
+function isSegmentMarker(value) {
+  return /^\(?\d+\/\d+\)?$/.test(String(value || '').trim());
+}
+
+function isPlaceholderGuestPart(value) {
+  const normalized = String(value || '').trim();
+  if (!normalized) return true;
+  return normalized.toLowerCase() === 'kekko' || isSegmentMarker(normalized);
+}
+
+function extractKekkoApartmentIdFromNotes(notes) {
+  const match = String(notes || '').match(KEKKO_REF_PATTERN);
+  return match?.[1] ? String(match[1]).trim().toUpperCase() : null;
+}
+
+function collectBookingNotes(row) {
+  return [
+    row?.notes,
+    row?.raw_payload?.notes,
+    row?.raw_payload?.request?.notes,
+    row?.raw_payload?.manual_request?.notes,
+    row?.raw_payload?.last_manual_request?.notes,
+  ].filter(Boolean);
+}
+
+export function getKekkoApartmentIdFromBooking(row) {
+  if (row?.raw_payload?.source?.apartment_id) {
+    return String(row.raw_payload.source.apartment_id).trim().toUpperCase();
+  }
+  for (const notes of collectBookingNotes(row)) {
+    const match = extractKekkoApartmentIdFromNotes(notes);
+    if (match) return match;
+  }
+  return null;
+}
+
+export function getKekkoUnitPresentation(unit, row = null, apartment = null) {
+  const contextApartment = resolveApartmentContext(unit, row, apartment);
+  if (!isVillaMargheritaApartment(contextApartment)) return null;
+
+  const directKey = normalizeKekkoKey(unit?.unit_label);
+  if (directKey && KEKKO_UNIT_BY_LABEL.has(directKey)) {
+    return KEKKO_UNIT_BY_LABEL.get(directKey);
+  }
+
+  const assignedKey = normalizeKekkoKey(row?.raw_payload?.__assignment?.selected_unit_label);
+  if (assignedKey && KEKKO_UNIT_BY_LABEL.has(assignedKey)) {
+    return KEKKO_UNIT_BY_LABEL.get(assignedKey);
+  }
+
+  const sourceId = getKekkoApartmentIdFromBooking(row);
+  if (sourceId && KEKKO_UNIT_BY_SOURCE_ID.has(sourceId)) {
+    return KEKKO_UNIT_BY_SOURCE_ID.get(sourceId);
+  }
+
+  return null;
+}
+
+function getUnitSortOrder(unit, apartment = null) {
+  if (isMontefeltroApartment(apartment)) {
+    const numericOrder = extractLeadingUnitNumber(unit?.unit_label);
+    if (Number.isFinite(numericOrder)) return numericOrder;
+  }
+  return getKekkoUnitPresentation(unit, null, apartment)?.sortOrder ?? (1000 + Number(unit?.beds24_unit_index || 0));
+}
+
+function buildUnitDisplayMeta(unit, apartment) {
+  const presentation = getKekkoUnitPresentation(unit, null, apartment);
+  if (presentation) return `${presentation.floor} · ${presentation.capacity} pax`;
+  return `${apartment.city} · ${unit?.max_guests || '—'} ospiti max`;
+}
+
+function buildUnitDisplayTitle(unit, apartment) {
+  if (isMontefeltroApartment(apartment)) {
+    const unitLabel = normalizeText(unit?.unit_label || '');
+    if (unitLabel) return unitLabel;
+  }
+  const presentation = getKekkoUnitPresentation(unit, null, apartment);
+  if (presentation) return presentation.title;
+
+  const roomType = normalizeText(unit?.room_type_label || '');
+  const unitLabel = normalizeText(unit?.unit_label || '');
+  if (roomType && !isGenericUnitLabel(roomType)) return roomType;
+  if (unitLabel && !isGenericUnitLabel(unitLabel)) return unitLabel;
+  return apartment.displayName;
+}
+
+function buildUnitDisplayNote(unit, apartment) {
+  if (isMontefeltroApartment(apartment)) {
+    return '';
+  }
+  const presentation = getKekkoUnitPresentation(unit, null, apartment);
+  if (!presentation) {
+    const roomType = normalizeText(unit?.room_type_label || '');
+    const unitLabel = normalizeText(unit?.unit_label || '');
+    const title = buildUnitDisplayTitle(unit, apartment);
+    if (roomType && !isGenericUnitLabel(roomType) && roomType !== title) return roomType;
+    if (unitLabel && !isGenericUnitLabel(unitLabel) && unitLabel !== title) return unitLabel;
+    return '';
+  }
+  return [presentation.groupName, presentation.note].filter(Boolean).join(' · ');
+}
+
+function buildBookingDisplayName(row) {
+  const isKekko = isKekkoImportedBooking(row);
+  const sourceName = normalizeText(row?.raw_payload?.source?.name || '');
+  if (isKekko && sourceName) return sourceName;
+
+  const first = normalizeText(row?.guest_first_name || '');
+  const last = normalizeText(row?.guest_last_name || '');
+
+  if (isKekko && first && isPlaceholderGuestPart(last)) return first;
+  return [first, last].filter(Boolean).join(' ').trim();
+}
+
+function buildBookingDisplaySegment(row) {
+  if (!isKekkoImportedBooking(row)) return null;
+  const value = normalizeText(row?.guest_last_name || '');
+  const match = value.match(/^\(?(\d+\/\d+)\)?$/);
+  return match?.[1] || null;
+}
+
+export function isKekkoImportedBooking(row) {
+  if (String(row?.raw_payload?.source?.source || '').trim().toLowerCase() === 'checco') return true;
+  if (getKekkoApartmentIdFromBooking(row)) return true;
+  return collectBookingNotes(row).some((notes) => KEKKO_IMPORT_NOTE_PATTERN.test(String(notes || '')));
+}
 
 export async function loadStaticData() {
   const apartmentsQuery = window.sb
@@ -49,6 +252,9 @@ export async function loadStaticData() {
   S.units = (units || []).slice();
   S.unitMap = new Map(S.units.map((item) => [String(item.id), item]));
   S.unitsByApartment = groupBy(S.units, (item) => String(item.apartment_id), (a, b) => {
+    const apartment = S.apartmentMap.get(String(a.apartment_id)) || null;
+    const sortCompare = getUnitSortOrder(a, apartment) - getUnitSortOrder(b, apartment);
+    if (sortCompare !== 0) return sortCompare;
     const indexCompare = Number(a.beds24_unit_index || 0) - Number(b.beds24_unit_index || 0);
     return indexCompare !== 0 ? indexCompare : String(a.unit_label || '').localeCompare(String(b.unit_label || ''), 'it');
   });
@@ -160,13 +366,19 @@ export function deriveCity(row) {
 
 export function enrichBooking(row) {
   const guestCount = Number(row.num_adults || 0) + Number(row.num_children || 0);
-  const notes = row.raw_payload?.notes || row.raw_payload?.['notes'] || row.raw_payload?.__assignment?.notes || '';
+  const notes = collectBookingNotes(row)[0] || '';
+  const unit = S.unitMap.get(String(row.apartment_unit_id)) || null;
   return {
     ...row,
     apartment: S.apartmentMap.get(String(row.apartment_id)) || null,
-    unit: S.unitMap.get(String(row.apartment_unit_id)) || null,
+    unit,
     guestCount,
     notes: normalizeText(notes),
+    unitPresentation: getKekkoUnitPresentation(unit, row),
+    kekkoApartmentId: getKekkoApartmentIdFromBooking(row),
+    isKekkoImported: isKekkoImportedBooking(row),
+    displayGuestName: buildBookingDisplayName(row),
+    displaySegment: buildBookingDisplaySegment(row),
   };
 }
 
@@ -266,6 +478,10 @@ export function getVisibleApartmentRows() {
         units,
         bookings,
         maxGuests: unit.max_guests || null,
+        displayTitle: buildUnitDisplayTitle(unit, apartment),
+        displayMeta: buildUnitDisplayMeta(unit, apartment),
+        displayNote: buildUnitDisplayNote(unit, apartment),
+        displayOrder: getUnitSortOrder(unit, apartment),
       };
     });
 
@@ -278,6 +494,10 @@ export function getVisibleApartmentRows() {
         units,
         bookings: visibleUnitRows[0]?.bookings || [],
         maxGuests: units[0]?.max_guests || null,
+        displayTitle: visibleUnitRows[0]?.displayTitle || units[0]?.unit_label || apartment.displayName,
+        displayMeta: visibleUnitRows[0]?.displayMeta || `${apartment.city} · ${units[0]?.max_guests || '—'} ospiti max`,
+        displayNote: visibleUnitRows[0]?.displayNote || '',
+        displayOrder: visibleUnitRows[0]?.displayOrder || 0,
       });
       continue;
     }
@@ -288,6 +508,7 @@ export function getVisibleApartmentRows() {
       units,
       bookings: [],
       maxGuests: sum(units.map((unit) => Number(unit.max_guests || 0))) || null,
+      displayOrder: 0,
     });
     if (S.expandedResidences.has(String(apartment.id))) {
       rows.push(...visibleUnitRows);
@@ -308,10 +529,9 @@ export function groupVisibleRowsByCity() {
     rows: cityRows.sort((left, right) => {
       const nameCompare = left.apartment.displayName.localeCompare(right.apartment.displayName, 'it');
       if (nameCompare !== 0) return nameCompare;
-      if (left.unit && right.unit) {
-        return String(left.unit.unit_label || '').localeCompare(String(right.unit.unit_label || ''), 'it');
-      }
-      return 0;
+      const orderCompare = Number(left.displayOrder || 0) - Number(right.displayOrder || 0);
+      if (orderCompare !== 0) return orderCompare;
+      return String(left.displayTitle || left.unit?.unit_label || '').localeCompare(String(right.displayTitle || right.unit?.unit_label || ''), 'it');
     }),
   }));
 }
@@ -334,6 +554,14 @@ export function groupVisibleBookingsForMobile() {
 
 export function getVisibleBookings() {
   return S.bookings.filter(matchesFilters).sort(compareBookingsForRender);
+}
+
+export function countVisibleBookingsForApartment(apartmentId) {
+  const key = String(apartmentId || '');
+  return S.bookings.filter((booking) => (
+    String(booking.apartment_id) === key
+    && matchesFilters(booking)
+  )).length;
 }
 
 export function matchesFilters(booking) {
@@ -374,9 +602,10 @@ export function getInventoryStateForUnit(unit, date) {
   const roomId = String(unit?.beds24_room_id || '').trim();
   const iso = typeof date === 'string' ? date : isoDateLocal(date);
   const cachedDay = S.calendarDayByUnitDate.get(`${unit?.id || ''}:${iso}`) || null;
+  const cachedClosed = isCachedDayClosed(cachedDay);
   if (!roomId) {
     return {
-      closed: cachedDay?.closed === true,
+      closed: cachedClosed,
       available: cachedDay?.available ?? null,
       hasBooking: false,
       price: cachedDay?.price ?? null,
@@ -386,7 +615,7 @@ export function getInventoryStateForUnit(unit, date) {
   const row = S.inventoryByRoomDate.get(`${roomId}:${iso}`) || null;
   if (!row) {
     return {
-      closed: cachedDay?.closed === true,
+      closed: cachedClosed,
       available: cachedDay?.available ?? null,
       hasBooking: false,
       price: cachedDay?.price ?? null,
@@ -394,7 +623,7 @@ export function getInventoryStateForUnit(unit, date) {
     };
   }
   return {
-    closed: row.closed === true || row.available === false || cachedDay?.closed === true,
+    closed: row.closed === true || row.available === false || cachedClosed,
     available: row.available ?? cachedDay?.available ?? null,
     hasBooking: Boolean(row.hasBooking),
     price: row.price ?? cachedDay?.price ?? null,
@@ -412,13 +641,17 @@ export function getDayAvailabilityState(row, date) {
     hasBooking: stateFromInventory.hasBooking || hasBooking,
     price: stateFromInventory.price ?? cachedDay?.price ?? null,
     minStay: stateFromInventory.minStay ?? cachedDay?.min_stay ?? null,
-    closed: stateFromInventory.closed || (cachedDay?.closed === true),
+    closed: stateFromInventory.closed || isCachedDayClosed(cachedDay),
   };
+}
+
+function isCachedDayClosed(cachedDay) {
+  return cachedDay?.closed === true || cachedDay?.available === false;
 }
 
 export function buildDayCellLabel(row, date, state) {
   const bits = [
-    row.apartment.displayName,
+    row.displayTitle || row.unit?.unit_label || row.apartment.displayName,
     formatDate(isoDateLocal(date)),
   ];
   if (state.closed) bits.push('non vendibile');
