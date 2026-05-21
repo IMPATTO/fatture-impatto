@@ -10,7 +10,12 @@
  */
 
 const { createClient } = require('@supabase/supabase-js');
-const { normalizeSupabaseUrl } = require('./_lib/shared-auth');
+const {
+  getBearerToken,
+  getSupabaseUserFromToken,
+  normalizeSupabaseUrl,
+} = require('./_lib/shared-auth');
+const { resolvePmsCalendarScope } = require('./_lib/pms-calendar-access');
 
 const BEDS24_URL = 'https://api.beds24.com/v2';
 const OCCUPYING_STATUSES = new Set(['confirmed', 'new', 'request', 'black']);
@@ -64,6 +69,16 @@ exports.handler = async (event) => {
     return respond(500, { error: 'BEDS24_API_KEY mancante' });
   }
 
+  const token = getBearerToken(event.headers || {});
+  if (!token) {
+    return respond(401, { error: 'Unauthorized' });
+  }
+
+  const user = await getSupabaseUserFromToken(token);
+  if (!user?.id) {
+    return respond(401, { error: 'Unauthorized' });
+  }
+
   const output = {
     mode: dryRun ? 'dry-run' : 'execute',
     filter: {
@@ -101,6 +116,13 @@ exports.handler = async (event) => {
   };
 
   const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
+  const scope = await resolvePmsCalendarScope(supabase, user.email || '');
+  if (!scope.canEditAny) {
+    return respond(403, {
+      error: 'Forbidden: no editable calendar access configured',
+      ...output,
+    });
+  }
 
   let syncJobId = null;
   let targetProperties = [];
@@ -121,19 +143,48 @@ exports.handler = async (event) => {
     const units = await loadActiveUnits(supabase);
     const indexes = buildIndexes(mappings, units);
 
-    targetProperties = determineTargetProperties({
-      apartmentId,
-      propertyId,
-      onlyResidences,
-      propertyToMappings: indexes.propertyToMappings,
-      apartmentToProperties: indexes.apartmentToProperties,
-    });
+    if (scope.isGlobalEditor) {
+      targetProperties = determineTargetProperties({
+        apartmentId,
+        propertyId,
+        onlyResidences,
+        propertyToMappings: indexes.propertyToMappings,
+        apartmentToProperties: indexes.apartmentToProperties,
+      });
 
-    targetApartmentIds = determineTargetApartmentIds({
-      apartmentId,
-      targetProperties,
-      propertyToMappings: indexes.propertyToMappings,
-    });
+      targetApartmentIds = determineTargetApartmentIds({
+        apartmentId,
+        targetProperties,
+        propertyToMappings: indexes.propertyToMappings,
+      });
+    } else {
+      const allowedApartmentIds = apartmentId
+        ? [apartmentId]
+        : scope.editableApartmentIds.slice();
+
+      if (apartmentId && !scope.editableApartmentIds.includes(apartmentId)) {
+        return respond(403, {
+          error: 'Forbidden: apartment not editable for this user',
+          ...output,
+        });
+      }
+
+      const allowedProperties = [...new Set(
+        allowedApartmentIds.flatMap((id) => Array.from(indexes.apartmentToProperties.get(id) || []))
+      )];
+
+      if (propertyId && !allowedProperties.includes(propertyId)) {
+        return respond(403, {
+          error: 'Forbidden: property not editable for this user',
+          ...output,
+        });
+      }
+
+      targetProperties = propertyId ? [propertyId] : allowedProperties;
+      targetApartmentIds = propertyId
+        ? allowedApartmentIds.filter((id) => Array.from(indexes.apartmentToProperties.get(id) || []).includes(propertyId))
+        : allowedApartmentIds;
+    }
 
     if (!targetProperties.length) {
       return respond(404, {

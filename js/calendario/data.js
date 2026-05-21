@@ -6,6 +6,7 @@ import {
   S,
   STATUS_LABELS,
 } from './state.js?v=20260519e';
+} from './state.js?v=20260521c';
 import {
   formatDate,
   formatPrice,
@@ -301,7 +302,11 @@ export async function loadMonthData() {
     orphanQuery,
     lastSyncQuery,
     fetchAllCalendarDays(start, end),
-    fetch(inventoryUrl)
+    fetch(inventoryUrl, {
+      headers: S.session?.access_token
+        ? { Authorization: `Bearer ${S.session.access_token}` }
+        : {},
+    })
       .then(async (response) => {
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) {

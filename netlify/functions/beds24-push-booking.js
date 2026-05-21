@@ -1,18 +1,12 @@
 const { createClient } = require('@supabase/supabase-js');
 const {
-  getAuthContextFromHeaders,
+  getBearerToken,
+  getSupabaseUserFromToken,
   normalizeSupabaseUrl,
 } = require('./_lib/shared-auth');
+const { resolvePmsCalendarScope, canEditApartment } = require('./_lib/pms-calendar-access');
 
 const BEDS24_URL = 'https://api.beds24.com/v2';
-const PMS_EDITORS = new Set([
-  'fatturazione@illupoaffitta.com',
-  'contabilita@illupoaffitta.com',
-  'info@marcovenzon.com',
-  'veronica.dieta@gmail.com',
-  'jessica.appartamenticaldari@gmail.com',
-  'cerulliserena@gmail.com',
-]);
 const ALLOWED_OPERATIONS = new Set(['create', 'update', 'delete']);
 
 const CORS = {
@@ -33,23 +27,16 @@ exports.handler = async (event) => {
     return respond(405, { error: 'Method not allowed' });
   }
 
-  const auth = await getAuthContextFromHeaders(event.headers || {}, {
-    allowInternalSupabase: true,
-  });
-  if (!auth) {
+  const token = getBearerToken(event.headers || {});
+  if (!token) {
     return respond(401, { error: 'Unauthorized' });
   }
 
-  const userEmail = String(
-    auth.user?.email ||
-    auth.email ||
-    auth.actor ||
-    auth.session?.sub ||
-    '',
-  ).trim().toLowerCase();
-  if (!PMS_EDITORS.has(userEmail)) {
-    return respond(403, { error: 'Forbidden: not a PMS editor' });
+  const user = await getSupabaseUserFromToken(token);
+  if (!user?.id) {
+    return respond(401, { error: 'Unauthorized' });
   }
+  const userEmail = String(user.email || '').trim().toLowerCase();
 
   let body;
   try {
@@ -82,6 +69,10 @@ exports.handler = async (event) => {
   }
 
   const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
+  const scope = await resolvePmsCalendarScope(supabase, userEmail);
+  if (!scope.canEditAny) {
+    return respond(403, { error: 'Forbidden: no editable calendar access configured' });
+  }
 
   const bookingId = normalizeText(booking.beds24_booking_id);
   let existingBooking = null;
@@ -121,6 +112,13 @@ exports.handler = async (event) => {
       unit = mapping.unit;
       apartment = mapping.apartment;
     }
+  }
+
+  const targetApartmentId = booking.apartment_unit_id
+    ? apartment?.id
+    : (existingBooking?.apartment_id || apartment?.id || null);
+  if (!targetApartmentId || !canEditApartment(scope, targetApartmentId)) {
+    return respond(403, { error: 'Forbidden: booking is outside your editable scope' });
   }
 
   const targetApartmentUnitId = booking.apartment_unit_id || existingBooking?.apartment_unit_id || null;

@@ -1,9 +1,11 @@
+const { createClient } = require('@supabase/supabase-js');
 const BEDS24_URL = 'https://api.beds24.com/v2';
 const {
   getBearerToken,
   getSupabaseUserFromToken,
   normalizeSupabaseUrl,
 } = require('./_lib/shared-auth');
+const { resolvePmsCalendarScope, canEditApartment } = require('./_lib/pms-calendar-access');
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -54,6 +56,7 @@ exports.handler = async (event) => {
 
   const requestUrl = new URL(event.rawUrl || `https://local.invalid${event.path || '/.netlify/functions/sync-beds24-calendar-background'}`);
   const daysParam = requestUrl.searchParams.get('days');
+  const apartmentIdParam = String(requestUrl.searchParams.get('apartmentId') || '').trim();
   const parsedDays = Number.parseInt(String(daysParam || '60'), 10);
   const daysToSync = Number.isFinite(parsedDays)
     ? Math.max(1, Math.min(90, parsedDays))
@@ -62,8 +65,22 @@ exports.handler = async (event) => {
   const startTime = Date.now();
 
   try {
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
+    const scope = await resolvePmsCalendarScope(supabase, user.email || '');
+    if (!scope.canEditAny) {
+      return respond(403, { error: 'Forbidden: no editable calendar access configured' }, corsHeaders);
+    }
+
+    if (apartmentIdParam && !canEditApartment(scope, apartmentIdParam)) {
+      return respond(403, { error: 'Forbidden: apartment not editable for this user' }, corsHeaders);
+    }
+
+    const targetApartmentIds = apartmentIdParam
+      ? [apartmentIdParam]
+      : (scope.isGlobalEditor ? [] : scope.editableApartmentIds);
+
     const accessToken = await getBeds24AccessToken(env);
-    const units = await getApartmentUnits(env);
+    const units = await getApartmentUnits(env, targetApartmentIds);
     if (!units.length) {
       return respond(200, {
         success: true,
@@ -126,11 +143,14 @@ async function getBeds24AccessToken(env) {
   return token;
 }
 
-async function getApartmentUnits(env) {
+async function getApartmentUnits(env, apartmentIds = []) {
   const url = new URL(`${env.SUPABASE_URL}/rest/v1/apartment_units`);
-  url.searchParams.set('select', 'id,beds24_room_id');
+  url.searchParams.set('select', 'id,apartment_id,beds24_room_id');
   url.searchParams.set('active', 'eq.true');
   url.searchParams.set('beds24_room_id', 'not.is.null');
+  if (Array.isArray(apartmentIds) && apartmentIds.length) {
+    url.searchParams.set('apartment_id', `in.(${apartmentIds.join(',')})`);
+  }
 
   const response = await fetch(url, {
     headers: {

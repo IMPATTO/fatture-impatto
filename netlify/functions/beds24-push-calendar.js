@@ -1,18 +1,12 @@
 const { createClient } = require('@supabase/supabase-js');
 const {
-  getAuthContextFromHeaders,
+  getBearerToken,
+  getSupabaseUserFromToken,
   normalizeSupabaseUrl,
 } = require('./_lib/shared-auth');
+const { resolvePmsCalendarScope, canEditApartment } = require('./_lib/pms-calendar-access');
 
 const BEDS24_URL = 'https://api.beds24.com/v2';
-const PMS_EDITORS = new Set([
-  'fatturazione@illupoaffitta.com',
-  'contabilita@illupoaffitta.com',
-  'info@marcovenzon.com',
-  'veronica.dieta@gmail.com',
-  'jessica.appartamenticaldari@gmail.com',
-  'cerulliserena@gmail.com',
-]);
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -32,17 +26,16 @@ exports.handler = async (event) => {
     return respond(405, { error: 'Method not allowed' });
   }
 
-  const auth = await getAuthContextFromHeaders(event.headers || {}, {
-    allowInternalSupabase: true,
-  });
-  if (!auth) {
+  const token = getBearerToken(event.headers || {});
+  if (!token) {
     return respond(401, { error: 'Unauthorized' });
   }
 
-  const userEmail = String(auth.user?.email || auth.email || '').trim().toLowerCase();
-  if (!PMS_EDITORS.has(userEmail)) {
-    return respond(403, { error: 'Forbidden: not a PMS editor' });
+  const user = await getSupabaseUserFromToken(token);
+  if (!user?.id) {
+    return respond(401, { error: 'Unauthorized' });
   }
+  const userEmail = String(user.email || '').trim().toLowerCase();
 
   let body;
   try {
@@ -95,6 +88,10 @@ exports.handler = async (event) => {
   }
 
   const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
+  const scope = await resolvePmsCalendarScope(supabase, userEmail);
+  if (!scope.canEditAny) {
+    return respond(403, { error: 'Forbidden: no editable calendar access configured' });
+  }
 
   let beds24Token;
   try {
@@ -107,7 +104,7 @@ exports.handler = async (event) => {
   const unitIds = [...new Set(body.changes.map((change) => change.apartment_unit_id))];
   const { data: units, error: unitsError } = await supabase
     .from('apartment_units')
-    .select('id, beds24_room_id')
+    .select('id, apartment_id, beds24_room_id')
     .in('id', unitIds);
 
   if (unitsError) {
@@ -115,6 +112,10 @@ exports.handler = async (event) => {
   }
 
   const unitMap = new Map((units || []).map((unit) => [unit.id, unit]));
+  const unauthorizedUnit = (units || []).find((unit) => !canEditApartment(scope, unit.apartment_id));
+  if (unauthorizedUnit) {
+    return respond(403, { error: 'Forbidden: one or more units are outside your editable scope' });
+  }
   const beds24PayloadByRoom = new Map();
 
   for (const change of body.changes) {

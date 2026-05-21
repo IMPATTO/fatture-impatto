@@ -7,8 +7,8 @@ import {
   syncDragSelectionToolbar,
   toggleCityFilter,
   toggleSetValue,
-} from './interactions.js?v=20260521b';
-import { CHANNEL_CONFIG, ELS, S, STATUS_LABELS } from './state.js?v=20260519e';
+} from './interactions.js?v=20260521c';
+import { CHANNEL_CONFIG, ELS, S, STATUS_LABELS } from './state.js?v=20260521c';
 import {
   buildDayCellLabel,
   countVisibleBookingsForApartment,
@@ -26,7 +26,7 @@ import {
   groupVisibleBookingsForMobile,
   groupVisibleRowsByCity,
   isKekkoImportedBooking,
-} from './data.js?v=20260521a';
+} from './data.js?v=20260521c';
 import {
   addDays,
   bookingSpanWithinMonth,

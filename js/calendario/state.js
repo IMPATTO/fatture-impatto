@@ -73,6 +73,8 @@ export const S = {
   syncing: false,
   syncingPrices: false,
   isPmsEditor: false,
+  calendarAccessMode: 'viewer',
+  calendarAccessHasRows: false,
   monthDate: new Date(now.getFullYear(), now.getMonth(), 1),
   apartments: [],
   apartmentMap: new Map(),

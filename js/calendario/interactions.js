@@ -5,7 +5,8 @@ import {
   loadMonthData,
   loadStaticData,
 } from './data.js?v=20260521a';
-import { CITY_PRIORITY, ELS, PMS_EDITOR_EMAILS, S, SIDEBAR_STORAGE_KEY } from './state.js?v=20260519e';
+} from './data.js?v=20260521c';
+import { CITY_PRIORITY, ELS, PMS_EDITOR_EMAILS, S, SIDEBAR_STORAGE_KEY } from './state.js?v=20260521c';
 import {
   nightsBetween,
   startOfMonth,
@@ -24,7 +25,7 @@ const RENDER = {
 
 export async function init() {
   cacheElements();
-  await import('./render.js?v=20260521b');
+  await import('./render.js?v=20260521c');
   bindShellEvents();
   restoreSidebarState();
   handleScrollHeaderToggle();
@@ -202,12 +203,12 @@ export function applySession(session) {
   S.session = session || null;
   S.authReady = true;
   const email = (session?.user?.email || '').toLowerCase();
-  S.isPmsEditor = PMS_EDITOR_EMAILS.has(email);
-  if (ELS.bulkEditBtn) {
-    ELS.bulkEditBtn.style.display = S.isPmsEditor ? '' : 'none';
-  }
   if (!session) {
+    S.isPmsEditor = false;
+    S.calendarAccessMode = 'viewer';
+    S.calendarAccessHasRows = false;
     S.lastNightlySync = null;
+    applyCalendarCapabilityUi();
     renderSyncBadge();
     clearDragSelection();
     ELS.app.classList.add('hidden');
@@ -222,8 +223,71 @@ export function applySession(session) {
   ELS.app.classList.remove('hidden');
   ELS.navUser.textContent = session.user?.email || 'Operatore';
   RENDER.renderStaticShell?.();
+  void initializeCalendarAccess(email);
+}
+
+async function initializeCalendarAccess(email) {
+  const access = await resolveCalendarAccess(email);
+  S.isPmsEditor = access.canEdit;
+  S.calendarAccessMode = access.mode;
+  S.calendarAccessHasRows = access.hasRows;
+  applyCalendarCapabilityUi();
+  RENDER.renderStaticShell?.();
+  RENDER.renderSyncMeta?.();
   void loadLastSyncStatus();
   void ensureDataLoaded();
+}
+
+async function resolveCalendarAccess(email) {
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+  const fallback = {
+    mode: PMS_EDITOR_EMAILS.has(normalizedEmail) ? 'global-editor' : 'viewer',
+    canEdit: PMS_EDITOR_EMAILS.has(normalizedEmail),
+    hasRows: false,
+  };
+
+  if (!normalizedEmail || !window.sb) {
+    return fallback;
+  }
+
+  try {
+    const { data, error } = await window.sb
+      .from('pms_calendar_access')
+      .select('apartment_id, can_edit')
+      .eq('login_email', normalizedEmail);
+
+    if (error) throw error;
+
+    const rows = data || [];
+    const hasEditableRow = rows.some((row) => row?.can_edit === true);
+    return {
+      mode: fallback.canEdit ? 'global-editor' : hasEditableRow ? 'scoped-editor' : 'viewer',
+      canEdit: fallback.canEdit || hasEditableRow,
+      hasRows: rows.length > 0,
+    };
+  } catch (error) {
+    console.warn('[CALENDAR-ACCESS-LOAD-FAIL]', error);
+    return fallback;
+  }
+}
+
+function applyCalendarCapabilityUi() {
+  const canManage = S.isPmsEditor === true;
+  if (ELS.bulkEditBtn) {
+    ELS.bulkEditBtn.style.display = canManage ? '' : 'none';
+  }
+  if (ELS.refreshBtn) {
+    ELS.refreshBtn.style.display = canManage ? '' : 'none';
+  }
+  if (ELS.syncPricesBtn) {
+    ELS.syncPricesBtn.style.display = canManage ? '' : 'none';
+  }
+  if (ELS.miniRefreshBtn) {
+    ELS.miniRefreshBtn.style.display = canManage ? '' : 'none';
+  }
+  if (!canManage && ELS.lastSyncBadge) {
+    ELS.lastSyncBadge.classList.add('hidden');
+  }
 }
 
 export async function handleLogin(event) {
@@ -307,6 +371,7 @@ export async function ensureDataLoaded({ monthOnly = false } = {}) {
 }
 
 export async function refreshFromBeds24() {
+  if (!S.isPmsEditor) return;
   if (S.syncing) return;
   S.syncing = true;
   RENDER.renderSyncMeta?.();
@@ -338,6 +403,7 @@ export async function refreshFromBeds24() {
 }
 
 export async function syncPricesWeek() {
+  if (!S.isPmsEditor) return;
   if (S.syncingPrices) return;
   S.syncingPrices = true;
   updatePricesSyncBtn();
@@ -370,7 +436,11 @@ export async function syncPricesWeek() {
 }
 
 async function loadLastSyncStatus() {
-  if (!S.session || !window.sb) return;
+  if (!S.session || !window.sb || !S.isPmsEditor) {
+    S.lastNightlySync = null;
+    renderSyncBadge();
+    return;
+  }
 
   try {
     const legacy = await window.sb
@@ -423,6 +493,11 @@ function applyLastSyncRows(rows) {
 
 function renderSyncBadge() {
   if (!ELS.lastSyncBadge) return;
+  if (!S.isPmsEditor) {
+    ELS.lastSyncBadge.classList.add('hidden');
+    ELS.lastSyncBadge.textContent = '';
+    return;
+  }
 
   if (!S.lastNightlySync) {
     ELS.lastSyncBadge.classList.add('hidden');

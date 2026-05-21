@@ -1,4 +1,10 @@
-const { normalizeSupabaseUrl } = require('./_lib/shared-auth');
+const { createClient } = require('@supabase/supabase-js');
+const {
+  getBearerToken,
+  getSupabaseUserFromToken,
+  normalizeSupabaseUrl,
+} = require('./_lib/shared-auth');
+const { resolvePmsCalendarScope } = require('./_lib/pms-calendar-access');
 
 const BEDS24_URL = 'https://api.beds24.com/v2';
 const CACHE = new Map();
@@ -26,6 +32,16 @@ exports.handler = async (event) => {
     return respond(405, { error: 'Method not allowed' });
   }
 
+  const token = getBearerToken(event.headers || {});
+  if (!token) {
+    return respond(401, { error: 'Unauthorized' });
+  }
+
+  const user = await getSupabaseUserFromToken(token);
+  if (!user?.id) {
+    return respond(401, { error: 'Unauthorized' });
+  }
+
   const query = event.queryStringParameters || {};
   const from = query.dateFrom || new Date().toISOString().slice(0, 10);
   const to = query.dateTo || new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -45,8 +61,16 @@ exports.handler = async (event) => {
   if (!env.SUPABASE_SERVICE_KEY) return respond(500, { error: 'SUPABASE_SERVICE_KEY mancante' });
 
   try {
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const scope = await resolvePmsCalendarScope(supabase, user.email || '');
+    if (!scope.canViewAny) {
+      return respond(403, { error: 'Forbidden: no calendar access configured' });
+    }
+
     const warnings = [];
-    const allApartments = await loadApartments(env, diagnostics);
+    const allApartments = await loadApartments(env, diagnostics, scope);
     const apartments = roomId
       ? allApartments.filter((apartment) => String(apartment.beds24_room_id) === roomId)
       : allApartments;
@@ -111,22 +135,29 @@ exports.handler = async (event) => {
   }
 };
 
-async function loadApartments(env, diagnostics) {
+async function loadApartments(env, diagnostics, scope) {
   return withCache({
-    key: `apartments:${env.SUPABASE_URL}`,
+    key: `apartments:${env.SUPABASE_URL}:${scope?.isGlobalEditor ? 'all' : (scope?.apartmentIds || []).sort().join(',')}`,
     ttlMs: CACHE_TTL.apartments,
     staleTtlMs: CACHE_STALE_TTL.apartments,
     diagnostics,
     loader: async () => {
-      const res = await fetch(
-        `${env.SUPABASE_URL}/rest/v1/apartments?select=id,nome_appartamento,beds24_room_id&beds24_room_id=not.is.null&order=nome_appartamento`,
-        {
-          headers: {
-            apikey: env.SUPABASE_SERVICE_KEY,
-            Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-          },
-        }
-      );
+      const url = new URL(`${env.SUPABASE_URL}/rest/v1/apartments`);
+      url.searchParams.set('select', 'id,nome_appartamento,beds24_room_id');
+      url.searchParams.set('beds24_room_id', 'not.is.null');
+      url.searchParams.set('order', 'nome_appartamento');
+      if (!scope?.isGlobalEditor) {
+        const ids = (scope?.apartmentIds || []).filter(Boolean);
+        if (!ids.length) return [];
+        url.searchParams.set('id', `in.(${ids.join(',')})`);
+      }
+
+      const res = await fetch(String(url), {
+        headers: {
+          apikey: env.SUPABASE_SERVICE_KEY,
+          Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+        },
+      });
 
       if (!res.ok) throw new Error(`Errore lettura apartments: ${res.status}`);
       return await res.json();
@@ -526,6 +557,8 @@ async function loadCalendarOverrides(env, roomIds, from, to, diagnostics, warnin
   roomIds.forEach((id) => params.append('roomId', id));
   params.set('from', from);
   params.set('to', to);
+  params.set('includePrices', 'true');
+  params.set('includeMinStay', 'true');
   const path = `/inventory/rooms/calendar?${params.toString()}`;
 
   try {
