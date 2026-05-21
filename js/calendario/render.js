@@ -7,7 +7,7 @@ import {
   syncDragSelectionToolbar,
   toggleCityFilter,
   toggleSetValue,
-} from './interactions.js?v=20260520e';
+} from './interactions.js?v=20260521a';
 import { CHANNEL_CONFIG, ELS, S, STATUS_LABELS } from './state.js?v=20260519e';
 import {
   buildDayCellLabel,
@@ -26,7 +26,7 @@ import {
   groupVisibleBookingsForMobile,
   groupVisibleRowsByCity,
   isKekkoImportedBooking,
-} from './data.js?v=20260520e';
+} from './data.js?v=20260521a';
 import {
   addDays,
   bookingSpanWithinMonth,
@@ -46,7 +46,7 @@ import {
   minutesAgoLabel,
   nightsBetween,
   titleCase,
-} from './utils.js?v=20260520e';
+} from './utils.js?v=20260520f';
 
 let dragMouseUpBound = false;
 let dragStartCell = null;

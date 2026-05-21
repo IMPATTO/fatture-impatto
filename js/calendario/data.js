@@ -18,7 +18,7 @@ import {
   unique,
   compareBookingsForRender,
   compareOrphans,
-} from './utils.js?v=20260520e';
+} from './utils.js?v=20260520f';
 
 const KEKKO_UNIT_CATALOG = [
   { sourceId: 'M1', title: '104', floor: 'PT', capacity: 3, groupName: 'Monolocali', note: 'il migliore', sortOrder: 1, aliases: ['104'] },
@@ -290,12 +290,6 @@ export async function loadMonthData() {
     .order('synced_at', { ascending: false })
     .limit(1);
 
-  const calendarDaysQuery = window.sb
-    .from('calendar_days')
-    .select('apartment_unit_id, date, price, min_stay, available, closed')
-    .gte('date', start)
-    .lte('date', end);
-
   const [
     { data: bookings, error: bookingsError },
     { data: orphanRows, error: orphanError, count: orphanCount },
@@ -306,7 +300,7 @@ export async function loadMonthData() {
     bookingsQuery,
     orphanQuery,
     lastSyncQuery,
-    calendarDaysQuery,
+    fetchAllCalendarDays(start, end),
     fetch(inventoryUrl)
       .then(async (response) => {
         const payload = await response.json().catch(() => ({}));
@@ -342,6 +336,34 @@ export async function loadMonthData() {
   S.orphanRows = (orphanRows || []).map(enrichOrphan).sort(compareOrphans);
   S.orphanCount = Number(orphanCount || 0);
   S.lastSync = lastSyncRows?.[0]?.synced_at || null;
+}
+
+async function fetchAllCalendarDays(start, end) {
+  const pageSize = 1000;
+  const rows = [];
+
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await window.sb
+      .from('calendar_days')
+      .select('apartment_unit_id, date, price, min_stay, available, closed')
+      .gte('date', start)
+      .lte('date', end)
+      .order('date', { ascending: true })
+      .order('apartment_unit_id', { ascending: true })
+      .range(from, from + pageSize - 1);
+
+    if (error) {
+      return { data: rows, error };
+    }
+
+    if (Array.isArray(data) && data.length) {
+      rows.push(...data);
+    }
+
+    if (!Array.isArray(data) || data.length < pageSize) {
+      return { data: rows, error: null };
+    }
+  }
 }
 
 export function enrichApartment(row) {
