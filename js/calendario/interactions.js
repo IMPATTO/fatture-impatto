@@ -4,9 +4,8 @@ import {
   initializeFilterDefaults,
   loadMonthData,
   loadStaticData,
-} from './data.js?v=20260521a';
-} from './data.js?v=20260521c';
-import { CITY_PRIORITY, ELS, PMS_EDITOR_EMAILS, S, SIDEBAR_STORAGE_KEY } from './state.js?v=20260521c';
+} from './data.js?v=20260521e';
+import { CITY_PRIORITY, ELS, PMS_EDITOR_EMAILS, S, SIDEBAR_STORAGE_KEY } from './state.js?v=20260521e';
 import {
   nightsBetween,
   startOfMonth,
@@ -25,7 +24,7 @@ const RENDER = {
 
 export async function init() {
   cacheElements();
-  await import('./render.js?v=20260521c');
+  await import('./render.js?v=20260521e');
   bindShellEvents();
   restoreSidebarState();
   handleScrollHeaderToggle();
@@ -200,9 +199,14 @@ export async function initializeSession() {
 }
 
 export function applySession(session) {
+  const previousEmail = String(S.session?.user?.email || '').trim().toLowerCase();
   S.session = session || null;
   S.authReady = true;
   const email = (session?.user?.email || '').toLowerCase();
+  const identityChanged = previousEmail !== email;
+  if (identityChanged) {
+    resetCalendarDataset();
+  }
   if (!session) {
     S.isPmsEditor = false;
     S.calendarAccessMode = 'viewer';
@@ -224,6 +228,28 @@ export function applySession(session) {
   ELS.navUser.textContent = session.user?.email || 'Operatore';
   RENDER.renderStaticShell?.();
   void initializeCalendarAccess(email);
+}
+
+function resetCalendarDataset() {
+  S.staticLoaded = false;
+  S.apartments = [];
+  S.apartmentMap = new Map();
+  S.units = [];
+  S.unitMap = new Map();
+  S.unitsByApartment = new Map();
+  S.bookings = [];
+  S.bookingMap = new Map();
+  S.bookingsByApartment = new Map();
+  S.bookingsByUnit = new Map();
+  S.inventoryDays = [];
+  S.inventoryByRoomDate = new Map();
+  S.calendarDays = [];
+  S.calendarDayByUnitDate = new Map();
+  S.orphanRows = [];
+  S.orphanCount = 0;
+  S.lastSync = null;
+  S.selectedBookingId = null;
+  clearDragSelection();
 }
 
 async function initializeCalendarAccess(email) {

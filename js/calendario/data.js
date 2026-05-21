@@ -5,8 +5,7 @@ import {
   OCCUPYING_STATUSES,
   S,
   STATUS_LABELS,
-} from './state.js?v=20260519e';
-} from './state.js?v=20260521c';
+} from './state.js?v=20260521e';
 import {
   formatDate,
   formatPrice,
