@@ -24,7 +24,7 @@ const RENDER = {
 
 export async function init() {
   cacheElements();
-  await import('./render.js?v=20260521a');
+  await import('./render.js?v=20260521b');
   bindShellEvents();
   restoreSidebarState();
   handleScrollHeaderToggle();
@@ -1678,19 +1678,72 @@ function positionDragSelectionToolbar() {
 export function syncStickyTimelineHeader() {
   const timelineHeader = ELS.timelineHeader;
   const timelineBody = ELS.timelineBody;
-  if (!timelineHeader || !timelineBody) return;
+  const timelineShell = ELS.timelineShell;
+  const timelineScroll = ELS.timelineScroll;
+  const todayMarker = ELS.todayMarker;
+  if (!timelineHeader || !timelineBody || !timelineShell || !timelineScroll) return;
   if (!timelineHeader.firstElementChild) return;
-  timelineHeader.classList.remove('is-fixed');
-  timelineHeader.style.top = '';
-  timelineHeader.style.left = '';
-  timelineHeader.style.width = '';
-  timelineHeader.style.height = '';
-  timelineHeader.style.transform = '';
-  timelineBody.style.paddingTop = '';
-
   const grid = timelineHeader.firstElementChild;
+  const corner = timelineHeader.querySelector('.timeline-corner');
+
+  const reset = () => {
+    timelineHeader.classList.remove('is-fixed');
+    timelineHeader.style.top = '';
+    timelineHeader.style.left = '';
+    timelineHeader.style.width = '';
+    timelineHeader.style.height = '';
+    timelineHeader.style.transform = '';
+    timelineBody.style.paddingTop = '';
+    if (grid) {
+      grid.style.transform = '';
+    }
+    if (corner) {
+      corner.style.transform = '';
+    }
+    if (todayMarker) {
+      todayMarker.style.top = '';
+    }
+  };
+
+  const stickyTop = Number.parseInt(
+    getComputedStyle(document.documentElement).getPropertyValue('--timeline-sticky-top').trim(),
+    10,
+  ) || 48;
+  const topScrollbarHeight = Number.parseInt(
+    getComputedStyle(document.documentElement).getPropertyValue('--timeline-top-scrollbar-height').trim(),
+    10,
+  ) || 0;
+  const fixedTop = stickyTop + topScrollbarHeight;
+  const shellRect = timelineShell.getBoundingClientRect();
+  const scrollRect = timelineScroll.getBoundingClientRect();
+  const headerHeight = Math.ceil(timelineHeader.getBoundingClientRect().height || timelineHeader.offsetHeight || 68);
+  const shouldFix = (
+    scrollRect.top <= fixedTop
+    && shellRect.bottom > (fixedTop + headerHeight + 8)
+    && scrollRect.width > 0
+  );
+
+  if (!shouldFix) {
+    reset();
+    positionDragSelectionToolbar();
+    return;
+  }
+
+  timelineHeader.classList.add('is-fixed');
+  timelineHeader.style.top = `${fixedTop}px`;
+  timelineHeader.style.left = `${Math.round(scrollRect.left)}px`;
+  timelineHeader.style.width = `${Math.round(scrollRect.width)}px`;
+  timelineHeader.style.height = `${headerHeight}px`;
+  timelineBody.style.paddingTop = `${headerHeight}px`;
+
   if (grid) {
-    grid.style.transform = '';
+    grid.style.transform = `translateX(${-Math.round(timelineScroll.scrollLeft)}px)`;
+  }
+  if (corner) {
+    corner.style.transform = `translateX(${Math.round(timelineScroll.scrollLeft)}px)`;
+  }
+  if (todayMarker) {
+    todayMarker.style.top = `${headerHeight}px`;
   }
   positionDragSelectionToolbar();
 }

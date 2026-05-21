@@ -655,8 +655,7 @@ input {
 }
 
 .timeline-header {
-  position: sticky;
-  top: calc(var(--timeline-sticky-top, 48px) + var(--timeline-top-scrollbar-height, 0px));
+  position: relative;
   z-index: 30;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.99) 0%, rgba(248, 244, 236, 0.98) 100%);
   border-bottom: 1px solid rgba(190, 175, 145, 0.72);
@@ -672,6 +671,11 @@ input {
 
 .timeline-header.is-fixed > .timeline-grid {
   will-change: transform;
+}
+
+.timeline-body {
+  position: relative;
+  z-index: 1;
 }
 
 .timeline-grid {
