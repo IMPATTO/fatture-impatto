@@ -5,7 +5,7 @@ import {
   OCCUPYING_STATUSES,
   S,
   STATUS_LABELS,
-} from './state.js?v=20260521e';
+} from './state.js?v=20260522a';
 import {
   formatDate,
   formatPrice,
@@ -244,12 +244,17 @@ export async function loadStaticData() {
   if (apartmentsError) throw apartmentsError;
   if (unitsError) throw unitsError;
 
+  const scopedApartmentIds = S.calendarAccessMode === 'global-editor'
+    ? null
+    : new Set([...S.calendarAccessibleApartmentIds].filter(Boolean));
+
   S.apartments = (apartments || [])
+    .filter((row) => !scopedApartmentIds || scopedApartmentIds.has(String(row.id)))
     .filter((row) => !/test/i.test(row.nome_appartamento || ''))
     .map(enrichApartment)
     .sort(compareApartment);
   S.apartmentMap = new Map(S.apartments.map((item) => [String(item.id), item]));
-  S.units = (units || []).slice();
+  S.units = (units || []).filter((item) => S.apartmentMap.has(String(item.apartment_id)));
   S.unitMap = new Map(S.units.map((item) => [String(item.id), item]));
   S.unitsByApartment = groupBy(S.units, (item) => String(item.apartment_id), (a, b) => {
     const apartment = S.apartmentMap.get(String(a.apartment_id)) || null;

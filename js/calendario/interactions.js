@@ -4,8 +4,8 @@ import {
   initializeFilterDefaults,
   loadMonthData,
   loadStaticData,
-} from './data.js?v=20260521e';
-import { CITY_PRIORITY, ELS, PMS_EDITOR_EMAILS, S, SIDEBAR_STORAGE_KEY } from './state.js?v=20260521e';
+} from './data.js?v=20260522a';
+import { CITY_PRIORITY, ELS, PMS_EDITOR_EMAILS, S, SIDEBAR_STORAGE_KEY } from './state.js?v=20260522a';
 import {
   nightsBetween,
   startOfMonth,
@@ -24,7 +24,7 @@ const RENDER = {
 
 export async function init() {
   cacheElements();
-  await import('./render.js?v=20260521e');
+  await import('./render.js?v=20260522a');
   bindShellEvents();
   restoreSidebarState();
   handleScrollHeaderToggle();
@@ -232,6 +232,7 @@ export function applySession(session) {
 
 function resetCalendarDataset() {
   S.staticLoaded = false;
+  S.calendarAccessibleApartmentIds = new Set();
   S.apartments = [];
   S.apartmentMap = new Map();
   S.units = [];
@@ -257,6 +258,7 @@ async function initializeCalendarAccess(email) {
   S.isPmsEditor = access.canEdit;
   S.calendarAccessMode = access.mode;
   S.calendarAccessHasRows = access.hasRows;
+  S.calendarAccessibleApartmentIds = new Set(access.apartmentIds || []);
   applyCalendarCapabilityUi();
   RENDER.renderStaticShell?.();
   RENDER.renderSyncMeta?.();
@@ -270,6 +272,7 @@ async function resolveCalendarAccess(email) {
     mode: PMS_EDITOR_EMAILS.has(normalizedEmail) ? 'global-editor' : 'viewer',
     canEdit: PMS_EDITOR_EMAILS.has(normalizedEmail),
     hasRows: false,
+    apartmentIds: [],
   };
 
   if (!normalizedEmail || !window.sb) {
@@ -290,6 +293,7 @@ async function resolveCalendarAccess(email) {
       mode: fallback.canEdit ? 'global-editor' : hasEditableRow ? 'scoped-editor' : 'viewer',
       canEdit: fallback.canEdit || hasEditableRow,
       hasRows: rows.length > 0,
+      apartmentIds: rows.map((row) => String(row.apartment_id || '')).filter(Boolean),
     };
   } catch (error) {
     console.warn('[CALENDAR-ACCESS-LOAD-FAIL]', error);

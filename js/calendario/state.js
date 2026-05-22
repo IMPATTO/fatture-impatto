@@ -75,6 +75,7 @@ export const S = {
   isPmsEditor: false,
   calendarAccessMode: 'viewer',
   calendarAccessHasRows: false,
+  calendarAccessibleApartmentIds: new Set(),
   monthDate: new Date(now.getFullYear(), now.getMonth(), 1),
   apartments: [],
   apartmentMap: new Map(),
