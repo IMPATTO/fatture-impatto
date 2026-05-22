@@ -1,11 +1,12 @@
 import {
   countVisibleBookingsForApartment,
+  getAvailableCities,
   getVisibleBookings,
   initializeFilterDefaults,
   loadMonthData,
   loadStaticData,
-} from './data.js?v=20260522a';
-import { CITY_PRIORITY, ELS, PMS_EDITOR_EMAILS, S, SIDEBAR_STORAGE_KEY } from './state.js?v=20260522a';
+} from './data.js?v=20260522b';
+import { CITY_PRIORITY, ELS, PMS_EDITOR_EMAILS, S, SIDEBAR_STORAGE_KEY } from './state.js?v=20260522b';
 import {
   nightsBetween,
   startOfMonth,
@@ -24,7 +25,7 @@ const RENDER = {
 
 export async function init() {
   cacheElements();
-  await import('./render.js?v=20260522a');
+  await import('./render.js?v=20260522b');
   bindShellEvents();
   restoreSidebarState();
   handleScrollHeaderToggle();
@@ -250,6 +251,10 @@ function resetCalendarDataset() {
   S.orphanCount = 0;
   S.lastSync = null;
   S.selectedBookingId = null;
+  S.filters.cities = new Set();
+  S.filters.channels = new Set();
+  S.filters.statuses = new Set();
+  S.filters.availableNights = 0;
   clearDragSelection();
 }
 
@@ -1652,14 +1657,14 @@ export function toggleCityFilter(city, callbacks = {}) {
     }
     selected.delete(city);
   } else {
-    if (selected.size >= 8) {
-      onLimitOrSame?.();
-      alert('Puoi selezionare al massimo 8 citta alla volta.');
-      return;
-    }
     selected.add(city);
   }
   onChange?.();
+}
+
+export function selectAllCities(rerender) {
+  S.filters.cities = new Set(getAvailableCities());
+  rerender?.();
 }
 
 export function toggleSetValue(set, value, rerender) {

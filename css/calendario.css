@@ -502,6 +502,28 @@ input {
   margin-top: 14px;
 }
 
+.check-stack-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 6px;
+}
+
+.check-stack-btn {
+  padding: 6px 10px;
+  border: 1px solid rgba(180, 139, 68, 0.38);
+  border-radius: 999px;
+  background: rgba(255, 250, 241, 0.92);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.check-stack-btn:hover {
+  background: rgba(250, 239, 210, 0.95);
+  border-color: rgba(180, 139, 68, 0.55);
+}
+
 .check-item {
   display: flex;
   align-items: center;

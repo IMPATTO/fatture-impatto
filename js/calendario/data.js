@@ -5,7 +5,7 @@ import {
   OCCUPYING_STATUSES,
   S,
   STATUS_LABELS,
-} from './state.js?v=20260522a';
+} from './state.js?v=20260522b';
 import {
   formatDate,
   formatPrice,
@@ -432,10 +432,10 @@ export function buildInventoryIndex(rows) {
 export function initializeFilterDefaults() {
   const cityOptions = getAvailableCities();
   if (!S.filters.cities.size) {
-    S.filters.cities = new Set(cityOptions.slice(0, 8));
+    S.filters.cities = new Set(cityOptions);
   } else {
     S.filters.cities = new Set([...S.filters.cities].filter((city) => cityOptions.includes(city)));
-    if (!S.filters.cities.size) S.filters.cities = new Set(cityOptions.slice(0, 8));
+    if (!S.filters.cities.size) S.filters.cities = new Set(cityOptions);
   }
 
   const channels = getAvailableChannels();

@@ -5,10 +5,11 @@ import {
   syncTimelineScrollChrome,
   syncStickyTimelineHeader,
   syncDragSelectionToolbar,
+  selectAllCities,
   toggleCityFilter,
   toggleSetValue,
-} from './interactions.js?v=20260522a';
-import { CHANNEL_CONFIG, ELS, S, STATUS_LABELS } from './state.js?v=20260522a';
+} from './interactions.js?v=20260522b';
+import { CHANNEL_CONFIG, ELS, S, STATUS_LABELS } from './state.js?v=20260522b';
 import {
   buildDayCellLabel,
   countVisibleBookingsForApartment,
@@ -26,7 +27,7 @@ import {
   groupVisibleBookingsForMobile,
   groupVisibleRowsByCity,
   isKekkoImportedBooking,
-} from './data.js?v=20260522a';
+} from './data.js?v=20260522b';
 import {
   addDays,
   bookingSpanWithinMonth,
@@ -183,6 +184,12 @@ export function renderFilters() {
 
   renderCheckboxGroup({
     target: ELS.cityFilters,
+    actions: [
+      {
+        label: 'Seleziona tutti',
+        onClick: () => selectAllCities(renderAll),
+      },
+    ],
     options: getAvailableCities().map((city) => ({
       value: city,
       label: city,
@@ -218,8 +225,16 @@ export function renderFilters() {
   });
 }
 
-export function renderCheckboxGroup({ target, options }) {
-  target.innerHTML = options.map((option) => `
+export function renderCheckboxGroup({ target, options, actions = [] }) {
+  const actionsHtml = actions.length ? `
+    <div class="check-stack-actions">
+      ${actions.map((action, index) => `
+        <button type="button" class="check-stack-btn" data-check-action="${index}">${esc(action.label)}</button>
+      `).join('')}
+    </div>
+  ` : '';
+
+  target.innerHTML = `${actionsHtml}${options.map((option) => `
     <label class="check-item">
       <input type="checkbox" data-filter-value="${esc(option.value)}" ${option.checked ? 'checked' : ''}>
       <span class="check-label">
@@ -227,10 +242,15 @@ export function renderCheckboxGroup({ target, options }) {
         <span class="check-count">${esc(option.count)}</span>
       </span>
     </label>
-  `).join('');
+  `).join('')}`;
 
   [...target.querySelectorAll('input[type="checkbox"]')].forEach((input, index) => {
     input.addEventListener('change', options[index].onChange);
+  });
+
+  [...target.querySelectorAll('[data-check-action]')].forEach((button) => {
+    const index = Number(button.getAttribute('data-check-action'));
+    button.addEventListener('click', () => actions[index]?.onClick?.());
   });
 }
 
