@@ -1,0 +1,4 @@
+[build]
+  base = "../.."
+  publish = "dist/villa-margherita"
+  command = "npm ci && SITE_KEY=villa-margherita npm run build:site"

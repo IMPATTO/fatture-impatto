@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Impatto SRL — Check-in</title>
+<script src="/js/legacy-host-redirect.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/codice-fiscale-js@2.3.23/dist/codice.fiscale.var.js"></script>
 <style>
@@ -133,11 +134,18 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .success-icon{width:56px;height:56px;background:var(--green-bg);border:1px solid var(--green-border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 22px;}
 .success-screen h2{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;margin-bottom:12px;}
 .success-screen p{font-size:13px;color:var(--text2);line-height:1.7;max-width:360px;margin:0 auto;}
-.success-actions{margin-top:24px;}
+.document-flow-status{padding:11px 12px;border-radius:var(--radius-xs);font-size:11px;line-height:1.55;font-family:'DM Mono',monospace;border:1px solid var(--blue-border);background:var(--blue-bg);color:#2962b4;}
+.document-flow-status.ready{background:var(--green-bg);border-color:var(--green-border);color:var(--green);}
+.document-flow-status.warning{background:var(--red-bg);border-color:var(--red-border);color:var(--red);}
+.document-flow-status.emergency{background:var(--accent-bg);border-color:rgba(138,98,0,0.2);color:var(--accent);}
+.document-flow-note{margin-top:10px;font-size:11px;color:var(--text3);line-height:1.55;}
+.document-flow-actions{display:grid;gap:10px;margin-top:14px;}
+.success-actions{margin-top:24px;display:grid;gap:12px;justify-content:center;}
 .success-link{display:inline-block;background:#8a6200;color:#fff;padding:14px 28px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;text-decoration:none;box-shadow:0 10px 24px rgba(138,98,0,0.14);}
+.success-link-secondary{display:inline-block;background:transparent;color:var(--text2);padding:13px 22px;border-radius:8px;border:1.5px solid var(--border2);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;text-decoration:none;}
 .inline-alert{display:none;max-width:560px;margin:0 auto 18px;padding:12px 14px;border:1px solid var(--red-border);background:var(--red-bg);color:var(--red);border-radius:var(--radius-sm);font-size:12px;line-height:1.5;font-family:'DM Mono',monospace;}
 .inline-alert.visible{display:block;}
-.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface3);border:1px solid var(--border2);color:var(--text);padding:10px 18px;border-radius:var(--radius-sm);font-size:12px;font-family:'DM Mono',monospace;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);z-index:999;white-space:nowrap;max-width:90vw;}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface3);border:1px solid var(--border2);color:var(--text);padding:10px 18px;border-radius:var(--radius-sm);font-size:12px;font-family:'DM Mono',monospace;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);z-index:999;white-space:normal;text-align:center;max-width:90vw;}
 .toast.show{transform:translateX(-50%) translateY(0);}
 .privacy-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:14px;display:flex;align-items:flex-start;gap:12px;transition:border-color 0.15s,background 0.15s;}
 .privacy-block input[type="checkbox"]{width:16px;height:16px;margin-top:2px;accent-color:var(--accent);flex-shrink:0;cursor:pointer;}
@@ -145,6 +153,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .privacy-block label a{color:var(--accent);text-decoration:underline;}
 .privacy-block.err{border-color:var(--red-border);background:var(--red-bg);}
 .privacy-block.has-error{border-color:var(--red);background:#fffdfd;}
+.card.has-error{border-color:var(--red);}
 @media(max-width:500px){
   .header{padding:16px 14px;}
   .main{padding:28px 14px 0;}
@@ -271,7 +280,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
             <div class="field">
               <label><span data-t="guestDocumentsLabel">Documenti ospite</span></label>
               <div class="upload-optional" id="mainUploadArea">
-                <input type="file" id="mainFileInput" accept="image/*" capture="environment" multiple onchange="handleGuestFiles(0, this.files)">
+                <input type="file" id="mainFileInput" accept=".pdf,image/*" multiple onchange="handleGuestFiles(0, this.files)">
                 <div class="upload-icon">&#128196;</div>
                 <h3 data-t="uploadTitle">Aggiungi foto documento</h3>
                 <p data-t="uploadSub">Carta d'identita - Passaporto - Patente</p>
@@ -395,7 +404,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
           <div class="field-row-3">
             <div class="field">
               <label><span data-t="citta">Citta</span> <span class="req">*</span></label>
-              <input type="text" id="citta" placeholder="Riccione" oninput="markFilled(this);scheduleResidenceCityLookup()">
+              <input type="text" id="citta" placeholder="Riccione" oninput="markFilled(this);scheduleResidenceCityLookup()" onchange="this.value=normalizeComuneInputValue(this.value);markFilled(this);scheduleResidenceCityLookup()">
             </div>
             <div class="field">
               <label><span data-t="cap">CAP</span> <span class="req">*</span></label>
@@ -404,7 +413,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
             </div>
             <div class="field">
               <label><span data-t="prov">Prov.</span></label>
-              <input type="text" id="provincia" placeholder="RN" maxlength="5" oninput="markFilled(this);this.value=normalizeUpperNoSpaces(this.value).slice(0,2);scheduleResidenceCityLookup()" style="text-transform:uppercase;font-family:'DM Mono',monospace">
+              <input type="text" id="provincia" placeholder="RN" maxlength="5" oninput="markFilled(this);this.value=normalizeUpperNoSpaces(this.value).slice(0,2);scheduleResidenceCityLookup()" onchange="this.value=normalizeResidenceProvinceValue(this.value,document.getElementById('citta').value)||normalizeUpperNoSpaces(this.value).slice(0,2);markFilled(this);scheduleResidenceCityLookup()" style="text-transform:uppercase;font-family:'DM Mono',monospace">
             </div>
           </div>
         </div>
@@ -468,6 +477,19 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
       <div class="card-body"><div class="review-box" id="reviewBox"></div></div>
     </div>
 
+    <div class="card" id="documentFlowCard">
+      <div class="card-header"><span class="card-title" data-t="documentFlowTitle">DOCUMENTI E PORTALE</span></div>
+      <div class="card-body">
+        <div class="field" id="documentFlowField">
+          <div class="document-flow-status" id="documentFlowStatus"></div>
+          <div class="document-flow-note" id="documentFlowNote" data-t="documentFlowNote">Per aprire il portale dobbiamo prima ricevere i documenti di tutti gli ospiti.</div>
+        </div>
+        <div class="document-flow-actions">
+          <button class="btn-secondary" type="button" id="documentEmergencyBtn" onclick="startDocumentEmergencyFlow()" data-t="documentEmergencyBtn">Il caricamento dei documenti non funziona? Continua il check-in e inviali a Serena su WhatsApp</button>
+        </div>
+      </div>
+    </div>
+
     <button class="btn-primary" onclick="submitForm()" id="submitBtn" data-t="invia">Invia dati</button>
     <button class="btn-secondary" onclick="goToStep(1)" data-t="indietro">Indietro</button>
   </div>
@@ -476,7 +498,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 <div class="success-screen" id="successScreen">
   <div class="success-icon">&#10003;</div>
   <h2 data-t="successTitle">Dati ricevuti</h2>
-  <p data-t="successMsg">I tuoi dati sono stati inviati correttamente.<br>Riceverai a breve una email con le istruzioni per il check-in.<br><br>Grazie per aver scelto Impatto.</p>
+  <p id="successMsgText" data-t="successMsg">I tuoi dati sono stati inviati correttamente.<br>Riceverai a breve una email con le istruzioni per il check-in.<br><br>Grazie per aver scelto Impatto.</p>
   <div class="success-actions" id="successActions"></div>
 </div>
 
@@ -499,8 +521,8 @@ function getPortalBaseUrl(){
 }
 var PORTAL_BASE_URL = getPortalBaseUrl();
 var T={
-  it:{step1:'DATI',step2:'CONFERMA',title1:'I tuoi dati<br><em>check-in</em>',sub1:'Compila i campi per completare il check-in.',title2:'Conferma<br><em>i tuoi dati</em>',sub2:'Controlla che tutto sia corretto.',residenzaLabel:'PAESE DI RESIDENZA',paese:'Paese',countryNotice:'Per ospiti non residenti in Italia, codice fiscale e indirizzo non sono obbligatori.',anagraficaLabel:'DATI ANAGRAFICI',stayInfoLabel:'DATI SOGGIORNO',guestsCountLabel:'Numero ospiti',guestDocumentsLabel:'Documenti ospite principale',guestDocumentsLabelOther:'Documenti ospite',groupRoleAutoHint:'Scegli il ruolo del primo ospite quando viaggiate in piu persone.',invoiceLabel:'FATTURA',invoiceToggle:'Vuoi fattura?',invoiceNote:'Se sei una persona fisica, non serve compilare la sezione azienda: la fattura verra emessa automaticamente con i dati gia inseriti sopra e inviata alla tua email. Questa sezione serve solo se ti occorrono dati aziendali o un\'intestazione diversa.',nome:'Nome',cognome:'Cognome',email:'Email',telefono:'Telefono',birthDate:'Data di nascita',birthPlace:'Luogo di nascita',birthOriginLabel:'Luogo di nascita',birthOriginHint:'Seleziona dove e nato il guest principale per compilare i codici Alloggiati in modo corretto.',bornInItaly:'Nato in Italia',bornAbroad:"Nato all'estero",birthPlaceComune:'Comune di nascita',birthCountryLabel:'Stato/Paese di nascita',sexLabel:'Sesso',citizenshipLabel:'Cittadinanza',documentTypeLabel:'Tipo documento',documentTypeIdentity:"Carta d'identita",documentTypePassport:'Passaporto',documentTypeDrivingLicense:'Patente',documentNumberLabel:'Numero documento',issuePlaceLabel:'Comune di rilascio documento',comuneChoiceLabel:'Seleziona il comune corretto',comuneChoiceHint:'Questo comune esiste in piu province. Seleziona l\'opzione corretta.',comuneChoicePlaceholder:'Seleziona provincia e comune',comuneNotFoundHint:'Comune non trovato nel dataset Alloggiati. Il testo resta salvato ma senza codice.',comuneMatchedHint:'Comune riconosciuto automaticamente:',comuneChoiceRequiredMsg:'Seleziona una delle opzioni proposte per usare il codice corretto.',dayLabel:'Giorno',monthLabel:'Mese',yearLabel:'Anno',travelersCount:'Numero persone che viaggiano',guestRole:'Ruolo nel gruppo/famiglia',additionalGuestsTitle:'Altri ospiti',guestLabel:'Ospite',guestSex:'Sesso',guestStateBirth:'Stato di nascita',role16:'Ospite singolo',role17:'Capofamiglia',role18:'Capogruppo',role19:'Familiare',role20:'Membro gruppo',role17Hint:'Usa questa opzione se viaggi con il tuo nucleo familiare.',role18Hint:'Usa questa opzione se viaggi con amici, colleghi o conoscenti.',cf:'Codice fiscale',cfWarning:'Il codice fiscale non sembra valido. Correggi o prosegui se sei sicuro.',indirizzoLabel:'INDIRIZZO DI RESIDENZA',indirizzo:'Indirizzo',citta:'Citta',cap:'CAP',prov:'Prov.',ragSoc:'Ragione sociale',piva:'Partita IVA',vatHelper:'Italia: controllo formale reale. UE con prefisso paese: controllo di formato base. Extra-UE: inserimento manuale, non bloccato da controlli automatici.',sdi:'Codice SDI',pecLabel:'PEC',indirizzoAzLabel:'Sede legale',checkin:'Check-in',checkout:'Check-out',riepilogoLabel:'RIEPILOGO',uploadTitle:'Aggiungi foto documento',uploadSub:"Carta d'identita - Passaporto - Patente",uploadMultiHint:'Puoi caricare piu file per la stessa persona, anche fronte e retro.',continua:'Continua',indietro:'Indietro',invia:'Invia dati',ocrLoading:'Caricamento...',ocrErr:'Errore caricamento',successTitle:'Dati ricevuti',successMsg:"I tuoi dati sono stati inviati correttamente.<br>Riceverai a breve una email con le istruzioni per il check-in.<br><br>Grazie per aver scelto Il Lupo Affitta.",errRequired:'Compila tutti i campi obbligatori',errDate:'Inserisci le date di soggiorno',errSending:'Errore di invio - riprova',errPrivacy:'Accetta l\'informativa privacy per continuare',privacyLabel:'Ho letto e compreso l\'<a href="privacy-policy.html" target="_blank" rel="noopener">informativa sul trattamento dei dati personali</a> ai sensi dell\'art. 13 GDPR. I miei dati saranno comunicati all\'Autorità di Pubblica Sicurezza ai sensi dell\'art. 109 TULPS.',NOME:'NOME',EMAIL:'EMAIL',TELEFONO:'TELEFONO',CF:'CODICE FISCALE',INDIRIZZO:'INDIRIZZO',CHECKIN:'CHECK-IN',CHECKOUT:'CHECK-OUT',PAESE:'PAESE',RAGIONE:'RAGIONE SOCIALE',PIVA:'PARTITA IVA',SDI:'SDI'},
-  en:{step1:'DATA',step2:'CONFIRM',title1:'Your<br><em>check-in</em>',sub1:'Fill in the fields to complete your check-in.',title2:'Confirm<br><em>your details</em>',sub2:'Make sure everything is correct.',residenzaLabel:'COUNTRY OF RESIDENCE',paese:'Country',countryNotice:'For guests not residing in Italy, tax code and address are not required.',anagraficaLabel:'PERSONAL DETAILS',stayInfoLabel:'STAY DETAILS',guestsCountLabel:'Guests count',guestDocumentsLabel:'Main guest documents',guestDocumentsLabelOther:'Guest documents',groupRoleAutoHint:'Choose the main guest role when more than one guest is staying.',invoiceLabel:'INVOICE',invoiceToggle:'Do you need an invoice?',nome:'First name',cognome:'Last name',email:'Email',telefono:'Phone',birthDate:'Date of birth',birthPlace:'Place of birth',birthOriginLabel:'Place of birth',birthOriginHint:'Choose whether the main guest was born in Italy or abroad to resolve Alloggiati codes correctly.',bornInItaly:'Born in Italy',bornAbroad:'Born abroad',birthPlaceComune:'Italian town of birth',birthCountryLabel:'Country of birth',sexLabel:'Sex',citizenshipLabel:'Citizenship',documentTypeLabel:'Document type',documentTypeIdentity:'ID card',documentTypePassport:'Passport',documentTypeDrivingLicense:'Driving licence',documentNumberLabel:'Document number',issuePlaceLabel:'Town of document issue',comuneChoiceLabel:'Select the correct town',comuneChoiceHint:'This town exists in more than one province. Select the correct option.',comuneChoicePlaceholder:'Select province and town',comuneNotFoundHint:'Town not found in the Alloggiati dataset. The text is kept but no code is saved.',comuneMatchedHint:'Town recognized automatically:',comuneChoiceRequiredMsg:'Select one of the proposed options to use the correct code.',dayLabel:'Day',monthLabel:'Month',yearLabel:'Year',travelersCount:'Number of travelers',guestRole:'Role in group',additionalGuestsTitle:'Other guests',guestLabel:'Guest',guestSex:'Sex',guestStateBirth:'Country of birth',role16:'Single guest',role17:'Head of household',role18:'Group leader',role19:'Family member',role20:'Group member',role17Hint:'Use this option if you are traveling with your household.',role18Hint:'Use this option if you are traveling with friends, colleagues or acquaintances.',cf:'Tax code',cfWarning:'The tax code does not appear valid. Please check or continue if sure.',indirizzoLabel:'HOME ADDRESS',indirizzo:'Address',citta:'City',cap:'Postal code',prov:'Prov.',ragSoc:'Company name',piva:'VAT number',sdi:'SDI code',pecLabel:'PEC email',indirizzoAzLabel:'Registered address',checkin:'Check-in',checkout:'Check-out',riepilogoLabel:'SUMMARY',uploadTitle:'Add document photo',uploadSub:'ID card - Passport - Driving licence',uploadMultiHint:'You can upload multiple files for the same guest, including front and back.',continua:'Continue',indietro:'Back',invia:'Submit',ocrLoading:'Uploading...',ocrErr:'Upload error',successTitle:'Data received',successMsg:"Your details have been submitted.<br>You will receive an email shortly with check-in instructions.<br><br>Thank you for choosing Il Lupo Affitta.",errRequired:'Please fill in all required fields',errDate:'Please enter your stay dates',errSending:'Submission error - please try again',errPrivacy:'Please accept the privacy policy to continue',privacyLabel:'I have read and understood the <a href="privacy-policy.html" target="_blank" rel="noopener">privacy policy</a> (art. 13 GDPR). My personal data will be communicated to the Public Security Authority as required by Italian law.',NOME:'NAME',EMAIL:'EMAIL',TELEFONO:'PHONE',CF:'TAX CODE',INDIRIZZO:'ADDRESS',CHECKIN:'CHECK-IN',CHECKOUT:'CHECK-OUT',PAESE:'COUNTRY',RAGIONE:'COMPANY',PIVA:'VAT NUMBER',SDI:'SDI CODE'},
+  it:{step1:'DATI',step2:'CONFERMA',title1:'I tuoi dati<br><em>check-in</em>',sub1:'Compila i campi per completare il check-in.',title2:'Conferma<br><em>i tuoi dati</em>',sub2:'Controlla che tutto sia corretto.',residenzaLabel:'PAESE DI RESIDENZA',paese:'Paese',countryNotice:'Per ospiti non residenti in Italia, codice fiscale e indirizzo non sono obbligatori.',anagraficaLabel:'DATI ANAGRAFICI',stayInfoLabel:'DATI SOGGIORNO',guestsCountLabel:'Numero ospiti',guestDocumentsLabel:'Documenti ospite principale',guestDocumentsLabelOther:'Documenti ospite',groupRoleAutoHint:'Scegli il ruolo del primo ospite quando viaggiate in piu persone.',invoiceLabel:'FATTURA',invoiceToggle:'Vuoi fattura?',invoiceNote:'Se sei una persona fisica, non serve compilare la sezione azienda: la fattura verra emessa automaticamente con i dati gia inseriti sopra e inviata alla tua email. Questa sezione serve solo se ti occorrono dati aziendali o un\'intestazione diversa.',nome:'Nome',cognome:'Cognome',email:'Email',telefono:'Telefono',birthDate:'Data di nascita',birthPlace:'Luogo di nascita',birthOriginLabel:'Luogo di nascita',birthOriginHint:'Seleziona dove e nato il guest principale per compilare i codici Alloggiati in modo corretto.',bornInItaly:'Nato in Italia',bornAbroad:"Nato all'estero",birthPlaceComune:'Comune di nascita',birthCountryLabel:'Stato/Paese di nascita',sexLabel:'Sesso',citizenshipLabel:'Cittadinanza',documentTypeLabel:'Tipo documento',documentTypeIdentity:"Carta d'identita",documentTypePassport:'Passaporto',documentTypeDrivingLicense:'Patente',documentNumberLabel:'Numero documento',issuePlaceLabel:'Luogo di rilascio documento',comuneChoiceLabel:'Seleziona il comune corretto',comuneChoiceHint:'Questo comune esiste in piu province. Seleziona l\'opzione corretta.',comuneChoicePlaceholder:'Seleziona provincia e comune',comuneNotFoundHint:'Comune non trovato nel dataset Alloggiati. Il testo resta salvato ma senza codice.',comuneMatchedHint:'Comune riconosciuto automaticamente:',comuneChoiceRequiredMsg:'Seleziona una delle opzioni proposte per usare il codice corretto.',dayLabel:'Giorno',monthLabel:'Mese',yearLabel:'Anno',travelersCount:'Numero persone che viaggiano',guestRole:'Ruolo nel gruppo/famiglia',additionalGuestsTitle:'Altri ospiti',guestLabel:'Ospite',guestSex:'Sesso',guestStateBirth:'Stato di nascita',role16:'Ospite singolo',role17:'Capofamiglia',role18:'Capogruppo',role19:'Familiare',role20:'Membro gruppo',role17Hint:'Usa questa opzione se viaggi con il tuo nucleo familiare.',role18Hint:'Usa questa opzione se viaggi con amici, colleghi o conoscenti.',cf:'Codice fiscale',cfWarning:'Il codice fiscale non sembra valido. Correggi o prosegui se sei sicuro.',indirizzoLabel:'INDIRIZZO DI RESIDENZA',indirizzo:'Indirizzo',citta:'Citta',cap:'CAP',prov:'Prov.',ragSoc:'Ragione sociale',piva:'Partita IVA',vatHelper:'Italia: controllo formale reale. UE con prefisso paese: controllo di formato base. Extra-UE: inserimento manuale, non bloccato da controlli automatici.',sdi:'Codice SDI',pecLabel:'PEC',indirizzoAzLabel:'Sede legale',checkin:'Check-in',checkout:'Check-out',riepilogoLabel:'RIEPILOGO',uploadTitle:'Carica documento o PDF',uploadSub:"Carta d'identita - Passaporto - Patente - PDF",uploadMultiHint:'Puoi caricare piu file per la stessa persona, anche fronte e retro. PDF inclusi.',documentFlowTitle:'DOCUMENTI E PORTALE',documentFlowNote:'Per aprire il portale dobbiamo prima ricevere i documenti di tutti gli ospiti.',documentEmergencyBtn:'Il caricamento dei documenti non funziona? Continua il check-in e inviali a Serena su WhatsApp',continua:'Continua',indietro:'Indietro',invia:'Invia dati',ocrLoading:'Caricamento...',ocrErr:'Autolettura temporaneamente non disponibile. Il documento e comunque allegato.',successTitle:'Dati ricevuti',successMsg:"I tuoi dati sono stati inviati correttamente.<br>Riceverai a breve una email con le istruzioni per il check-in.<br><br>Grazie per aver scelto Il Lupo Affitta.",successMsgEmergency:'Check-in ricevuto.<br>Invia subito i documenti a Serena su WhatsApp e poi apri il portale dal pulsante qui sotto.<br><br>Grazie per aver scelto Il Lupo Affitta.',errRequired:'Compila tutti i campi obbligatori',errDate:'Inserisci le date di soggiorno',errSending:'Errore di invio - riprova',errPrivacy:'Accetta l\'informativa privacy per continuare',privacyLabel:'Ho letto e compreso l\'<a href="privacy-policy.html" target="_blank" rel="noopener">informativa sul trattamento dei dati personali</a> ai sensi dell\'art. 13 GDPR. I miei dati saranno comunicati all\'Autorità di Pubblica Sicurezza ai sensi dell\'art. 109 TULPS.',NOME:'NOME',EMAIL:'EMAIL',TELEFONO:'TELEFONO',CF:'CODICE FISCALE',INDIRIZZO:'INDIRIZZO',CHECKIN:'CHECK-IN',CHECKOUT:'CHECK-OUT',PAESE:'PAESE',RAGIONE:'RAGIONE SOCIALE',PIVA:'PARTITA IVA',SDI:'SDI'},
+  en:{step1:'DATA',step2:'CONFIRM',title1:'Your<br><em>check-in</em>',sub1:'Fill in the fields to complete your check-in.',title2:'Confirm<br><em>your details</em>',sub2:'Make sure everything is correct.',residenzaLabel:'COUNTRY OF RESIDENCE',paese:'Country',countryNotice:'For guests not residing in Italy, tax code and address are not required.',anagraficaLabel:'PERSONAL DETAILS',stayInfoLabel:'STAY DETAILS',guestsCountLabel:'Guests count',guestDocumentsLabel:'Main guest documents',guestDocumentsLabelOther:'Guest documents',groupRoleAutoHint:'Choose the main guest role when more than one guest is staying.',invoiceLabel:'INVOICE',invoiceToggle:'Do you need an invoice?',nome:'First name',cognome:'Last name',email:'Email',telefono:'Phone',birthDate:'Date of birth',birthPlace:'Place of birth',birthOriginLabel:'Place of birth',birthOriginHint:'Choose whether the main guest was born in Italy or abroad to resolve Alloggiati codes correctly.',bornInItaly:'Born in Italy',bornAbroad:'Born abroad',birthPlaceComune:'Italian town of birth',birthCountryLabel:'Country of birth',sexLabel:'Sex',citizenshipLabel:'Citizenship',documentTypeLabel:'Document type',documentTypeIdentity:'ID card',documentTypePassport:'Passport',documentTypeDrivingLicense:'Driving licence',documentNumberLabel:'Document number',issuePlaceLabel:'Place of document issue',comuneChoiceLabel:'Select the correct town',comuneChoiceHint:'This town exists in more than one province. Select the correct option.',comuneChoicePlaceholder:'Select province and town',comuneNotFoundHint:'Town not found in the Alloggiati dataset. The text is kept but no code is saved.',comuneMatchedHint:'Town recognized automatically:',comuneChoiceRequiredMsg:'Select one of the proposed options to use the correct code.',dayLabel:'Day',monthLabel:'Month',yearLabel:'Year',travelersCount:'Number of travelers',guestRole:'Role in group',additionalGuestsTitle:'Other guests',guestLabel:'Guest',guestSex:'Sex',guestStateBirth:'Country of birth',role16:'Single guest',role17:'Head of household',role18:'Group leader',role19:'Family member',role20:'Group member',role17Hint:'Use this option if you are traveling with your household.',role18Hint:'Use this option if you are traveling with friends, colleagues or acquaintances.',cf:'Tax code',cfWarning:'The tax code does not appear valid. Please check or continue if sure.',indirizzoLabel:'HOME ADDRESS',indirizzo:'Address',citta:'City',cap:'Postal code',prov:'Prov.',ragSoc:'Company name',piva:'VAT number',sdi:'SDI code',pecLabel:'PEC email',indirizzoAzLabel:'Registered address',checkin:'Check-in',checkout:'Check-out',riepilogoLabel:'SUMMARY',uploadTitle:'Upload document or PDF',uploadSub:'ID card - Passport - Driving licence - PDF',uploadMultiHint:'You can upload multiple files for the same guest, including front and back. PDFs supported.',documentFlowTitle:'DOCUMENTS AND PORTAL',documentFlowNote:'We need the documents for every guest before opening the portal.',documentEmergencyBtn:'Documents not uploading? Continue check-in and send them to Serena on WhatsApp',continua:'Continue',indietro:'Back',invia:'Submit',ocrLoading:'Uploading...',ocrErr:'Auto-reading is temporarily unavailable. The document is still attached.',successTitle:'Data received',successMsg:"Your details have been submitted.<br>You will receive an email shortly with check-in instructions.<br><br>Thank you for choosing Il Lupo Affitta.",successMsgEmergency:'Check-in received.<br>Send the documents to Serena on WhatsApp, then open the portal with the button below.<br><br>Thank you for choosing Il Lupo Affitta.',errRequired:'Please fill in all required fields',errDate:'Please enter your stay dates',errSending:'Submission error - please try again',errPrivacy:'Please accept the privacy policy to continue',privacyLabel:'I have read and understood the <a href="privacy-policy.html" target="_blank" rel="noopener">privacy policy</a> (art. 13 GDPR). My personal data will be communicated to the Public Security Authority as required by Italian law.',NOME:'NAME',EMAIL:'EMAIL',TELEFONO:'PHONE',CF:'TAX CODE',INDIRIZZO:'ADDRESS',CHECKIN:'CHECK-IN',CHECKOUT:'CHECK-OUT',PAESE:'COUNTRY',RAGIONE:'COMPANY',PIVA:'VAT NUMBER',SDI:'SDI CODE'},
   de:{step1:'DATEN',step2:'BESTATIGUNG',title1:'Ihr<br><em>Check-in</em>',sub1:'Bitte fullen Sie die Felder aus, um den Check-in abzuschliessen.',title2:'Angaben<br><em>bestatigen</em>',sub2:'Stellen Sie sicher, dass alles korrekt ist.',tipoLabel:'ART DES SUBJEKTS',privato:'Privatperson',privatoDesc:'Steuer-ID / Dok.',azienda:'Unternehmen',aziendaDesc:'B2B-Rechnung / USt-ID',residenzaLabel:'WOHNSITZLAND',paese:'Land',countryNotice:'Fur Gaste ausserhalb Italiens sind Steuernummer und Adresse nicht erforderlich.',anagraficaLabel:'PERSONLICHE DATEN',nome:'Vorname',cognome:'Nachname',email:'E-Mail',telefono:'Telefon',cf:'Steuernummer',cfWarning:'Die Steuernummer scheint ungultig. Prufen Sie sie oder fahren Sie fort.',indirizzoLabel:'HEIMATADRESSE',indirizzo:'Adresse',citta:'Stadt',cap:'PLZ',prov:'Prov.',aziendaLabel:'UNTERNEHMENSDATEN',ragSoc:'Firmenname',piva:'USt-ID',sdi:'SDI-Code',pecLabel:'PEC',indirizzoAzLabel:'Geschaftssitz',soggiornoLabel:'AUFENTHALT',checkin:'Check-in',checkout:'Check-out',riepilogoLabel:'ZUSAMMENFASSUNG',fotoLabel:'DOKUMENTFOTO',uploadTitle:'Dokumentfoto hinzufugen',uploadSub:'Personalausweis - Reisepass - Fuhrerschein',continua:'Weiter',indietro:'Zuruck',invia:'Absenden',ocrLoading:'Wird hochgeladen...',ocrOk:'Dokument angehangt',ocrErr:'Fehler beim Hochladen',successTitle:'Daten erhalten',successMsg:'Ihre Angaben wurden ubermittelt.<br>Sie erhalten eine E-Mail mit Check-in-Anweisungen.<br><br>Vielen Dank.',errRequired:'Bitte alle Pflichtfelder ausfullen',errDate:'Bitte Aufenthaltsdaten eingeben',errSending:'Ubermittlungsfehler - erneut versuchen',errPrivacy:'Bitte akzeptieren Sie die Datenschutzerklarung um fortzufahren',privacyLabel:'Ich habe die <a href="privacy-policy.html" target="_blank" rel="noopener">Datenschutzerklarung</a> (Art. 13 DSGVO) gelesen. Meine Daten werden gemaß dem italienischen TULPS an die Behorden ubermittelt.',NOME:'NAME',EMAIL:'E-MAIL',TELEFONO:'TELEFON',CF:'STEUERNUMMER',INDIRIZZO:'ADRESSE',CHECKIN:'CHECK-IN',CHECKOUT:'CHECK-OUT',PAESE:'LAND',RAGIONE:'FIRMA',PIVA:'UST-ID',SDI:'SDI-CODE'},
   fr:{step1:'DONNEES',step2:'CONFIRMATION',title1:'Votre<br><em>check-in</em>',sub1:'Remplissez les champs pour finaliser votre check-in.',title2:'Confirmez<br><em>vos donnees</em>',sub2:'Assurez-vous que tout est correct.',tipoLabel:'TYPE DE SUJET',privato:'Particulier',privatoDesc:'Code fiscal / doc.',azienda:'Entreprise',aziendaDesc:'Facture B2B / TVA',residenzaLabel:'PAYS DE RESIDENCE',paese:'Pays',countryNotice:"Pour les clients ne residant pas en Italie, le code fiscal et l'adresse ne sont pas obligatoires.",anagraficaLabel:'DONNEES PERSONNELLES',nome:'Prenom',cognome:'Nom',email:'Email',telefono:'Telephone',cf:'Code fiscal',cfWarning:'Le code fiscal ne semble pas valide. Verifiez ou continuez.',indirizzoLabel:'ADRESSE DE RESIDENCE',indirizzo:'Adresse',citta:'Ville',cap:'Code postal',prov:'Prov.',aziendaLabel:"DONNEES D'ENTREPRISE",ragSoc:'Raison sociale',piva:'Numero TVA',sdi:'Code SDI',pecLabel:'PEC',indirizzoAzLabel:'Siege social',soggiornoLabel:'SEJOUR',checkin:'Arrivee',checkout:'Depart',riepilogoLabel:'RECAPITULATIF',fotoLabel:'PHOTO DU DOCUMENT',uploadTitle:'Ajouter photo document',uploadSub:"Carte d'identite - Passeport - Permis",continua:'Continuer',indietro:'Retour',invia:'Envoyer',ocrLoading:'Chargement...',ocrOk:'Document joint',ocrErr:'Erreur de chargement',successTitle:'Donnees recues',successMsg:'Vos donnees ont ete soumises.<br>Vous recevrez un email avec les instructions.<br><br>Merci.',errRequired:'Veuillez remplir tous les champs obligatoires',errDate:'Veuillez saisir les dates',errSending:"Erreur d'envoi - reessayez",errPrivacy:'Veuillez accepter la politique de confidentialite pour continuer',privacyLabel:"J'ai lu et compris la <a href=\"privacy-policy.html\" target=\"_blank\" rel=\"noopener\">politique de confidentialite</a> (art. 13 RGPD). Mes donnees seront communiquees aux autorites de securite publique conformement a la loi italienne.",NOME:'PRENOM / NOM',EMAIL:'EMAIL',TELEFONO:'TELEPHONE',CF:'CODE FISCAL',INDIRIZZO:'ADRESSE',CHECKIN:'ARRIVEE',CHECKOUT:'DEPART',PAESE:'PAYS',RAGIONE:'RAISON SOCIALE',PIVA:'TVA',SDI:'CODE SDI'},
   es:{step1:'DATOS',step2:'CONFIRMACION',title1:'Su<br><em>check-in</em>',sub1:'Complete los campos para finalizar su check-in.',title2:'Confirme<br><em>sus datos</em>',sub2:'Asegurese de que todo sea correcto.',tipoLabel:'TIPO DE SUJETO',privato:'Particular',privatoDesc:'NIF / documento',azienda:'Empresa',aziendaDesc:'Factura B2B / IVA',residenzaLabel:'PAIS DE RESIDENCIA',paese:'Pais',countryNotice:'Para huespedes no residentes en Italia, el codigo fiscal y la direccion no son obligatorios.',anagraficaLabel:'DATOS PERSONALES',nome:'Nombre',cognome:'Apellido',email:'Email',telefono:'Telefono',cf:'Codigo fiscal',cfWarning:'El codigo fiscal no parece valido. Verifique o continue.',indirizzoLabel:'DIRECCION DE RESIDENCIA',indirizzo:'Direccion',citta:'Ciudad',cap:'Codigo postal',prov:'Prov.',aziendaLabel:'DATOS DE EMPRESA',ragSoc:'Razon social',piva:'Numero IVA',sdi:'Codigo SDI',pecLabel:'PEC',indirizzoAzLabel:'Domicilio social',soggiornoLabel:'ESTANCIA',checkin:'Llegada',checkout:'Salida',riepilogoLabel:'RESUMEN',fotoLabel:'FOTO DEL DOCUMENTO',uploadTitle:'Anadir foto documento',uploadSub:'DNI - Pasaporte - Carne de conducir',continua:'Continuar',indietro:'Atras',invia:'Enviar',ocrLoading:'Cargando...',ocrOk:'Documento adjunto',ocrErr:'Error al cargar',successTitle:'Datos recibidos',successMsg:'Sus datos han sido enviados.<br>Recibira un email con las instrucciones.<br><br>Gracias.',errRequired:'Complete todos los campos obligatorios',errDate:'Introduzca las fechas de estancia',errSending:'Error de envio - intentelo de nuevo',errPrivacy:'Por favor acepte la politica de privacidad para continuar',privacyLabel:'He leido y comprendido la <a href="privacy-policy.html" target="_blank" rel="noopener">politica de privacidad</a> (art. 13 RGPD). Mis datos seran comunicados a la Autoridad de Seguridad Publica segun la ley italiana.',NOME:'NOMBRE',EMAIL:'EMAIL',TELEFONO:'TELEFONO',CF:'CODIGO FISCAL',INDIRIZZO:'DIRECCION',CHECKIN:'LLEGADA',CHECKOUT:'SALIDA',PAESE:'PAIS',RAGIONE:'RAZON SOCIAL',PIVA:'IVA',SDI:'SDI'},
@@ -508,14 +530,25 @@ var T={
 };
 
 var MESSAGES={
-  it:{sending:'Invio in corso...',portalCta:'Entra nel tuo portale',invalidEmail:'Email non valida',invalidPhone:'Telefono non valido',invalidCap:'CAP non valido',invalidVat:'Partita IVA non valida',invalidSdi:'Codice SDI non valido',invalidCheckout:'Il check-out deve essere dopo il check-in',invalidApartment:'Link non valido: appartamento mancante',ocrOkClean:'Dati letti dal documento',ocrMultiOk:'Documenti analizzati',ocrNoData:'Nessun dato leggibile rilevato'},
-  en:{sending:'Sending...',portalCta:'Open your portal',invalidEmail:'Invalid email',invalidPhone:'Invalid phone number',invalidCap:'Invalid postal code',invalidVat:'Invalid VAT number',invalidSdi:'Invalid SDI code',invalidCheckout:'Check-out must be after check-in',invalidApartment:'Invalid link: missing apartment',ocrOkClean:'Data read from the document',ocrMultiOk:'Documents analyzed',ocrNoData:'No readable data detected'},
+  it:{sending:'Invio in corso...',retryingSubmit:'Riprovo invio...',recoveringSubmit:'Verifico il salvataggio...',submissionRecovered:'Check-in recuperato correttamente dopo un problema di rete.',portalCta:'Entra nel tuo portale',portalAfterEmergencyCta:'Apri il portale',invalidEmail:'Email non valida',invalidPhone:'Telefono non valido',invalidCap:'CAP non valido',invalidVat:'Partita IVA non valida',invalidSdi:'Codice SDI non valido',invalidCheckout:'Il check-out deve essere dopo il check-in',invalidApartment:'Link non valido: appartamento mancante',ocrOkClean:'Dati letti dal documento',ocrMultiOk:'Documenti analizzati',ocrNoData:'Documento allegato, ma non sono riuscito a leggere automaticamente i dati.',ocrNoDataHeic:'Documento allegato, ma non sono riuscito a leggere automaticamente i dati da questa foto iPhone. Se serve, compila i campi a mano.',ocrFilesAttached:'Documento allegato. Le foto provano l autolettura automatica; i PDF restano allegati senza compilazione automatica.',ocrErrHeic:'Non sono riuscito a convertire automaticamente questa foto iPhone. Il documento e comunque allegato.',documentsReady:'Documenti completi: dopo l invio si aprira il portale.',documentsEmergency:'Percorso di emergenza attivo: completa il check-in, invia i documenti a Serena su WhatsApp e poi apri il portale.',documentsEmergencyActivated:'Percorso di emergenza attivato. Invia i documenti a Serena su WhatsApp e poi completa l invio.',documentsEmergencyPreparing:'Attivo il percorso di emergenza...',documentsEmergencyRetry:'Non sono riuscito ad attivare il percorso di emergenza. Riprova tra pochi secondi.',documentsWhatsappCta:'Invia i documenti a Serena su WhatsApp',issuePlaceCountryHint:'Paese estero rilevato: il codice verra risolto automaticamente al salvataggio.'},
+  en:{sending:'Sending...',retryingSubmit:'Retrying submission...',recoveringSubmit:'Checking whether your check-in was saved...',submissionRecovered:'Check-in recovered successfully after a network issue.',portalCta:'Open your portal',portalAfterEmergencyCta:'Open the portal',invalidEmail:'Invalid email',invalidPhone:'Invalid phone number',invalidCap:'Invalid postal code',invalidVat:'Invalid VAT number',invalidSdi:'Invalid SDI code',invalidCheckout:'Check-out must be after check-in',invalidApartment:'Invalid link: missing apartment',ocrOkClean:'Data read from the document',ocrMultiOk:'Documents analyzed',ocrNoData:'Document attached, but I could not read the data automatically.',ocrNoDataHeic:'Document attached, but I could not read the data automatically from this iPhone photo. You can still fill the fields manually.',ocrFilesAttached:'Document attached. Photos try automatic reading; PDFs stay attached without auto-fill.',ocrErrHeic:'I could not automatically convert this iPhone photo. The document is still attached.',documentsReady:'Documents complete: the portal will open after you submit the check-in.',documentsEmergency:'Emergency flow enabled: finish the check-in, send the documents to Serena on WhatsApp, then open the portal.',documentsEmergencyActivated:'Emergency flow enabled. Send the documents to Serena on WhatsApp, then finish the submission.',documentsEmergencyPreparing:'Enabling the emergency flow...',documentsEmergencyRetry:'Unable to enable the emergency flow right now. Please try again in a few seconds.',documentsWhatsappCta:'Send the documents to Serena on WhatsApp',issuePlaceCountryHint:'Foreign issuing country detected: the code will be resolved automatically on submit.'},
 };
 
 var lang='it',currentStep=1,isItalian=true,cfAttempts=0;
 var countryOptionsState={loaded:false,loading:null,names:[],map:new Map()};
 var guestDocumentStore={0:[]};
+var documentEmergencyBypass=false;
+var documentEmergencyToken='';
+var documentEmergencyTokenBinding='';
+var documentEmergencyTokenExpiresAt='';
+var documentEmergencyRequestInFlight=null;
 var activeOCRTarget={scope:'main',index:0};
+var SUPPORT_WHATSAPP='393501258030';
+var MAX_GUEST_DOCUMENT_SIZE_BYTES=20*1024*1024;
+var MAX_GUEST_DOCUMENTS_PER_GUEST=8;
+var RETRYABLE_SUBMIT_STATUS_CODES=[408,425,429,500,502,503,504];
+var GUEST_ALLOWED_DOCUMENT_MIME_TYPES=['application/pdf','image/gif','image/heic','image/heif','image/jpeg','image/jpg','image/png','image/webp'];
+var GUEST_ALLOWED_DOCUMENT_EXTENSIONS=['.gif','.heic','.heif','.jpeg','.jpg','.pdf','.png','.webp'];
 var comuneLookupCache={},comuneLookupTimers={birth:null,issue:null,residence_city:null};
 var cfAutofillState={manual:false,lastGenerated:''};
 var capAutofillState={manual:false,lastCap:'',lastProvince:''};
@@ -612,17 +645,187 @@ function getFirstQueryParam(params,keys){
 }
 var legacyPortalToken=getFirstQueryParam(initialParams,['token','portale_token']);
 var legacyAptRef=getFirstQueryParam(initialParams,['apt','aptId','apartment_ref','apartment_id','key']);
-var legacyPortalMode=(initialParams.get('mode')||'').trim().toLowerCase();
-if(legacyPortalToken||(legacyAptRef&&legacyPortalMode!=='checkin')){
+if(legacyPortalToken){
   var legacyPortalUrl=new URL('/portale.html',window.location.origin);
   initialParams.forEach(function(value,key){ legacyPortalUrl.searchParams.set(key,value); });
-  if(legacyAptRef&&!legacyPortalToken&&!legacyPortalMode)legacyPortalUrl.searchParams.set('mode','open');
   window.location.replace(legacyPortalUrl.toString());
 }
 var aptRef=getFirstQueryParam(initialParams,['apt','aptId','apartment_ref','apartment_id','key']);
 function t(k){return(T[lang]&&T[lang][k]!==undefined)?T[lang][k]:(T.it[k]||k);}
 function msg(k){return(MESSAGES[lang]&&MESSAGES[lang][k]!==undefined)?MESSAGES[lang][k]:(MESSAGES.it[k]||k);}
 function normalizeUpperNoSpaces(value){return String(value||'').replace(/\s+/g,'').trim().toUpperCase();}
+function buildSupportWhatsappHref(){
+  var apartmentRef=getResolvedApartmentRef()||legacyAptRef||aptRef||'';
+  var message='Ciao Serena, il caricamento dei documenti del check-in non funziona. Sto completando il check-in';
+  if(apartmentRef)message+=' per '+apartmentRef;
+  message+='. Ti invio qui i documenti.';
+  return 'https://wa.me/'+SUPPORT_WHATSAPP+'?text='+encodeURIComponent(message);
+}
+function clearDocumentEmergencyToken(){
+  documentEmergencyToken='';
+  documentEmergencyTokenBinding='';
+  documentEmergencyTokenExpiresAt='';
+}
+function buildDocumentEmergencyPayload(payload){
+  return {
+    apartment_ref:normalizeValue((payload&&payload.apartment_ref)||getResolvedApartmentRef()||legacyAptRef||aptRef||'').toLowerCase(),
+    email:normalizeValue(payload&&payload.email).toLowerCase(),
+    telefono:normalizeValue(payload&&payload.telefono).replace(/[^\d+]/g,''),
+    cognome:normalizeValue(payload&&payload.cognome).toUpperCase(),
+    data_checkin:normalizeValue(payload&&payload.data_checkin),
+    data_checkout:normalizeValue(payload&&payload.data_checkout)
+  };
+}
+function getDocumentEmergencyBinding(payload){
+  return JSON.stringify(buildDocumentEmergencyPayload(payload));
+}
+function hasValidDocumentEmergencyToken(payload){
+  if(!documentEmergencyToken)return false;
+  if(documentEmergencyTokenBinding!==getDocumentEmergencyBinding(payload))return false;
+  if(documentEmergencyTokenExpiresAt){
+    var expiresAt=Date.parse(documentEmergencyTokenExpiresAt);
+    if(Number.isFinite(expiresAt) && expiresAt<=Date.now()+5000)return false;
+  }
+  return true;
+}
+async function requestDocumentEmergencyToken(payload){
+  var res=await fetch('/.netlify/functions/create-public-checkin-emergency-token',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(buildDocumentEmergencyPayload(payload))
+  });
+  var data=await res.json().catch(function(){ return {}; });
+  if(!res.ok || !data || !data.token){
+    throw new Error((data&&data.fields&&data.fields[0]&&data.fields[0].message)||data.error||msg('documentsEmergencyRetry'));
+  }
+  documentEmergencyToken=String(data.token||'').trim();
+  documentEmergencyTokenBinding=getDocumentEmergencyBinding(payload);
+  documentEmergencyTokenExpiresAt=String(data.expires_at||'').trim();
+  return documentEmergencyToken;
+}
+async function ensureDocumentEmergencyToken(payload){
+  if(hasValidDocumentEmergencyToken(payload))return documentEmergencyToken;
+  if(documentEmergencyRequestInFlight)return documentEmergencyRequestInFlight;
+  documentEmergencyRequestInFlight=requestDocumentEmergencyToken(payload).finally(function(){
+    documentEmergencyRequestInFlight=null;
+  });
+  return documentEmergencyRequestInFlight;
+}
+function hasGuestDocuments(index){
+  var entries=guestDocumentStore[getGuestStoreKey(index)]||[];
+  return Array.isArray(entries) && entries.length>0;
+}
+function getGuestDocumentStatus(){
+  var total=Math.max(1,getNumeroPersone());
+  var missing=[];
+  for(var i=0;i<total;i++){
+    if(!hasGuestDocuments(i))missing.push(i);
+  }
+  return {total:total,missing:missing,complete:missing.length===0};
+}
+function getGuestDocumentLabel(index){
+  if(index===0)return lang==='en'?'main guest':'ospite principale';
+  return (lang==='en'?'guest ':'ospite ')+(index+1);
+}
+function getGuestDocumentRequirementMessage(status){
+  var currentStatus=status||getGuestDocumentStatus();
+  if(currentStatus.complete)return msg('documentsReady');
+  var missingGuests=currentStatus.missing.map(getGuestDocumentLabel).join(', ');
+  if(lang==='en')return 'Upload at least one document for each guest before opening the portal. Missing: '+missingGuests+'.';
+  return 'Carica almeno un documento per ogni ospite prima di aprire il portale. Mancano: '+missingGuests+'.';
+}
+function hasAllRequiredGuestDocuments(){
+  return getGuestDocumentStatus().complete;
+}
+function shouldUseDocumentEmergencyFlow(){
+  return documentEmergencyBypass && !hasAllRequiredGuestDocuments();
+}
+function updateDocumentFlowUi(){
+  if(hasAllRequiredGuestDocuments()){
+    documentEmergencyBypass=false;
+    clearDocumentEmergencyToken();
+  }
+  var statusEl=document.getElementById('documentFlowStatus');
+  var noteEl=document.getElementById('documentFlowNote');
+  var buttonEl=document.getElementById('documentEmergencyBtn');
+  var fieldEl=document.getElementById('documentFlowField');
+  if(!statusEl||!noteEl||!buttonEl||!fieldEl)return;
+  clearFieldError('documentFlowField');
+  var status=getGuestDocumentStatus();
+  if(status.complete){
+    statusEl.className='document-flow-status ready';
+    statusEl.textContent=msg('documentsReady');
+    noteEl.innerHTML=t('documentFlowNote');
+    buttonEl.style.display='none';
+    return;
+  }
+  if(shouldUseDocumentEmergencyFlow()){
+    statusEl.className='document-flow-status emergency';
+    statusEl.textContent=msg('documentsEmergency');
+    noteEl.innerHTML=lang==='en'
+      ? 'If WhatsApp opened, finish the check-in now and use the success screen to open the portal afterwards.'
+      : 'Se hai aperto WhatsApp, completa ora il check-in e usa la schermata finale per aprire il portale dopo l invio.';
+    buttonEl.style.display='';
+    return;
+  }
+  statusEl.className='document-flow-status warning';
+  statusEl.textContent=getGuestDocumentRequirementMessage(status);
+  noteEl.innerHTML=t('documentFlowNote');
+  buttonEl.style.display='';
+}
+async function startDocumentEmergencyFlow(){
+  var buttonEl=document.getElementById('documentEmergencyBtn');
+  var originalLabel=buttonEl?buttonEl.textContent:'';
+  documentEmergencyBypass=true;
+  updateDocumentFlowUi();
+  var whatsappHref=buildSupportWhatsappHref();
+  var popup=window.open(whatsappHref,'_blank','noopener');
+  if(!popup)window.location.href=whatsappHref;
+  if(buttonEl){
+    buttonEl.disabled=true;
+    buttonEl.textContent=msg('documentsEmergencyPreparing');
+  }
+  try{
+    await ensureDocumentEmergencyToken(buildPayload());
+    updateDocumentFlowUi();
+    showToast(msg('documentsEmergencyActivated'));
+  }catch(err){
+    documentEmergencyBypass=false;
+    clearDocumentEmergencyToken();
+    updateDocumentFlowUi();
+    showToast(err&&err.message?err.message:msg('documentsEmergencyRetry'));
+  }finally{
+    if(buttonEl){
+      buttonEl.disabled=false;
+      buttonEl.textContent=originalLabel||t('documentEmergencyBtn');
+    }
+  }
+}
+function updateSuccessMessage(usedEmergencyFlow){
+  var messageEl=document.getElementById('successMsgText');
+  if(!messageEl)return;
+  messageEl.innerHTML=usedEmergencyFlow?t('successMsgEmergency'):t('successMsg');
+}
+function renderSuccessActions(data,usedEmergencyFlow){
+  var actions=document.getElementById('successActions');
+  if(!actions)return;
+  actions.innerHTML='';
+  var links=[];
+  var portalUrl='';
+  if(data&&data.portal_url){
+    portalUrl=String(data.portal_url).replace(/^https?:\/\/[^/]+/,PORTAL_BASE_URL.replace(/\/+$/,''));
+  }
+  if(usedEmergencyFlow){
+    links.push('<a href="'+buildSupportWhatsappHref()+'" class="success-link-secondary" target="_blank" rel="noopener">'+msg('documentsWhatsappCta')+'</a>');
+  }
+  if(portalUrl){
+    links.push('<a href="'+portalUrl+'" class="success-link">'+msg(usedEmergencyFlow?'portalAfterEmergencyCta':'portalCta')+' →</a>');
+  }
+  actions.innerHTML=links.join('');
+  if(portalUrl && !usedEmergencyFlow){
+    setTimeout(function(){ window.location.href = portalUrl; }, 600);
+  }
+}
 
 function onPrivacyChange(){
   var cb=document.getElementById('privacyCheck');
@@ -643,6 +846,7 @@ function setLang(l){
   updateBirthOriginUi();
   updatePrimaryGuestUi();
   renderGuestUploads(0);
+  updateDocumentFlowUi();
 }
 
 function goToStep(n){
@@ -652,6 +856,7 @@ function goToStep(n){
   document.getElementById('progressFill').style.width=n===1?'50%':'100%';
   document.getElementById('s1').className='step'+(n>1?' done':' active');
   document.getElementById('s2').className='step'+(n===2?' active':'');
+  if(n===2)updateDocumentFlowUi();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -759,7 +964,29 @@ function normalizeKnownCountryValue(value){
   var normalized=normalizeCitizenshipValue(value);
   var key=normalizeComuneLookupValue(normalized);
   if(!key)return '';
-  return countryOptionsState.map.get(key)||normalized;
+  if(countryOptionsState.map.has(key))return countryOptionsState.map.get(key);
+  if(COUNTRY_ALIASES[key])return COUNTRY_ALIASES[key];
+  return normalized;
+}
+function isItalianCountryValue(value){
+  var normalized=normalizeComuneLookupValue(normalizeKnownCountryValue(value)||value);
+  return normalized==='italia'||normalized==='italy'||normalized==='it';
+}
+function isKnownForeignCountryValue(value){
+  var normalized=normalizeKnownCountryValue(value);
+  if(!normalized)return false;
+  var key=normalizeComuneLookupValue(normalized);
+  return !isItalianCountryValue(normalized) && (!!key && (countryOptionsState.map.has(key) || Object.prototype.hasOwnProperty.call(COUNTRY_ALIASES, normalizeComuneLookupValue(value))));
+}
+function handleIssuePlaceAsCountry(value){
+  var normalized=normalizeKnownCountryValue(value)||normalizeValue(value);
+  var inputEl=document.getElementById('luogoRilascioDocumento');
+  if(inputEl&&normalized&&inputEl.value!==normalized){
+    inputEl.value=normalized;
+    markFilled(inputEl);
+  }
+  resetComuneChoice('issue');
+  setComuneStatus('issue',msg('issuePlaceCountryHint'));
 }
 function handleCountryFieldBlur(id){
   ensureCountryOptionsLoaded().finally(function(){
@@ -915,6 +1142,61 @@ function normalizeComuneLookupValue(value){
     .trim()
     .toLowerCase();
 }
+function extractProvinceCodeFromText(value){
+  var raw=String(value||'').replace(/[’`´]/g,"'").replace(/\s+/g,' ').trim();
+  if(!raw)return '';
+  var parenMatch=raw.match(/\(([A-Za-z]{2})\)\s*$/);
+  if(parenMatch)return normalizeUpperNoSpaces(parenMatch[1]).slice(0,2);
+  var separatorMatch=raw.match(/[-/]\s*([A-Za-z]{2})\s*$/);
+  if(separatorMatch)return normalizeUpperNoSpaces(separatorMatch[1]).slice(0,2);
+  var commaParts=raw.split(',').map(function(part){return normalizeValue(part);}).filter(Boolean);
+  if(commaParts.length>1){
+    var lastCommaPart=normalizeUpperNoSpaces(commaParts[commaParts.length-1]).replace(/[^A-Z]/g,'');
+    if(/^[A-Z]{2}$/.test(lastCommaPart))return lastCommaPart;
+  }
+  var tokens=raw.split(/\s+/).filter(Boolean);
+  if(tokens.length>1){
+    var lastToken=normalizeUpperNoSpaces(tokens[tokens.length-1]).replace(/[^A-Z]/g,'');
+    if(/^[A-Z]{2}$/.test(lastToken))return lastToken;
+  }
+  return '';
+}
+function sanitizeComuneLikeValue(value){
+  var raw=String(value||'').replace(/[’`´]/g,"'").replace(/\s+/g,' ').trim();
+  if(!raw)return '';
+  raw=raw.replace(/^(rilasciato\s+(?:da|presso)\s+)/i,'');
+  raw=raw.replace(/^(comune|questura|prefettura|motorizzazione|anagrafe)\s+di\s+/i,'');
+  raw=raw.replace(/^(comune|questura|prefettura|motorizzazione|anagrafe)\s+/i,'');
+  raw=raw.replace(/\b\d{5}\b/g,' ').replace(/\s+/g,' ').trim();
+  raw=raw.replace(/\(([A-Za-z]{2})\)\s*$/,' ').trim();
+  raw=raw.replace(/[-/]\s*[A-Za-z]{2}\s*$/,' ').trim();
+  var commaParts=raw.split(',').map(function(part){return normalizeValue(part);}).filter(Boolean);
+  if(commaParts.length>1){
+    var lastPart=commaParts[commaParts.length-1];
+    var prevPart=commaParts[commaParts.length-2];
+    raw=/^[A-Za-z]{2}$/.test(normalizeUpperNoSpaces(lastPart))&&prevPart?prevPart:lastPart;
+  }
+  var tokens=raw.split(/\s+/).filter(Boolean);
+  if(tokens.length>1){
+    var lastToken=normalizeUpperNoSpaces(tokens[tokens.length-1]).replace(/[^A-Z]/g,'');
+    if(/^[A-Z]{2}$/.test(lastToken))tokens.pop();
+  }
+  return tokens.join(' ').replace(/\s+/g,' ').trim();
+}
+function normalizeResidenceProvinceValue(value,fallbackText){
+  var extracted=extractProvinceCodeFromText(value)||extractProvinceCodeFromText(fallbackText);
+  if(extracted)return extracted;
+  var normalized=normalizeUpperNoSpaces(value).replace(/[^A-Z]/g,'');
+  return normalized.length===2?normalized:'';
+}
+function getComuneProvinceHint(kind,rawValue){
+  var extracted=extractProvinceCodeFromText(rawValue);
+  if(extracted)return extracted;
+  if(kind==='issue'){
+    return normalizeResidenceProvinceValue(document.getElementById('provincia')?.value,document.getElementById('citta')?.value);
+  }
+  return '';
+}
 function getComuneFieldConfig(kind){
   var additionalBirthMatch=String(kind||'').match(/^additional_birth_(\d+)$/);
   if(additionalBirthMatch){
@@ -932,7 +1214,7 @@ function getComuneFieldConfig(kind){
     : {inputId:'luogoRilascioDocumento',codeId:'luogoRilascioCodice',choiceListId:'luogoRilascioChoiceList',fieldId:'issuePlaceChoiceField',statusId:'luogoRilascioStatus'};
 }
 function normalizeComuneInputValue(value){
-  return String(value||'').replace(/[’`´]/g,"'").replace(/\s+/g,' ').trim();
+  return sanitizeComuneLikeValue(value);
 }
 function getComuneSelectedLabel(kind){
   var cfg=getComuneFieldConfig(kind);
@@ -1032,9 +1314,11 @@ function renderComuneChoice(kind,matches){
   resetComuneChoice(kind);
   setComuneStatus(kind,t('comuneNotFoundHint'));
 }
-async function resolveComuneMatches(kind,value){
+async function resolveComuneMatches(kind,value,provinceHint){
   var raw=normalizeComuneInputValue(value);
   var normalized=normalizeComuneLookupValue(raw);
+  var province=normalizeResidenceProvinceValue(provinceHint||getComuneProvinceHint(kind,raw),value);
+  var cacheKey=normalized+'|'+province;
   if(!normalized){
     resetComuneChoice(kind);
     return;
@@ -1047,20 +1331,17 @@ async function resolveComuneMatches(kind,value){
     resetComuneChoice(kind);
     return;
   }
-  if(comuneLookupCache[normalized]){
-    renderComuneChoice(kind,comuneLookupCache[normalized]);
+  if(kind==='issue'&&isKnownForeignCountryValue(raw)){
+    handleIssuePlaceAsCountry(raw);
+    return;
+  }
+  if(comuneLookupCache[cacheKey]){
+    renderComuneChoice(kind,comuneLookupCache[cacheKey]);
     return;
   }
   try{
-    var res=await fetch('/.netlify/functions/lookup-comuni',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({q:raw})
-    });
-    if(!res.ok)throw new Error('lookup failed');
-    var data=await res.json();
-    var matches=Array.isArray(data.matches)?data.matches:[];
-    comuneLookupCache[normalized]=matches;
+    var matches=await fetchComuneMatchesWithRetry(raw,province);
+    comuneLookupCache[cacheKey]=matches;
     if(normalizeComuneLookupValue(document.getElementById(getComuneFieldConfig(kind).inputId).value)!==normalized)return;
     renderComuneChoice(kind,matches);
   }catch(err){
@@ -1068,15 +1349,78 @@ async function resolveComuneMatches(kind,value){
     resetComuneChoice(kind);
   }
 }
+async function fetchComuneMatchesWithRetry(raw,province){
+  var lastError=null;
+  for(var attempt=0;attempt<3;attempt++){
+    try{
+      var res=await fetch('/.netlify/functions/lookup-comuni',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({q:raw,provincia:province})
+      });
+      if(!res.ok)throw new Error('lookup failed');
+      var data=await res.json();
+      return Array.isArray(data.matches)?data.matches:[];
+    }catch(err){
+      lastError=err;
+      if(attempt===2)break;
+      await waitForGuestSubmit(180*(attempt+1));
+    }
+  }
+  throw lastError||new Error('lookup failed');
+}
+async function ensureComuneMatchResolved(kind){
+  var cfg=getComuneFieldConfig(kind);
+  var inputEl=document.getElementById(cfg.inputId);
+  var codeEl=document.getElementById(cfg.codeId);
+  if(!inputEl)return;
+  if(kind==='birth'&&!isBornInItaly())return;
+  if(isAdditionalGuestBirthKind(kind)&&!isAdditionalGuestBornInItaly(getAdditionalGuestIndexFromKind(kind)))return;
+  var normalizedValue=normalizeComuneInputValue(inputEl.value);
+  var normalizedLookup=normalizeComuneLookupValue(normalizedValue);
+  if(!normalizedLookup)return;
+  if(kind==='issue'&&isKnownForeignCountryValue(normalizedValue)){
+    handleIssuePlaceAsCountry(normalizedValue);
+    return;
+  }
+  if(codeEl&&codeEl.value&&codeEl.dataset.resolvedInput===normalizedLookup)return;
+  if(comuneLookupTimers[kind])clearTimeout(comuneLookupTimers[kind]);
+  await resolveComuneMatches(kind,normalizedValue,getComuneProvinceHint(kind,normalizedValue));
+}
+async function ensureCriticalComuneLookupsResolved(){
+  await ensureCountryOptionsLoaded();
+  var tasks=[];
+  if(isBornInItaly()&&normalizeValue(document.getElementById('luogoNascita')?.value)){
+    tasks.push(ensureComuneMatchResolved('birth'));
+  }
+  if(normalizeValue(document.getElementById('luogoRilascioDocumento')?.value)){
+    tasks.push(ensureComuneMatchResolved('issue'));
+  }
+  if(getNumeroPersone()>1){
+    collectAdditionalGuests().forEach(function(guest,index){
+      if(isAdditionalGuestBornInItaly(index)&&normalizeValue(guest.luogo_nascita)){
+        tasks.push(ensureComuneMatchResolved(getAdditionalGuestComuneKind(index)));
+      }
+    });
+  }
+  if(tasks.length)await Promise.all(tasks);
+}
 function handleComuneFieldInput(kind){
   var cfg=getComuneFieldConfig(kind);
   var inputEl=document.getElementById(cfg.inputId);
   var codeEl=document.getElementById(cfg.codeId);
   var listEl=document.getElementById(cfg.choiceListId);
+  var rawValue=inputEl?String(inputEl.value||''):'';
+  var provinceHint=getComuneProvinceHint(kind,rawValue);
   var normalizedValue=inputEl?normalizeComuneInputValue(inputEl.value):'';
   var normalizedLookup=normalizeComuneLookupValue(normalizedValue);
   if(inputEl){
     if(inputEl.value!==normalizedValue)inputEl.value=normalizedValue;
+  }
+  if(kind==='issue'&&isKnownForeignCountryValue(normalizedValue)){
+    handleIssuePlaceAsCountry(normalizedValue);
+    clearFieldError(cfg.fieldId);
+    return;
   }
   if(codeEl&&codeEl.value&&codeEl.dataset.resolvedInput===normalizedLookup){
     if(listEl){
@@ -1102,7 +1446,7 @@ function handleComuneFieldInput(kind){
   clearFieldError(cfg.fieldId);
   if(comuneLookupTimers[kind])clearTimeout(comuneLookupTimers[kind]);
   comuneLookupTimers[kind]=setTimeout(function(){
-    resolveComuneMatches(kind,document.getElementById(cfg.inputId).value);
+    resolveComuneMatches(kind,document.getElementById(cfg.inputId).value,provinceHint);
   },250);
 }
 function handleComuneChoiceChange(kind,code,label){
@@ -1275,11 +1619,20 @@ function normalizeCitizenshipValue(value){
   return normalizeValue(value);
 }
 function resolveOcrBirthOrigin(data){
-  var explicitState=normalizeCitizenshipValue(data.stato_nascita||'');
-  if(explicitState && normalizeComuneLookupValue(explicitState)!=='italia' && normalizeComuneLookupValue(explicitState)!=='italy' && normalizeComuneLookupValue(explicitState)!=='it'){
+  var explicitState=normalizeKnownCountryValue(data.stato_nascita||'');
+  if(explicitState && !isItalianCountryValue(explicitState)){
     document.getElementById('natoInItalia').value='0';
     updateBirthOriginUi();
     updateFieldValue('statoNascitaEstero',explicitState);
+    return;
+  }
+  var foreignBirthCountry=normalizeKnownCountryValue(data.luogo_nascita||'');
+  if(foreignBirthCountry && !isItalianCountryValue(foreignBirthCountry)){
+    document.getElementById('natoInItalia').value='0';
+    updateBirthOriginUi();
+    updateFieldValue('statoNascitaEstero',foreignBirthCountry);
+    updateFieldValue('luogoNascita','');
+    resetComuneChoice('birth');
     return;
   }
   if(normalizeValue(data.luogo_nascita)){
@@ -1290,12 +1643,17 @@ function resolveOcrBirthOrigin(data){
 function applyMainOcrLinkedResolutions(data){
   resolveOcrBirthOrigin(data);
   if(normalizeValue(data.luogo_nascita) && isBornInItaly())handleComuneFieldInput('birth');
-  if(normalizeValue(data.luogo_rilascio))handleComuneFieldInput('issue');
+  if(normalizeValue(data.luogo_rilascio)){
+    ensureCountryOptionsLoaded().finally(function(){
+      if(isKnownForeignCountryValue(data.luogo_rilascio))handleIssuePlaceAsCountry(data.luogo_rilascio);
+      else handleComuneFieldInput('issue');
+    });
+  }
   if(normalizeValue(data.citta) || normalizeValue(data.provincia))scheduleResidenceCityLookup();
 }
 function applyAdditionalGuestOcrLinkedResolutions(index,data){
   var prefix='additionalGuest_'+index+'_';
-  var explicitState=normalizeCitizenshipValue(data.stato_nascita||'');
+  var explicitState=normalizeKnownCountryValue(data.stato_nascita||'');
   if(explicitState){
     updateFieldValue(prefix+'stato_nascita',explicitState,function(){handleAdditionalGuestBirthStateChange(index);});
   }else if(!normalizeValue(document.getElementById(prefix+'stato_nascita')?.value)){
@@ -1326,8 +1684,18 @@ function applyResidenceCityMatch(match){
 }
 async function resolveResidenceCityCap(cityValue,provinceValue){
   var city=normalizeComuneInputValue(cityValue);
-  var province=normalizeUpperNoSpaces(provinceValue).slice(0,2);
+  var province=normalizeResidenceProvinceValue(provinceValue,cityValue);
   if(!city){ setCapLookupStatus('',false); return; }
+  var cityEl=document.getElementById('citta');
+  var provEl=document.getElementById('provincia');
+  if(cityEl && normalizeValue(cityEl.value)!==city){
+    cityEl.value=city;
+    markFilled(cityEl);
+  }
+  if(provEl && province && normalizeValue(provEl.value)!==province){
+    provEl.value=province;
+    markFilled(provEl);
+  }
   try{
     var res=await fetch('/.netlify/functions/lookup-comuni',{
       method:'POST',
@@ -1337,8 +1705,8 @@ async function resolveResidenceCityCap(cityValue,provinceValue){
     if(!res.ok)throw new Error('lookup failed');
     var data=await res.json();
     var matches=Array.isArray(data.matches)?data.matches:[];
-    if(normalizeComuneLookupValue(document.getElementById('citta')?.value)!==normalizeComuneLookupValue(city))return;
-    if(province && normalizeUpperNoSpaces(document.getElementById('provincia')?.value).slice(0,2)!==province)return;
+    if(normalizeComuneLookupValue(normalizeComuneInputValue(document.getElementById('citta')?.value))!==normalizeComuneLookupValue(city))return;
+    if(province && normalizeResidenceProvinceValue(document.getElementById('provincia')?.value,document.getElementById('citta')?.value)!==province)return;
     if(matches.length===1){
       applyResidenceCityMatch(matches[0]);
       if(!matches[0].cap){
@@ -1367,6 +1735,239 @@ function scheduleResidenceCityLookup(){
 function getGuestStoreKey(index){
   return Number(index)===0?0:Number(index);
 }
+function createGuestFileEntry(index,file){
+  var numericIndex=Number(index)===0?0:Number(index);
+  var clientId=(window.crypto&&typeof window.crypto.randomUUID==='function')
+    ? window.crypto.randomUUID()
+    : 'doc_'+Date.now()+'_'+Math.random().toString(36).slice(2,10);
+  return {
+    clientId:clientId,
+    fileField:'guest_file_'+clientId,
+    guestScope:numericIndex===0?'main':'additional',
+    guestIndex:numericIndex,
+    name:file&&file.name?file.name:'',
+    size:file&&file.size?file.size:0,
+    type:file&&file.type?file.type:'',
+    file:file
+  };
+}
+function waitForGuestSubmit(ms){
+  return new Promise(function(resolve){ setTimeout(resolve, ms); });
+}
+function getGuestDocumentFingerprint(file){
+  return [
+    normalizeValue(file&&file.name?file.name:'').toLowerCase(),
+    Number(file&&file.size?file.size:0),
+    Number(file&&file.lastModified?file.lastModified:0),
+    normalizeValue(file&&file.type?file.type:'').toLowerCase()
+  ].join('::');
+}
+function getGuestDocumentExtension(name){
+  var match=String(name||'').toLowerCase().match(/(\.[a-z0-9]+)$/);
+  return match?match[1]:'';
+}
+function isAllowedGuestDocumentFile(file){
+  var type=normalizeValue(file&&file.type?file.type:'').toLowerCase();
+  if(GUEST_ALLOWED_DOCUMENT_MIME_TYPES.indexOf(type)>=0)return true;
+  return GUEST_ALLOWED_DOCUMENT_EXTENSIONS.indexOf(getGuestDocumentExtension(file&&file.name?file.name:''))>=0;
+}
+function getGuestUploadValidationMessage(type,fileName){
+  var safeName=normalizeValue(fileName||'questo file');
+  if(lang==='en'){
+    if(type==='invalidType')return safeName+' is not supported. Upload a PDF or image.';
+    if(type==='tooLarge')return safeName+' exceeds the 20 MB limit.';
+    if(type==='duplicate')return safeName+' was already added.';
+    if(type==='tooMany')return 'You can upload up to '+MAX_GUEST_DOCUMENTS_PER_GUEST+' documents for the same guest.';
+    return 'Unable to add this document.';
+  }
+  if(type==='invalidType')return safeName+' non e supportato. Carica un PDF o un immagine.';
+  if(type==='tooLarge')return safeName+' supera il limite di 20 MB.';
+  if(type==='duplicate')return safeName+' era gia stato aggiunto.';
+  if(type==='tooMany')return 'Puoi caricare al massimo '+MAX_GUEST_DOCUMENTS_PER_GUEST+' documenti per lo stesso ospite.';
+  return 'Impossibile aggiungere questo documento.';
+}
+function validateGuestFiles(index,selected){
+  var key=getGuestStoreKey(index);
+  var currentEntries=guestDocumentStore[key]||[];
+  var fingerprints={};
+  currentEntries.forEach(function(item){
+    if(item&&item.file)fingerprints[getGuestDocumentFingerprint(item.file)]=true;
+  });
+  var accepted=[];
+  var errors=[];
+  selected.forEach(function(file){
+    if(currentEntries.length+accepted.length>=MAX_GUEST_DOCUMENTS_PER_GUEST){
+      errors.push(getGuestUploadValidationMessage('tooMany'));
+      return;
+    }
+    if(!isAllowedGuestDocumentFile(file)){
+      errors.push(getGuestUploadValidationMessage('invalidType',file&&file.name));
+      return;
+    }
+    if(Number(file&&file.size?file.size:0)>MAX_GUEST_DOCUMENT_SIZE_BYTES){
+      errors.push(getGuestUploadValidationMessage('tooLarge',file&&file.name));
+      return;
+    }
+    var fingerprint=getGuestDocumentFingerprint(file);
+    if(fingerprints[fingerprint]){
+      errors.push(getGuestUploadValidationMessage('duplicate',file&&file.name));
+      return;
+    }
+    fingerprints[fingerprint]=true;
+    accepted.push(file);
+  });
+  return {accepted:accepted,errors:errors};
+}
+function supportsGuestDocumentOCR(file){
+  var type=normalizeValue(file&&file.type?file.type:'').toLowerCase();
+  if(['image/jpeg','image/png','image/webp','image/gif','image/heic','image/heif'].indexOf(type)>=0)return true;
+  var ext=getGuestDocumentExtension(file&&file.name?file.name:'');
+  return ['.jpg','.jpeg','.png','.webp','.gif','.heic','.heif'].indexOf(ext)>=0;
+}
+function isHeicGuestDocumentFile(file){
+  var type=normalizeValue(file&&file.type?file.type:'').toLowerCase();
+  if(['image/heic','image/heif'].indexOf(type)>=0)return true;
+  var ext=getGuestDocumentExtension(file&&file.name?file.name:'');
+  return ['.heic','.heif'].indexOf(ext)>=0;
+}
+function buildGuestOcrFilename(originalName){
+  var base=String(originalName||'documento').replace(/\.[a-z0-9]+$/i,'').replace(/[^a-zA-Z0-9._-]+/g,'_').replace(/_+/g,'_').replace(/^_+|_+$/g,'');
+  return (base||'documento')+'-ocr.jpg';
+}
+function loadImageFromBlob(blob){
+  return new Promise(function(resolve,reject){
+    var url=URL.createObjectURL(blob);
+    var image=new Image();
+    image.onload=function(){
+      URL.revokeObjectURL(url);
+      resolve(image);
+    };
+    image.onerror=function(){
+      URL.revokeObjectURL(url);
+      reject(new Error('image_decode_failed'));
+    };
+    image.src=url;
+  });
+}
+function canvasToBlob(canvas,type,quality){
+  return new Promise(function(resolve,reject){
+    canvas.toBlob(function(blob){
+      if(blob)resolve(blob);
+      else reject(new Error('image_convert_failed'));
+    },type,quality);
+  });
+}
+async function prepareGuestFileForOcr(file){
+  if(!isHeicGuestDocumentFile(file))return file;
+  var image=await loadImageFromBlob(file);
+  var width=Math.max(1,Number(image.naturalWidth||image.width||0));
+  var height=Math.max(1,Number(image.naturalHeight||image.height||0));
+  var maxEdge=2200;
+  var scale=Math.min(1,maxEdge/Math.max(width,height));
+  var canvas=document.createElement('canvas');
+  canvas.width=Math.max(1,Math.round(width*scale));
+  canvas.height=Math.max(1,Math.round(height*scale));
+  var context=canvas.getContext('2d',{alpha:false});
+  if(!context)throw new Error('image_context_unavailable');
+  context.fillStyle='#ffffff';
+  context.fillRect(0,0,canvas.width,canvas.height);
+  context.drawImage(image,0,0,canvas.width,canvas.height);
+  var blob=await canvasToBlob(canvas,'image/jpeg',0.92);
+  return new File([blob],buildGuestOcrFilename(file&&file.name),{
+    type:'image/jpeg',
+    lastModified:Number(file&&file.lastModified?file.lastModified:Date.now())
+  });
+}
+function getGuestOcrNoDataMessage(files){
+  return (files||[]).some(isHeicGuestDocumentFile)?msg('ocrNoDataHeic'):msg('ocrNoData');
+}
+function getGuestOcrErrorMessage(files){
+  return (files||[]).some(isHeicGuestDocumentFile)?msg('ocrErrHeic'):t('ocrErr');
+}
+function hasUploadedGuestDocuments(){
+  return Object.keys(guestDocumentStore).some(function(key){
+    return Array.isArray(guestDocumentStore[key]) && guestDocumentStore[key].length>0;
+  });
+}
+function buildGuestDocumentUploadsMetadata(){
+  var metadata=[];
+  Object.keys(guestDocumentStore).forEach(function(key){
+    (guestDocumentStore[key]||[]).forEach(function(item,fileIndex){
+      if(!item||!item.file)return;
+      metadata.push({
+        client_id:item.clientId||'',
+        file_field:item.fileField||'',
+        guest_scope:item.guestScope||'main',
+        guest_index:Number.isFinite(item.guestIndex)?item.guestIndex:0,
+        display_order:fileIndex
+      });
+    });
+  });
+  return metadata;
+}
+function buildCheckinFormData(payload){
+  var formData=new FormData();
+  formData.append('payload',JSON.stringify(payload));
+  formData.append('document_uploads',JSON.stringify(buildGuestDocumentUploadsMetadata()));
+  Object.keys(guestDocumentStore).forEach(function(key){
+    (guestDocumentStore[key]||[]).forEach(function(item){
+      if(item&&item.file&&item.fileField)formData.append(item.fileField,item.file,item.name||item.file.name||'documento');
+    });
+  });
+  return formData;
+}
+function shouldRetryGuestSubmit(status,error){
+  if(error)return true;
+  return RETRYABLE_SUBMIT_STATUS_CODES.indexOf(Number(status||0))>=0;
+}
+async function submitCheckinRequestWithRetry(requestFactory,onAttempt){
+  var lastError=null;
+  for(var attempt=0;attempt<3;attempt++){
+    if(typeof onAttempt==='function')onAttempt(attempt);
+    try{
+      var requestOptions=requestFactory();
+      var res=await fetch('/.netlify/functions/submit-public-checkin',requestOptions);
+      var data=await res.json().catch(function(){ return {}; });
+      if(res.ok || !shouldRetryGuestSubmit(res.status,null) || attempt===2){
+        return {res:res,data:data};
+      }
+      lastError=new Error(data.error||t('errSending'));
+    }catch(error){
+      lastError=error;
+      if(attempt===2 || !shouldRetryGuestSubmit(0,error))break;
+    }
+    await waitForGuestSubmit(500*(attempt+1));
+  }
+  throw lastError||new Error(t('errSending'));
+}
+async function recoverRecentCheckinSubmission(payload){
+  var res=await fetch('/.netlify/functions/recover-public-checkin',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      apartment_ref:payload&&payload.apartment_ref,
+      email:payload&&payload.email,
+      telefono:payload&&payload.telefono,
+      nome:payload&&payload.nome,
+      cognome:payload&&payload.cognome,
+      data_checkin:payload&&payload.data_checkin,
+      data_checkout:payload&&payload.data_checkout,
+      additional_guests:Array.isArray(payload&&payload.additional_guests)?payload.additional_guests:[]
+    })
+  });
+  var data=await res.json().catch(function(){ return {}; });
+  if(!res.ok || !data || data.recovered!==true || !data.record){
+    return null;
+  }
+  return data;
+}
+function showSuccessfulCheckinSubmission(data,usedEmergencyFlow){
+  document.getElementById('mainContent').style.display='none';
+  var ss=document.getElementById('successScreen');
+  ss.style.display='block';
+  updateSuccessMessage(usedEmergencyFlow);
+  renderSuccessActions(data,usedEmergencyFlow);
+}
 function normalizeOCRDocumentType(value){
   var normalized=normalizeValue(value).toUpperCase();
   if(normalized==='IDENT' || normalized==="CARTA D'IDENTITA" || normalized==='CARTA DI IDENTITA')return "Carta d'identita";
@@ -1389,7 +1990,9 @@ function mergeOCRResults(results){
   merged.cittadinanza=normalizeCitizenshipValue(merged.cittadinanza);
   if(merged.sesso)merged.sesso=merged.sesso.toUpperCase().charAt(0);
   if(merged.codice_fiscale)merged.codice_fiscale=merged.codice_fiscale.toUpperCase();
-  if(merged.provincia)merged.provincia=merged.provincia.toUpperCase();
+  var rawResidenceCity=merged.citta;
+  if(merged.citta)merged.citta=normalizeComuneInputValue(merged.citta);
+  merged.provincia=normalizeResidenceProvinceValue(merged.provincia,rawResidenceCity);
   return merged;
 }
 function updateFieldValue(id,value,onAfter){
@@ -1467,6 +2070,7 @@ function renderGuestUploads(index){
   listEl.innerHTML=files.map(function(file, fileIndex){
     return '<div class="upload-item"><span class="upload-name">'+escAttr(file.name||('file-'+(fileIndex+1)))+'</span><button type="button" class="upload-remove" onclick="removeGuestFile('+index+','+fileIndex+')">X</button></div>';
   }).join('');
+  updateDocumentFlowUi();
 }
 function removeGuestFile(index,fileIndex){
   var key=getGuestStoreKey(index);
@@ -1477,14 +2081,32 @@ function removeGuestFile(index,fileIndex){
   if(input)input.value='';
 }
 async function readFileAsBase64(file){
+  var sourceFile=await prepareGuestFileForOcr(file);
   return new Promise(function(resolve,reject){
     var reader=new FileReader();
     reader.onload=function(event){
-      resolve(String(event.target.result||'').split(',')[1]||'');
+      resolve({
+        data:String(event.target.result||'').split(',')[1]||'',
+        mime_type:normalizeValue(sourceFile&&sourceFile.type?sourceFile.type:'').toLowerCase()
+      });
     };
     reader.onerror=reject;
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(sourceFile);
   });
+}
+async function buildGuestOcrImages(files){
+  var settled=await Promise.allSettled((files||[]).map(readFileAsBase64));
+  var encoded=[];
+  var heicFailure=false;
+  settled.forEach(function(result,index){
+    if(result.status==='fulfilled'){
+      encoded.push(result.value);
+      return;
+    }
+    console.error(result.reason);
+    if(isHeicGuestDocumentFile(files[index]))heicFailure=true;
+  });
+  return {encoded:encoded,heicFailure:heicFailure};
 }
 async function handleGuestFiles(index,files){
   var selected=Array.prototype.slice.call(files||[]).filter(Boolean);
@@ -1492,27 +2114,40 @@ async function handleGuestFiles(index,files){
   var isMain=Number(index)===0;
   var guestIndex=isMain?0:Number(index)-1;
   var key=getGuestStoreKey(index);
-  guestDocumentStore[key]=(guestDocumentStore[key]||[]).concat(selected.map(function(file){ return {name:file.name,size:file.size,type:file.type,file:file}; }));
+  var validated=validateGuestFiles(index,selected);
+  if(validated.errors.length)showToast(validated.errors[0]);
+  if(!validated.accepted.length){
+    setOcrStatus(isMain?'main':'guest',guestIndex,'error',t('ocrErr'));
+    return;
+  }
+  guestDocumentStore[key]=(guestDocumentStore[key]||[]).concat(validated.accepted.map(function(file){ return createGuestFileEntry(index,file); }));
   renderGuestUploads(index);
   activeOCRTarget=isMain?{scope:'main',index:0}:{scope:'guest',index:guestIndex};
+  var allFiles=(guestDocumentStore[key]||[]).map(function(item){ return item.file; }).filter(Boolean);
+  var ocrReadyFiles=allFiles.filter(supportsGuestDocumentOCR);
+  if(!ocrReadyFiles.length){
+    setOcrStatus(activeOCRTarget.scope,guestIndex,'success',msg('ocrFilesAttached'));
+    if(currentStep===2)buildReview();
+    return;
+  }
   setOcrStatus(activeOCRTarget.scope,guestIndex,'loading',t('ocrLoading'));
   try{
-    var allFiles=(guestDocumentStore[key]||[]).map(function(item){ return item.file; }).filter(Boolean);
-    var encoded=await Promise.all(allFiles.map(readFileAsBase64));
+    var preparedOcr=await buildGuestOcrImages(ocrReadyFiles);
+    if(!preparedOcr.encoded.length)throw new Error(preparedOcr.heicFailure?'ocr_heic_conversion_failed':'ocr_prepare_failed');
     var res=await fetch('/.netlify/functions/ocr',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({images:encoded,tipo:'privato'})
+      body:JSON.stringify({images:preparedOcr.encoded,tipo:'privato'})
     });
     if(!res.ok)throw new Error('OCR error');
     var response=await res.json();
     var merged=mergeOCRResults(Array.isArray(response)?response:[]);
     applyOCRToForm(merged);
-    setOcrStatus(activeOCRTarget.scope,guestIndex,'success',Object.values(merged).some(function(value){return normalizeValue(value);})?msg('ocrMultiOk'):msg('ocrNoData'));
+    setOcrStatus(activeOCRTarget.scope,guestIndex,'success',Object.values(merged).some(function(value){return normalizeValue(value);})?msg('ocrMultiOk'):getGuestOcrNoDataMessage(ocrReadyFiles));
     if(currentStep===2)buildReview();
   }catch(err){
     console.error(err);
-    setOcrStatus(activeOCRTarget.scope,guestIndex,'error',t('ocrErr'));
+    setOcrStatus(activeOCRTarget.scope,guestIndex,'error',getGuestOcrErrorMessage(ocrReadyFiles));
   }
 }
 function collectAdditionalGuests(){
@@ -1562,7 +2197,7 @@ function renderAdditionalGuests(){
           '<div class="field">'+
             '<label>'+t('guestDocumentsLabelOther')+'</label>'+
             '<div class="upload-optional">'+
-              '<input type="file" id="additionalGuest_'+i+'_file" accept="image/*" capture="environment" multiple onchange="handleGuestFiles('+(i+1)+', this.files)">'+
+              '<input type="file" id="additionalGuest_'+i+'_file" accept=".pdf,image/*" multiple onchange="handleGuestFiles('+(i+1)+', this.files)">'+
               '<div class="upload-icon">&#128196;</div>'+
               '<h3>'+t('uploadTitle')+'</h3>'+
               '<p>'+t('uploadSub')+'</p>'+
@@ -1606,6 +2241,7 @@ function handleNumeroPersoneChange(){
   if(!value||value<1)value=1;
   el.value=String(value);
   updatePrimaryGuestUi();
+  updateDocumentFlowUi();
 }
 function handleNumeroPersoneInput(){
   var el=document.getElementById('numeroPersone');
@@ -1703,6 +2339,7 @@ function focusField(id){
 function mapServerFieldId(id){
   if(id==='email_fattura')return 'email';
   if(id==='indirizzo_fatturazione')return 'indirizzoAz';
+  if(id==='guest_documents')return 'documentFlowField';
   return id;
 }
 
@@ -1712,11 +2349,14 @@ function validateCF(){
   return /^[A-Z]{6}[0-9LMNPQRSTUV]{2}[ABCDEHLMPRST][0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{3}[A-Z]$/.test(cf);
 }
 
-function validateClientData(){
+function validateClientData(options){
+  var config=options||{};
+  var requireDocuments=config.requireDocuments!==false;
   clearAllErrors();
   var errors=[];
   var paese=document.getElementById('paeseResidenza').value;
   var wantsInvoice=!!document.getElementById('vuoiFattura').checked;
+  var documentStatus=getGuestDocumentStatus();
 
   if(!getResolvedApartmentRef()){
     showTopAlert(msg('invalidApartment'));
@@ -1744,13 +2384,18 @@ function validateClientData(){
     var age=getAgeFromBirthDate(document.getElementById('dataNascita').value);
     if(age!==null&&age<18)errors.push({id:'dataNascita',msg:(getPrimaryGuestRoleType()===17?'Il capofamiglia':'Il capogruppo')+' deve essere maggiorenne'});
     collectAdditionalGuests().forEach(function(guest,index){
-      ['nome','cognome','sesso','data_nascita','luogo_nascita','cittadinanza'].forEach(function(key){
+      var guestBornInItaly=isAdditionalGuestBornInItaly(index);
+      ['nome','cognome','sesso','data_nascita','cittadinanza'].forEach(function(key){
         if(!normalizeValue(guest[key]))errors.push({id:'additionalGuest_'+index+'_'+key,msg:t('errRequired')});
       });
-      if(!isAdditionalGuestBornInItaly(index) && !normalizeValue(guest.stato_nascita)){
+      if(guestBornInItaly){
+        if(!normalizeValue(guest.luogo_nascita)){
+          errors.push({id:'additionalGuest_'+index+'_luogo_nascita',msg:t('errRequired')});
+        }
+      }else if(!normalizeValue(guest.stato_nascita)){
         errors.push({id:'additionalGuest_'+index+'_stato_nascita',msg:t('errRequired')});
       }
-      if(isAdditionalGuestBornInItaly(index)&&isComuneChoiceRequired(getAdditionalGuestComuneKind(index))&&!normalizeValue(guest.luogo_nascita_codice)){
+      if(guestBornInItaly&&isComuneChoiceRequired(getAdditionalGuestComuneKind(index))&&!normalizeValue(guest.luogo_nascita_codice)){
         errors.push({id:'additionalGuest_'+index+'_luogo_nascita_choice',msg:t('comuneChoiceRequiredMsg')});
       }
     });
@@ -1793,6 +2438,9 @@ function validateClientData(){
   if(!checkin)errors.push({id:'checkin',msg:t('errDate')});
   if(!checkout)errors.push({id:'checkout',msg:t('errDate')});
   if(checkin&&checkout&&!isCheckoutAfterCheckin(checkin,checkout))errors.push({id:'checkout',msg:msg('invalidCheckout')});
+  if(requireDocuments && !documentStatus.complete && !shouldUseDocumentEmergencyFlow()){
+    errors.push({id:'documentFlowField',msg:getGuestDocumentRequirementMessage(documentStatus)});
+  }
 
   if(errors.length){
     var seen={};
@@ -1806,8 +2454,9 @@ function validateClientData(){
   return errors;
 }
 
-function goToStep2(){
-  var errors=validateClientData();
+async function goToStep2(){
+  await ensureCriticalComuneLookupsResolved();
+  var errors=validateClientData({requireDocuments:false});
   if(errors.length){showToast(errors[0].msg);return;}
   buildReview();goToStep(2);
 }
@@ -1818,6 +2467,7 @@ function buildReview(){
   var pEl=document.getElementById('paeseResidenza');
   var birthSummary=isBornInItaly()?(getComuneSelectedLabel('birth')||document.getElementById('luogoNascita').value):document.getElementById('statoNascitaEstero').value;
   var issueSummary=getComuneSelectedLabel('issue')||document.getElementById('luogoRilascioDocumento').value;
+  var documentStatus=getGuestDocumentStatus();
   rows.push([t('NOME'),document.getElementById('nome').value+' '+document.getElementById('cognome').value]);
   rows.push([t('EMAIL'),document.getElementById('email').value]);
   rows.push([t('TELEFONO'),document.getElementById('telefono').value]);
@@ -1849,8 +2499,13 @@ function buildReview(){
   }
   rows.push([t('CHECKIN'),document.getElementById('checkin').value]);
   rows.push([t('CHECKOUT'),document.getElementById('checkout').value]);
+  rows.push([lang==='en'?'DOCUMENTS':'DOCUMENTI',documentStatus.complete?msg('documentsReady'):getGuestDocumentRequirementMessage(documentStatus)]);
+  if(shouldUseDocumentEmergencyFlow()){
+    rows.push([lang==='en'?'EMERGENCY FLOW':'PERCORSO EMERGENZA',msg('documentsEmergency')]);
+  }
   var monoKeys=[t('CF'),t('PIVA'),t('SDI')];
   box.innerHTML=rows.map(function(r){return '<div class="review-row"><span class="review-key">'+r[0]+'</span><span class="review-val'+(monoKeys.indexOf(r[0])>=0?' mono':'')+'">'+( r[1]||'—')+'</span></div>';}).join('');
+  updateDocumentFlowUi();
 }
 
 function buildPayload(){
@@ -1894,24 +2549,34 @@ function buildPayload(){
     indirizzo_fatturazione:document.getElementById('indirizzoAz').value.trim(),
     piva_cliente:document.getElementById('piva').value.trim(),
     sdi:document.getElementById('sdi').value.trim().toUpperCase(),
-    pec:document.getElementById('pec').value.trim().toLowerCase()
+    pec:document.getElementById('pec').value.trim().toLowerCase(),
+    document_upload_issue:shouldUseDocumentEmergencyFlow(),
+    document_emergency_token:shouldUseDocumentEmergencyFlow()?documentEmergencyToken:''
   };
 }
 
 async function submitForm(){
   var btn=document.getElementById('submitBtn');
   clearTopAlert();
-  var errors=validateClientData();
+  await ensureCriticalComuneLookupsResolved();
+  var errors=validateClientData({requireDocuments:true});
   if(errors.length){showToast(errors[0].msg);return;}
   btn.disabled=true;btn.textContent=msg('sending');
   var payload=buildPayload();
+  var usedEmergencyFlow=shouldUseDocumentEmergencyFlow();
   try{
-    var res=await fetch('/.netlify/functions/submit-public-checkin',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(payload)
+    if(usedEmergencyFlow){
+      payload.document_emergency_token=await ensureDocumentEmergencyToken(payload);
+    }
+    var hasDocuments=hasUploadedGuestDocuments();
+    var requestFactory=hasDocuments
+      ? function(){ return {method:'POST',body:buildCheckinFormData(payload)}; }
+      : function(){ return {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}; };
+    var response=await submitCheckinRequestWithRetry(requestFactory,function(attempt){
+      btn.textContent=attempt===0?msg('sending'):msg('retryingSubmit');
     });
-    var data=await res.json();
+    var res=response.res;
+    var data=response.data;
     if(!res.ok){
       if(Array.isArray(data.fields)&&data.fields.length){
         clearAllErrors();
@@ -1922,23 +2587,30 @@ async function submitForm(){
           }
         });
         if(data.fields[0].field!=='apartment_id') focusField(mapServerFieldId(data.fields[0].field));
-        throw new Error(data.fields[0].message||t('errSending'));
+        var fieldError=new Error(data.fields[0].message||t('errSending'));
+        fieldError.recoveryDisabled=true;
+        throw fieldError;
       }
-      throw new Error(data.error||t('errSending'));
+      var submitError=new Error(data.error||t('errSending'));
+      submitError.recoveryDisabled=Number(res.status||0)<500;
+      throw submitError;
     }
-
-    document.getElementById('mainContent').style.display='none';
-    var ss = document.getElementById('successScreen');
-    ss.style.display='block';
-    var actions=document.getElementById('successActions');
-    actions.innerHTML='';
-    if(data.portal_url){
-      var portalUrl=data.portal_url.replace(/^https?:\/\/[^/]+/,PORTAL_BASE_URL.replace(/\/+$/,''));
-      actions.innerHTML='<a href="'+portalUrl+'" class="success-link">'+msg('portalCta')+' →</a>';
-      setTimeout(function(){ window.location.href = portalUrl; }, 600);
-    }
+    showSuccessfulCheckinSubmission(data,usedEmergencyFlow);
   }catch(err){
     console.error(err);
+    if(!err || err.recoveryDisabled!==true){
+      try{
+        btn.textContent=msg('recoveringSubmit');
+        var recoveredData=await recoverRecentCheckinSubmission(payload);
+        if(recoveredData){
+          showSuccessfulCheckinSubmission(recoveredData,usedEmergencyFlow);
+          showToast(msg('submissionRecovered'));
+          return;
+        }
+      }catch(recoveryError){
+        console.error(recoveryError);
+      }
+    }
     showToast(err.message||t('errSending'));
     btn.disabled=false;btn.innerHTML=t('invia');
   }

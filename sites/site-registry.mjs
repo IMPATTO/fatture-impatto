@@ -12,6 +12,7 @@ export const siteRegistry = {
     ],
     assets: [
       'js/legacy-host-redirect.js',
+      'js/site-links.js',
       'js/supabase-client.js',
       'comuni.csv',
       'stati.csv',
@@ -22,8 +23,10 @@ export const siteRegistry = {
       'create-fattura-from-text',
       'export-alloggiati-report',
       'export-istat-marche-xml',
+      'get-checkin-document-url',
       'save-istat-config-fatt-docs',
       'send-alloggiati',
+      'submit-public-invoice-documents',
       'transcribe-invoice-audio',
     ],
     includedFiles: [
@@ -47,6 +50,7 @@ export const siteRegistry = {
       'js/backoffice-operativita.js',
     ],
     functions: [
+      'daily-checkin-checkout-notify',
       'get-backoffice-richieste',
       'get-operativita-apartments',
     ],
@@ -71,13 +75,16 @@ export const siteRegistry = {
     functions: [
       'apply-apartment-links',
       'audit-apartment-links',
+      'create-public-checkin-emergency-token',
       'get-backoffice-portale-data',
       'get-public-portal-data',
+      'lookup-comuni',
+      'log-legacy-redirect',
       'ocr',
+      'recover-public-checkin',
       'revenue-optimizer',
       'save-istat-config-portale',
       'submit-public-checkin',
-      'submit-public-invoice-documents',
       'translate-apartment-info',
     ],
     includedFiles: [

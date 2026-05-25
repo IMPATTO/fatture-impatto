@@ -241,13 +241,13 @@ exports.handler = async (event) => {
 
 function readParams(event, manualMode) {
   if (!manualMode) {
-    const currentMonth = getCurrentMonthReference(new Date());
-    const weekStart = getWeekReference(new Date());
+    const currentWeek = getPreviousWeekReference(new Date());
+    const weekStart = currentWeek.start;
     return {
-      month: currentMonth.month,
-      rangeStart: currentMonth.start,
-      rangeEndExclusive: currentMonth.end,
-      periodLabel: currentMonth.month,
+      month: currentWeek.month,
+      rangeStart: currentWeek.start,
+      rangeEndExclusive: currentWeek.end,
+      periodLabel: currentWeek.label,
       weekStart,
       periodKey: weekStart,
       dryRun: envFlag('DRY_RUN_EXPORT_COMMERCIALISTA', false),
@@ -272,12 +272,14 @@ function readParams(event, manualMode) {
   const dryRun = toBoolean(body.dry_run ?? query.dry_run ?? envFlag('DRY_RUN_EXPORT_COMMERCIALISTA', false));
   const forceSend = toBoolean(body.force_send ?? query.force_send ?? false);
   const verifyDelivery = toBoolean(body.verify_delivery ?? query.verify_delivery ?? false);
-  const reference = fromDate || toDate
+  const usingCustomRange = Boolean(fromDate || toDate);
+  const usingMonth = Boolean(month);
+  const reference = usingCustomRange
     ? getCustomRangeReference({ fromDate, toDate })
-    : month
+    : usingMonth
       ? getMonthReference(month)
-      : getCurrentMonthReference(new Date());
-  const weekStart = customWeekStart || (fromDate || toDate ? reference.start : month ? null : getWeekReference(new Date()));
+      : getPreviousWeekReference(new Date());
+  const weekStart = customWeekStart || (usingCustomRange ? reference.start : usingMonth ? null : reference.start);
 
   return {
     month: reference.month,
@@ -357,6 +359,18 @@ function getCurrentMonthReference(now) {
   return getMonthReference(`${romeParts.year}-${romeParts.month}`);
 }
 
+function getCurrentWeekReference(now) {
+  const weekStart = getWeekReference(now);
+  return getWeekRangeReference(weekStart);
+}
+
+function getPreviousWeekReference(now) {
+  const currentWeekStart = getWeekReference(now);
+  const previousWeekDate = new Date(`${currentWeekStart}T00:00:00Z`);
+  previousWeekDate.setUTCDate(previousWeekDate.getUTCDate() - 7);
+  return getWeekRangeReference(previousWeekDate.toISOString().slice(0, 10));
+}
+
 function getWeekReference(now) {
   const romeDate = new Intl.DateTimeFormat('en-CA', {
     timeZone: ROME_TZ,
@@ -369,6 +383,24 @@ function getWeekReference(now) {
   const dayOfWeek = utcDate.getUTCDay() || 7;
   utcDate.setUTCDate(utcDate.getUTCDate() - (dayOfWeek - 1));
   return utcDate.toISOString().slice(0, 10);
+}
+
+function getWeekRangeReference(weekStart) {
+  const normalizedWeekStart = normalizeIsoDate(weekStart);
+  if (!normalizedWeekStart) {
+    throw new Error('week_start deve essere nel formato YYYY-MM-DD');
+  }
+  const startDate = new Date(`${normalizedWeekStart}T00:00:00Z`);
+  const labelEndDate = new Date(startDate);
+  labelEndDate.setUTCDate(labelEndDate.getUTCDate() + 6);
+  const endDate = new Date(startDate);
+  endDate.setUTCDate(endDate.getUTCDate() + 7);
+  return {
+    month: normalizedWeekStart.slice(0, 7),
+    start: normalizedWeekStart,
+    end: endDate.toISOString().slice(0, 10),
+    label: `${normalizedWeekStart} -> ${labelEndDate.toISOString().slice(0, 10)}`,
+  };
 }
 
 function getMonthReference(monthKey) {
@@ -956,16 +988,34 @@ async function safeUpdateDeliveryAttempt(supabase, attemptId, lastEvent) {
 
 async function safeInsertAuditLog(supabase, payload) {
   try {
-    const { error } = await supabase.from('audit_log').insert({
-      ...payload,
-      timestamp: new Date().toISOString(),
-    });
+    const normalizedPayload = {
+      user_email: payload.user_email || '',
+      action: payload.action || '',
+      table_name: payload.table_name || '',
+      record_id: normalizeAuditRecordId(payload.record_id),
+      old_data: payload.old_data ?? null,
+      new_data: payload.new_data ?? payload.payload ?? null,
+      ip_address: payload.ip_address ?? null,
+    };
+    if (payload.created_at) {
+      normalizedPayload.created_at = payload.created_at;
+    }
+
+    const { error } = await supabase.from('audit_log').insert(normalizedPayload);
     if (error) {
       console.error('[monthly-export-commercialista] audit_log error:', error);
     }
   } catch (error) {
     console.error('[monthly-export-commercialista] audit_log fatal:', error);
   }
+}
+
+function normalizeAuditRecordId(value) {
+  if (value == null) return null;
+  const normalized = String(value).trim();
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalized)
+    ? normalized
+    : null;
 }
 
 function jsonResponse(statusCode, body) {

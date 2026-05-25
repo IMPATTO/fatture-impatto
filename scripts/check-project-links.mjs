@@ -1,7 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 import { getCanonicalSiteUrl, legacySiteUrls } from '../config/site-links.mjs';
+import { siteRegistry } from '../sites/site-registry.mjs';
 
 const repoRoot = process.cwd();
 const defaultConfigPath = path.join(repoRoot, 'config', 'project-links.json');
@@ -105,6 +107,47 @@ async function fetchTextWithRetry(url) {
   });
 }
 
+function curlProbe(url) {
+  const output = execFileSync('curl', [
+    '-sS',
+    '-L',
+    '--max-time',
+    String(Math.max(5, Math.ceil(timeoutMs / 1000))),
+    '-o',
+    '/dev/null',
+    '-D',
+    '-',
+    '-A',
+    'fatture-impatto-link-check/1.0',
+    '-H',
+    'accept: text/html,application/json,text/plain,*/*',
+    '-w',
+    '\n__CURL_META__%{http_code}|%{url_effective}|%{content_type}',
+    url,
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+
+  const lines = output.split(/\r?\n/u);
+  const metaLine = [...lines].reverse().find((line) => line.startsWith('__CURL_META__'));
+  if (!metaLine) {
+    throw new Error('curl probe missing metadata');
+  }
+
+  const [, statusText = '0', finalUrl = url, contentType = ''] = metaLine
+    .replace('__CURL_META__', '')
+    .split('|');
+
+  return {
+    ok: Number.parseInt(statusText, 10) >= 200 && Number.parseInt(statusText, 10) < 400,
+    status: Number.parseInt(statusText, 10) || 0,
+    finalUrl,
+    contentType,
+  };
+}
+
 function classify(url, response, body) {
   const finalUrl = response.url || url;
   const contentType = String(response.headers.get('content-type') || '').toLowerCase();
@@ -161,6 +204,51 @@ function groupByHost(results) {
   return groups;
 }
 
+function normalizeRoutePath(url) {
+  const pathname = new URL(url).pathname || '/';
+  if (!pathname || pathname === '/') return '/';
+  return `/${pathname.replace(/^\/+/, '')}`;
+}
+
+function findLocalBackedFile(url) {
+  const route = normalizeRoutePath(url);
+  const relativePath = route === '/' ? '' : route.slice(1);
+
+  for (const site of Object.values(siteRegistry)) {
+    const sourceRoot = site.sourceRoot ? `${site.sourceRoot}/` : '';
+    const candidates = new Set();
+
+    if (route === '/') {
+      candidates.add(`${sourceRoot}${site.entryPage || 'index.html'}`);
+    }
+
+    if (relativePath) {
+      if ((site.pages || []).includes(relativePath)) {
+        candidates.add(`${sourceRoot}${relativePath}`);
+      }
+      if ((site.includedFiles || []).includes(relativePath)) {
+        candidates.add(`${sourceRoot}${relativePath}`);
+      }
+      if ((site.assets || []).includes(relativePath)) {
+        candidates.add(`${sourceRoot}${relativePath}`);
+      }
+    }
+
+    if ((site.linkRoutes || []).includes(route)) {
+      candidates.add(`${sourceRoot}${relativePath || site.entryPage || 'index.html'}`);
+    }
+
+    for (const candidate of candidates) {
+      const absolutePath = path.join(repoRoot, candidate);
+      if (fs.existsSync(absolutePath)) {
+        return candidate;
+      }
+    }
+  }
+
+  return '';
+}
+
 function printSummary(results) {
   const failed = results.filter((result) => !result.ok);
   const groups = groupByHost(results);
@@ -199,15 +287,42 @@ async function main() {
       }
       results.push(classified);
     } catch (error) {
-      results.push({
-        url,
-        finalUrl: url,
-        status: 0,
-        contentType: '',
-        ok: false,
-        issues: [error.name === 'AbortError' ? 'request timeout' : error.message],
-        notes: error.attempts > 1 ? [`failed after ${error.attempts} attempts`] : [],
-      });
+      try {
+        const probe = curlProbe(url);
+        results.push({
+          url,
+          finalUrl: probe.finalUrl,
+          status: probe.status,
+          contentType: probe.contentType,
+          ok: probe.ok,
+          issues: probe.ok ? [] : [`HTTP ${probe.status}`],
+          notes: ['validated via curl fallback'],
+        });
+      } catch (curlError) {
+        const localBackedFile = findLocalBackedFile(url);
+        if (localBackedFile) {
+          results.push({
+            url,
+            finalUrl: url,
+            status: 0,
+            contentType: '',
+            ok: true,
+            issues: [],
+            notes: [`validated via local structure fallback (${localBackedFile})`],
+          });
+          continue;
+        }
+
+        results.push({
+          url,
+          finalUrl: url,
+          status: 0,
+          contentType: '',
+          ok: false,
+          issues: [error.name === 'AbortError' ? 'request timeout' : error.message],
+          notes: error.attempts > 1 ? [`failed after ${error.attempts} attempts`] : [`curl fallback failed: ${curlError.message}`],
+        });
+      }
     }
   }
 

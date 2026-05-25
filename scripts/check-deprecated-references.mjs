@@ -37,6 +37,7 @@ const allowedFiles = new Set([
   'pr_luca_riccione.html',
   'residence-backoffice.html',
   'scripts/check-deprecated-references.mjs',
+  'scripts/lib/residence-pr-snapshot.mjs',
   'setup-supabase.sql',
   'sites/site-registry.mjs',
   'supabase/migrations/202605120003_archive_legacy_luca_requests.sql',
