@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Backoffice Fatturazione · Impatto</title>
 
+  <script src="/js/legacy-host-redirect.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/supabase-client.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -112,6 +113,7 @@
     .badge { display: inline-block; font-family: var(--mono); font-size: 10px; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 500; }
     .b-check   { background: #f0f9ff; color: #0369a1; }
     .b-daverif { background: var(--yellow-l); color: var(--yellow); }
+    .b-dacompl { background: #fff7ed; color: #c2410c; }
     .b-approv  { background: var(--green-l);  color: var(--green); }
     .b-bozza   { background: var(--blue-l); color: var(--accent); }
     .b-cred    { background: #ecfdf5; color: #059669; }
@@ -361,6 +363,9 @@ const S = {
   fAccApt: '',
   freeInvoice: getEmptyFreeInvoiceState(),
   columnSupport: { ragione_sociale: true, indirizzo_fatturazione: true },
+  autoInvoiceRecoveryRunning: false,
+  autoInvoiceRecoveryDone: false,
+  autoInvoiceRecoverySeen: new Set(),
   timeLeft: TIMEOUT_MS,
   inTimer: null, cdTimer: null, toastTimer: null,
 };
@@ -478,8 +483,8 @@ function getAudioMethod() {
 function fmt(d) { if(!d)return'—'; return new Date(d).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'}); }
 function fmtTs(d) { if(!d)return'—'; return new Date(d).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
 function esc(s) { if(s==null)return''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function badgeCls(s){ return{CHECK_IN_COMPLETATO:'b-check',DA_VERIFICARE:'b-daverif',APPROVATA:'b-approv',BOZZA_CREATA:'b-bozza',CREDENZIALI_INVIATE:'b-cred',SCARTATA:'b-scart'}[s]||'b-daverif'; }
-function badgeLbl(s){ return{CHECK_IN_COMPLETATO:'Check-in',DA_VERIFICARE:'Da verificare',APPROVATA:'Approvata',BOZZA_CREATA:'Bozza creata',CREDENZIALI_INVIATE:'Cred. inviate',SCARTATA:'Scartata'}[s]||s; }
+function badgeCls(s){ return{CHECK_IN_COMPLETATO:'b-check',DA_VERIFICARE:'b-daverif',DA_COMPLETARE:'b-dacompl',APPROVATA:'b-approv',BOZZA_CREATA:'b-bozza',CREDENZIALI_INVIATE:'b-cred',SCARTATA:'b-scart'}[s]||'b-daverif'; }
+function badgeLbl(s){ return{CHECK_IN_COMPLETATO:'Check-in',DA_VERIFICARE:'Da verificare',DA_COMPLETARE:'Da completare',APPROVATA:'Approvata',BOZZA_CREATA:'Bozza creata',CREDENZIALI_INVIATE:'Cred. inviate',SCARTATA:'Scartata'}[s]||s; }
 function accountingBadgeCls(s){ return{DA_APPROVARE:'b-acc-da-approvare',DA_CORREGGERE:'b-acc-da-correggere',APPROVATO:'b-acc-approvato',SCARTATO:'b-acc-scartato'}[s]||'b-acc-da-approvare'; }
 function accountingBadgeLbl(s){ return{DA_APPROVARE:'Da approvare',DA_CORREGGERE:'Da correggere',APPROVATO:'Approvato',SCARTATO:'Scartato'}[s]||s; }
 function accountingDocTypeLbl(v){ return{bolletta:'Bolletta',fattura_fornitore:'Fattura fornitore',ricevuta:'Ricevuta',contratto:'Contratto',altro:'Altro'}[v]||v||'—'; }
@@ -510,6 +515,23 @@ function getEffectiveGroupChildren(row){
 function isLeaderRow(row){ return !!row && !row.capogruppo_id && getEffectiveGroupChildren(row).length>0; }
 function isMemberRow(row){ return !!row?.capogruppo_id; }
 function isPrimaryPracticeRow(row){ return !!row && !row.capogruppo_id; }
+function getBillingRootRow(row){ return getParentRow(row) || row || null; }
+function hasInvoiceIntent(row){
+  if (!row) return false;
+  const tipoCliente = String(row.tipo_cliente || '').toLowerCase();
+  const iva = Number(row.iva_percentuale ?? 0);
+  return tipoCliente === 'azienda'
+    || tipoCliente === 'professionista'
+    || iva >= 22
+    || !!String(row.ragione_sociale || '').trim()
+    || !!String(row.piva_cliente || '').trim()
+    || !!String(row.indirizzo_fatturazione || '').trim();
+}
+function shouldEnsureLocalInvoiceDraft(row){
+  const root = getBillingRootRow(row);
+  if (!root || !isPrimaryPracticeRow(root)) return false;
+  return ACTIVE_STATI.includes(String(root.stato || ''));
+}
 function getVisibleBillingRows(){ return S.rows.filter(isPrimaryPracticeRow); }
 function getPrimaryRoleLabel(row){
   const tipo = Number(row?.tipo_alloggiato || 16);
@@ -1642,6 +1664,19 @@ async function loadData() {
         nome_appartamento: apartmentNameById.get(String(row.apartment_id)) || row.nome_appartamento || '',
       }));
     }
+
+    if (!S.autoInvoiceRecoveryRunning && !S.autoInvoiceRecoveryDone) {
+      S.autoInvoiceRecoveryRunning = true;
+      try {
+        const recovery = await syncLocalInvoiceDrafts(S.rows, { silent: true });
+        if (recovery.failed > 0) {
+          toast(`⚠️ Recupero bozze locali: ${recovery.failed} errori`, 'err');
+        }
+        S.autoInvoiceRecoveryDone = true;
+      } finally {
+        S.autoInvoiceRecoveryRunning = false;
+      }
+    }
   } catch(e) {
     console.error('loadData error:', e);
     toast('Errore caricamento dati, riprova','err');
@@ -1663,7 +1698,22 @@ async function saveForm() {
   const i = S.rows.findIndex(r=>String(r.id)===String(S.selected.id));
   if (i>=0) S.rows[i]={...S.rows[i],...S.form};
   S.selected = S.rows[i]||S.selected;
-  toast('✓ Salvato','ok'); updateFooter(); partialTable(); partialStats();
+  let draftSyncError = null;
+  if (shouldEnsureLocalInvoiceDraft(S.selected)) {
+    try {
+      await syncLocalInvoiceDrafts([S.selected], { silent: true, ignoreSeen: true });
+    } catch (syncError) {
+      console.error('saveForm local draft sync failed', syncError);
+      draftSyncError = syncError;
+    }
+  }
+  toast(
+    draftSyncError
+      ? `⚠️ Salvato, ma bozza locale non sincronizzata: ${draftSyncError.message}`
+      : '✓ Salvato',
+    draftSyncError ? 'err' : 'ok'
+  );
+  updateFooter(); partialTable(); partialStats();
 }
 
 async function setStato(stato) {
@@ -1684,8 +1734,19 @@ async function setStato(stato) {
   toast(lbl[stato]||stato, typ[stato]||'ok');
   const i = S.rows.findIndex(r=>String(r.id)===String(S.selected.id));
   if (i>=0) S.rows[i]={...S.rows[i],...payload};
-  if (stato !== 'DA_VERIFICARE') { S.selected=null; S.form={}; }
-  else { S.selected=S.rows[i]; }
+  if (stato !== 'SCARTATA') {
+    try {
+      await syncLocalInvoiceDrafts([S.rows[i] || { ...S.selected, ...payload }], { silent: true, ignoreSeen: true });
+    } catch (syncError) {
+      console.error('setStato local draft sync failed', syncError);
+      toast(`⚠️ Stato aggiornato, ma bozza locale non sincronizzata: ${syncError.message}`, 'err');
+    }
+  }
+  if (stato === 'SCARTATA') {
+    S.selected=null; S.form={};
+  } else {
+    S.selected=S.rows[i];
+  }
   partialTable(); partialStats(); partialDrawer();
 }
 
@@ -1740,36 +1801,17 @@ async function setAccountingStatus(stato) {
 
 async function creaFattura() {
   if (!S.selected) return;
+  const root = getBillingRootRow(S.selected);
+  const importo = numberVal(root?.importo_lordo);
+  if (!Number.isFinite(importo) || importo <= 0) {
+    toast('Inserisci un importo lordo maggiore di zero prima di inviare la bozza a Fatture in Cloud', 'err');
+    return;
+  }
   const btn = document.getElementById('dFatt');
   if (btn) { btn.disabled=true; btn.textContent='⏳ Creo…'; }
 
   try {
-    const session = await sb.auth.getSession();
-
-    const res = await fetch('/.netlify/functions/create-fattura-fic-fatt-docs', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.data.session.access_token}`
-      },
-      body: JSON.stringify({
-        ospiti_check_in_id: S.selected.id,
-        payment_status: S.form.payment_status,
-        payment_account_type: S.form.payment_account_type,
-        sezionale: S.form.sezionale
-      })
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      const detailMessage =
-        data.detail?.message ||
-        data.detail?.reason ||
-        data.supabase_error?.message ||
-        (typeof data.detail === 'string' ? data.detail : '') ||
-        data.error;
-      throw new Error(detailMessage || 'Errore sconosciuto');
-    }
+    const data = await requestInvoiceDraftForRow(S.selected);
     if (data.sezionale_warning) {
       toast(`ℹ️ ${data.sezionale_warning}`, 'info');
     }
@@ -1795,6 +1837,92 @@ async function creaFattura() {
   }
 }
 
+async function requestInvoiceDraftForRow(row, options = {}) {
+  const root = getBillingRootRow(row);
+  if (!root?.id) throw new Error('Record fatturazione non valido');
+
+  const session = await sb.auth.getSession();
+  const res = await fetch('/.netlify/functions/create-fattura-fic-fatt-docs', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.data.session.access_token}`
+    },
+    body: JSON.stringify({
+      ospiti_check_in_id: root.id,
+      payment_status: options.payment_status || S.form.payment_status || 'not_paid',
+      payment_account_type: options.payment_account_type || S.form.payment_account_type || 'bonifico',
+      sezionale: options.sezionale || S.form.sezionale || 'D'
+    })
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    if (options.allowExisting && res.status === 409) return { ...data, already_exists: true };
+    const detailMessage =
+      data.detail?.message ||
+      data.detail?.reason ||
+      data.supabase_error?.message ||
+      (typeof data.detail === 'string' ? data.detail : '') ||
+      data.error;
+    throw new Error(detailMessage || 'Errore sconosciuto');
+  }
+
+  return data;
+}
+
+async function syncLocalInvoiceDrafts(rows, options = {}) {
+  const candidates = (rows || [])
+    .map(getBillingRootRow)
+    .filter((row, index, list) => row && list.findIndex(item => String(item?.id) === String(row.id)) === index)
+    .filter((row) => shouldEnsureLocalInvoiceDraft(row))
+    .filter((row) => options.ignoreSeen || !S.autoInvoiceRecoverySeen.has(String(row.id)));
+
+  if (!candidates.length) return { skipped: true, total: 0, created: 0, updated: 0, failed: 0 };
+
+  const session = await sb.auth.getSession();
+  const res = await fetch('/.netlify/functions/sync-local-invoice-drafts', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.data.session.access_token}`
+    },
+    body: JSON.stringify({
+      ospiti_check_in_ids: candidates.map((row) => row.id)
+    })
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    const detailMessage =
+      data.detail?.message ||
+      data.detail?.reason ||
+      (typeof data.detail === 'string' ? data.detail : '') ||
+      data.error;
+    throw new Error(detailMessage || 'Errore sincronizzazione bozze locali');
+  }
+
+  for (const row of candidates) {
+    S.autoInvoiceRecoverySeen.add(String(row.id));
+  }
+
+  if (!options.silent) {
+    if (data.created > 0 || data.updated > 0) {
+      toast(`✓ Sincronizzate ${data.created + data.updated} bozze locali`, 'ok');
+    } else if (data.failed > 0) {
+      toast(`⚠️ Recupero bozze locali con ${data.failed} errori`, 'err');
+    }
+  }
+
+  return {
+    total: candidates.length,
+    created: Number(data.created || 0),
+    updated: Number(data.updated || 0),
+    failed: Number(data.failed || 0),
+    results: Array.isArray(data.results) ? data.results : []
+  };
+}
+
 function renderLogin() {
   document.getElementById('app').innerHTML = `
   <div class="login-wrap">
@@ -1803,7 +1931,7 @@ function renderLogin() {
       <div class="login-sub">Backoffice · Fatturazione</div>
       <div id="lerr" class="msg-err"></div>
       <div class="field"><label>Email</label>
-        <input id="lem" type="email" value="fatturazione@illupoaffitta.com" autocomplete="username"/></div>
+        <input id="lem" type="email" placeholder="nome@azienda.it" autocomplete="username" autocapitalize="off" spellcheck="false"/></div>
       <div class="field"><label>Password</label>
         <input id="lpw" type="password" autocomplete="current-password"/></div>
       <button id="lbtn" class="btn btn-primary btn-full">Entra →</button>
@@ -1817,12 +1945,12 @@ function renderLogin() {
   };
   document.getElementById('lbtn').addEventListener('click', doLogin);
   document.getElementById('lpw').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
-  setTimeout(()=>document.getElementById('lpw')?.focus(), 80);
+  setTimeout(()=>document.getElementById('lem')?.focus(), 80);
 }
 
 function renderDashboard() {
   const st=stats(), pct=(S.timeLeft/TIMEOUT_MS)*100;
-  const displayEmail = S.session?.user?.email || 'fatturazione@illupoaffitta.com';
+  const displayEmail = S.session?.user?.email || 'utente autenticato';
   const barClr = pct<20?'#dc2626':pct<50?'#d97706':'#2563eb';
   const activeCount = countByView('active');
   const archiveCount = countByView('archive');

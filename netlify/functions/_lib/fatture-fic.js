@@ -29,6 +29,8 @@ const SEZIONALE_LABELS = {
 };
 const DEFAULT_SEZIONALE = 'D';
 const BACKOFFICE_EMAILS = Array.from(INTERNAL_ALLOWED_EMAILS);
+const LOCAL_DRAFT_ELIGIBLE_STATI = ['CHECK_IN_COMPLETATO', 'DA_VERIFICARE', 'APPROVATA'];
+const LOCAL_DRAFT_INCOMPLETE_STATO = 'DA_COMPLETARE';
 
 function jsonResponse(statusCode, body) {
   return {
@@ -462,11 +464,158 @@ async function detectOptionalColumns(supabase) {
   };
 }
 
+async function ensureLocalInvoiceDraftForOspiteId(supabase, ospiteIdInput, options = {}) {
+  const ospiteId = normalizeString(ospiteIdInput);
+  if (!ospiteId) {
+    return { ok: false, error: new Error('ospiti_check_in_id richiesto') };
+  }
+
+  const columnSupport = options.columnSupport || await detectOptionalColumns(supabase);
+  const force = options.force === true;
+
+  const selectFields = [
+    'id',
+    'nome',
+    'cognome',
+    'stato',
+    'tipo_cliente',
+    'piva_cliente',
+    'iva_percentuale',
+    'importo_lordo',
+    'data_checkin',
+    'data_checkout'
+  ];
+  if (columnSupport.ragione_sociale) selectFields.push('ragione_sociale');
+  if (columnSupport.indirizzo_fatturazione) selectFields.push('indirizzo_fatturazione');
+
+  const { data: ospite, error: ospiteError } = await supabase
+    .from('ospiti_check_in')
+    .select(selectFields.join(','))
+    .eq('id', ospiteId)
+    .maybeSingle();
+
+  if (ospiteError) return { ok: false, error: ospiteError };
+  if (!ospite) return { ok: false, error: new Error('Ospite non trovato') };
+
+  const ospiteStato = String(ospite.stato || '');
+  if (!LOCAL_DRAFT_ELIGIBLE_STATI.includes(ospiteStato)) {
+    return {
+      ok: true,
+      ospite,
+      data: null,
+      skipped: true,
+      reason: `stato_${ospiteStato || 'UNKNOWN'}`.toLowerCase()
+    };
+  }
+
+  const tipoCliente = String(ospite.tipo_cliente || '').toLowerCase();
+  const iva = Number(ospite.iva_percentuale ?? 0);
+  const invoiceIntent = tipoCliente === 'azienda'
+    || tipoCliente === 'professionista'
+    || iva >= 22
+    || !!String(ospite.ragione_sociale || '').trim()
+    || !!String(ospite.piva_cliente || '').trim()
+    || !!String(ospite.indirizzo_fatturazione || '').trim();
+
+  if (!invoiceIntent) {
+    return { ok: true, ospite, data: null, skipped: true, reason: 'no_invoice_intent' };
+  }
+
+  const { data: existing, error: existingError } = await supabase
+    .from('fatture_staging')
+    .select('id, stato, numero_fattura, link_fatture_cloud, importo_lordo, iva_percentuale, importo_totale_con_iva')
+    .eq('ospiti_check_in_id', ospiteId)
+    .maybeSingle();
+
+  if (existingError) return { ok: false, error: existingError };
+
+  const existingHasRemote = !!(
+    existing?.link_fatture_cloud
+    || existing?.numero_fattura
+    || String(existing?.stato || '').toUpperCase() === 'BOZZA_CREATA'
+  );
+
+  if (existingHasRemote && !force) {
+    // Esiste già una bozza remota o una bozza locale già collegata.
+    // Se l'ospite e ancora in stato APPROVATA, riallinea a BOZZA_CREATA (arretrati).
+    if (String(ospite.stato || '').toUpperCase() === 'APPROVATA') {
+      const { error: ospiteUpdateError } = await supabase
+        .from('ospiti_check_in')
+        .update({ stato: 'BOZZA_CREATA', updated_at: new Date().toISOString() })
+        .eq('id', ospiteId)
+        .eq('stato', 'APPROVATA');
+      if (ospiteUpdateError) return { ok: false, error: ospiteUpdateError };
+      return { ok: true, ospite: { ...ospite, stato: 'BOZZA_CREATA' }, data: existing, updated: true, skipped: false, reason: 'ospite_status_synced' };
+    }
+    return { ok: true, ospite, data: existing, skipped: true, reason: 'already_exists' };
+  }
+
+  const totals = computeInvoiceTotals(ospite.importo_lordo, ospite.iva_percentuale ?? 22);
+  const hasValidAmount = totals.ok === true;
+  const existingStatoRaw = String(existing?.stato || '');
+  const existingStato = existingStatoRaw.toUpperCase();
+  const existingImportoLordo = Number(existing?.importo_lordo);
+  const existingHasAmounts = Number.isFinite(existingImportoLordo) && existingImportoLordo > 0;
+  const resultingHasAmount = hasValidAmount || existingHasAmounts;
+  const existingIsAdvanced = existingStato.length > 0 && existingStato !== LOCAL_DRAFT_INCOMPLETE_STATO;
+
+  let nextStato = LOCAL_DRAFT_INCOMPLETE_STATO;
+  if (resultingHasAmount) {
+    nextStato = existingStatoRaw || 'APPROVATA';
+  } else if (existingIsAdvanced) {
+    nextStato = existingStatoRaw;
+  }
+
+  const payload = {
+    ospiti_check_in_id: ospite.id,
+    nome_cliente: ospite.nome,
+    cognome_cliente: ospite.cognome,
+    stato: nextStato
+  };
+
+  if (hasValidAmount) {
+    payload.importo_lordo = totals.importoTotale;
+    payload.iva_percentuale = totals.ivaPercentuale;
+    payload.importo_totale_con_iva = totals.importoTotaleDocumento;
+  } else if (existingHasAmounts) {
+    payload.importo_lordo = existing.importo_lordo;
+    payload.iva_percentuale = existing.iva_percentuale ?? Number(ospite.iva_percentuale ?? 22);
+    payload.importo_totale_con_iva = existing.importo_totale_con_iva ?? null;
+  } else {
+    payload.importo_lordo = null;
+    payload.iva_percentuale = Number(ospite.iva_percentuale ?? 22);
+    payload.importo_totale_con_iva = null;
+  }
+
+  const upsertResult = await saveFatturaStaging(supabase, payload);
+  if (upsertResult.error) {
+    return { ok: false, error: upsertResult.error };
+  }
+
+  const wasCreated = !existing;
+  const wasUpdated = !!existing;
+
+  return {
+    ok: true,
+    ospite,
+    data: upsertResult.data || null,
+    created: wasCreated,
+    updated: wasUpdated,
+    skipped: false,
+    incomplete: !resultingHasAmount,
+    reason: wasCreated
+      ? (resultingHasAmount ? 'created' : 'created_incomplete')
+      : (resultingHasAmount ? 'updated' : 'updated_incomplete')
+  };
+}
+
 module.exports = {
   BACKOFFICE_EMAILS,
   BOLLO_IMPORTO,
   BOLLO_SOGLIA,
   DEFAULT_SEZIONALE,
+  LOCAL_DRAFT_ELIGIBLE_STATI,
+  LOCAL_DRAFT_INCOMPLETE_STATO,
   SEZIONALI,
   SEZIONALE_LABELS,
   SUPABASE_URL,
@@ -480,6 +629,7 @@ module.exports = {
   createDraftOnFic,
   createSupabaseAdmin,
   detectOptionalColumns,
+  ensureLocalInvoiceDraftForOspiteId,
   hasColumn,
   insertAuditLog,
   jsonResponse,

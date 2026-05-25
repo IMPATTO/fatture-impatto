@@ -1,13 +1,27 @@
+const Busboy = require('busboy');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
+const {
+  derivePublicCheckinEmergencySecret,
+  verifyPublicCheckinEmergencyToken,
+} = require('./_public-checkin-emergency-token');
+const { resolvePublicCheckinKeyAlias } = require('./_public-checkin-key-rotation');
+const { ensureLocalInvoiceDraftForOspiteId } = require('./_lib/fatture-fic');
 
 const DEFAULT_SUPABASE_URL = 'https://tysxeikqbgebpfyblgeb.supabase.co';
-const SUPABASE_URL = process.env.SUPABASE_URL || DEFAULT_SUPABASE_URL;
+const SUPABASE_URL = resolveSupabaseUrl(process.env.SUPABASE_URL);
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const PUBLIC_CHECKIN_EMERGENCY_TOKEN_SECRET = derivePublicCheckinEmergencySecret(
+  process.env.PUBLIC_CHECKIN_EMERGENCY_TOKEN_SECRET,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 const PUBLIC_PORTAL_BASE_URL = process.env.PUBLIC_PORTAL_BASE_URL || '';
+const CHECKIN_DOCUMENTS_BUCKET = process.env.PUBLIC_CHECKIN_DOCUMENTS_BUCKET || 'checkin-documents';
+const MAX_CHECKIN_DOCUMENT_SIZE_BYTES = 20 * 1024 * 1024;
 let siteLinksConfigPromise = null;
+let checkinDocumentsBucketPromise = null;
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -101,6 +115,26 @@ const STATE_ALIASES = {
   cinese: 'CINA',
   cinesi: 'CINA',
 };
+const CHECKIN_ALLOWED_UPLOAD_MIME_TYPES = new Set([
+  'application/pdf',
+  'image/gif',
+  'image/heic',
+  'image/heif',
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+]);
+const CHECKIN_ALLOWED_UPLOAD_EXTENSIONS = new Set([
+  '.gif',
+  '.heic',
+  '.heif',
+  '.jpeg',
+  '.jpg',
+  '.pdf',
+  '.png',
+  '.webp',
+]);
 let officialStateIndexPromise;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -117,111 +151,196 @@ exports.handler = async (event) => {
     return respond(500, { error: 'Missing Supabase server configuration' });
   }
 
-  let body;
   try {
-    body = JSON.parse(event.body || '{}');
-  } catch {
-    return respond(400, { error: 'Invalid JSON body' });
-  }
+    const parsedRequest = await parseIncomingRequest(event);
+    const payload = normalizePayload(parsedRequest.body);
+    const validationErrors = validatePayload(payload);
+    if (validationErrors.length) {
+      return respond(400, { error: 'Validation failed', fields: validationErrors });
+    }
 
-  const payload = normalizePayload(body);
-  const validationErrors = validatePayload(payload);
-  if (validationErrors.length) {
-    return respond(400, { error: 'Validation failed', fields: validationErrors });
-  }
-
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
-  const { apartment, error: apartmentError } = await resolveApartmentReference(supabase, payload.apartment_ref);
-
-  if (apartmentError) {
-    console.error('submit-public-checkin apartment lookup error:', apartmentError);
-    return respond(500, { error: 'Apartment lookup failed' });
-  }
-
-  if (!apartment) {
-    return respond(400, {
-      error: 'Validation failed',
-      fields: [{ field: 'apartment_id', message: 'Link appartamento non valido o disattivato' }],
-    });
-  }
-
-  payload.apartment_id = apartment.id;
-
-  const columnSupport = await detectOptionalColumns(supabase);
-  const operationalErrors = await validateOperationalGuestCodes(supabase, payload);
-  if (operationalErrors.length) {
-    return respond(400, { error: 'Validation failed', fields: operationalErrors });
-  }
-  const insertPayload = await buildInsertPayload(supabase, payload, columnSupport);
-
-  const { data: inserted, error: insertError } = await supabase
-    .from('ospiti_check_in')
-    .insert(insertPayload)
-    .select('id, portale_token, apartment_id, email, stato')
-    .single();
-
-  if (insertError) {
-    console.error('submit-public-checkin insert error:', insertError);
-    return respond(500, { error: 'Insert failed', detail: insertError.message });
-  }
-
-  if (!inserted) {
-    return respond(500, { error: 'Insert completed without returned row' });
-  }
-
-  let childRecords = [];
-  if (payload.additional_guests.length) {
-    const childInsertPayloads = await buildAdditionalGuestInsertPayloads(
-      supabase,
-      payload,
-      columnSupport,
-      inserted.id
-    );
-
-    const { data: insertedChildren, error: childInsertError } = await supabase
-      .from('ospiti_check_in')
-      .insert(childInsertPayloads)
-      .select('id, capogruppo_id, tipo_alloggiato, nome, cognome');
-
-    if (childInsertError) {
-      console.error('submit-public-checkin child insert error:', childInsertError);
-      const childFailure = await diagnoseChildInsertFailure(supabase, childInsertPayloads);
-      const { error: rollbackChildrenError } = await supabase
-        .from('ospiti_check_in')
-        .delete()
-        .eq('capogruppo_id', inserted.id);
-      const { error: rollbackParentError } = await supabase
-        .from('ospiti_check_in')
-        .delete()
-        .eq('id', inserted.id);
-      return respond(500, {
-        error: 'Child insert failed',
-        detail: childInsertError.message,
-        supabase_error: {
-          message: childInsertError.message || null,
-          details: childInsertError.details || null,
-          hint: childInsertError.hint || null,
-          code: childInsertError.code || null,
-        },
-        failing_index: childFailure.index,
-        failing_record: childFailure.record,
-        failing_detail: childFailure.detail,
-        child_summary: summarizeChildPayloads(childInsertPayloads),
-        rollback_failed: !!(rollbackChildrenError || rollbackParentError),
-        rollback_detail: [rollbackChildrenError?.message, rollbackParentError?.message].filter(Boolean).join(' | ') || null,
+    const documentErrors = validateUploadedDocuments(parsedRequest.files || []);
+    if (documentErrors.length) {
+      return respond(400, { error: 'Validation failed', fields: documentErrors });
+    }
+    if (payload.document_upload_issue) {
+      const emergencyValidation = verifyPublicCheckinEmergencyToken(
+        payload.document_emergency_token,
+        payload,
+        PUBLIC_CHECKIN_EMERGENCY_TOKEN_SECRET
+      );
+      if (!emergencyValidation.ok) {
+        return respond(400, {
+          error: 'Validation failed',
+          fields: [{
+            field: 'guest_documents',
+            message: 'Percorso di emergenza scaduto o non valido. Riattiva WhatsApp e riprova il salvataggio.',
+          }],
+          detail: emergencyValidation.reason || 'invalid_emergency_token',
+        });
+      }
+    }
+    if (!parsedRequest.files.length && !payload.document_upload_issue) {
+      return respond(400, {
+        error: 'Validation failed',
+        fields: [{ field: 'guest_documents', message: 'Carica i documenti di tutti gli ospiti oppure usa il percorso di emergenza WhatsApp.' }],
       });
     }
 
-    childRecords = Array.isArray(insertedChildren) ? insertedChildren : [];
-  }
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const { apartment, error: apartmentError } = await resolveApartmentReference(supabase, payload.apartment_ref);
 
-  return respond(200, {
-    ok: true,
-    record: inserted,
-    child_records: childRecords,
-    portal_url: buildPortalUrl(await resolvePortalBaseUrl(event), inserted.portale_token, apartment.public_checkin_key),
-  });
+    if (apartmentError) {
+      console.error('submit-public-checkin apartment lookup error:', apartmentError);
+      return respond(500, { error: 'Apartment lookup failed' });
+    }
+
+    if (!apartment) {
+      return respond(400, {
+        error: 'Validation failed',
+        fields: [{ field: 'apartment_id', message: 'Link appartamento non valido o disattivato' }],
+      });
+    }
+
+    payload.apartment_id = apartment.id;
+
+    const columnSupport = await detectOptionalColumns(supabase);
+    if (parsedRequest.files.length && !columnSupport.documenti_caricati) {
+      return respond(503, {
+        error: 'Upload documenti temporaneamente non disponibile',
+        fields: [{ field: 'files', message: 'Il supporto documenti non è ancora attivo sul database. Riprova tra poco.' }],
+      });
+    }
+
+    const operationalErrors = await validateOperationalGuestCodes(supabase, payload);
+    if (operationalErrors.length) {
+      return respond(400, { error: 'Validation failed', fields: operationalErrors });
+    }
+
+    const normalizedDocumentUploads = normalizeDocumentUploads(parsedRequest.documentUploads);
+    let storedDocuments = [];
+    let insertedRecordId = '';
+
+    try {
+      storedDocuments = await persistUploadedDocuments(
+        supabase,
+        payload,
+        parsedRequest.files,
+        normalizedDocumentUploads
+      );
+
+      const insertPayload = await buildInsertPayload(supabase, payload, columnSupport, storedDocuments);
+      const { data: inserted, error: insertError } = await insertCheckinRowsWithLegacyFallback(
+        supabase,
+        insertPayload,
+        'id, portale_token, apartment_id, email, stato',
+        { contextLabel: 'parent record', single: true }
+      );
+
+      if (insertError) {
+        console.error('submit-public-checkin insert error:', insertError);
+        throw new Error(`Insert failed: ${insertError.message}`);
+      }
+
+      if (!inserted) {
+        throw new Error('Insert completed without returned row');
+      }
+      insertedRecordId = inserted.id;
+
+      let childRecords = [];
+      if (payload.additional_guests.length) {
+        const childInsertPayloads = await buildAdditionalGuestInsertPayloads(
+          supabase,
+          payload,
+          columnSupport,
+          inserted.id
+        );
+
+        const { data: insertedChildren, error: childInsertError } = await insertCheckinRowsWithLegacyFallback(
+          supabase,
+          childInsertPayloads,
+          'id, capogruppo_id, tipo_alloggiato, nome, cognome',
+          { contextLabel: 'child records' }
+        );
+
+        if (childInsertError) {
+          console.error('submit-public-checkin child insert error:', childInsertError);
+          const childFailure = await diagnoseChildInsertFailure(supabase, childInsertPayloads);
+          const { error: rollbackChildrenError } = await supabase
+            .from('ospiti_check_in')
+            .delete()
+            .eq('capogruppo_id', inserted.id);
+          const { error: rollbackParentError } = await supabase
+            .from('ospiti_check_in')
+            .delete()
+            .eq('id', inserted.id);
+          await cleanupStoredDocuments(supabase, storedDocuments);
+          return respond(500, {
+            error: 'Child insert failed',
+            detail: childInsertError.message,
+            supabase_error: {
+              message: childInsertError.message || null,
+              details: childInsertError.details || null,
+              hint: childInsertError.hint || null,
+              code: childInsertError.code || null,
+            },
+            failing_index: childFailure.index,
+            failing_record: childFailure.record,
+            failing_detail: childFailure.detail,
+            child_summary: summarizeChildPayloads(childInsertPayloads),
+            rollback_failed: !!(rollbackChildrenError || rollbackParentError),
+            rollback_detail: [rollbackChildrenError?.message, rollbackParentError?.message].filter(Boolean).join(' | ') || null,
+          });
+        }
+
+        childRecords = Array.isArray(insertedChildren) ? insertedChildren : [];
+      }
+
+      const portalUrl = buildPortalUrl(
+        await resolvePortalBaseUrl(event),
+        inserted.portale_token,
+        apartment.public_checkin_key
+      );
+
+      if (payload.vuoi_fattura) {
+        try {
+          const draftResult = await ensureLocalInvoiceDraftForOspiteId(supabase, inserted.id, { columnSupport });
+          if (!draftResult?.ok) {
+            console.error('submit-public-checkin local draft sync error:', draftResult?.error || draftResult);
+          }
+        } catch (draftError) {
+          console.error('submit-public-checkin local draft sync error:', draftError);
+        }
+      }
+
+      return respond(200, {
+        ok: true,
+        record: inserted,
+        child_records: childRecords,
+        uploaded_documents: storedDocuments.length,
+        portal_url: portalUrl,
+      });
+    } catch (error) {
+      if (insertedRecordId) {
+        await supabase.from('ospiti_check_in').delete().eq('capogruppo_id', insertedRecordId);
+        await supabase.from('ospiti_check_in').delete().eq('id', insertedRecordId);
+      }
+      if (storedDocuments.length) {
+        await cleanupStoredDocuments(supabase, storedDocuments);
+      }
+      console.error('submit-public-checkin error:', error);
+      if (String(error.message || '').startsWith('Insert failed:')) {
+        return respond(500, { error: 'Insert failed', detail: error.message.replace(/^Insert failed:\s*/, '') });
+      }
+      return respond(500, { error: 'Errore salvataggio check-in', detail: error.message });
+    }
+  } catch (error) {
+    if (error?.statusCode) {
+      return respond(error.statusCode, { error: error.publicMessage || error.message });
+    }
+    console.error('submit-public-checkin request parse error:', error);
+    return respond(500, { error: 'Errore interno', detail: error.message });
+  }
 };
 
 function respond(statusCode, payload) {
@@ -230,6 +349,95 @@ function respond(statusCode, payload) {
     headers: CORS,
     body: JSON.stringify(payload),
   };
+}
+
+async function parseIncomingRequest(event) {
+  const contentType = String(event.headers['content-type'] || event.headers['Content-Type'] || '').toLowerCase();
+  if (contentType.includes('multipart/form-data')) {
+    const parsed = await parseMultipart(event);
+    const body = parseMultipartPayload(parsed.fields || {});
+    return {
+      body,
+      files: Array.isArray(parsed.files) ? parsed.files : [],
+      documentUploads: parsed.fields?.document_uploads || parsed.fields?.documenti_caricati || '[]',
+    };
+  }
+
+  let body;
+  try {
+    body = JSON.parse(event.body || '{}');
+  } catch (_error) {
+    throw createRequestError(400, 'Invalid JSON body');
+  }
+
+  return {
+    body,
+    files: [],
+    documentUploads: body?.document_uploads || body?.documenti_caricati || [],
+  };
+}
+
+function parseMultipart(event) {
+  return new Promise((resolve, reject) => {
+    const contentType = event.headers['content-type'] || event.headers['Content-Type'] || '';
+    if (!String(contentType).toLowerCase().includes('multipart/form-data')) {
+      reject(createRequestError(400, 'Content-Type multipart/form-data richiesto'));
+      return;
+    }
+
+    const fields = {};
+    const files = [];
+    const busboy = Busboy({ headers: { 'content-type': contentType } });
+    const raw = event.isBase64Encoded
+      ? Buffer.from(event.body || '', 'base64')
+      : Buffer.from(event.body || '');
+
+    busboy.on('field', (name, value) => {
+      if (fields[name] !== undefined) {
+        if (!Array.isArray(fields[name])) fields[name] = [fields[name]];
+        fields[name].push(value);
+      } else {
+        fields[name] = value;
+      }
+    });
+
+    busboy.on('file', (name, stream, info) => {
+      const chunks = [];
+      stream.on('data', (chunk) => chunks.push(chunk));
+      stream.on('end', () => {
+        files.push({
+          field_name: name,
+          filename: String(info.filename || '').trim(),
+          mime_type: String(info.mimeType || '').trim() || 'application/octet-stream',
+          buffer: Buffer.concat(chunks),
+          size_bytes: chunks.reduce((sum, chunk) => sum + chunk.length, 0),
+        });
+      });
+    });
+
+    busboy.on('finish', () => resolve({ fields, files }));
+    busboy.on('error', reject);
+    busboy.end(raw);
+  });
+}
+
+function parseMultipartPayload(fields) {
+  const rawPayload = fields.payload || fields.data || '{}';
+  if (Array.isArray(rawPayload)) {
+    throw createRequestError(400, 'Payload multipart non valido');
+  }
+  try {
+    return JSON.parse(String(rawPayload || '{}'));
+  } catch (_error) {
+    throw createRequestError(400, 'Payload multipart non valido');
+  }
+}
+
+function createRequestError(statusCode, message) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  error.publicMessage = message;
+  return error;
 }
 
 function normalizePayload(body) {
@@ -289,6 +497,11 @@ function normalizePayload(body) {
     sdi: String(body.sdi || '').trim().toUpperCase(),
     pec: String(body.pec || '').trim().toLowerCase(),
     codice_fiscale_verificato: body.codice_fiscale_verificato !== false,
+    document_upload_issue: body.document_upload_issue === true
+      || body.document_upload_issue === 'true'
+      || body.document_upload_issue === 1
+      || body.document_upload_issue === '1',
+    document_emergency_token: String(body.document_emergency_token || '').trim(),
   };
 }
 
@@ -338,8 +551,8 @@ function validatePayload(payload) {
       if (!guest.cognome) errors.push(errorField(`additionalGuest_${index}_cognome`, 'Cognome obbligatorio'));
       if (!['M', 'F'].includes(guest.sesso)) errors.push(errorField(`additionalGuest_${index}_sesso`, 'Sesso obbligatorio'));
       if (!guest.data_nascita) errors.push(errorField(`additionalGuest_${index}_data_nascita`, 'Data di nascita obbligatoria'));
-      if (!guest.luogo_nascita) errors.push(errorField(`additionalGuest_${index}_luogo_nascita`, 'Luogo di nascita obbligatorio'));
       if (guestBornInItaly) {
+        if (!guest.luogo_nascita) errors.push(errorField(`additionalGuest_${index}_luogo_nascita`, 'Comune di nascita obbligatorio'));
         if (!guest.luogo_nascita_codice) errors.push(errorField(`additionalGuest_${index}_luogo_nascita_choice`, 'Comune di nascita obbligatorio'));
       } else if (!guest.stato_nascita) {
         errors.push(errorField(`additionalGuest_${index}_stato_nascita`, 'Stato di nascita obbligatorio'));
@@ -374,12 +587,24 @@ function validatePayload(payload) {
   return errors;
 }
 
-async function buildInsertPayload(supabase, payload, columnSupport) {
+async function buildInsertPayload(supabase, payload, columnSupport, storedDocuments = []) {
   const isItalian = payload.paese_residenza === 'IT';
   const hasInvoice = payload.vuoi_fattura;
-  const segnalazione = hasInvoice
-    ? [payload.sdi ? `SDI:${payload.sdi}` : '', payload.pec ? `PEC:${payload.pec}` : ''].filter(Boolean).join('|') || null
-    : (isItalian && !payload.codice_fiscale_verificato ? 'CF non verificato lato client - verificare' : null);
+  const segnalazioneParts = [];
+  if (hasInvoice) {
+    if (payload.sdi) segnalazioneParts.push(`SDI:${payload.sdi}`);
+    if (payload.pec) segnalazioneParts.push(`PEC:${payload.pec}`);
+  } else if (isItalian && !payload.codice_fiscale_verificato) {
+    segnalazioneParts.push('CF non verificato lato client - verificare');
+  }
+  if (payload.document_upload_issue) {
+    segnalazioneParts.push(
+      storedDocuments.length
+        ? 'DOCUMENTI_PARZIALI_COMPLETARE_SU_WHATSAPP'
+        : 'DOCUMENTI_VIA_WHATSAPP'
+    );
+  }
+  const segnalazione = segnalazioneParts.join('|') || null;
   const resolvedCodes = await resolveGuestCodes(supabase, payload);
 
   const insertPayload = {
@@ -421,6 +646,7 @@ async function buildInsertPayload(supabase, payload, columnSupport) {
   if (columnSupport.stato_nascita_codice) insertPayload.stato_nascita_codice = resolvedCodes.stato_nascita_codice || null;
   if (columnSupport.ragione_sociale) insertPayload.ragione_sociale = hasInvoice ? payload.ragione_sociale || null : null;
   if (columnSupport.indirizzo_fatturazione) insertPayload.indirizzo_fatturazione = hasInvoice ? payload.indirizzo_fatturazione || null : null;
+  if (columnSupport.documenti_caricati) insertPayload.documenti_caricati = storedDocuments;
   insertPayload.dati_completi = computeGuestCompleteness(insertPayload);
 
   return insertPayload;
@@ -533,8 +759,22 @@ function errorField(field, message) {
   return { field, message };
 }
 
+function resolveSupabaseUrl(rawValue) {
+  const fallback = DEFAULT_SUPABASE_URL;
+  const candidate = String(rawValue || '').trim();
+  if (!candidate) return fallback;
+  try {
+    const url = new URL(candidate);
+    if (!/^https?:$/i.test(url.protocol)) return fallback;
+    return url.toString().replace(/\/+$/, '');
+  } catch (error) {
+    console.warn('submit-public-checkin invalid SUPABASE_URL, using fallback URL');
+    return fallback;
+  }
+}
+
 async function resolveApartmentReference(supabase, rawReference) {
-  const reference = String(rawReference || '').trim();
+  const reference = resolvePublicCheckinKeyAlias(rawReference);
   if (!reference) return { apartment: null, error: null };
 
   let query = supabase
@@ -567,7 +807,7 @@ async function validateOperationalGuestCodes(supabase, payload) {
     errors.push(errorField('luogoNascita', 'Comune di nascita non risolvibile in modo univoco'));
   }
   if ([16, 17, 18].includes(payload.tipo_alloggiato) && !mainCodes.luogo_rilascio_codice) {
-    errors.push(errorField('luogoRilascioDocumento', 'Luogo rilascio documento non risolvibile in modo univoco'));
+    errors.push(errorField('luogoRilascioDocumento', 'Luogo rilascio documento non codificabile. Se il documento e italiano aggiungi comune o provincia; se e estero inserisci lo stato o paese di rilascio.'));
   }
   if ([16, 17, 18].includes(payload.tipo_alloggiato) && !mainCodes.tipo_documento_codice) {
     errors.push(errorField('tipoDocumento', 'Tipo documento non codificabile in modo affidabile'));
@@ -705,6 +945,7 @@ async function detectOptionalColumns(supabase) {
   const tag_prenotazione = await hasColumn(supabase, 'tag_prenotazione');
   const ragione_sociale = await hasColumn(supabase, 'ragione_sociale');
   const indirizzo_fatturazione = await hasColumn(supabase, 'indirizzo_fatturazione');
+  const documenti_caricati = await hasColumn(supabase, 'documenti_caricati');
   return {
     numero_persone,
     additional_guests,
@@ -722,6 +963,7 @@ async function detectOptionalColumns(supabase) {
     tag_prenotazione,
     ragione_sociale,
     indirizzo_fatturazione,
+    documenti_caricati,
   };
 }
 
@@ -730,15 +972,284 @@ async function hasColumn(supabase, column) {
   return !error;
 }
 
+async function insertCheckinRowsWithLegacyFallback(supabase, payload, selectColumns, options = {}) {
+  const single = !!options.single;
+  const contextLabel = options.contextLabel || 'ospiti_check_in insert';
+  const attempts = buildLegacyCompatibleInsertAttempts(payload);
+  let lastError = null;
+
+  for (let index = 0; index < attempts.length; index += 1) {
+    const candidate = attempts[index];
+    let query = supabase
+      .from('ospiti_check_in')
+      .insert(candidate)
+      .select(selectColumns);
+    if (single) query = query.single();
+
+    const { data, error } = await query;
+    if (!error) {
+      if (index > 0) {
+        console.warn(`submit-public-checkin ${contextLabel}: legacy fallback used`);
+      }
+      return { data, error: null };
+    }
+
+    lastError = error;
+    const canRetryWithLegacyFallback = index === 0
+      && attempts.length > 1
+      && isLegacyAdditionalGuestsTypeMismatch(error);
+    if (!canRetryWithLegacyFallback) break;
+
+    console.warn(`submit-public-checkin ${contextLabel}: retrying without additional_guests`, {
+      message: error.message || null,
+      details: error.details || null,
+      hint: error.hint || null,
+      code: error.code || null,
+    });
+  }
+
+  return { data: null, error: lastError };
+}
+
+function buildLegacyCompatibleInsertAttempts(payload) {
+  const attempts = [payload];
+  const sanitized = stripLegacyOptionalFields(payload);
+  if (sanitized !== payload) attempts.push(sanitized);
+  return attempts;
+}
+
+function stripLegacyOptionalFields(payload) {
+  if (Array.isArray(payload)) {
+    let changed = false;
+    const sanitized = payload.map((item) => {
+      if (!item || typeof item !== 'object') {
+        return item;
+      }
+      const next = stripLegacyOptionalFields(item);
+      if (next !== item) changed = true;
+      return next;
+    });
+    return changed ? sanitized : payload;
+  }
+
+  if (!payload || typeof payload !== 'object') {
+    return payload;
+  }
+
+  let changed = false;
+  const sanitized = { ...payload };
+  if (Object.prototype.hasOwnProperty.call(sanitized, 'additional_guests')) {
+    delete sanitized.additional_guests;
+    changed = true;
+  }
+  if (Array.isArray(sanitized.documenti_caricati) && sanitized.documenti_caricati.length === 0) {
+    delete sanitized.documenti_caricati;
+    changed = true;
+  }
+  return changed ? sanitized : payload;
+}
+
+function isLegacyAdditionalGuestsTypeMismatch(error) {
+  const raw = [
+    error?.message || '',
+    error?.details || '',
+    error?.hint || '',
+  ].join(' ').toLowerCase();
+  return raw.includes('invalid input syntax for type boolean') && raw.includes('[]');
+}
+
+function validateUploadedDocuments(files) {
+  if (!Array.isArray(files) || !files.length) return [];
+  const errors = [];
+
+  files.forEach((file, index) => {
+    const safeIndex = index + 1;
+    const filename = String(file?.filename || '').trim();
+    const sizeBytes = Number(file?.size_bytes || file?.buffer?.length || 0);
+    if (!filename || !file?.buffer?.length) {
+      errors.push(errorField('files', `Documento ${safeIndex} non valido`));
+      return;
+    }
+    if (!isAllowedUploadFile(file)) {
+      errors.push(errorField('files', `${filename}: formato non supportato. Usa PDF, JPG, PNG, WEBP, GIF o HEIC.`));
+    }
+    if (sizeBytes <= 0) {
+      errors.push(errorField('files', `${filename}: file vuoto`));
+    } else if (sizeBytes > MAX_CHECKIN_DOCUMENT_SIZE_BYTES) {
+      errors.push(errorField('files', `${filename}: supera il limite di 20 MB`));
+    }
+  });
+
+  return errors;
+}
+
+function normalizeDocumentUploads(value) {
+  const raw = Array.isArray(value) ? value : (() => {
+    if (!value) return [];
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (_error) {
+        return [];
+      }
+    }
+    return [];
+  })();
+
+  return raw.map((entry, index) => ({
+    client_id: String(entry?.client_id || '').trim() || `doc-${index + 1}`,
+    file_field: String(entry?.file_field || '').trim(),
+    guest_scope: String(entry?.guest_scope || '').trim() === 'additional' ? 'additional' : 'main',
+    guest_index: normalizeGuestDocumentIndex(entry?.guest_index),
+    display_order: normalizeGuestDocumentIndex(entry?.display_order),
+  }));
+}
+
+async function persistUploadedDocuments(supabase, payload, files, documentUploads) {
+  if (!Array.isArray(files) || !files.length) return [];
+
+  await ensureCheckinDocumentsBucket(supabase);
+
+  const datePrefix = new Date().toISOString().slice(0, 10);
+  const requestKey = sanitizeStorageKeyPart([
+    payload.apartment_ref || payload.apartment_id || 'apartment',
+    payload.cognome || payload.nome || 'guest',
+    Date.now(),
+  ].filter(Boolean).join('-'));
+  const metadataByField = new Map(
+    documentUploads
+      .filter((entry) => entry.file_field)
+      .map((entry) => [entry.file_field, entry])
+  );
+  const storedDocuments = [];
+
+  for (let index = 0; index < files.length; index += 1) {
+    const file = files[index];
+    const metadata = metadataByField.get(file.field_name) || null;
+    const safeName = sanitizeFilename(file.filename || `documento-${index + 1}`);
+    const storagePath = `public-checkin/${datePrefix}/${requestKey}/${String(index + 1).padStart(2, '0')}_${safeName}`;
+    const mimeType = normalizeUploadMimeType(file);
+    const sizeBytes = Number(file.size_bytes || file.buffer.length || 0);
+    const { error } = await supabase.storage.from(CHECKIN_DOCUMENTS_BUCKET).upload(storagePath, file.buffer, {
+      contentType: mimeType,
+      upsert: true,
+    });
+
+    if (error) throw error;
+
+    storedDocuments.push({
+      client_id: metadata?.client_id || `doc-${index + 1}`,
+      guest_scope: metadata?.guest_scope || 'main',
+      guest_index: metadata?.guest_index ?? 0,
+      display_order: metadata?.display_order ?? index,
+      file_name: file.filename || safeName,
+      mime_type: mimeType,
+      size_bytes: sizeBytes,
+      storage_bucket: CHECKIN_DOCUMENTS_BUCKET,
+      storage_path: storagePath,
+      uploaded_at: new Date().toISOString(),
+    });
+  }
+
+  return storedDocuments;
+}
+
+async function ensureCheckinDocumentsBucket(supabase) {
+  if (!checkinDocumentsBucketPromise) {
+    checkinDocumentsBucketPromise = ensureCheckinDocumentsBucketOnce(supabase);
+  }
+  try {
+    await checkinDocumentsBucketPromise;
+  } catch (error) {
+    checkinDocumentsBucketPromise = null;
+    throw error;
+  }
+}
+
+async function ensureCheckinDocumentsBucketOnce(supabase) {
+  const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+  if (listError) throw listError;
+  if (Array.isArray(buckets) && buckets.some((bucket) => bucket.name === CHECKIN_DOCUMENTS_BUCKET)) return;
+
+  const { error: createError } = await supabase.storage.createBucket(CHECKIN_DOCUMENTS_BUCKET, {
+    public: false,
+    fileSizeLimit: '20MB',
+    allowedMimeTypes: [...CHECKIN_ALLOWED_UPLOAD_MIME_TYPES],
+  });
+
+  if (createError && !String(createError.message || '').toLowerCase().includes('already exists')) {
+    throw createError;
+  }
+}
+
+async function cleanupStoredDocuments(supabase, storedDocuments) {
+  if (!Array.isArray(storedDocuments) || !storedDocuments.length) return;
+  const paths = storedDocuments
+    .map((entry) => String(entry?.storage_path || '').trim())
+    .filter(Boolean);
+  if (!paths.length) return;
+  const { error } = await supabase.storage.from(CHECKIN_DOCUMENTS_BUCKET).remove(paths);
+  if (error) {
+    console.warn('submit-public-checkin document cleanup failed:', error.message);
+  }
+}
+
+function normalizeUploadMimeType(file) {
+  const mimeType = String(file?.mime_type || '').trim().toLowerCase();
+  if (CHECKIN_ALLOWED_UPLOAD_MIME_TYPES.has(mimeType)) {
+    return mimeType === 'image/jpg' ? 'image/jpeg' : mimeType;
+  }
+
+  const ext = path.extname(String(file?.filename || '').trim()).toLowerCase();
+  if (ext === '.pdf') return 'application/pdf';
+  if (ext === '.png') return 'image/png';
+  if (ext === '.webp') return 'image/webp';
+  if (ext === '.gif') return 'image/gif';
+  if (ext === '.heic') return 'image/heic';
+  if (ext === '.heif') return 'image/heif';
+  return 'image/jpeg';
+}
+
+function isAllowedUploadFile(file) {
+  const mimeType = String(file?.mime_type || '').trim().toLowerCase();
+  if (CHECKIN_ALLOWED_UPLOAD_MIME_TYPES.has(mimeType)) return true;
+  const ext = path.extname(String(file?.filename || '').trim()).toLowerCase();
+  return CHECKIN_ALLOWED_UPLOAD_EXTENSIONS.has(ext);
+}
+
+function normalizeGuestDocumentIndex(value) {
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+}
+
+function sanitizeStorageKeyPart(value) {
+  return String(value || 'item')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 80) || 'item';
+}
+
+function sanitizeFilename(filename) {
+  return String(filename || 'documento')
+    .replace(/[^a-zA-Z0-9._-]/g, '_')
+    .replace(/_+/g, '_')
+    .slice(0, 120);
+}
+
 async function diagnoseChildInsertFailure(supabase, records) {
   const insertedIds = [];
   for (let index = 0; index < records.length; index += 1) {
     const record = records[index];
-    const { data, error } = await supabase
-      .from('ospiti_check_in')
-      .insert(record)
-      .select('id')
-      .single();
+    const { data, error } = await insertCheckinRowsWithLegacyFallback(
+      supabase,
+      record,
+      'id',
+      { contextLabel: `child diagnostic ${index}`, single: true }
+    );
     if (error) {
       console.error('submit-public-checkin child insert diagnostic error:', {
         index,
@@ -848,7 +1359,7 @@ async function resolveGuestCodes(supabase, payload) {
   const birthMatch = payload.nato_in_italia
     ? await findUniqueComuneCode(supabase, payload.luogo_nascita)
     : await findUniqueStateCode(supabase, payload.stato_nascita);
-  const rilascioMatch = await findUniqueComuneCode(supabase, payload.luogo_rilascio_documento);
+  const rilascioMatch = await findIssuePlaceMatch(supabase, payload);
   const documentMatch = await findDocumentCode(supabase, payload.tipo_documento);
   const birthCode = payload.nato_in_italia
     ? (payload.luogo_nascita_codice || birthMatch.code)
@@ -867,6 +1378,19 @@ async function resolveGuestCodes(supabase, payload) {
     luogo_nascita_codice: birthCode,
     stato_nascita_codice: payload.nato_in_italia ? ITALIA_CODE : birthMatch.code,
   };
+}
+
+async function findIssuePlaceMatch(supabase, payload) {
+  const normalizedIssuePlace = normalizeIssuePlaceValue(payload?.luogo_rilascio_documento);
+  const comuneMatch = await findUniqueComuneCode(supabase, normalizedIssuePlace, {
+    fallbackProvince: extractProvinceCodeFromAddress(payload?.indirizzo_residenza),
+  });
+  if (comuneMatch.status === 'matched') return comuneMatch;
+
+  const stateMatch = await findUniqueStateCode(supabase, normalizedIssuePlace);
+  if (stateMatch.status === 'matched') return stateMatch;
+
+  return comuneMatch.status !== 'not_found' ? comuneMatch : stateMatch;
 }
 
 async function findUniqueStateCode(supabase, value) {
@@ -1051,19 +1575,33 @@ function loadOfficialStatesCsvFromFile() {
   return '';
 }
 
-async function findUniqueComuneCode(supabase, value) {
+async function findUniqueComuneCode(supabase, value, options = {}) {
   const normalized = String(value || '').trim();
   if (!normalized) return emptyLookup();
-  const { data, error } = await supabase
-    .from('codici_comuni')
-    .select('codice,nome,provincia')
-    .ilike('nome', normalized)
-    .limit(2);
-  if (error) {
-    console.warn('submit-public-checkin comune lookup error:', error.message);
-    return emptyLookup('error');
+  const normalizedComune = normalizeComuneLookupValue(normalized);
+  if (!normalizedComune) return emptyLookup();
+
+  const provinceHint = normalizeUpperProvinceCode(options.fallbackProvince) || extractProvinceCodeFromComuneText(normalized);
+  const patterns = buildComuneLookupPatterns(normalized);
+  const collectedRows = [];
+  const seenCodes = new Set();
+
+  for (const pattern of patterns) {
+    const rows = await fetchComuneLookupRows(supabase, pattern);
+    rows.forEach((row) => {
+      const code = String(row?.codice || '').trim();
+      if (!code || seenCodes.has(code)) return;
+      seenCodes.add(code);
+      collectedRows.push(row);
+    });
+
+    const resolved = resolveComuneLookupRows(collectedRows, normalizedComune, provinceHint);
+    if (resolved.status === 'matched' || resolved.status === 'ambiguous') {
+      return resolved;
+    }
   }
-  return resolveLookupRows(Array.isArray(data) ? data : []);
+
+  return resolveComuneLookupRows(collectedRows, normalizedComune, provinceHint);
 }
 
 async function findDocumentCode(supabase, value) {
@@ -1156,6 +1694,141 @@ function registerOfficialState(index, code, description) {
 
 function stripParentheticalText(value) {
   return String(value || '').replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function extractProvinceCodeFromComuneText(value) {
+  const raw = String(value || '').replace(/[’`´]/g, "'").replace(/\s+/g, ' ').trim();
+  if (!raw) return '';
+  const parenMatch = raw.match(/\(([A-Za-z]{2})\)\s*$/);
+  if (parenMatch) return normalizeUpperProvinceCode(parenMatch[1]);
+  const separatorMatch = raw.match(/[-/]\s*([A-Za-z]{2})\s*$/);
+  if (separatorMatch) return normalizeUpperProvinceCode(separatorMatch[1]);
+  const commaParts = raw.split(',').map((part) => String(part || '').trim()).filter(Boolean);
+  if (commaParts.length > 1) {
+    const lastPart = normalizeUpperProvinceCode(commaParts[commaParts.length - 1]);
+    if (lastPart) return lastPart;
+  }
+  const tokens = raw.split(/\s+/).filter(Boolean);
+  if (tokens.length > 1) {
+    const lastToken = normalizeUpperProvinceCode(tokens[tokens.length - 1]);
+    if (lastToken) return lastToken;
+  }
+  return '';
+}
+
+function extractProvinceCodeFromAddress(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  const parts = raw.split(',').map((part) => String(part || '').trim()).filter(Boolean);
+  for (let index = parts.length - 1; index >= 0; index -= 1) {
+    const province = normalizeUpperProvinceCode(parts[index]);
+    if (province) return province;
+  }
+  const tokens = raw.split(/\s+/).filter(Boolean);
+  for (let index = tokens.length - 1; index >= 0; index -= 1) {
+    const province = normalizeUpperProvinceCode(tokens[index]);
+    if (province) return province;
+  }
+  return '';
+}
+
+function normalizeIssuePlaceValue(value) {
+  let raw = String(value || '').replace(/[’`´]/g, "'").replace(/\s+/g, ' ').trim();
+  if (!raw) return '';
+  raw = raw.replace(/^(rilasciato\s+(?:da|presso)\s+)/i, '');
+  raw = raw.replace(/^(comune|questura|prefettura|motorizzazione|anagrafe)\s+di\s+/i, '');
+  raw = raw.replace(/^(comune|questura|prefettura|motorizzazione|anagrafe)\s+/i, '');
+  raw = raw.replace(/\s+/g, ' ').trim();
+  return raw;
+}
+
+function normalizeUpperProvinceCode(value) {
+  const normalized = String(value || '').trim().toUpperCase().replace(/[^A-Z]/g, '');
+  return normalized.length === 2 ? normalized : '';
+}
+
+function sanitizeComuneLikeValue(value) {
+  let raw = String(value || '').replace(/[’`´]/g, "'").replace(/\s+/g, ' ').trim();
+  if (!raw) return '';
+  raw = raw.replace(/\b\d{5}\b/g, ' ').replace(/\s+/g, ' ').trim();
+  raw = raw.replace(/\(([A-Za-z]{2})\)\s*$/, ' ').trim();
+  raw = raw.replace(/[-/]\s*[A-Za-z]{2}\s*$/, ' ').trim();
+  const commaParts = raw.split(',').map((part) => String(part || '').trim()).filter(Boolean);
+  if (commaParts.length > 1) {
+    const lastPart = normalizeUpperProvinceCode(commaParts[commaParts.length - 1]);
+    raw = lastPart && commaParts[commaParts.length - 2]
+      ? commaParts[commaParts.length - 2]
+      : commaParts[commaParts.length - 1];
+  }
+  const tokens = raw.split(/\s+/).filter(Boolean);
+  if (tokens.length > 1) {
+    const lastToken = normalizeUpperProvinceCode(tokens[tokens.length - 1]);
+    if (lastToken) tokens.pop();
+  }
+  return tokens.join(' ').replace(/\s+/g, ' ').trim();
+}
+
+function normalizeComuneLookupValue(value) {
+  return normalizeLookupValue(sanitizeComuneLikeValue(value))
+    .replace(/['’`´-]/g, '')
+    .replace(/\s+/g, '');
+}
+
+function buildComuneLookupPatterns(value) {
+  const sanitized = sanitizeComuneLikeValue(value);
+  if (!sanitized) return [];
+
+  const patterns = [];
+  const pushPattern = (pattern) => {
+    if (!pattern || patterns.includes(pattern)) return;
+    patterns.push(pattern);
+  };
+
+  pushPattern(sanitized);
+
+  const prefix = sanitized.slice(0, Math.min(sanitized.length, 4)).trim();
+  if (prefix.length >= 2) pushPattern(`${escapeLikeValue(prefix)}%`);
+
+  const tokenCandidates = sanitized
+    .split(/\s+/)
+    .map((token) => token.replace(/[^A-Za-zÀ-ÿ']/g, '').trim())
+    .filter(Boolean)
+    .sort((left, right) => right.length - left.length);
+
+  tokenCandidates.forEach((token) => {
+    if (token.length >= 3) pushPattern(`%${escapeLikeValue(token)}%`);
+  });
+
+  return patterns;
+}
+
+async function fetchComuneLookupRows(supabase, pattern) {
+  const { data, error } = await supabase
+    .from('codici_comuni')
+    .select('codice,nome,provincia')
+    .ilike('nome', pattern)
+    .order('provincia', { ascending: true })
+    .limit(50);
+  if (error) {
+    console.warn('submit-public-checkin comune lookup error:', error.message);
+    return [];
+  }
+  return Array.isArray(data) ? data : [];
+}
+
+function resolveComuneLookupRows(rows, normalizedComune, provinceHint) {
+  const exactRows = (Array.isArray(rows) ? rows : []).filter((row) => (
+    normalizeComuneLookupValue(row?.nome) === normalizedComune
+  ));
+
+  if (provinceHint) {
+    const narrowed = exactRows.filter((row) => (
+      normalizeUpperProvinceCode(row?.provincia) === provinceHint
+    ));
+    if (narrowed.length) return resolveLookupRows(narrowed);
+  }
+
+  return resolveLookupRows(exactRows);
 }
 
 function findApproxOfficialStateByName(index, value) {
@@ -1255,3 +1928,13 @@ function calculateAge(value) {
   if (monthDiff < 0 || (monthDiff === 0 && today.getUTCDate() < day)) age -= 1;
   return age;
 }
+
+exports.__test__ = {
+  findUniqueComuneCode,
+  findIssuePlaceMatch,
+  normalizeComuneLookupValue,
+  sanitizeComuneLikeValue,
+  extractProvinceCodeFromComuneText,
+  extractProvinceCodeFromAddress,
+  normalizeIssuePlaceValue,
+};
