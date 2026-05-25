@@ -489,6 +489,17 @@ function accountingBadgeCls(s){ return{DA_APPROVARE:'b-acc-da-approvare',DA_CORR
 function accountingBadgeLbl(s){ return{DA_APPROVARE:'Da approvare',DA_CORREGGERE:'Da correggere',APPROVATO:'Approvato',SCARTATO:'Scartato'}[s]||s; }
 function accountingDocTypeLbl(v){ return{bolletta:'Bolletta',fattura_fornitore:'Fattura fornitore',ricevuta:'Ricevuta',contratto:'Contratto',altro:'Altro'}[v]||v||'—'; }
 function numberVal(v){ const n = Number(String(v ?? '').replace(',', '.')); return Number.isFinite(n) ? n : null; }
+function nullableNumberVal(v){
+  const raw = String(v ?? '').trim();
+  if (!raw) return null;
+  const normalized = raw.replace(',', '.');
+  const n = Number(normalized);
+  return Number.isFinite(n) ? n : null;
+}
+function nullableInputVal(v){
+  const raw = String(v ?? '').trim();
+  return raw || null;
+}
 function getChildRows(parentId){ return S.rows.filter(r=>String(r.capogruppo_id||'')===String(parentId||'')); }
 function getParentRow(row){ return row?.capogruppo_id ? (S.rows.find(r=>String(r.id)===String(row.capogruppo_id))||null) : null; }
 function getStoredAdditionalGuests(row){
@@ -602,6 +613,9 @@ async function hasBillingColumn(column) {
 }
 function getPersistableBillingForm(form) {
   const payload = { ...form };
+  payload.importo_lordo = nullableNumberVal(payload.importo_lordo);
+  payload.data_checkin = nullableInputVal(payload.data_checkin);
+  payload.data_checkout = nullableInputVal(payload.data_checkout);
   if (!S.columnSupport.ragione_sociale) delete payload.ragione_sociale;
   if (!S.columnSupport.indirizzo_fatturazione) delete payload.indirizzo_fatturazione;
   return payload;
@@ -626,7 +640,7 @@ function selectRow(row){
     paese_residenza:row.paese_residenza||'Italia', indirizzo_residenza:row.indirizzo_residenza||'',
     codice_fiscale:row.codice_fiscale||'', codice_fiscale_verificato:row.codice_fiscale_verificato||false,
     iva_percentuale:row.iva_percentuale??10, tipo_cliente:row.tipo_cliente||'privato',
-    ragione_sociale:row.ragione_sociale||'', piva_cliente:row.piva_cliente||'', indirizzo_fatturazione:row.indirizzo_fatturazione||'', importo_lordo:row.importo_lordo||'',
+    ragione_sociale:row.ragione_sociale||'', piva_cliente:row.piva_cliente||'', indirizzo_fatturazione:row.indirizzo_fatturazione||'', importo_lordo:row.importo_lordo ?? '',
     data_checkin:row.data_checkin||'', data_checkout:row.data_checkout||'',
     segnalazione_jessica:row.segnalazione_jessica||'',
     payment_status: row.payment_status || 'paid',
