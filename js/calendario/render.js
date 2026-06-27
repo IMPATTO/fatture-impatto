@@ -8,10 +8,11 @@ import {
   selectAllCities,
   toggleCityFilter,
   toggleSetValue,
-} from './interactions.js?v=20260522b';
-import { CHANNEL_CONFIG, ELS, S, STATUS_LABELS } from './state.js?v=20260522b';
+} from './interactions.js?v=20260626c';
+import { CHANNEL_CONFIG, ELS, S, STATUS_LABELS } from './state.js?v=20260626c';
 import {
   buildDayCellLabel,
+  compareCity,
   countVisibleBookingsForApartment,
   countBookingsByChannel,
   countBookingsByStatus,
@@ -27,7 +28,7 @@ import {
   groupVisibleBookingsForMobile,
   groupVisibleRowsByCity,
   isKekkoImportedBooking,
-} from './data.js?v=20260522b';
+} from './data.js?v=20260626c';
 import {
   addDays,
   bookingSpanWithinMonth,
@@ -47,7 +48,7 @@ import {
   minutesAgoLabel,
   nightsBetween,
   titleCase,
-} from './utils.js?v=20260520f';
+} from './utils.js?v=20260626c';
 
 let dragMouseUpBound = false;
 let dragStartCell = null;
@@ -128,7 +129,7 @@ function groupFilteredVisibleRowsByCity() {
     if (!groups.has(row.apartment.city)) groups.set(row.apartment.city, []);
     groups.get(row.apartment.city).push(row);
   }
-  return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0], 'it')).map(([city, cityRows]) => ({
+  return [...groups.entries()].sort((a, b) => compareCity(a[0], b[0])).map(([city, cityRows]) => ({
     city,
     rows: cityRows.sort((left, right) => {
       const nameCompare = left.apartment.displayName.localeCompare(right.apartment.displayName, 'it');
@@ -283,26 +284,44 @@ export function renderMonthNotice() {
 
   const visibleRows = getFilteredVisibleApartmentRows();
   const visibleBookings = getVisibleBookings();
+  const warningLines = [...new Set((S.inventoryWarnings || []).filter(Boolean))];
+  const shouldShowWarnings = !S.loading && !S.errorMessage && warningLines.length > 0;
   const shouldShow = !S.loading && !S.errorMessage && visibleRows.length > 0 && visibleBookings.length === 0;
 
-  ELS.monthNotice.classList.toggle('hidden', !shouldShow);
-  if (!shouldShow) {
+  ELS.monthNotice.classList.toggle('hidden', !(shouldShow || shouldShowWarnings));
+  ELS.monthNotice.classList.toggle('month-notice-warning', shouldShowWarnings);
+  if (!shouldShow && !shouldShowWarnings) {
     ELS.monthNotice.innerHTML = '';
     return;
   }
 
-  ELS.monthNotice.innerHTML = `
+  const warningHtml = shouldShowWarnings ? `
+    <div class="month-notice-copy">
+      <strong>Controllo dati Beds24 consigliato</strong>
+      <p>Il calendario sta mostrando dati di fallback o parziali. Le celle restano visibili, ma conviene ricontrollare questi avvisi.</p>
+      <ul class="month-notice-list">
+        ${warningLines.slice(0, 4).map((warning) => `<li>${esc(warning)}</li>`).join('')}
+      </ul>
+    </div>
+  ` : '';
+
+  const noBookingsHtml = shouldShow ? `
     <div class="month-notice-copy">
       <strong>Nessuna prenotazione visibile in ${esc(formatMonthLabel(S.monthDate))}</strong>
       <p>Le celle chiuse non significano che le booking mancano: con i filtri attuali questo mese e vuoto. Se vuoi, cerco io il primo mese utile con prenotazioni.</p>
     </div>
+  ` : '';
+
+  const actionHtml = shouldShow ? `
     <button
       type="button"
       class="btn btn-primary btn-small"
       data-month-jump="next-bookings"
       ${S.findingNextBookingMonth ? 'disabled' : ''}
     >${esc(S.findingNextBookingMonth ? 'Cerco il prossimo mese…' : 'Vai al prossimo mese con prenotazioni')}</button>
-  `;
+  ` : '';
+
+  ELS.monthNotice.innerHTML = `${warningHtml}${noBookingsHtml}${actionHtml}`;
 }
 
 export function renderStates() {
@@ -708,6 +727,9 @@ export function renderDrawer() {
         <button type="button" class="btn btn-primary" data-action="edit-booking" data-booking-id="${esc(booking.beds24_booking_id)}">
           Modifica
         </button>
+        <button type="button" class="btn btn-secondary" data-action="move-booking" data-booking-id="${esc(booking.beds24_booking_id)}">
+          Sposta appartamento
+        </button>
         <button type="button" class="btn btn-danger" data-action="cancel-booking" data-booking-id="${esc(booking.beds24_booking_id)}">
           Cancella
         </button>
@@ -779,6 +801,18 @@ export function renderDrawer() {
     });
   });
 
+  ELS.drawerBody.querySelectorAll('[data-action="move-booking"]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const bookingId = button.getAttribute('data-booking-id');
+      const targetBooking = S.bookings.find((item) => String(item.beds24_booking_id) === String(bookingId));
+      if (!targetBooking) {
+        alert('Booking non trovata');
+        return;
+      }
+      window._calendarioBookingForm?.openUpdate?.(targetBooking, { allowApartmentChange: true });
+    });
+  });
+
   ELS.drawerBody.querySelectorAll('[data-action="cancel-booking"]').forEach((button) => {
     button.addEventListener('click', async () => {
       const bookingId = button.getAttribute('data-booking-id');
@@ -809,7 +843,7 @@ export function renderDrawer() {
         if (!response.ok || !result.success) {
           throw new Error(result.error || 'Cancellazione fallita');
         }
-        alert('Booking cancellata');
+        alert(result.warning ? `Booking cancellata\n\nAttenzione: ${result.warning}` : 'Booking cancellata');
         await window._calendarioBookingForm?.reloadAndCloseDrawer?.();
       } catch (error) {
         console.error('[BOOKING-CANCEL-FAIL]', error);

@@ -5,7 +5,7 @@ import {
   OCCUPYING_STATUSES,
   S,
   STATUS_LABELS,
-} from './state.js?v=20260522b';
+} from './state.js?v=20260626c';
 import {
   formatDate,
   formatPrice,
@@ -18,28 +18,28 @@ import {
   unique,
   compareBookingsForRender,
   compareOrphans,
-} from './utils.js?v=20260520f';
+} from './utils.js?v=20260626c';
 
 const KEKKO_UNIT_CATALOG = [
-  { sourceId: 'M1', title: '104', floor: 'PT', capacity: 3, groupName: 'Monolocali', note: 'il migliore', sortOrder: 1, aliases: ['104'] },
-  { sourceId: 'M2', title: 'Mono 1° A', floor: '1°', capacity: 2, groupName: 'Monolocali', note: '', sortOrder: 2, aliases: ['Mono 1° A'] },
-  { sourceId: 'M3', title: 'Mono 1° B', floor: '1°', capacity: 2, groupName: 'Monolocali', note: '', sortOrder: 3, aliases: ['Mono 1° B'] },
-  { sourceId: 'M4', title: 'Mono 3°', floor: '3°', capacity: 2, groupName: 'Monolocali', note: 'standard base', sortOrder: 4, aliases: ['Mono 3°'] },
-  { sourceId: 'BD1', title: 'Dependance 1', floor: 'Dep', capacity: 5, groupName: 'Bilocali · Dependance', note: '', sortOrder: 10, aliases: ['Dependance 1'] },
-  { sourceId: 'BD2', title: 'Dependance 2', floor: 'Dep', capacity: 5, groupName: 'Bilocali · Dependance', note: '', sortOrder: 11, aliases: ['Dependance 2'] },
-  { sourceId: 'BPT1', title: 'Bilo PT 1', floor: 'PT', capacity: 6, groupName: 'Bilocali · Piano Terra', note: '', sortOrder: 20, aliases: ['Bilo PT 1'] },
-  { sourceId: 'BPT2', title: 'Bilo PT 2', floor: 'PT', capacity: 6, groupName: 'Bilocali · Piano Terra', note: '', sortOrder: 21, aliases: ['Bilo PT 2'] },
-  { sourceId: 'BPT3', title: 'Bilo PT 3', floor: 'PT', capacity: 6, groupName: 'Bilocali · Piano Terra', note: 'app.5', sortOrder: 22, aliases: ['Bilo PT 3'] },
-  { sourceId: 'BPT4', title: 'Bilo PT 4', floor: 'PT', capacity: 6, groupName: 'Bilocali · Piano Terra', note: '', sortOrder: 23, aliases: ['Bilo PT 4'] },
-  { sourceId: 'B1A', title: 'Bilo 1° A', floor: '1°', capacity: 6, groupName: 'Bilocali · Primo Piano', note: '', sortOrder: 30, aliases: ['Bilo 1° A'] },
-  { sourceId: 'B1B', title: 'Bilo 1° B', floor: '1°', capacity: 6, groupName: 'Bilocali · Primo Piano', note: '', sortOrder: 31, aliases: ['Bilo 1° B'] },
-  { sourceId: 'B1C', title: 'Bilo 1° C', floor: '1°', capacity: 6, groupName: 'Bilocali · Primo Piano', note: '', sortOrder: 32, aliases: ['Bilo 1° C'] },
-  { sourceId: 'B202', title: '202 ★', floor: '1°', capacity: 7, groupName: 'Bilocali · Primo Piano', note: 'vista mare', sortOrder: 33, aliases: ['202'] },
-  { sourceId: 'T1', title: 'Trilo 1° ★', floor: '1°', capacity: 6, groupName: 'Trilocali', note: 'vista mare', sortOrder: 40, aliases: ['Trilo 1°'] },
-  { sourceId: 'T3A', title: 'Trilo 3° A', floor: '3°', capacity: 8, groupName: 'Trilocali', note: '', sortOrder: 41, aliases: ['Trilo 3° A'] },
-  { sourceId: 'T3B', title: 'Trilo 3° B', floor: '3°', capacity: 8, groupName: 'Trilocali', note: '', sortOrder: 42, aliases: ['Trilo 3° B'] },
-  { sourceId: 'T3C_FAMILY', title: 'Trilo 3° C', floor: '3°', capacity: 8, groupName: 'Trilocali', note: 'Family Hotel · stagione', sortOrder: 43, aliases: ['Trilo 3° C', 'Trilo 3° C Family'] },
-  { sourceId: 'T3D_STAFF', title: 'Trilo 3° D', floor: '3°', capacity: 8, groupName: 'Trilocali', note: 'Staff · stagione', sortOrder: 44, aliases: ['Trilo 3° D'] },
+  { sourceId: 'M1', title: '104 Mono con giardino', floor: 'PT', capacity: 3, groupName: 'Monolocale · Piano Terra', note: '', sortOrder: 2, aliases: ['104', 'Mono PT con giardino', '104 Mono con giardino'] },
+  { sourceId: 'M2', title: '210 Mono', floor: '2°', capacity: 2, groupName: 'Monolocale · Secondo Piano', note: '', sortOrder: 10, aliases: ['Mono 1° A', '210', '210 Mono', 'Mono 210'] },
+  { sourceId: 'M3', title: '208 Mono vista mare', floor: '2°', capacity: 2, groupName: 'Monolocale · Secondo Piano', note: '', sortOrder: 9, aliases: ['Mono 1° B', '208', '208 Mono', 'Mono 208', '208 Mono vista mare'] },
+  { sourceId: 'M4', title: 'Mono 3°', floor: '3°', capacity: 2, groupName: 'Monolocali', note: 'standard base', sortOrder: 16, aliases: ['Mono 3°'] },
+  { sourceId: 'BD1', title: 'Dependance 1', floor: 'Dep', capacity: 5, groupName: 'Bilocali · Dependance', note: '', sortOrder: 90, aliases: ['Dependance 1'] },
+  { sourceId: 'BD2', title: 'Dependance 2', floor: 'Dep', capacity: 5, groupName: 'Bilocali · Dependance', note: '', sortOrder: 91, aliases: ['Dependance 2'] },
+  { sourceId: 'BPT1', title: '108 Bilo con giardino', floor: 'PT', capacity: 6, groupName: 'Bilocale · Piano Terra', note: '', sortOrder: 4, aliases: ['Bilo PT 1', 'Bilo PT 1 con giardino', '108', '108 Bilo con giardino'] },
+  { sourceId: 'BPT2', title: '106 Bilo con giardino', floor: 'PT', capacity: 6, groupName: 'Bilocale · Piano Terra', note: '', sortOrder: 3, aliases: ['Bilo PT 2', 'Bilo PT 2 con giardino', '106', '106 Bilo con giardino'] },
+  { sourceId: 'BPT3', title: '102 Bilo senza giardino', floor: 'PT', capacity: 6, groupName: 'Bilocale · Piano Terra', note: '', sortOrder: 1, aliases: ['Bilo PT 3', 'Bilo PT 3 senza giardino', '102', '102 Bilo senza giardino'] },
+  { sourceId: 'BPT4', title: '110 Bilo senza giardino', floor: 'PT', capacity: 6, groupName: 'Bilocale · Piano Terra', note: '', sortOrder: 5, aliases: ['Bilo PT 4', 'Bilo PT 4 senza giardino', '110', '110 Bilo senza giardino'] },
+  { sourceId: 'B1A', title: '214 Bilo interno', floor: '2°', capacity: 6, groupName: 'Bilocale · Secondo Piano', note: '', sortOrder: 12, aliases: ['Bilo 1° A', '214', '214 Bilo interno'] },
+  { sourceId: 'B1B', title: '212 Bilo ingresso', floor: '2°', capacity: 6, groupName: 'Bilocale · Secondo Piano', note: '', sortOrder: 11, aliases: ['Bilo 1° B', '212', '212 Bilo ingresso'] },
+  { sourceId: 'B1C', title: '206', floor: '2°', capacity: 6, groupName: 'Bilocale · Secondo Piano', note: '', sortOrder: 8, aliases: ['Bilo 1° C', '206', '206 Bilo vista mare', 'Bilo 206'] },
+  { sourceId: 'B202', title: '202 (stella) bilo vista mare', floor: '2°', capacity: 7, groupName: 'Bilocale · Secondo Piano', note: '', sortOrder: 6, aliases: ['202', '202 ★', 'Bilo 1° 202 ★', '202 Bilo vista mare', '202 (stella) bilo vista mare'] },
+  { sourceId: 'T1', title: '204 Trilo', floor: '2°', capacity: 6, groupName: 'Trilocale · Secondo Piano', note: '', sortOrder: 7, aliases: ['Trilo 1°', 'Trilo 1 piano', '204', '204 Trilo', 'Trilo 204'] },
+  { sourceId: 'T3A', title: '304 Trilo vista mare', floor: '3°', capacity: 8, groupName: 'Trilocali', note: '', sortOrder: 13, aliases: ['Trilo 3° A', '304', '304 Trilo', '304 Trilo vista mare'] },
+  { sourceId: 'T3B', title: '306 Trilo Grande Vista Mare', floor: '3°', capacity: 8, groupName: 'Trilocali', note: '', sortOrder: 14, aliases: ['Trilo 3° B', '306', '306 Trilo grande', '306 Trilo Grande Vista Mare'] },
+  { sourceId: 'T3C_FAMILY', title: '308 Trilo', floor: '3°', capacity: 8, groupName: 'Trilocali', note: 'Family Hotel · stagione', sortOrder: 15, aliases: ['Trilo 3° C', 'Trilo 3° C Family', '308', '308 Trilo'] },
+  { sourceId: 'T3D_STAFF', title: 'Trilo 3° D', floor: '3°', capacity: 8, groupName: 'Trilocali', note: 'Staff · stagione', sortOrder: 17, aliases: ['Trilo 3° D'] },
 ];
 
 const KEKKO_IMPORT_NOTE_PATTERN = /import manuale da calendario kekko/i;
@@ -61,6 +61,12 @@ function normalizeKekkoKey(value) {
     .replace(/\s+/g, ' ');
 }
 
+function getKekkoPresentationByLabel(value) {
+  const key = normalizeKekkoKey(value);
+  if (!key) return null;
+  return KEKKO_UNIT_BY_LABEL.get(key) || null;
+}
+
 function isMontefeltroApartment(apartment) {
   const source = `${apartment?.nome_appartamento || ''} ${apartment?.struttura_nome || ''}`.toLowerCase();
   return source.includes('montefeltro');
@@ -76,6 +82,21 @@ function isVillaMargheritaApartment(apartment) {
   if (String(apartment.beds24_property_id || '').trim() === VILLA_MARGHERITA_PROPERTY_ID) return true;
   const source = `${apartment?.nome_appartamento || ''} ${apartment?.struttura_nome || ''}`.toLowerCase();
   return source.includes('villa margherita') || source.includes('principe di piemonte');
+}
+
+function shouldDefaultExpandResidence(apartment, units = []) {
+  if ((units?.length || 0) <= 1) return false;
+  return isMontefeltroApartment(apartment) || isVillaMargheritaApartment(apartment);
+}
+
+function applyDefaultResidenceExpansionState() {
+  for (const apartment of S.apartments) {
+    const apartmentId = String(apartment.id);
+    const units = S.unitsByApartment.get(apartmentId) || [];
+    if (shouldDefaultExpandResidence(apartment, units)) {
+      S.expandedResidences.add(apartmentId);
+    }
+  }
 }
 
 function resolveApartmentContext(unit, row = null, apartment = null) {
@@ -135,15 +156,14 @@ export function getKekkoUnitPresentation(unit, row = null, apartment = null) {
   const contextApartment = resolveApartmentContext(unit, row, apartment);
   if (!isVillaMargheritaApartment(contextApartment)) return null;
 
-  const directKey = normalizeKekkoKey(unit?.unit_label);
-  if (directKey && KEKKO_UNIT_BY_LABEL.has(directKey)) {
-    return KEKKO_UNIT_BY_LABEL.get(directKey);
-  }
+  const directMatch = getKekkoPresentationByLabel(unit?.unit_label);
+  if (directMatch) return directMatch;
 
-  const assignedKey = normalizeKekkoKey(row?.raw_payload?.__assignment?.selected_unit_label);
-  if (assignedKey && KEKKO_UNIT_BY_LABEL.has(assignedKey)) {
-    return KEKKO_UNIT_BY_LABEL.get(assignedKey);
-  }
+  const roomTypeMatch = getKekkoPresentationByLabel(unit?.room_type_label);
+  if (roomTypeMatch) return roomTypeMatch;
+
+  const assignedMatch = getKekkoPresentationByLabel(row?.raw_payload?.__assignment?.selected_unit_label);
+  if (assignedMatch) return assignedMatch;
 
   const sourceId = getKekkoApartmentIdFromBooking(row);
   if (sourceId && KEKKO_UNIT_BY_SOURCE_ID.has(sourceId)) {
@@ -263,13 +283,19 @@ export async function loadStaticData() {
     const indexCompare = Number(a.beds24_unit_index || 0) - Number(b.beds24_unit_index || 0);
     return indexCompare !== 0 ? indexCompare : String(a.unit_label || '').localeCompare(String(b.unit_label || ''), 'it');
   });
+  applyDefaultResidenceExpansionState();
 
   S.staticLoaded = true;
 }
 
-export async function loadMonthData() {
+export async function loadMonthData({ freshInventory = false } = {}) {
   const { start, end } = getMonthBounds(S.monthDate);
-  const inventoryUrl = `/.netlify/functions/get-calendar-calendario?dateFrom=${encodeURIComponent(start)}&dateTo=${encodeURIComponent(end)}`;
+  const inventoryParams = new URLSearchParams({
+    dateFrom: start,
+    dateTo: end,
+  });
+  if (freshInventory) inventoryParams.set('fresh', '1');
+  const inventoryUrl = `/.netlify/functions/get-calendar-calendario?${inventoryParams.toString()}`;
 
   const bookingsQuery = window.sb
     .from('bookings')
@@ -307,6 +333,7 @@ export async function loadMonthData() {
     lastSyncQuery,
     fetchAllCalendarDays(start, end),
     fetch(inventoryUrl, {
+      cache: freshInventory ? 'no-store' : 'default',
       headers: S.session?.access_token
         ? { Authorization: `Bearer ${S.session.access_token}` }
         : {},
@@ -334,6 +361,7 @@ export async function loadMonthData() {
 
   S.inventoryDays = (inventoryPayload?.inventoryDays || []).slice();
   S.inventoryByRoomDate = buildInventoryIndex(S.inventoryDays);
+  S.inventoryWarnings = unique((inventoryPayload?.warnings || []).map((value) => String(value || '').trim()).filter(Boolean));
   S.calendarDays = (calendarDays || []).slice();
   S.calendarDayByUnitDate = new Map(
     (calendarDays || []).map((row) => [`${row.apartment_unit_id}:${row.date}`, row])
@@ -387,12 +415,12 @@ export function enrichApartment(row) {
 export function deriveCity(row) {
   const source = [row.nome_appartamento, row.struttura_nome, row.provincia].filter(Boolean).join(' · ');
   for (const [pattern, city] of KNOWN_CITY_MAP) {
-    if (pattern.test(source)) return city;
+    if (pattern.test(source)) return normalizeCityName(city);
   }
   const trimmed = String(row.struttura_nome || row.provincia || row.nome_appartamento || '').trim();
   if (!trimmed) return 'Altro';
   const firstToken = trimmed.split(/[-,]/)[0].trim();
-  return titleCase(firstToken || 'Altro');
+  return normalizeCityName(titleCase(firstToken || 'Altro'));
 }
 
 export function enrichBooking(row) {
@@ -423,8 +451,15 @@ export function enrichOrphan(row) {
 export function buildInventoryIndex(rows) {
   const map = new Map();
   for (const row of rows || []) {
-    if (!row?.propertyId || !row?.date) continue;
-    map.set(`${row.propertyId}:${row.date}`, row);
+    if (!row?.date) continue;
+    const roomId = String(row.roomId || '').trim();
+    const propertyId = String(row.propertyId || '').trim();
+    if (roomId) {
+      map.set(`${roomId}:${row.date}`, row);
+    }
+    if (propertyId) {
+      map.set(`${propertyId}:${row.date}`, row);
+    }
   }
   return map;
 }
@@ -634,10 +669,12 @@ export function getInventoryStateForUnit(unit, date) {
   const iso = typeof date === 'string' ? date : isoDateLocal(date);
   const cachedDay = S.calendarDayByUnitDate.get(`${unit?.id || ''}:${iso}`) || null;
   const cachedClosed = isCachedDayClosed(cachedDay);
+  const cachedAvailable = resolveCachedDayAvailable(cachedDay);
   if (!roomId) {
     return {
+      hasInventory: false,
       closed: cachedClosed,
-      available: cachedDay?.available ?? null,
+      available: cachedAvailable,
       hasBooking: false,
       price: cachedDay?.price ?? null,
       minStay: cachedDay?.min_stay ?? null,
@@ -646,19 +683,24 @@ export function getInventoryStateForUnit(unit, date) {
   const row = S.inventoryByRoomDate.get(`${roomId}:${iso}`) || null;
   if (!row) {
     return {
+      hasInventory: false,
       closed: cachedClosed,
-      available: cachedDay?.available ?? null,
+      available: cachedAvailable,
       hasBooking: false,
       price: cachedDay?.price ?? null,
       minStay: cachedDay?.min_stay ?? null,
     };
   }
+  const inventoryAvailabilityKnown = hasInventoryAvailability(row);
+  const inventoryClosed = row.closed === true || row.available === false;
+  const inventoryAvailable = resolveInventoryAvailable(row);
   return {
-    closed: row.closed === true || row.available === false || cachedClosed,
-    available: row.available ?? cachedDay?.available ?? null,
+    hasInventory: true,
+    closed: inventoryAvailabilityKnown ? inventoryClosed : cachedClosed,
+    available: inventoryAvailabilityKnown ? inventoryAvailable : cachedAvailable,
     hasBooking: Boolean(row.hasBooking),
-    price: row.price ?? cachedDay?.price ?? null,
-    minStay: row.minStay ?? cachedDay?.min_stay ?? null,
+    price: cachedDay?.price ?? row.price ?? null,
+    minStay: cachedDay?.min_stay ?? row.minStay ?? null,
   };
 }
 
@@ -667,17 +709,50 @@ export function getDayAvailabilityState(row, date) {
   const iso = isoDateLocal(date);
   const hasBooking = row.bookings.some((booking) => booking.check_in <= iso && booking.check_out > iso);
   const cachedDay = S.calendarDayByUnitDate.get(`${row.unit?.id || ''}:${iso}`);
+  const cachedClosed = isCachedDayClosed(cachedDay);
   return {
     ...stateFromInventory,
     hasBooking: stateFromInventory.hasBooking || hasBooking,
     price: stateFromInventory.price ?? cachedDay?.price ?? null,
     minStay: stateFromInventory.minStay ?? cachedDay?.min_stay ?? null,
-    closed: stateFromInventory.closed || isCachedDayClosed(cachedDay),
+    closed: stateFromInventory.closed || (!stateFromInventory.hasInventory && cachedClosed),
   };
 }
 
 function isCachedDayClosed(cachedDay) {
   return cachedDay?.closed === true || cachedDay?.available === false;
+}
+
+function hasCachedDayAvailability(cachedDay) {
+  return cachedDay?.closed === true
+    || cachedDay?.closed === false
+    || cachedDay?.available === true
+    || cachedDay?.available === false;
+}
+
+function hasInventoryAvailability(row) {
+  return row?.closed === true
+    || row?.closed === false
+    || row?.available === true
+    || row?.available === false;
+}
+
+function resolveCachedDayAvailable(cachedDay) {
+  if (cachedDay?.available === true || cachedDay?.available === false) {
+    return cachedDay.available;
+  }
+  if (cachedDay?.closed === true) return false;
+  if (cachedDay?.closed === false) return true;
+  return null;
+}
+
+function resolveInventoryAvailable(row) {
+  if (row?.available === true || row?.available === false) {
+    return row.available;
+  }
+  if (row?.closed === true) return false;
+  if (row?.closed === false) return true;
+  return null;
 }
 
 export function buildDayCellLabel(row, date, state) {
@@ -700,12 +775,20 @@ export function compareApartment(a, b) {
 }
 
 export function compareCity(a, b) {
-  const aIndex = CITY_PRIORITY.indexOf(a);
-  const bIndex = CITY_PRIORITY.indexOf(b);
+  const aIndex = CITY_PRIORITY.indexOf(normalizeCityName(a));
+  const bIndex = CITY_PRIORITY.indexOf(normalizeCityName(b));
   if (aIndex >= 0 && bIndex >= 0) return aIndex - bIndex;
   if (aIndex >= 0) return -1;
   if (bIndex >= 0) return 1;
   return String(a).localeCompare(String(b), 'it');
+}
+
+function normalizeCityName(value) {
+  const city = String(value || '').trim();
+  if (/^valle\s+d[' ]aosta$/i.test(city) || /^val\s+d[' ]aosta$/i.test(city)) {
+    return "Val d'Aosta";
+  }
+  return city;
 }
 
 function channelSortLabel(value) {

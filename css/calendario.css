@@ -433,6 +433,10 @@ input {
   gap: 16px;
 }
 
+.month-notice.month-notice-warning {
+  align-items: flex-start;
+}
+
 .month-notice.hidden {
   display: none;
 }
@@ -454,6 +458,18 @@ input {
   color: var(--ink-soft);
   font-size: 13px;
   line-height: 1.5;
+}
+
+.month-notice-list {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: var(--warning-text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.month-notice-list li + li {
+  margin-top: 4px;
 }
 
 .page-body {
@@ -1566,12 +1582,46 @@ input {
 }
 
 @media (max-width: 760px) {
+  :root {
+    --label-width: 204px;
+    --day-width: 40px;
+    --row-height: 44px;
+    --residence-height: 52px;
+  }
+
+  .timeline-top-scrollbar {
+    display: none !important;
+  }
+
   .timeline-shell {
-    display: none;
+    display: block;
+    border-radius: 18px;
   }
 
   .mobile-list {
     display: grid;
+  }
+
+  .timeline-scroll {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .timeline-label,
+  .timeline-corner {
+    padding: 10px 12px;
+  }
+
+  .timeline-corner {
+    min-height: 60px;
+    font-size: 22px;
+  }
+
+  .label-title {
+    font-size: 13px;
+  }
+
+  .label-title strong {
+    font-size: 18px;
   }
 
   .booking-drawer {
@@ -2729,6 +2779,7 @@ input {
 
 .drawer-booking-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 16px;
   padding-top: 12px;
@@ -2736,7 +2787,7 @@ input {
 }
 
 .drawer-booking-actions .btn {
-  flex: 1;
+  flex: 1 1 180px;
 }
 
 .btn-danger {

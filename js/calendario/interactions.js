@@ -1,17 +1,19 @@
 import {
+  compareCity,
   countVisibleBookingsForApartment,
   getAvailableCities,
+  getKekkoUnitPresentation,
   getVisibleBookings,
   initializeFilterDefaults,
   loadMonthData,
   loadStaticData,
-} from './data.js?v=20260522b';
-import { CITY_PRIORITY, ELS, PMS_EDITOR_EMAILS, S, SIDEBAR_STORAGE_KEY } from './state.js?v=20260522b';
+} from './data.js?v=20260626c';
+import { ELS, PMS_EDITOR_EMAILS, S, SIDEBAR_STORAGE_KEY } from './state.js?v=20260626c';
 import {
   nightsBetween,
   startOfMonth,
   toMonthInputValue,
-} from './utils.js?v=20260520f';
+} from './utils.js?v=20260626c';
 
 const RENDER = {
   renderAll: null,
@@ -23,9 +25,55 @@ const RENDER = {
   closeOrphanModal: null,
 };
 
+const REQUEST_TIMEOUT_MS = 35000;
+
+function setBookingFieldSyncState(field, disabled, title = '') {
+  if (!field) return;
+  field.disabled = Boolean(disabled);
+  field.title = disabled ? title : '';
+}
+
+async function fetchJsonWithTimeout(
+  url,
+  options = {},
+  {
+    timeoutMs = REQUEST_TIMEOUT_MS,
+    timeoutMessage = 'La richiesta ha impiegato troppo tempo. Ricarica la pagina se l\'interfaccia resta bloccata.',
+  } = {},
+) {
+  const controller = typeof AbortController === 'function' ? new AbortController() : null;
+  const requestOptions = { ...options };
+  let timerId = null;
+
+  if (controller) {
+    requestOptions.signal = controller.signal;
+    timerId = setTimeout(() => controller.abort(), timeoutMs);
+  }
+
+  try {
+    const response = await fetch(url, requestOptions);
+    const payload = await response.json().catch(() => ({}));
+    return { response, payload };
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      throw new Error(timeoutMessage);
+    }
+    throw error;
+  } finally {
+    if (timerId) clearTimeout(timerId);
+  }
+}
+
+function collectCalendarWarnings(payload = {}) {
+  return [payload.warning, payload.rm_mirror_warning]
+    .map((value) => String(value || '').trim())
+    .filter(Boolean)
+    .join('\n');
+}
+
 export async function init() {
   cacheElements();
-  await import('./render.js?v=20260522b');
+  await import('./render.js?v=20260626c');
   bindShellEvents();
   restoreSidebarState();
   handleScrollHeaderToggle();
@@ -245,6 +293,7 @@ function resetCalendarDataset() {
   S.bookingsByUnit = new Map();
   S.inventoryDays = [];
   S.inventoryByRoomDate = new Map();
+  S.inventoryWarnings = [];
   S.calendarDays = [];
   S.calendarDayByUnitDate = new Map();
   S.orphanRows = [];
@@ -383,7 +432,7 @@ export function closeMenu() {
   ELS.navbarToggle?.setAttribute('aria-expanded', 'false');
 }
 
-export async function ensureDataLoaded({ monthOnly = false } = {}) {
+export async function ensureDataLoaded({ monthOnly = false, freshInventory = false } = {}) {
   if (!S.session) return;
   setError('');
   setLoading(true);
@@ -393,7 +442,7 @@ export async function ensureDataLoaded({ monthOnly = false } = {}) {
         await loadStaticData();
       }
     }
-    await loadMonthData();
+    await loadMonthData({ freshInventory });
     initializeFilterDefaults();
   } catch (error) {
     console.error('calendario load error', error);
@@ -426,7 +475,7 @@ export async function refreshFromBeds24() {
       throw new Error(bookingsPayload.error || bookingsPayload.detail || 'Aggiornamento Beds24 non riuscito');
     }
 
-    await ensureDataLoaded({ monthOnly: true });
+    await ensureDataLoaded({ monthOnly: true, freshInventory: true });
   } catch (error) {
     console.error('calendario refresh error', error);
     alert(error.message || 'Aggiornamento non riuscito');
@@ -742,6 +791,8 @@ export function openBookingFormCreate({ apartmentUnitId, arrival, departure } = 
   S.bookingForm = {
     open: true,
     mode: 'create',
+    intent: 'create',
+    allowApartmentChange: true,
     bookingId: null,
     submitting: false,
     error: '',
@@ -763,6 +814,9 @@ export function openBookingFormCreate({ apartmentUnitId, arrival, departure } = 
   if (ELS.bookingFormPhone) ELS.bookingFormPhone.value = '';
   if (ELS.bookingFormPrice) ELS.bookingFormPrice.value = '';
   if (ELS.bookingFormNotes) ELS.bookingFormNotes.value = '';
+  setBookingFieldSyncState(ELS.bookingFormEmail, false);
+  setBookingFieldSyncState(ELS.bookingFormPhone, false);
+  setBookingFieldSyncState(ELS.bookingFormPrice, false);
   if (ELS.bookingFormStatusRow) ELS.bookingFormStatusRow.classList.remove('hidden');
   if (ELS.bookingFormStatus) ELS.bookingFormStatus.value = 'confirmed';
   if (ELS.bookingFormTitle) ELS.bookingFormTitle.textContent = 'Nuova booking';
@@ -777,12 +831,21 @@ export function openBookingFormCreate({ apartmentUnitId, arrival, departure } = 
   setTimeout(() => ELS.bookingFormFirstName?.focus(), 50);
 }
 
-export function openBookingFormUpdate(booking) {
+export function openBookingFormUpdate(booking, options = {}) {
   if (!S.isPmsEditor || !booking) return;
+  const allowApartmentChange = Boolean(options.allowApartmentChange);
+  const isKekkoImported = Boolean(booking.isKekkoImported);
+  const submitLabel = allowApartmentChange ? 'Sposta prenotazione' : 'Salva modifiche';
+  const title = allowApartmentChange
+    ? `Sposta booking #${booking.beds24_booking_id}`
+    : `Modifica booking #${booking.beds24_booking_id}`;
+  const readOnlySyncHint = 'Questo campo non si sincronizza per le prenotazioni importate da Kekko.';
 
   S.bookingForm = {
     open: true,
     mode: 'update',
+    intent: allowApartmentChange ? 'move' : 'update',
+    allowApartmentChange,
     bookingId: booking.beds24_booking_id,
     submitting: false,
     error: '',
@@ -792,7 +855,7 @@ export function openBookingFormUpdate(booking) {
   populateApartmentDropdown();
   if (ELS.bookingFormApartment) {
     ELS.bookingFormApartment.value = booking.apartment_unit_id || '';
-    ELS.bookingFormApartment.disabled = true;
+    ELS.bookingFormApartment.disabled = !allowApartmentChange;
   }
   if (ELS.bookingFormArrival) ELS.bookingFormArrival.value = booking.check_in?.slice(0, 10) || '';
   if (ELS.bookingFormDeparture) ELS.bookingFormDeparture.value = booking.check_out?.slice(0, 10) || '';
@@ -809,17 +872,23 @@ export function openBookingFormUpdate(booking) {
       || booking.raw_payload?.notes
       || '';
   }
+  setBookingFieldSyncState(ELS.bookingFormEmail, isKekkoImported, readOnlySyncHint);
+  setBookingFieldSyncState(ELS.bookingFormPhone, isKekkoImported, readOnlySyncHint);
+  setBookingFieldSyncState(ELS.bookingFormPrice, isKekkoImported, readOnlySyncHint);
   if (ELS.bookingFormStatusRow) ELS.bookingFormStatusRow.classList.add('hidden');
-  if (ELS.bookingFormTitle) ELS.bookingFormTitle.textContent = `Modifica booking #${booking.beds24_booking_id}`;
+  if (ELS.bookingFormTitle) ELS.bookingFormTitle.textContent = title;
   if (ELS.bookingFormSubmit) {
-    ELS.bookingFormSubmit.textContent = 'Salva modifiche';
+    ELS.bookingFormSubmit.textContent = submitLabel;
     ELS.bookingFormSubmit.disabled = false;
   }
 
   hideBookingErrors();
   ELS.bookingFormModal?.classList.remove('hidden');
   ELS.bookingFormModal?.setAttribute('aria-hidden', 'false');
-  setTimeout(() => ELS.bookingFormFirstName?.focus(), 50);
+  setTimeout(() => {
+    if (allowApartmentChange) ELS.bookingFormApartment?.focus();
+    else ELS.bookingFormFirstName?.focus();
+  }, 50);
 }
 
 export function closeBookingForm() {
@@ -830,6 +899,11 @@ export function closeBookingForm() {
 
 function populateApartmentDropdown() {
   if (!ELS.bookingFormApartment) return;
+
+  const getVisibleUnitLabel = (unit, apartment) => (
+    getKekkoUnitPresentation(unit, null, apartment)?.title
+    || String(unit?.room_type_label || unit?.unit_label || '').trim()
+  );
 
   const byCity = new Map();
   for (const apartment of S.apartments) {
@@ -846,12 +920,13 @@ function populateApartmentDropdown() {
   for (const city of cities) {
     html += `<optgroup label="${escapeHtml(city)}">`;
     const items = byCity.get(city).slice().sort((a, b) => {
-      const left = `${a.apartment.displayName || ''} ${a.unit.unit_label || ''}`;
-      const right = `${b.apartment.displayName || ''} ${b.unit.unit_label || ''}`;
+      const left = `${a.apartment.displayName || ''} ${getVisibleUnitLabel(a.unit, a.apartment)}`;
+      const right = `${b.apartment.displayName || ''} ${getVisibleUnitLabel(b.unit, b.apartment)}`;
       return left.localeCompare(right, 'it');
     });
     for (const item of items) {
-      const label = `${item.apartment.displayName || '—'}${item.unit.unit_label ? ` — ${item.unit.unit_label}` : ''}`;
+      const unitLabel = getVisibleUnitLabel(item.unit, item.apartment);
+      const label = `${item.apartment.displayName || '—'}${unitLabel ? ` — ${unitLabel}` : ''}`;
       html += `<option value="${escapeHtml(item.unit.id)}">${escapeHtml(label)}</option>`;
     }
     html += '</optgroup>';
@@ -924,15 +999,20 @@ export async function handleEditCellSubmit(event) {
     const token = S.session?.access_token;
     if (!token) throw new Error('Sessione non valida');
 
-    const response = await fetch('/.netlify/functions/beds24-push-calendar', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
+    const { response, payload } = await fetchJsonWithTimeout(
+      '/.netlify/functions/beds24-push-calendar',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ changes: [change] }),
       },
-      body: JSON.stringify({ changes: [change] }),
-    });
-    const payload = await response.json().catch(() => ({}));
+      {
+        timeoutMessage: 'Il salvataggio della data ha impiegato troppo tempo. Ricarica la pagina se il calendario resta bloccato.',
+      },
+    );
 
     if (!response.ok) {
       const errMsg = payload.error || `Errore ${response.status}`;
@@ -952,11 +1032,19 @@ export async function handleEditCellSubmit(event) {
     };
     if (change.price !== undefined) updated.price = change.price;
     if (change.min_stay !== undefined) updated.min_stay = change.min_stay;
-    if (change.closed !== undefined) updated.closed = change.closed;
+    if (change.closed !== undefined) {
+      updated.closed = change.closed;
+      updated.available = change.closed === false;
+    }
     S.calendarDayByUnitDate.set(cacheKey, updated);
 
+    await reloadCurrentMonth();
     closeEditModal();
     RENDER.renderAll?.();
+    const warningText = collectCalendarWarnings(payload);
+    if (warningText) {
+      alert(`Data aggiornata.\n\nAttenzione: ${warningText}`);
+    }
   } catch (error) {
     console.error('[EDIT-FAIL]', error);
     showEditError(error.message || 'Errore di rete');
@@ -995,7 +1083,7 @@ export async function handleBookingFormSubmit(event) {
   const notes = (ELS.bookingFormNotes?.value || '').trim();
   const status = (ELS.bookingFormStatus?.value || 'confirmed').trim();
 
-  if (S.bookingForm.mode === 'create' && !apartmentUnitId) {
+  if (!apartmentUnitId) {
     showBookingError('Seleziona un apartment');
     return;
   }
@@ -1050,18 +1138,23 @@ export async function handleBookingFormSubmit(event) {
       booking.beds24_booking_id = S.bookingForm.bookingId;
     }
 
-    const response = await fetch('/.netlify/functions/beds24-push-booking', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
+    const { response, payload: result } = await fetchJsonWithTimeout(
+      '/.netlify/functions/beds24-push-booking',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          operation: S.bookingForm.mode,
+          booking,
+        }),
       },
-      body: JSON.stringify({
-        operation: S.bookingForm.mode,
-        booking,
-      }),
-    });
-    const result = await response.json().catch(() => ({}));
+      {
+        timeoutMessage: 'Il salvataggio della prenotazione ha impiegato troppo tempo. Ricarica la pagina se il pannello resta bloccato.',
+      },
+    );
 
     if (response.status === 409 && Array.isArray(result.conflicting_bookings)) {
       showBookingConflict(result.conflicting_bookings);
@@ -1079,11 +1172,10 @@ export async function handleBookingFormSubmit(event) {
 
     await reloadCurrentMonth();
     closeBookingForm();
-    alert(
-      S.bookingForm.mode === 'create'
-        ? `Booking creata. ID Beds24: ${result.beds24_booking_id}`
-        : 'Modifiche salvate',
-    );
+    const baseMessage = S.bookingForm.mode === 'create'
+      ? `Booking creata. ID Beds24: ${result.beds24_booking_id}`
+      : (S.bookingForm.intent === 'move' ? 'Prenotazione spostata' : 'Modifiche salvate');
+    alert(result.warning ? `${baseMessage}\n\nAttenzione: ${result.warning}` : baseMessage);
   } catch (error) {
     console.error('[BOOKING-FORM-FAIL]', error);
     showBookingError(error.message || 'Errore di rete');
@@ -1091,14 +1183,16 @@ export async function handleBookingFormSubmit(event) {
     S.bookingForm.submitting = false;
     if (ELS.bookingFormSubmit) {
       ELS.bookingFormSubmit.disabled = false;
-      ELS.bookingFormSubmit.textContent = S.bookingForm.mode === 'create' ? 'Crea booking' : 'Salva modifiche';
+      ELS.bookingFormSubmit.textContent = S.bookingForm.mode === 'create'
+        ? 'Crea booking'
+        : (S.bookingForm.intent === 'move' ? 'Sposta prenotazione' : 'Salva modifiche');
     }
   }
 }
 
 async function reloadCurrentMonth() {
   try {
-    await ensureDataLoaded({ monthOnly: true });
+    await ensureDataLoaded({ monthOnly: true, freshInventory: true });
     RENDER.renderAll?.();
     RENDER.closeDrawer?.();
   } catch (error) {
@@ -1164,7 +1258,8 @@ export function openBulkModal() {
   ELS.bulkModal?.setAttribute('aria-hidden', 'false');
 }
 
-export function closeBulkModal() {
+export function closeBulkModal({ force = false } = {}) {
+  if (S.bulk.submitting && !force) return;
   S.bulk.open = false;
   ELS.bulkModal?.classList.add('hidden');
   ELS.bulkModal?.setAttribute('aria-hidden', 'true');
@@ -1441,15 +1536,20 @@ export async function handleBulkSubmit() {
     const token = S.session?.access_token;
     if (!token) throw new Error('Sessione non valida');
 
-    const response = await fetch('/.netlify/functions/beds24-push-calendar', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
+    const { response, payload } = await fetchJsonWithTimeout(
+      '/.netlify/functions/beds24-push-calendar',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ changes: validChanges }),
       },
-      body: JSON.stringify({ changes: validChanges }),
-    });
-    const payload = await response.json().catch(() => ({}));
+      {
+        timeoutMessage: 'La modifica massiva ha impiegato troppo tempo. Ricarica la pagina se la finestra resta bloccata.',
+      },
+    );
     if (!response.ok) {
       const errMsg = payload.error || `Errore ${response.status}`;
       const details = Array.isArray(payload.details) ? `: ${payload.details.join(', ')}` : '';
@@ -1469,13 +1569,28 @@ export async function handleBulkSubmit() {
       };
       if (change.price !== undefined) updated.price = change.price;
       if (change.min_stay !== undefined) updated.min_stay = change.min_stay;
-      if (change.closed !== undefined) updated.closed = change.closed;
+      if (change.closed !== undefined) {
+        updated.closed = change.closed;
+        updated.available = change.closed === false;
+      }
       S.calendarDayByUnitDate.set(key, updated);
     });
 
-    closeBulkModal();
+    await reloadCurrentMonth();
+
+    S.bulk.submitting = false;
+    if (ELS.bulkSubmit) {
+      ELS.bulkSubmit.disabled = false;
+      ELS.bulkSubmit.textContent = 'Applica modifica';
+    }
+    closeBulkModal({ force: true });
     clearDragSelection();
-    alert(`Modifica massiva completata: ${validChanges.length} celle aggiornate.`);
+    const warningText = collectCalendarWarnings(payload);
+    alert(
+      warningText
+        ? `Modifica massiva completata: ${validChanges.length} celle aggiornate.\n\nAttenzione: ${warningText}`
+        : `Modifica massiva completata: ${validChanges.length} celle aggiornate.`,
+    );
     RENDER.renderAll?.();
   } catch (error) {
     console.error('[BULK-FAIL]', error);
@@ -1588,14 +1703,7 @@ function getFilteredBulkApartments(filter) {
 }
 
 function compareCityNames(a, b) {
-  const aIndex = CITY_PRIORITY.indexOf(a);
-  const bIndex = CITY_PRIORITY.indexOf(b);
-  if (aIndex !== -1 || bIndex !== -1) {
-    if (aIndex === -1) return 1;
-    if (bIndex === -1) return -1;
-    if (aIndex !== bIndex) return aIndex - bIndex;
-  }
-  return a.localeCompare(b, 'it');
+  return compareCity(a, b);
 }
 
 function parseIsoDateUtc(value) {

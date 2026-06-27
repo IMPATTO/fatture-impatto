@@ -21,6 +21,10 @@ export const CITY_PRIORITY = [
   'Montelabbate',
   'Fanano',
   'Valtournenche',
+  "Val d'Aosta",
+  "Val D'Aosta",
+  "Valle d'Aosta",
+  "Valle D'Aosta",
   'Verona',
 ];
 
@@ -35,6 +39,7 @@ export const KNOWN_CITY_MAP = [
   [/gradara/i, 'Gradara'],
   [/montelabbate|montellabbate/i, 'Montelabbate'],
   [/fanano/i, 'Fanano'],
+  [/valle\s+d[' ]aosta|val\s+d[' ]aosta/i, "Val d'Aosta"],
   [/valtournenche/i, 'Valtournenche'],
   [/verona/i, 'Verona'],
 ];
@@ -88,6 +93,7 @@ export const S = {
   bookingsByUnit: new Map(),
   inventoryDays: [],
   inventoryByRoomDate: new Map(),
+  inventoryWarnings: [],
   calendarDays: [],
   calendarDayByUnitDate: new Map(),
   orphanRows: [],
