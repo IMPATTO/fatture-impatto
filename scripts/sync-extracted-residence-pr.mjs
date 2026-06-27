@@ -16,6 +16,22 @@ function ensureDir(dirPath) {
   fs.mkdirSync(dirPath, { recursive: true });
 }
 
+function walkFiles(rootDir, currentDir = rootDir) {
+  if (!fs.existsSync(currentDir)) return [];
+
+  const files = [];
+  const entries = fs.readdirSync(currentDir, { withFileTypes: true });
+  for (const entry of entries) {
+    const absolutePath = path.join(currentDir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...walkFiles(rootDir, absolutePath));
+      continue;
+    }
+    files.push(path.relative(rootDir, absolutePath));
+  }
+  return files;
+}
+
 function copyFile(relativePath) {
   const source = path.join(repoRoot, relativePath);
   const target = path.join(targetRoot, relativePath);
@@ -28,7 +44,24 @@ function copyFile(relativePath) {
 
 function removeFile(relativePath) {
   const target = path.join(targetRoot, relativePath);
-  fs.rmSync(target, { force: true });
+  fs.rmSync(target, { force: true, recursive: true });
+}
+
+function pruneUnexpectedFiles(generatedFiles) {
+  const allowedFiles = new Set([
+    ...RESIDENCE_PR_SNAPSHOT_FILES,
+    ...Object.keys(generatedFiles),
+    '_extract-summary.json',
+  ]);
+  let removed = 0;
+
+  for (const relativePath of walkFiles(targetRoot)) {
+    if (allowedFiles.has(relativePath)) continue;
+    removeFile(relativePath);
+    removed += 1;
+  }
+
+  return removed;
 }
 
 function writeSummary() {
@@ -54,6 +87,7 @@ function writeGeneratedFiles() {
 
 function main() {
   ensureDir(targetRoot);
+  const generatedFiles = getResidencePrGeneratedFiles();
 
   for (const relativePath of RESIDENCE_PR_SNAPSHOT_FILES) {
     copyFile(relativePath);
@@ -66,9 +100,10 @@ function main() {
   }
 
   writeSummary();
+  const prunedFiles = pruneUnexpectedFiles(generatedFiles);
 
   console.log(`Synced ${RESIDENCE_PR_SNAPSHOT_FILES.length} files into ${RESIDENCE_PR_SNAPSHOT_TARGET}`);
-  console.log(`Removed ${RESIDENCE_PR_REMOVED_RUNTIME_FILES.length} deprecated runtime files from snapshot`);
+  console.log(`Removed ${RESIDENCE_PR_REMOVED_RUNTIME_FILES.length + prunedFiles} deprecated or unexpected files from snapshot`);
 }
 
 main();

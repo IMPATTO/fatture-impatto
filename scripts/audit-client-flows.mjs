@@ -12,14 +12,16 @@ import {
   getKnownSiteUrlPrefixes,
   getProjectLinkUrls,
 } from '../config/site-links.mjs';
+import { resolveRuntimeConfig } from './lib/netlify-runtime-config.mjs';
 import { getAllPageOwners } from '../sites/site-registry.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
 
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://tysxeikqbgebpfyblgeb.supabase.co';
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+const runtimeConfig = resolveRuntimeConfig({ projectRoot: repoRoot, context: 'production' });
+const SUPABASE_URL = runtimeConfig.supabaseUrl || 'https://tysxeikqbgebpfyblgeb.supabase.co';
+const SUPABASE_SERVICE_ROLE_KEY = runtimeConfig.supabaseKey;
 
 if (!SUPABASE_SERVICE_ROLE_KEY) {
   console.error('Missing SUPABASE_SERVICE_ROLE_KEY / SUPABASE_SERVICE_KEY');
@@ -28,6 +30,9 @@ if (!SUPABASE_SERVICE_ROLE_KEY) {
 
 const PORTALE_BASE = getCanonicalSiteUrl('portale');
 const KNOWN_SITE_PREFIXES = getKnownSiteUrlPrefixes();
+const CHECKIN_DOCUMENTS_BUCKET = 'checkin-documents';
+const AUDIT_UPLOAD_FILE_NAME = 'audit-direct-upload.pdf';
+const AUDIT_UPLOAD_SIZE_BYTES = (4 * 1024 * 1024) + 1024;
 
 const TEST_GUEST = {
   data_checkin: '2026-06-10',
@@ -135,18 +140,68 @@ async function loadAlloggiatiMappings() {
   return new Map((data || []).map((row) => [row.apartment_id, row]));
 }
 
-async function cleanupCheckinRecord(id) {
-  if (!id) return;
-  const { error } = await supabase.from('ospiti_check_in').delete().eq('id', id);
-  if (error) {
-    console.warn(`cleanup failed for ${id}: ${error.message}`);
+function buildApartmentAuditPayload(apartment, index) {
+  return {
+    ...TEST_GUEST,
+    apartment_ref: apartment.public_checkin_key,
+    cognome: `Cliente ${index + 1}`,
+    email: `codex-audit-checkin+${index + 1}@example.com`,
+    telefono: `+39333111${String(2000 + index).padStart(4, '0')}`,
+    numero_documento: `AZ${String(1000000 + index).slice(-7)}`,
+  };
+}
+
+async function cleanupCheckinRecord(id, storagePaths = []) {
+  if (id) {
+    const { error } = await supabase.from('ospiti_check_in').delete().eq('id', id);
+    if (error) {
+      console.warn(`cleanup failed for ${id}: ${error.message}`);
+    }
+  }
+
+  if (storagePaths.length) {
+    const { error } = await supabase.storage.from(CHECKIN_DOCUMENTS_BUCKET).remove(storagePaths);
+    if (error) {
+      console.warn(`storage cleanup failed for ${storagePaths.join(', ')}: ${error.message}`);
+    }
   }
 }
 
-async function auditApartmentLink(apartment) {
+async function createAuditUpload(preparedUpload) {
+  const uploadForm = new FormData();
+  uploadForm.append('cacheControl', '3600');
+  uploadForm.append('', new Blob([Buffer.from('%PDF-1.4 audit direct upload')], {
+    type: 'application/pdf',
+  }), preparedUpload.file_name || AUDIT_UPLOAD_FILE_NAME);
+
+  const response = await fetch(String(preparedUpload?.signed_url || ''), {
+    method: 'PUT',
+    headers: { 'x-upsert': 'true' },
+    body: uploadForm,
+    signal: AbortSignal.timeout(12000),
+  });
+
+  return {
+    ok: response.ok,
+    status: response.status,
+    body: await response.text().catch(() => ''),
+  };
+}
+
+async function auditApartmentLink(apartment, index) {
   const checkinUrl = buildCheckinUrl(apartment.public_checkin_key);
   const portalUrl = buildOpenPortalUrl(apartment.public_checkin_key);
   const apiUrl = joinUrl(PORTALE_BASE, `/.netlify/functions/get-public-portal-data?apt=${encodeURIComponent(apartment.public_checkin_key)}&lang=IT`);
+  const payload = buildApartmentAuditPayload(apartment, index);
+  const documentUploads = [{
+    client_id: 'doc-main',
+    guest_scope: 'main',
+    guest_index: 0,
+    display_order: 0,
+    file_name: AUDIT_UPLOAD_FILE_NAME,
+    mime_type: 'application/pdf',
+    size_bytes: AUDIT_UPLOAD_SIZE_BYTES,
+  }];
 
   const [checkinPage, portalPage, payloadResponse] = await Promise.all([
     fetchStatus(checkinUrl),
@@ -154,23 +209,65 @@ async function auditApartmentLink(apartment) {
     fetchStatus(apiUrl, { includeJson: true }),
   ]);
 
-  let submitResult = { ok: false, status: 0, error: 'not-run' };
-  const payload = { ...TEST_GUEST, apartment_ref: apartment.public_checkin_key };
-  const submitResponse = await fetchStatus(`${PORTALE_BASE}/.netlify/functions/submit-public-checkin`, {
+  const uploadPrepResponse = await fetchStatus(`${PORTALE_BASE}/.netlify/functions/create-public-checkin-upload-urls`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      apartment_ref: payload.apartment_ref,
+      email: payload.email,
+      telefono: payload.telefono,
+      cognome: payload.cognome,
+      data_checkin: payload.data_checkin,
+      data_checkout: payload.data_checkout,
+      document_uploads: documentUploads,
+    }),
     includeJson: true,
   });
-  submitResult = {
-    ok: submitResponse.status === 200 && submitResponse.json?.ok === true,
-    status: submitResponse.status,
-    error: submitResponse.json?.error || submitResponse.error || null,
-    fieldErrors: submitResponse.json?.fields || [],
-  };
 
-  if (submitResponse.json?.record?.id) {
-    await cleanupCheckinRecord(submitResponse.json.record.id);
+  const preparedUploads = Array.isArray(uploadPrepResponse.json?.uploads)
+    ? uploadPrepResponse.json.uploads
+    : [];
+  const storagePaths = preparedUploads.map((entry) => entry?.storage_path).filter(Boolean);
+
+  let directUploadResult = { ok: false, status: 0, error: 'not-run' };
+  let submitResult = { ok: false, status: 0, error: 'not-run' };
+  let cleanupAttempted = false;
+
+  if (preparedUploads.length === 1 && uploadPrepResponse.json?.upload_batch_token) {
+    const directUploadResponse = await createAuditUpload(preparedUploads[0]);
+    directUploadResult = {
+      ok: directUploadResponse.ok,
+      status: directUploadResponse.status,
+      error: directUploadResponse.ok ? null : (directUploadResponse.body || 'direct upload failed'),
+    };
+
+    if (directUploadResult.ok) {
+      const submitResponse = await fetchStatus(`${PORTALE_BASE}/.netlify/functions/submit-public-checkin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...payload,
+          document_upload_batch_token: uploadPrepResponse.json.upload_batch_token,
+          document_uploads: preparedUploads.map(({ signed_url: _signedUrl, ...rest }) => rest),
+        }),
+        includeJson: true,
+      });
+
+      submitResult = {
+        ok: submitResponse.status === 200 && submitResponse.json?.ok === true,
+        status: submitResponse.status,
+        error: submitResponse.json?.error || submitResponse.error || null,
+        fieldErrors: submitResponse.json?.fields || [],
+      };
+
+      if (submitResponse.json?.record?.id || storagePaths.length) {
+        cleanupAttempted = true;
+        await cleanupCheckinRecord(submitResponse.json?.record?.id || '', storagePaths);
+      }
+    } else if (storagePaths.length) {
+      cleanupAttempted = true;
+      await cleanupCheckinRecord('', storagePaths);
+    }
   }
 
   return {
@@ -184,10 +281,17 @@ async function auditApartmentLink(apartment) {
     api_ok: payloadResponse.status === 200 && payloadResponse.json?.meta?.apartment_found === true,
     api_status: payloadResponse.status,
     api_meta: payloadResponse.json?.meta || null,
+    upload_prep_ok: uploadPrepResponse.status === 200 && !!uploadPrepResponse.json?.upload_batch_token && preparedUploads.length === 1,
+    upload_prep_status: uploadPrepResponse.status,
+    upload_prep_error: uploadPrepResponse.json?.error || uploadPrepResponse.error || null,
+    direct_upload_ok: directUploadResult.ok,
+    direct_upload_status: directUploadResult.status,
+    direct_upload_error: directUploadResult.error,
     submit_ok: submitResult.ok,
     submit_status: submitResult.status,
     submit_error: submitResult.error,
     submit_field_errors: submitResult.fieldErrors,
+    cleanup_attempted: cleanupAttempted,
   };
 }
 
@@ -298,6 +402,8 @@ async function main() {
     summary: {
       active_apartments: apartments.length,
       apartment_links_ok: apartmentResults.filter((row) => row.checkin_page_ok && row.portal_page_ok && row.api_ok).length,
+      apartment_upload_prep_ok: apartmentResults.filter((row) => row.upload_prep_ok).length,
+      apartment_direct_upload_ok: apartmentResults.filter((row) => row.direct_upload_ok).length,
       apartment_submit_ok: apartmentResults.filter((row) => row.submit_ok).length,
       questura_linked_apartments: questuraReadiness.filter((row) => row.linked && row.account_active).length,
       questura_missing_apartments: questuraReadiness.filter((row) => !row.linked || !row.account_active).length,
@@ -321,6 +427,8 @@ async function main() {
 
   const failures = [];
   if (report.summary.apartment_links_ok !== apartments.length) failures.push('Some apartment links failed');
+  if (report.summary.apartment_upload_prep_ok !== apartments.length) failures.push('Some apartment upload preps failed');
+  if (report.summary.apartment_direct_upload_ok !== apartments.length) failures.push('Some apartment direct uploads failed');
   if (report.summary.apartment_submit_ok !== apartments.length) failures.push('Some apartment submissions failed');
   if (report.summary.core_pages_ok !== report.summary.core_pages_total) failures.push('Some core pages failed');
   if (report.summary.clickable_links_ok !== report.summary.clickable_links_total) failures.push('Some clickable links failed');

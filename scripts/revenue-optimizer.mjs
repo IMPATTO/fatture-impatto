@@ -3,6 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 const MAX_WINDOW_DAYS = 15;
 const DEFAULT_HISTORY_DAYS = 30;
 const OCCUPANCY_LOW_THRESHOLD = 0.6;
+const MIN_CHANNEL_SAFE_PRICE_EUR = 9;
+const PRICE_FLOOR_TAG = 'price-floor';
 
 function parseArgs(argv) {
   const args = {};
@@ -72,7 +74,7 @@ function normalizePrice(value) {
 function applyDiscount(basePrice, discountPct) {
   const price = normalizePrice(basePrice);
   if (price == null) return null;
-  return Math.max(1, Math.round(price * (1 - (discountPct / 100))));
+  return Math.max(MIN_CHANNEL_SAFE_PRICE_EUR, Math.round(price * (1 - (discountPct / 100))));
 }
 
 function openDay(row) {
@@ -83,6 +85,15 @@ function makeAction(unit, row, overrides = {}) {
   const discountPct = overrides.discountPct ?? 0;
   const currentPrice = normalizePrice(row.price);
   const recommendedPrice = overrides.price ?? applyDiscount(currentPrice, discountPct);
+  const tags = Array.isArray(overrides.tags) ? [...overrides.tags] : [];
+  if (
+    currentPrice != null
+    && recommendedPrice === MIN_CHANNEL_SAFE_PRICE_EUR
+    && currentPrice < MIN_CHANNEL_SAFE_PRICE_EUR
+    && !tags.includes(PRICE_FLOOR_TAG)
+  ) {
+    tags.push(PRICE_FLOOR_TAG);
+  }
   return {
     apartmentId: unit.apartment_id,
     apartmentName: unit.apartment_name,
@@ -96,7 +107,7 @@ function makeAction(unit, row, overrides = {}) {
     recommendedMinStay: overrides.minStay ?? null,
     recommendedClosed: overrides.closed ?? null,
     discountPct,
-    tags: overrides.tags || [],
+    tags,
     rationale: overrides.rationale || '',
     priority: overrides.priority ?? 50,
   };

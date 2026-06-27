@@ -400,7 +400,7 @@
 
   <footer class="footer">
     <div class="footer-brand">Kekko PR Riccione <em>×</em> Il Lupo Affitta</div>
-    <div class="footer-meta">Residence Margherita + 3 esterni · Stagione 2026 · v7.0 · Live</div>
+    <div class="footer-meta" id="footer-meta">Residence Margherita · Stagione 2026 · v7.0 · Live</div>
   </footer>
 </main>
 
@@ -577,6 +577,7 @@ async function loadAll() {
 async function init() {
   await loadAll();
   renderHeroStats();
+  renderFooterMeta();
   renderCalendar();
   renderMyBookings();
   if (refreshTimer) clearInterval(refreshTimer);
@@ -584,6 +585,7 @@ async function init() {
     try {
       await loadAll();
       renderHeroStats();
+      renderFooterMeta();
       renderCalendar();
       renderMyBookings();
     } catch (_error) {
@@ -746,6 +748,11 @@ function renderHeroStats() {
     <div class="quick-stat"><div class="num">${totPax}</div><div class="lbl">Ospiti</div></div>
     <button class="btn-logout" onclick="doLogout()">Esci</button>
   `;
+}
+
+function renderFooterMeta() {
+  const externalCount = APARTMENTS.filter(a => a.external).length;
+  document.getElementById('footer-meta').textContent = `Residence Margherita + ${externalCount} esterni · Stagione 2026 · v7.0 · Live`;
 }
 
 function renderCalendar() {

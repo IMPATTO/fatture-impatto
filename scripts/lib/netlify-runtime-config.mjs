@@ -15,6 +15,22 @@ export function getEnvValue(name) {
   return String(process.env[name] || '').trim();
 }
 
+function isMaskedValue(value) {
+  const normalized = String(value || '').trim();
+  if (!normalized) return true;
+  return normalized.includes('*');
+}
+
+function pickFirstUsableValue(values, { allowMasked = false } = {}) {
+  for (const candidate of values) {
+    const normalized = String(candidate || '').trim();
+    if (!normalized) continue;
+    if (!allowMasked && isMaskedValue(normalized)) continue;
+    return normalized;
+  }
+  return '';
+}
+
 function readJsonFile(filePath) {
   try {
     if (!existsSync(filePath)) return null;
@@ -140,21 +156,27 @@ export function resolveRuntimeConfig({
   context = 'production',
   defaultSupabaseUrl = DEFAULT_SUPABASE_URL,
 } = {}) {
-  const supabaseUrl = getEnvValue('SUPABASE_URL')
-    || getEnvValue('SUPABASE_RUNTIME_URL')
-    || readNetlifyEnv('SUPABASE_URL', { projectRoot, context })
-    || readNetlifyEnv('SUPABASE_RUNTIME_URL', { projectRoot, context })
-    || defaultSupabaseUrl;
+  const supabaseUrl = pickFirstUsableValue([
+    getEnvValue('SUPABASE_URL'),
+    getEnvValue('SUPABASE_RUNTIME_URL'),
+    readNetlifyEnv('SUPABASE_URL', { projectRoot, context }),
+    readNetlifyEnv('SUPABASE_RUNTIME_URL', { projectRoot, context }),
+    defaultSupabaseUrl,
+  ], { allowMasked: true });
 
-  const supabaseKey = getEnvValue('SUPABASE_SERVICE_ROLE_KEY')
-    || getEnvValue('SUPABASE_SERVICE_KEY')
-    || readNetlifyEnv('SUPABASE_SERVICE_ROLE_KEY', { projectRoot, context })
-    || readNetlifyEnv('SUPABASE_SERVICE_KEY', { projectRoot, context });
+  const supabaseKey = pickFirstUsableValue([
+    getEnvValue('SUPABASE_SERVICE_ROLE_KEY'),
+    getEnvValue('SUPABASE_SERVICE_KEY'),
+    readNetlifyEnv('SUPABASE_SERVICE_ROLE_KEY', { projectRoot, context }),
+    readNetlifyEnv('SUPABASE_SERVICE_KEY', { projectRoot, context }),
+  ]);
 
-  const beds24RefreshToken = getEnvValue('BEDS24_REFRESH_TOKEN')
-    || getEnvValue('BEDS24_API_KEY')
-    || readNetlifyEnv('BEDS24_REFRESH_TOKEN', { projectRoot, context })
-    || readNetlifyEnv('BEDS24_API_KEY', { projectRoot, context });
+  const beds24RefreshToken = pickFirstUsableValue([
+    getEnvValue('BEDS24_REFRESH_TOKEN'),
+    getEnvValue('BEDS24_API_KEY'),
+    readNetlifyEnv('BEDS24_REFRESH_TOKEN', { projectRoot, context }),
+    readNetlifyEnv('BEDS24_API_KEY', { projectRoot, context }),
+  ]);
 
   return { supabaseUrl, supabaseKey, beds24RefreshToken };
 }

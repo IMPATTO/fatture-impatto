@@ -1,0 +1,153 @@
+struttura_nome,nome_appartamento,unit_label,tipologia,month,avg_price,min_price,max_price,weekend_avg,weekday_avg,min_stay_values,closed_days,priced_days,rack_rate,room_min_stay,source_updated_at
+Antey Saint Andre,Valle d'Aosta - Grande Cervino Frazione Colavou 8 Antey-Saint-Andre,Default,Appartamento,luglio,299,299,299,299,299,3,0,31,500,3,2026-06-24T18:16:05.127+00:00
+Antey Saint Andre,Valle d'Aosta - Grande Cervino Frazione Colavou 8 Antey-Saint-Andre,Default,Appartamento,agosto,349,349,349,349,349,3,0,31,500,3,2026-06-24T18:16:05.127+00:00
+Cattolica,Cattolica - Via Amalfi 5 con Balcone,Default,Appartamento,luglio,,,,,,,0,0,400,1,
+Cattolica,Cattolica - Via Amalfi 5 con Balcone,Default,Appartamento,agosto,,,,,,,0,0,400,1,
+Cattolica,Cattolica - Via Amalfi 5 con Cortile,Default,Appartamento,luglio,,,,,,,0,0,400,1,
+Cattolica,Cattolica - Via Amalfi 5 con Cortile,Default,Appartamento,agosto,,,,,,,0,0,400,1,
+Cattolica,Cattolica - Via Bovio 25,Default,Appartamento,luglio,,,,,,,0,0,400,1,
+Cattolica,Cattolica - Via Bovio 25,Default,Appartamento,agosto,,,,,,,0,0,400,1,
+Cattolica,Cattolica - Via Bovio 3,Default,Appartamento,luglio,,,,,,,0,0,400,1,
+Cattolica,Cattolica - Via Bovio 3,Default,Appartamento,agosto,,,,,,,0,0,400,1,
+Cattolica,Cattolica - Via Carducci 19,Default,Bilocale,luglio,327.29,151,450,357.44,314.95,2/3,0,31,400,1,2026-06-21T22:06:06.543+00:00
+Cattolica,Cattolica - Via Carducci 19,Default,Bilocale,agosto,414.52,400,450,450,400,3,0,31,400,1,2026-06-21T22:06:06.543+00:00
+Cattolica,Cattolica - Via Cesare Battisti 51,Default,Appartamento,luglio,,,,,,,0,0,0,1,
+Cattolica,Cattolica - Via Cesare Battisti 51,Default,Appartamento,agosto,,,,,,,0,0,0,1,
+Cattolica,Cattolica - Via Cremona 2/c interno 1 con Balcone Davanti,Default,Appartamento,luglio,243.39,102,320,263.89,235,3,0,31,250,3,2026-06-21T22:06:06.543+00:00
+Cattolica,Cattolica - Via Cremona 2/c interno 1 con Balcone Davanti,Default,Appartamento,agosto,297.82,250,400,340.56,280.34,3,0,31,250,3,2026-06-21T22:06:06.543+00:00
+Cattolica,Cattolica - Via Cremona 2/c interno 2 con Balcone Interno,Default,Appartamento,luglio,168.88,150,216,207.5,156,3,5,8,250,3,2026-06-24T02:00:07.777+00:00
+Cattolica,Cattolica - Via Cremona 2/c interno 2 con Balcone Interno,Default,Appartamento,agosto,,,,,,,0,0,250,3,2026-06-24T02:00:07.777+00:00
+Cattolica,Cattolica - Via Donizetti 13/a,Default,Appartamento,luglio,210.55,92,346.32,271.34,185.69,3,0,31,400,3,2026-06-21T22:06:06.543+00:00
+Cattolica,Cattolica - Via Donizetti 13/a,Default,Appartamento,agosto,256.14,138,401.54,301.24,237.7,2/3,0,31,400,3,2026-06-21T22:06:06.543+00:00
+Cattolica,Cattolica - Via Fiume 37,Default,Appartamento,luglio,368.39,194,608,482.11,321.86,3,21,31,400,1,2026-06-21T22:06:06.543+00:00
+Cattolica,Cattolica - Via Fiume 37,Default,Appartamento,agosto,565.94,407,738,652.78,530.41,3,7,31,400,1,2026-06-21T22:06:06.543+00:00
+Cattolica,Cattolica - Via Giuseppe Mazzini 169,Default,Appartamento,luglio,,,,,,,0,0,400,1,
+Cattolica,Cattolica - Via Giuseppe Mazzini 169,Default,Appartamento,agosto,,,,,,,0,0,400,1,
+Cattolica,Cattolica - Via Rasi Spinelli 2,Default,Appartamento,luglio,,,,,,,0,0,400,1,
+Cattolica,Cattolica - Via Rasi Spinelli 2,Default,Appartamento,agosto,,,,,,,0,0,400,1,
+Cattolica,Cattolica - Via Venezia 7 Cortile Interno,Default,Appartamento,luglio,,,,,,,0,0,400,1,
+Cattolica,Cattolica - Via Venezia 7 Cortile Interno,Default,Appartamento,agosto,,,,,,,0,0,400,1,
+Cattolica,Cattolica - Via Venezia 7 Fronte Strada,Default,Appartamento,luglio,,,,,,,0,0,400,1,
+Cattolica,Cattolica - Via Venezia 7 Fronte Strada,Default,Appartamento,agosto,,,,,,,0,0,400,1,
+Cattolica,Cattolica - Via Venezia 9 con cucina,Default,Appartamento,luglio,,,,,,,0,0,500,1,
+Cattolica,Cattolica - Via Venezia 9 con cucina,Default,Appartamento,agosto,,,,,,,0,0,500,1,
+Cattolica,Cattolica - Via Verdi 29,Default,Appartamento,luglio,297.55,196,467,386.44,261.18,1/3,17,31,400,1,2026-06-21T22:06:06.543+00:00
+Cattolica,Cattolica - Via Verdi 29,Default,Appartamento,agosto,444.78,330,594,527.71,408.5,1/3,5,23,400,1,2026-06-21T22:06:06.543+00:00
+Cattolica,Cattolica - Via Zara 24,Default,Appartamento,luglio,,,,,,,0,0,400,1,
+Cattolica,Cattolica - Via Zara 24,Default,Appartamento,agosto,,,,,,,0,0,400,1,
+Gabicce Mare,Gabicce Mare - Via Macchiavelli snc,Default,Trilocale,luglio,,,,,,,0,0,400,3,
+Gabicce Mare,Gabicce Mare - Via Macchiavelli snc,Default,Trilocale,agosto,,,,,,,0,0,400,3,
+Gabicce Mare,Gabicce Monte - Via Emanuele Filiberto 9,Default,Appartamento,luglio,,,,,,,0,0,400,1,
+Gabicce Mare,Gabicce Monte - Via Emanuele Filiberto 9,Default,Appartamento,agosto,,,,,,,0,0,400,1,
+Gradara,Fanano - Via Sotto Farneto snc,Default,Appartamento,luglio,,,,,,,0,0,400,1,
+Gradara,Fanano - Via Sotto Farneto snc,Default,Appartamento,agosto,,,,,,,0,0,400,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,102,Appartamento,luglio,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,102,Appartamento,agosto,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,104,Appartamento,luglio,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,104,Appartamento,agosto,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,106,Appartamento,luglio,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,106,Appartamento,agosto,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,108,Appartamento,luglio,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,108,Appartamento,agosto,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,110,Appartamento,luglio,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,110,Appartamento,agosto,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,202,Appartamento,luglio,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,202,Appartamento,agosto,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,Bilo 1° A,Appartamento,luglio,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,Bilo 1° A,Appartamento,agosto,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,Bilo 1° B,Appartamento,luglio,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,Bilo 1° B,Appartamento,agosto,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,Bilo 1° C,Appartamento,luglio,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,Bilo 1° C,Appartamento,agosto,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,Dependance 1,Appartamento,luglio,,,,,,,0,0,,,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,Dependance 1,Appartamento,agosto,,,,,,,0,0,,,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,Dependance 2,Appartamento,luglio,,,,,,,0,0,,,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,Dependance 2,Appartamento,agosto,,,,,,,0,0,,,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,Mono 1° A,Appartamento,luglio,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,Mono 1° A,Appartamento,agosto,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,Mono 1° B,Appartamento,luglio,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,Mono 1° B,Appartamento,agosto,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,Mono 3°,Appartamento,luglio,,,,,,,0,0,,,2026-06-21T22:06:06.543+00:00
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,Mono 3°,Appartamento,agosto,,,,,,,0,0,,,2026-06-21T22:06:06.543+00:00
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,Trilo 1°,Appartamento,luglio,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,Trilo 1°,Appartamento,agosto,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,Trilo 3° A,Appartamento,luglio,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,Trilo 3° A,Appartamento,agosto,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,Trilo 3° B,Appartamento,luglio,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,Trilo 3° B,Appartamento,agosto,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,Trilo 3° C Family,Appartamento,luglio,,,,,,,0,0,0,1,
+Miramare,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare,Trilo 3° C Family,Appartamento,agosto,,,,,,,0,0,0,1,
+Misano Adriatico,Misano Adriatico - Via Litoranea Sud 40 con Balcone,Default,Appartamento,luglio,491.35,327,782,635.89,432.23,3,31,31,300,1,2026-06-21T22:06:06.543+00:00
+Misano Adriatico,Misano Adriatico - Via Litoranea Sud 40 con Balcone,Default,Appartamento,agosto,717.87,517,932,844,662.69,3,14,23,300,1,2026-06-21T22:06:06.543+00:00
+Misano Adriatico,Misano Adriatico - Via Litoranea Sud 40 con Terrazza Panoramica,Default,Trilocale,luglio,,,,,,,0,0,400,1,
+Misano Adriatico,Misano Adriatico - Via Litoranea Sud 40 con Terrazza Panoramica,Default,Trilocale,agosto,,,,,,,0,0,400,1,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,1 · Stanza,Stanza,luglio,,,,,,,0,0,,,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,1 · Stanza,Stanza,agosto,,,,,,,0,0,,,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,10 · Monolocale,Monolocale,luglio,,,,,,,0,0,,,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,10 · Monolocale,Monolocale,agosto,,,,,,,0,0,,,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,11 · Monolocale,Monolocale,luglio,,,,,,,0,0,,,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,11 · Monolocale,Monolocale,agosto,,,,,,,0,0,,,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,12 · Monolocale,Monolocale,luglio,,,,,,,0,0,,,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,12 · Monolocale,Monolocale,agosto,,,,,,,0,0,,,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,14 · Monolocale,Monolocale,luglio,,,,,,,0,0,,,2026-06-21T22:06:06.543+00:00
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,14 · Monolocale,Monolocale,agosto,,,,,,3,0,0,,,2026-06-21T22:06:06.543+00:00
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,15 · Monolocale · Beds24,Monolocale,luglio,,,,,,,0,0,0,1,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,15 · Monolocale · Beds24,Monolocale,agosto,,,,,,,0,0,0,1,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,16 · Bilocale,Bilocale,luglio,,,,,,,0,0,,,2026-06-21T22:06:06.543+00:00
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,16 · Bilocale,Bilocale,agosto,,,,,,3,0,0,,,2026-06-21T22:06:06.543+00:00
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,18 · Bilocale · Beds24,Bilocale,luglio,93.39,81,100,93.56,93.32,2,0,31,0,1,2026-06-21T22:06:06.543+00:00
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,18 · Bilocale · Beds24,Bilocale,agosto,221.37,150,337.5,237.5,214.77,2/3,0,31,0,1,2026-06-21T22:06:06.543+00:00
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,19 · Bilocale · Beds24,Bilocale,luglio,,,,,,,0,0,0,1,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,19 · Bilocale · Beds24,Bilocale,agosto,,,,,,,0,0,0,1,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,2 · Stanza,Stanza,luglio,,,,,,,0,0,,,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,2 · Stanza,Stanza,agosto,,,,,,,0,0,,,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,20 · Stanza · Beds24,Stanza,luglio,,,,,,,0,0,0,1,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,20 · Stanza · Beds24,Stanza,agosto,,,,,,,0,0,0,1,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,21 · Bilocale,Bilocale,luglio,,,,,,,0,0,0,1,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,21 · Bilocale,Bilocale,agosto,,,,,,,0,0,0,1,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,22 · Bilocale,Bilocale,luglio,93.39,81,100,93.56,93.32,2,0,31,0,1,2026-06-21T22:06:06.543+00:00
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,22 · Bilocale,Bilocale,agosto,223.79,150,337.5,237.5,218.18,2/3,0,31,0,1,2026-06-21T22:06:06.543+00:00
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,3 · Monolocale,Monolocale,luglio,,,,,,,0,0,,,2026-06-21T22:06:06.543+00:00
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,3 · Monolocale,Monolocale,agosto,,,,,,3,0,0,,,2026-06-21T22:06:06.543+00:00
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,4 · Monolocale,Monolocale,luglio,,,,,,,0,0,,,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,4 · Monolocale,Monolocale,agosto,,,,,,,0,0,,,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,5 · Stanza,Stanza,luglio,,,,,,,0,0,,,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,5 · Stanza,Stanza,agosto,,,,,,,0,0,,,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,6 · Monolocale,Monolocale,luglio,,,,,,,0,0,,,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,6 · Monolocale,Monolocale,agosto,,,,,,,0,0,,,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,7 · Monolocale,Monolocale,luglio,,,,,,,0,0,0,1,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,7 · Monolocale,Monolocale,agosto,,,,,,,0,0,0,1,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,8 · Monolocale,Monolocale,luglio,,,,,,,0,0,0,1,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,8 · Monolocale,Monolocale,agosto,,,,,,,0,0,0,1,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,9 · Monolocale,Monolocale,luglio,,,,,,,0,0,,,
+Montefeltro,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro,9 · Monolocale,Monolocale,agosto,,,,,,,0,0,,,
+Riccione,Riccione - Via Catullo 22,Default,Appartamento,luglio,418.06,400,470,453.33,403.64,3,31,31,500,1,2026-06-21T22:06:06.543+00:00
+Riccione,Riccione - Via Catullo 22,Default,Appartamento,agosto,419.68,400,470,456.67,404.55,3,0,31,500,1,2026-06-21T22:06:06.543+00:00
+Riccione,Riccione - Via Panzini 12/b,Default,Appartamento,luglio,423.29,276,628,519.22,384.04,1/2/3,21,31,400,1,2026-06-21T22:06:06.543+00:00
+Riccione,Riccione - Via Panzini 12/b,Default,Appartamento,agosto,594.26,420,828,693.57,550.81,3,0,23,400,1,2026-06-21T22:06:06.543+00:00
+Rimini,Miramare - Via Lugano 41,Default,Appartamento,luglio,,,,,,,0,0,9,1,
+Rimini,Miramare - Via Lugano 41,Default,Appartamento,agosto,,,,,,,0,0,9,1,
+Rimini,Rimini - Via Lagomaggio Monolocale,Default,Monolocale,luglio,,,,,,,0,0,250,3,
+Rimini,Rimini - Via Lagomaggio Monolocale,Default,Monolocale,agosto,,,,,,,0,0,250,3,
+Rimini,Rimini - Via Lagomaggio Trilocale,Default,Trilocale,luglio,,,,,,,0,0,150,0,
+Rimini,Rimini - Via Lagomaggio Trilocale,Default,Trilocale,agosto,,,,,,,0,0,150,0,
+Rimini,Rimini - Viale Giovanni Battista Ramusio 2,Default,Appartamento,luglio,,,,,,,0,0,500,1,
+Rimini,Rimini - Viale Giovanni Battista Ramusio 2,Default,Appartamento,agosto,,,,,,,0,0,500,1,
+Rimini,Rimini - Viale Zuara,Default,Appartamento,luglio,,,,,,,0,0,300,1,
+Rimini,Rimini - Viale Zuara,Default,Appartamento,agosto,,,,,,,0,0,300,1,
+Rivazzurra,Rivazzurra - Viale Bergamo 23,Default,Appartamento,luglio,156.61,104,170,156.11,156.82,3,0,31,500,1,2026-06-21T22:06:06.543+00:00
+Rivazzurra,Rivazzurra - Viale Bergamo 23,Default,Appartamento,agosto,254.84,250,260,254.44,255,3,0,31,500,1,2026-06-21T22:06:06.543+00:00
+San Giovanni In Marignano,San Giovanni In Marignano - Via Enrico Fermi 8,Default,Appartamento,luglio,,,,,,,0,0,400,1,
+San Giovanni In Marignano,San Giovanni In Marignano - Via Enrico Fermi 8,Default,Appartamento,agosto,,,,,,,0,0,400,1,
+Valtournenche,Valtournenche - Frazione Chaloz di Sotto SNC - Condominio Grolla A,Default,Appartamento,luglio,,,,,,,0,0,400,1,
+Valtournenche,Valtournenche - Frazione Chaloz di Sotto SNC - Condominio Grolla A,Default,Appartamento,agosto,,,,,,,0,0,400,1,
+Valtournenche,Valtournenche - Frazione Evette snc - Condominio Lisa,Default,Appartamento,luglio,121.15,72,339.6,178.42,97.72,2/3,2,31,400,1,2026-06-21T22:06:06.543+00:00
+Valtournenche,Valtournenche - Frazione Evette snc - Condominio Lisa,Default,Appartamento,agosto,324,274.8,471.6,395.6,294.71,3,6,31,400,1,2026-06-21T22:06:06.543+00:00
+Verona,Verona - Vicolo Pozzo 2,Default,Appartamento,luglio,,,,,,,0,0,75,1,
+Verona,Verona - Vicolo Pozzo 2,Default,Appartamento,agosto,,,,,,,0,0,75,1,
+Viserba,Viserba - Via Giuliano Dati 33 con Giardino,Default,Appartamento,luglio,,,,,,,0,0,400,1,
+Viserba,Viserba - Via Giuliano Dati 33 con Giardino,Default,Appartamento,agosto,,,,,,,0,0,400,1,
+Viserba,Viserba - Via Giuliano Dati 35 con Balcone,Default,Appartamento,luglio,507.74,339,668.25,622.44,460.82,2/3,8,31,400,1,2026-06-21T22:06:06.543+00:00
+Viserba,Viserba - Via Giuliano Dati 35 con Balcone,Default,Appartamento,agosto,550.73,350,825,612.5,525.45,1/3,3,31,400,1,2026-06-21T22:06:06.543+00:00
+Viserbella,Viserbella - Via Massimiliano Grazia 15,Default,Appartamento,luglio,,,,,,,0,0,400,1,
+Viserbella,Viserbella - Via Massimiliano Grazia 15,Default,Appartamento,agosto,,,,,,,0,0,400,1,

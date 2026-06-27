@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-05-12T12:51:36.667Z",
+  "checked_at": "2026-06-26T18:02:14.226Z",
   "config": "/Users/impattosrl/Desktop/fatture-impatto/config/project-links.json",
   "results": [
     {
@@ -77,13 +77,10 @@
     {
       "url": "https://checkin.illupoaffitta.com/manifest.json",
       "finalUrl": "https://checkin.illupoaffitta.com/manifest.json",
-      "status": 404,
-      "contentType": "text/html; charset=utf-8",
-      "ok": false,
-      "issues": [
-        "HTTP 404",
-        "renders a page-not-found document"
-      ],
+      "status": 200,
+      "contentType": "application/json",
+      "ok": true,
+      "issues": [],
       "notes": []
     },
     {
@@ -98,13 +95,10 @@
     {
       "url": "https://checkin.illupoaffitta.com/privacy-policy.html",
       "finalUrl": "https://checkin.illupoaffitta.com/privacy-policy.html",
-      "status": 404,
+      "status": 200,
       "contentType": "text/html; charset=utf-8",
-      "ok": false,
-      "issues": [
-        "HTTP 404",
-        "renders a page-not-found document"
-      ],
+      "ok": true,
+      "issues": [],
       "notes": []
     },
     {

@@ -12,9 +12,30 @@ const repoRoot = process.cwd();
 const targetRoot = path.join(repoRoot, RESIDENCE_PR_SNAPSHOT_TARGET);
 const issues = [];
 const generatedFiles = getResidencePrGeneratedFiles();
+const allowedSnapshotFiles = new Set([
+  ...RESIDENCE_PR_SNAPSHOT_FILES,
+  ...Object.keys(generatedFiles),
+  '_extract-summary.json',
+]);
 
 function readFileSafe(filePath) {
   return fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf8') : null;
+}
+
+function walkFiles(rootDir, currentDir = rootDir) {
+  if (!fs.existsSync(currentDir)) return [];
+
+  const files = [];
+  const entries = fs.readdirSync(currentDir, { withFileTypes: true });
+  for (const entry of entries) {
+    const absolutePath = path.join(currentDir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...walkFiles(rootDir, absolutePath));
+      continue;
+    }
+    files.push(path.relative(rootDir, absolutePath));
+  }
+  return files;
 }
 
 for (const relativePath of RESIDENCE_PR_SNAPSHOT_FILES) {
@@ -41,6 +62,12 @@ for (const relativePath of RESIDENCE_PR_REMOVED_RUNTIME_FILES) {
   const target = path.join(targetRoot, relativePath);
   if (fs.existsSync(target)) {
     issues.push(`deprecated runtime file still present in snapshot: ${relativePath}`);
+  }
+}
+
+for (const relativePath of walkFiles(targetRoot)) {
+  if (!allowedSnapshotFiles.has(relativePath)) {
+    issues.push(`unexpected file in snapshot: ${relativePath}`);
   }
 }
 

@@ -1,0 +1,47 @@
+property_id,room_id,city,min_price,base_price,max_price,matched_calendar_units,match_type
+324753,674391,Villa Margherita Trilocale,35,115,Non impostato,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare | 102 + 110,grouped_2
+324753,674392,Villa Margherita Trilocale,30,115,Non impostato,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare | 106 + 108,grouped_2
+335751,694705,Rimini,35,116,Non impostato,Rimini - Viale Zuara 10B | Default,single
+329762,683925,Gabicce Monte,60,91,Non impostato,Gabicce Monte - Via Emanuele Filiberto 9 | Default,single
+324716,674092,Fronte Strada - Cattolica,71,238,Non impostato,Cattolica - Via Venezia 7 Fronte Strada | Default,single
+324617,673993,Cattolica,44,146,Non impostato,Cattolica - Via Cremona 2/c interno 2 con Balcone Interno | Default,single
+324625,674001,8 - San Giovanni In Marignano,44,147,Non impostato,San Giovanni In Marignano - Via Enrico Fermi 8 | Default,single
+324630,674006,Cortile Interno - Cattolica,61,203,Non impostato,Cattolica - Via Venezia 7 Cortile Interno | Default,single
+327251,678976,Rimini,30,68,Non impostato,Rimini - Via Lagomaggio Monolocale | Default,single
+324765,674232,Cattolica,46,153,Non impostato,Cattolica - Via Cremona 2/c interno 1 con Balcone Davanti | Default,single
+324639,674015,7 - Complesso A - interno 20 - Fanano - Gradara,38,128,Non impostato,Fanano - Via Sotto Farneto snc | Default,single
+324764,674231,Cattolica,63,209,Non impostato,Cattolica - Via Bovio 25 | Default,single
+324674,674050,Rimini,37,122,Non impostato,Miramare - Via Lugano 41 | Default,single
+324704,674080,Cattolica,94,312,Non impostato,Cattolica - Via Rasi Spinelli 2 | Default,single
+324589,673965,Cattolica,52,173,Non impostato,Cattolica - Via Bovio 3 | Default,single
+324729,674105,Cattolica,47,155,Non impostato,Cattolica - Via Donizetti 13/a | Default,single
+324755,674178,Strada del Montefeltro 74 Pesaro,41,136,Non impostato,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro | 20 · Stanza · Beds24,single
+324753,674174,Villa Margherita Trilocale,30,65,Non impostato,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare | 104 + Mono 1° A + Mono 1° B,grouped_3
+324753,674172,Villa Margherita Trilocale,30,79,Non impostato,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare | Bilo 1° A + Bilo 1° B + Bilo 1° C + 202,grouped_4
+324615,673991,Piano Terra - Cattolica,50,166,Non impostato,Cattolica - Via Amalfi 5 con Cortile | Default,single
+324585,673961,Misano Adriatico,97,324,Non impostato,Misano Adriatico - Via Litoranea Sud 40 con Balcone | Default,single
+324584,673960,Cattolica,61,204,Non impostato,Cattolica - Via Amalfi 5 con Balcone | Default,single
+324548,673924,Viserbella di Rimini,46,153,Non impostato,Viserbella - Via Massimiliano Grazia 15 | Default,single
+329765,683928,Cattolica,63,210,Non impostato,Cattolica - Via Carducci 19 | Default,single
+329763,683926,Verona,47,155,Non impostato,Verona - Vicolo Pozzo 2 | Default,single
+324735,674134,Valtournenche - Condominio Lisa,58,193,Non impostato,Valtournenche - Frazione Evette snc - Condominio Lisa | Default,single
+324755,674180,Strada del Montefeltro 74 Pesaro,30,101,Non impostato,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro | 21 · Bilocale + 22 · Bilocale + 18 · Bilocale · Beds24 + 19 · Bilocale · Beds24,grouped_4
+324755,674179,Strada del Montefeltro 74 Pesaro,30,101,Non impostato,RESIDENCE MONTEFELTRO - Strada del Montefeltro 74 Pesaro | 8 · Monolocale + 7 · Monolocale + 15 · Monolocale · Beds24,grouped_3
+324752,674169,Rivazzurra,31,102,Non impostato,Rivazzurra - Viale Bergamo 23 | Default,single
+336124,695317,Antey-Saint-Andre,63,211,Non impostato,Valle d'Aosta - Grande Cervino Frazione Colavou 8 Antey-Saint-Andre | Default,single
+324637,674013,Cattolica,77,255,Non impostato,Cattolica - Via Giuseppe Mazzini 169 | Default,single
+329766,683929,Gabicce Mare,65,217,Non impostato,Gabicce Mare - Via Macchiavelli snc | Default,single
+324757,674182,Cattolica,79,262,Non impostato,Cattolica - Via Cesare Battisti 51 | Default,single
+335435,694148,Rimini,75,250,Non impostato,Rimini - Viale Giovanni Battista Ramusio 2 | Default,single
+324753,674173,Villa Margherita Trilocale,31,102,Non impostato,RESIDENCE VILLA MARGHERITA - Via Principe di Piemonte 52 Miramare | Trilo 3° A + Trilo 3° B + Trilo 1° + Trilo 3° C Family,grouped_4
+324751,674168,Cattolica,81,269,Non impostato,Cattolica - Via Fiume 37 | Default,single
+324653,674029,Riccione,88,293,Non impostato,Riccione - Via Panzini 12/b | Default,single
+324648,674024,Piano Terra Dietro - Cattolica,73,242,Non impostato,Cattolica - Via Zara 24 | Default,single
+324636,674012,Interno 3 - Cattolica,63,210,Non impostato,Cattolica - Via Verdi 29 | Default,single
+324544,673920,Misano Adriatico,119,395,Non impostato,Misano Adriatico - Via Litoranea Sud 40 con Terrazza Panoramica | Default,single
+324361,673551,Rimini,62,208,Non impostato,Rimini - Via Lagomaggio Trilocale | Default,single
+324726,674102,Valtournenche,47,157,Non impostato,Valtournenche - Frazione Chaloz di Sotto SNC - Condominio Grolla A | Default,single
+324748,674165,Piano Terra Dietro - Cattolica,38,127,Non impostato,Cattolica - Via Venezia 9 con cucina | Default,single
+324747,674164,Viserba,115,383,Non impostato,Viserba - Via Giuliano Dati 33 con Giardino | Default,single
+324746,674163,Viserba,61,204,Non impostato,Viserba - Via Giuliano Dati 35 con Balcone | Default,single
+329487,683448,Riccione,70,232,Non impostato,Riccione - Via Catullo 22 | Default,single

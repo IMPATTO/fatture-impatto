@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { resolveRuntimeConfig } from './lib/netlify-runtime-config.mjs';
 
 const AUTOMATION_ID = 'ottimizzatore-notti-vendute';
 const AUTOMATION_STEP = 'force-today-minstay';
@@ -393,17 +394,16 @@ function buildSummary(report) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help) {
-    console.log('Usage: node scripts/force-today-minstay.mjs [--today=YYYY-MM-DD] [--dry-run=true|false] [--format=json|markdown]');
+    console.log('Usage: node scripts/force-today-minstay.mjs [--today=YYYY-MM-DD] [--dry-run=true|false] [--format=json|markdown] [--allow-minstay=true|false]');
     process.exit(0);
   }
 
   const dryRun = parseBoolean(args['dry-run'], false);
   const format = String(args.format || 'json').trim().toLowerCase();
   const todayIso = String(args.today || isoDate(new Date()));
+  const allowMinStayAutomation = parseBoolean(args['allow-minstay'], parseBoolean(process.env.ALLOW_MIN_STAY_AUTOMATION, false));
 
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.SUPABASE_RUNTIME_URL || '';
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || '';
-  const beds24RefreshToken = String(process.env.BEDS24_REFRESH_TOKEN || process.env.BEDS24_API_KEY || '').trim();
+  const { supabaseUrl, supabaseKey, beds24RefreshToken } = resolveRuntimeConfig();
 
   if (!supabaseUrl || !supabaseKey) {
     throw new Error('SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY/SUPABASE_SERVICE_KEY sono obbligatori');
@@ -417,13 +417,15 @@ async function main() {
   });
 
   const context = await loadContext(client, todayIso);
-  const plan = buildPlan(context);
+  const plan = allowMinStayAutomation ? buildPlan(context) : { applied: [], skipped: [] };
   const report = {
     today: todayIso,
     dryRun,
     applied: plan.applied,
     skipped: plan.skipped,
-    warnings: [],
+    warnings: allowMinStayAutomation
+      ? []
+      : ['Min stay automation disabilitata di default. Usa --allow-minstay=true o ALLOW_MIN_STAY_AUTOMATION=true per abilitarla.'],
   };
 
   if (!dryRun && plan.applied.length) {

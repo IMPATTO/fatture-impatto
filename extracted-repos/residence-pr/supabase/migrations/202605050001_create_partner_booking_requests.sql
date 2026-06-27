@@ -52,7 +52,6 @@ create trigger trg_partner_booking_requests_updated_at
 before update on public.partner_booking_requests
 for each row execute function public.set_partner_booking_requests_updated_at();
 
-alter table public.partner_booking_requests enable row level security;
+alter table public.partner_booking_requests disable row level security;
 
-revoke all on public.partner_booking_requests from anon, authenticated;
-grant select, insert, update, delete on public.partner_booking_requests to service_role;
+grant select, insert, update on public.partner_booking_requests to anon, authenticated, service_role;

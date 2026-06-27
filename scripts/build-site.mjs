@@ -28,6 +28,10 @@ const site = siteRegistry[targetSiteKey];
 const outputRoot = path.join(repoRoot, 'dist', targetSiteKey);
 const outputFunctionsRoot = path.join(outputRoot, 'netlify', 'functions');
 const allPageOwners = getAllPageOwners();
+const calendarioBuildStamp = String(
+  process.env.CALENDARIO_ASSET_VERSION
+  || new Date().toISOString().replace(/\D/g, '').slice(0, 14)
+);
 
 function getSiteSourceRoot(currentSite = site) {
   return path.normalize(currentSite.sourceRoot || '.');
@@ -45,6 +49,20 @@ function ensureDir(dirPath) {
 
 function unique(items) {
   return [...new Set(items.filter(Boolean))];
+}
+
+function walkFiles(rootDir) {
+  const files = [];
+  const entries = fs.readdirSync(rootDir, { withFileTypes: true });
+  for (const entry of entries) {
+    const absolutePath = path.join(rootDir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...walkFiles(absolutePath));
+      continue;
+    }
+    files.push(absolutePath);
+  }
+  return files;
 }
 
 function resolveSourceRelativePath(relativePath, currentSite = site) {
@@ -172,6 +190,31 @@ function writeSiteSummary() {
   fs.writeFileSync(path.join(outputRoot, '_site-build.json'), `${JSON.stringify(summary, null, 2)}\n`, 'utf8');
 }
 
+function runCalendarioGuardrails() {
+  execFileSync('node', ['scripts/run-calendario-guardrails.mjs'], {
+    cwd: repoRoot,
+    stdio: 'inherit',
+    env: process.env,
+  });
+}
+
+function stampCalendarioAssetVersions() {
+  const assetFiles = walkFiles(outputRoot)
+    .filter((absolutePath) => /\.(html|js|css)$/i.test(absolutePath));
+
+  for (const absolutePath of assetFiles) {
+    const source = fs.readFileSync(absolutePath, 'utf8');
+    const next = source.replace(/\?v=[A-Za-z0-9._-]+/g, `?v=${calendarioBuildStamp}`);
+    if (next !== source) {
+      fs.writeFileSync(absolutePath, next, 'utf8');
+    }
+  }
+}
+
+if (targetSiteKey === 'calendario' && process.env.SKIP_CALENDARIO_GUARDS !== '1') {
+  runCalendarioGuardrails();
+}
+
 fs.rmSync(outputRoot, { recursive: true, force: true });
 ensureDir(outputRoot);
 ensureDir(outputFunctionsRoot);
@@ -206,6 +249,10 @@ if (!includedPages.has('index.html')) {
     throw new Error(`entryPage "${entryPage}" is not part of site "${targetSiteKey}" bundle`);
   }
   writeLocalEntryRedirect('index.html', entryPage);
+}
+
+if (targetSiteKey === 'calendario') {
+  stampCalendarioAssetVersions();
 }
 
 writeSiteSummary();

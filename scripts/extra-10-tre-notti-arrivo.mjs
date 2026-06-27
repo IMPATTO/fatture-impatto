@@ -338,7 +338,7 @@ async function loadContext(client, todayIso, targetDates) {
   };
 }
 
-function buildPlan(context) {
+function buildPlan(context, { allowMinStayAutomation = false } = {}) {
   const roomIdGroups = new Map();
   for (const unit of context.units) {
     const roomId = String(unit.beds24_room_id || '').trim();
@@ -432,7 +432,7 @@ function buildPlan(context) {
       }
 
       const offset = dayOffset(context.today, date);
-      const newMinStay = offset === 2 ? 1 : null;
+      const newMinStay = allowMinStayAutomation && offset === 2 ? 1 : null;
       applied.push({
         apartmentId: unit.apartment_id,
         apartmentName: unit.apartment_name,
@@ -587,7 +587,7 @@ function buildSummary(report) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help) {
-    console.log('Usage: node scripts/extra-10-tre-notti-arrivo.mjs [--today=YYYY-MM-DD] [--dry-run=true|false] [--format=json|markdown]');
+    console.log('Usage: node scripts/extra-10-tre-notti-arrivo.mjs [--today=YYYY-MM-DD] [--dry-run=true|false] [--format=json|markdown] [--allow-minstay=true|false]');
     process.exit(0);
   }
 
@@ -595,6 +595,7 @@ async function main() {
   const format = String(args.format || 'json').trim().toLowerCase();
   const todayIso = String(args.today || isoDate(new Date()));
   const targetDates = buildTargetDates(todayIso);
+  const allowMinStayAutomation = parseBoolean(args['allow-minstay'], parseBoolean(process.env.ALLOW_MIN_STAY_AUTOMATION, false));
 
   const { supabaseUrl, supabaseKey, beds24RefreshToken } = resolveRuntimeConfig();
 
@@ -611,7 +612,7 @@ async function main() {
   });
 
   const context = await loadContext(client, todayIso, targetDates);
-  const plan = buildPlan(context);
+  const plan = buildPlan(context, { allowMinStayAutomation });
   const runAtIso = new Date().toISOString();
 
   const report = {
@@ -621,7 +622,9 @@ async function main() {
     targetDates,
     applied: plan.applied,
     skipped: plan.skipped,
-    warnings: [],
+    warnings: allowMinStayAutomation
+      ? []
+      : ['Min stay automation disabilitata di default. Usa --allow-minstay=true o ALLOW_MIN_STAY_AUTOMATION=true per abilitarla.'],
   };
 
   if (!dryRun && plan.applied.length) {

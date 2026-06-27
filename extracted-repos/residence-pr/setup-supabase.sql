@@ -97,51 +97,41 @@ CREATE TABLE IF NOT EXISTS rm_audit (
 );
 
 -- ============================================================
--- RLS — ABILITATA
--- Accesso browser rimosso: queste tabelle vanno usate tramite Netlify
--- Functions con service role e sessioni applicative firmate.
+-- RLS — DISABILITATA per queste tabelle (auth via password lato app)
+-- L'anon key di Supabase può leggere/scrivere tutto.
+-- Sicurezza garantita dalla password condivisa nel frontend.
 -- ============================================================
-ALTER TABLE rm_apartments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE rm_unavailability ENABLE ROW LEVEL SECURITY;
-ALTER TABLE rm_bookings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE rm_audit ENABLE ROW LEVEL SECURITY;
-
-REVOKE ALL ON TABLE rm_apartments FROM anon, authenticated;
-REVOKE ALL ON TABLE rm_unavailability FROM anon, authenticated;
-REVOKE ALL ON TABLE rm_bookings FROM anon, authenticated;
-REVOKE ALL ON TABLE rm_audit FROM anon, authenticated;
-
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE rm_apartments TO service_role;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE rm_unavailability TO service_role;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE rm_bookings TO service_role;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE rm_audit TO service_role;
+ALTER TABLE rm_apartments DISABLE ROW LEVEL SECURITY;
+ALTER TABLE rm_unavailability DISABLE ROW LEVEL SECURITY;
+ALTER TABLE rm_bookings DISABLE ROW LEVEL SECURITY;
+ALTER TABLE rm_audit DISABLE ROW LEVEL SECURITY;
 
 -- ============================================================
 -- SEED DATI: 19 APPARTAMENTI + 3 ESTERNI
 -- ============================================================
 INSERT INTO rm_apartments (id, name, type, floor, capacity, group_name, note, blocked, external, sort_order) VALUES
   -- 4 MONO
-  ('M1', '104', 'mono', 'PT', 3, 'Monolocali', 'il migliore', false, false, 1),
-  ('M2', 'Mono 1° A', 'mono', '1°', 2, 'Monolocali', NULL, false, false, 2),
-  ('M3', 'Mono 1° B', 'mono', '1°', 2, 'Monolocali', NULL, false, false, 3),
-  ('M4', 'Mono 3°', 'mono', '3°', 2, 'Monolocali', 'standard base', false, false, 4),
+  ('M1', '104', 'mono', 'PT', 3, 'Monolocali', 'il migliore', false, false, 2),
+  ('M2', '210 Mono', 'mono', '1°', 2, 'Monolocali', NULL, false, false, 10),
+  ('M3', '208 Mono vista mare', 'mono', '1°', 2, 'Monolocali', NULL, false, false, 9),
+  ('M4', 'Mono 3°', 'mono', '3°', 2, 'Monolocali', 'standard base', false, false, 16),
   -- 10 BILO
-  ('BD1', 'Dependance 1', 'bilo', 'Dep', 5, 'Bilocali · Dependance', NULL, false, false, 10),
-  ('BD2', 'Dependance 2', 'bilo', 'Dep', 5, 'Bilocali · Dependance', NULL, false, false, 11),
-  ('BPT1', 'Bilo PT 1', 'bilo', 'PT', 6, 'Bilocali · Piano Terra', NULL, false, false, 20),
-  ('BPT2', 'Bilo PT 2', 'bilo', 'PT', 6, 'Bilocali · Piano Terra', NULL, false, false, 21),
-  ('BPT3', 'Bilo PT 3', 'bilo', 'PT', 6, 'Bilocali · Piano Terra', 'app.5', false, false, 22),
-  ('BPT4', 'Bilo PT 4', 'bilo', 'PT', 6, 'Bilocali · Piano Terra', NULL, false, false, 23),
-  ('B1A', 'Bilo 1° A', 'bilo', '1°', 6, 'Bilocali · Primo Piano', NULL, false, false, 30),
-  ('B1B', 'Bilo 1° B', 'bilo', '1°', 6, 'Bilocali · Primo Piano', NULL, false, false, 31),
-  ('B1C', 'Bilo 1° C', 'bilo', '1°', 6, 'Bilocali · Primo Piano', NULL, false, false, 32),
-  ('B202', '202 ★', 'bilo', '1°', 7, 'Bilocali · Primo Piano', 'vista mare', false, false, 33),
+  ('BD1', 'Dependance 1', 'bilo', 'Dep', 5, 'Bilocali · Dependance', NULL, false, false, 90),
+  ('BD2', 'Dependance 2', 'bilo', 'Dep', 5, 'Bilocali · Dependance', NULL, false, false, 91),
+  ('BPT1', 'Bilo PT 1', 'bilo', 'PT', 6, 'Bilocali · Piano Terra', NULL, false, false, 4),
+  ('BPT2', 'Bilo PT 2', 'bilo', 'PT', 6, 'Bilocali · Piano Terra', NULL, false, false, 3),
+  ('BPT3', 'Bilo PT 3', 'bilo', 'PT', 6, 'Bilocali · Piano Terra', 'app.5', false, false, 1),
+  ('BPT4', 'Bilo PT 4', 'bilo', 'PT', 6, 'Bilocali · Piano Terra', NULL, false, false, 5),
+  ('B1A', 'Bilo 1° A', 'bilo', '1°', 6, 'Bilocali · Primo Piano', NULL, false, false, 12),
+  ('B1B', 'Bilo 1° B', 'bilo', '1°', 6, 'Bilocali · Primo Piano', NULL, false, false, 11),
+  ('B1C', '206', 'bilo', '1°', 6, 'Bilocali · Primo Piano', NULL, false, false, 8),
+  ('B202', '202 (stella) bilo vista mare', 'bilo', '1°', 7, 'Bilocali · Primo Piano', 'vista mare', false, false, 6),
   -- 5 TRILO (3 operativi + 2 bloccati)
-  ('T1', 'Trilo 1° ★', 'trilo', '1°', 6, 'Trilocali', 'vista mare', false, false, 40),
-  ('T3A', 'Trilo 3° A', 'trilo', '3°', 8, 'Trilocali', NULL, false, false, 41),
-  ('T3B', 'Trilo 3° B', 'trilo', '3°', 8, 'Trilocali', NULL, false, false, 42),
-  ('T3C_FAMILY', 'Trilo 3° C', 'trilo', '3°', 8, 'Trilocali', 'Family Hotel · stagione', true, false, 43),
-  ('T3D_STAFF', 'Trilo 3° D', 'trilo', '3°', 8, 'Trilocali', 'Staff · stagione', true, false, 44),
+  ('T1', '204 Trilo', 'trilo', '1°', 6, 'Trilocali', 'vista mare', false, false, 7),
+  ('T3A', '304 Trilo vista mare', 'trilo', '3°', 8, 'Trilocali', NULL, false, false, 13),
+  ('T3B', '306 Trilo Grande Vista Mare', 'trilo', '3°', 8, 'Trilocali', NULL, false, false, 14),
+  ('T3C_FAMILY', '308 Trilo', 'trilo', '3°', 8, 'Trilocali', 'Family Hotel · stagione', true, false, 15),
+  ('T3D_STAFF', 'Trilo 3° D', 'trilo', '3°', 8, 'Trilocali', 'Staff · stagione', true, false, 17),
   -- 3 ESTERNI
   ('EXT_PORTO', 'Riccione Porto', 'trilo', 'Esterno', 8, 'Esterni · Altri Appartamenti', 'libero dal 20/6', false, true, 50),
   ('EXT_DANTE', 'Viale Dante', 'bilo', 'Esterno', 6, 'Esterni · Altri Appartamenti', 'bloccato 16-30 lug', false, true, 51),

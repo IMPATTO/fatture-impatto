@@ -53,6 +53,9 @@ exports.handler = async (event) => {
   if (!config) {
     return respond(400, { error: 'App non valida' });
   }
+  if (config.deprecated) {
+    return respond(410, { error: config.error || 'Modulo dismesso' });
+  }
   if (!password) {
     return respond(400, { error: 'Password obbligatoria' });
   }

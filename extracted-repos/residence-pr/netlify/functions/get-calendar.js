@@ -1,4 +1,10 @@
-const { getInternalSupabaseUserFromHeaders, normalizeSupabaseUrl } = require('./_lib/shared-auth');
+const { createClient } = require('@supabase/supabase-js');
+const {
+  getBearerToken,
+  getSupabaseUserFromToken,
+  normalizeSupabaseUrl,
+} = require('./_lib/shared-auth');
+const { resolvePmsCalendarScope } = require('./_lib/pms-calendar-access');
 
 const BEDS24_URL = 'https://api.beds24.com/v2';
 const CACHE = new Map();
@@ -17,6 +23,37 @@ const CACHE_STALE_TTL = {
   offers: 6 * 60 * 60 * 1000,
 };
 
+function normalizeExternalId(value) {
+  const normalized = String(value || '').trim();
+  return normalized || null;
+}
+
+function resolveApartmentPropertyId(apartment) {
+  return normalizeExternalId(apartment?.beds24_property_id)
+    || normalizeExternalId(apartment?.beds24_room_id);
+}
+
+function matchesRequestedRoom(apartment, requestedId) {
+  const normalizedRequestedId = normalizeExternalId(requestedId);
+  if (!normalizedRequestedId) return true;
+  return [
+    normalizeExternalId(apartment?.beds24_property_id),
+    normalizeExternalId(apartment?.beds24_room_id),
+  ].includes(normalizedRequestedId);
+}
+
+function findMissingPropertyIds(propertyIds, propertyRooms) {
+  const resolvedPropertyIds = new Set(
+    (propertyRooms || [])
+      .map((item) => normalizeExternalId(item?.propertyId))
+      .filter(Boolean)
+  );
+
+  return (propertyIds || [])
+    .map((value) => normalizeExternalId(value))
+    .filter((value) => value && !resolvedPropertyIds.has(value));
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
     return respond(204, '');
@@ -26,14 +63,28 @@ exports.handler = async (event) => {
     return respond(405, { error: 'Method not allowed' });
   }
 
+  const token = getBearerToken(event.headers || {});
+  if (!token) {
+    return respond(401, { error: 'Unauthorized' });
+  }
+
+  const user = await getSupabaseUserFromToken(token);
+  if (!user?.id) {
+    return respond(401, { error: 'Unauthorized' });
+  }
+
   const query = event.queryStringParameters || {};
   const from = query.dateFrom || new Date().toISOString().slice(0, 10);
   const to = query.dateTo || new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const roomId = String(query.roomId || '').trim();
+  const freshInventory = ['1', 'true'].includes(String(query.fresh || '').trim().toLowerCase());
   const diagnostics = createDiagnostics();
 
   const env = {
-    SUPABASE_URL: normalizeSupabaseUrl(process.env.SUPABASE_RUNTIME_URL || process.env.SUPABASE_URL),
+    SUPABASE_URL: normalizeSupabaseUrl(
+      process.env.SUPABASE_RUNTIME_URL || process.env.SUPABASE_URL,
+      'https://tysxeikqbgebpfyblgeb.supabase.co',
+    ),
     SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY,
     BEDS24_API_KEY: process.env.BEDS24_API_KEY,
   };
@@ -42,12 +93,18 @@ exports.handler = async (event) => {
   if (!env.SUPABASE_SERVICE_KEY) return respond(500, { error: 'SUPABASE_SERVICE_KEY mancante' });
 
   try {
-    const internalAuth = await getInternalSupabaseUserFromHeaders(event.headers);
-    const canViewGuestDetails = Boolean(internalAuth);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const scope = await resolvePmsCalendarScope(supabase, user.email || '');
+    if (!scope.canViewAny) {
+      return respond(403, { error: 'Forbidden: no calendar access configured' });
+    }
+
     const warnings = [];
-    const allApartments = await loadApartments(env, diagnostics);
+    const allApartments = await loadApartments(env, diagnostics, scope);
     const apartments = roomId
-      ? allApartments.filter((apartment) => String(apartment.beds24_room_id) === roomId)
+      ? allApartments.filter((apartment) => matchesRequestedRoom(apartment, roomId))
       : allApartments;
     let bookings = [];
     try {
@@ -63,12 +120,16 @@ exports.handler = async (event) => {
     }
     const roomMap = {};
     apartments.forEach((apartment) => {
-      roomMap[String(apartment.beds24_room_id)] = apartment.nome_appartamento;
+      const propertyId = resolveApartmentPropertyId(apartment);
+      if (propertyId) {
+        roomMap[propertyId] = apartment.nome_appartamento;
+      }
     });
 
     const normalizedBookings = bookings.map((booking) => {
       const propertyKey = String(booking.propertyId || booking.roomId || '');
-      const resolvedGuestName = [booking.firstName, booking.lastName].filter(Boolean).join(' ')
+      const roomKey = String(booking.roomId || '').trim();
+      const guestName = [booking.firstName, booking.lastName].filter(Boolean).join(' ')
         || [booking.guestFirstName, booking.guestName].filter(Boolean).join(' ')
         || booking.firstName
         || booking.guestFirstName
@@ -78,60 +139,74 @@ exports.handler = async (event) => {
 
       return {
         id: String(booking.bookId || booking.id || ''),
-        roomId: propertyKey,
+        roomId: roomKey || propertyKey,
         propertyId: propertyKey,
-        unitId: String(booking.roomId || ''),
+        unitId: roomKey,
         roomName: roomMap[propertyKey] || `Property ${propertyKey || booking.roomId || 'N/D'}`,
-        guestName: canViewGuestDetails ? resolvedGuestName : 'Occupato',
+        guestName,
         checkIn: booking.arrival || booking.checkIn || '',
         checkOut: booking.departure || booking.checkOut || '',
         nights: booking.numNights || booking.nights || null,
-        channel: canViewGuestDetails ? (booking.referer || booking.channel || '') : '',
+        channel: booking.referer || booking.channel || '',
         status: booking.status || '',
-        price: canViewGuestDetails ? (booking.price || booking.totalPrice || null) : null,
+        price: booking.price || booking.totalPrice || null,
       };
     });
 
-    const inventory = await loadInventoryDays(env, apartments, normalizedBookings, from, to, roomId, diagnostics);
+    const inventory = await loadInventoryDays(
+      env,
+      apartments,
+      normalizedBookings,
+      from,
+      to,
+      roomId,
+      diagnostics,
+      { freshInventory },
+    );
 
     return respond(200, {
       bookings: normalizedBookings,
       apartments: apartments.map((apartment) => ({
         id: apartment.id,
         name: apartment.nome_appartamento,
+        beds24_property_id: resolveApartmentPropertyId(apartment),
         beds24_room_id: apartment.beds24_room_id,
       })),
       inventoryDays: inventory.inventoryDays,
       warnings: [...warnings, ...inventory.warnings],
       diagnostics,
-      meta: {
-        guest_details_included: canViewGuestDetails,
-      },
     });
   } catch (error) {
     return respond(500, { error: error.message });
   }
 };
 
-async function loadApartments(env, diagnostics) {
+async function loadApartments(env, diagnostics, scope) {
   return withCache({
-    key: `apartments:${env.SUPABASE_URL}`,
+    key: `apartments:${env.SUPABASE_URL}:${scope?.isGlobalEditor ? 'all' : (scope?.apartmentIds || []).sort().join(',')}`,
     ttlMs: CACHE_TTL.apartments,
     staleTtlMs: CACHE_STALE_TTL.apartments,
     diagnostics,
     loader: async () => {
-      const res = await fetch(
-        `${env.SUPABASE_URL}/rest/v1/apartments?select=id,nome_appartamento,beds24_room_id&beds24_room_id=not.is.null&order=nome_appartamento`,
-        {
-          headers: {
-            apikey: env.SUPABASE_SERVICE_KEY,
-            Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
-          },
-        }
-      );
+      const url = new URL(`${env.SUPABASE_URL}/rest/v1/apartments`);
+      url.searchParams.set('select', 'id,nome_appartamento,beds24_property_id,beds24_room_id');
+      url.searchParams.set('order', 'nome_appartamento');
+      if (!scope?.isGlobalEditor) {
+        const ids = (scope?.apartmentIds || []).filter(Boolean);
+        if (!ids.length) return [];
+        url.searchParams.set('id', `in.(${ids.join(',')})`);
+      }
+
+      const res = await fetch(String(url), {
+        headers: {
+          apikey: env.SUPABASE_SERVICE_KEY,
+          Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+        },
+      });
 
       if (!res.ok) throw new Error(`Errore lettura apartments: ${res.status}`);
-      return await res.json();
+      const rows = await res.json();
+      return (Array.isArray(rows) ? rows : []).filter((row) => resolveApartmentPropertyId(row));
     },
   });
 }
@@ -162,13 +237,13 @@ async function loadBookings(env, from, to, roomId, diagnostics) {
   });
 }
 
-async function loadInventoryDays(env, apartments, bookings, from, to, selectedRoomId, diagnostics) {
+async function loadInventoryDays(env, apartments, bookings, from, to, selectedRoomId, diagnostics, { freshInventory = false } = {}) {
   const warnings = [];
   if (!apartments.length) {
     return { inventoryDays: [], warnings };
   }
 
-  const propertyIds = [...new Set(apartments.map((apartment) => String(apartment.beds24_room_id)).filter(Boolean))];
+  const propertyIds = [...new Set(apartments.map((apartment) => resolveApartmentPropertyId(apartment)).filter(Boolean))];
   let propertyRooms = [];
   try {
     propertyRooms = await loadPropertyRooms(env, propertyIds, diagnostics);
@@ -183,12 +258,17 @@ async function loadInventoryDays(env, apartments, bookings, from, to, selectedRo
     return { inventoryDays: [], warnings };
   }
   const roomIds = propertyRooms.map((item) => item.roomId);
+  const missingPropertyIds = findMissingPropertyIds(propertyIds, propertyRooms);
   console.info('[get-calendar] inventory setup', {
     propertyIds,
     roomIds,
     dateFrom: from,
     dateTo: to,
   });
+
+  if (missingPropertyIds.length) {
+    warnings.push(`Property Beds24 senza room type risolta: ${missingPropertyIds.join(', ')}`);
+  }
 
   if (!roomIds.length) {
     warnings.push('Inventory Beds24 non disponibile: room type non risolte per le property richieste.');
@@ -203,14 +283,15 @@ async function loadInventoryDays(env, apartments, bookings, from, to, selectedRo
   const availabilityMap = new Map();
   const offerPriceMap = new Map();
   const roomByProperty = new Map(propertyRooms.map((item) => [item.propertyId, item]));
-  await loadCalendarOverrides(env, roomIds, from, to, diagnostics, warnings, calendarMap, propertyIds);
-  await loadAvailability(env, roomIds, from, to, diagnostics, warnings, availabilityMap, propertyIds);
+  await loadCalendarOverrides(env, roomIds, from, to, diagnostics, warnings, calendarMap, propertyIds, { freshInventory });
+  await loadAvailability(env, roomIds, from, to, diagnostics, warnings, availabilityMap, propertyIds, { freshInventory });
 
   if (selectedRoomId) {
     try {
-      const selectedRoomInfo = roomByProperty.get(String(selectedRoomId));
+      const selectedRoomInfo = roomByProperty.get(String(selectedRoomId))
+        || propertyRooms.find((item) => String(item.roomId) === String(selectedRoomId));
       const offerRoomIds = selectedRoomInfo?.roomId ? [selectedRoomInfo.roomId] : [];
-      const offerPrices = await loadOfferPrices(env, offerRoomIds, from, to, diagnostics);
+      const offerPrices = await loadOfferPrices(env, offerRoomIds, from, to, diagnostics, { freshInventory });
       offerPrices.forEach((value, key) => offerPriceMap.set(key, value));
       if (offerPriceMap.size) {
         warnings.push('Prezzi calcolati da Beds24 offers per 2 adulti');
@@ -240,30 +321,32 @@ async function loadInventoryDays(env, apartments, bookings, from, to, selectedRo
 
   const inventoryDays = [];
   apartments.forEach((apartment) => {
-    const propertyId = String(apartment.beds24_room_id);
+    const propertyId = resolveApartmentPropertyId(apartment);
+    if (!propertyId) return;
     const roomInfo = roomByProperty.get(propertyId);
-      const roomKey = roomInfo?.roomId || null;
-      for (const date of eachDate(from, to)) {
-        const calendarEntry = roomKey ? calendarMap.get(`${roomKey}:${date}`) : null;
-        const availability = roomKey ? availabilityMap.get(`${roomKey}:${date}`) : null;
-        const offerEntry = roomKey ? offerPriceMap.get(`${roomKey}:${date}`) : null;
-        const booking = bookingsByPropertyAndDate.get(`${propertyId}:${date}`) || null;
-        const derivedClosed = calendarEntry?.closed != null
-          ? Boolean(calendarEntry.closed)
-          : (availability == null ? null : !availability);
+    const roomKey = roomInfo?.roomId || normalizeExternalId(apartment.beds24_room_id) || null;
+    for (const date of eachDate(from, to)) {
+      const calendarEntry = roomKey ? calendarMap.get(`${roomKey}:${date}`) : null;
+      const availability = roomKey ? availabilityMap.get(`${roomKey}:${date}`) : null;
+      const offerEntry = roomKey ? offerPriceMap.get(`${roomKey}:${date}`) : null;
+      const booking = bookingsByPropertyAndDate.get(`${propertyId}:${date}`) || null;
+      const derivedClosed = calendarEntry?.closed != null
+        ? Boolean(calendarEntry.closed)
+        : (availability == null ? null : !availability);
 
-        inventoryDays.push({
-          date,
-          propertyId,
-          apartmentId: apartment.id,
-          price: normalizeNumber(offerEntry?.price ?? calendarEntry?.price),
-          priceSource: offerEntry?.price != null ? 'offers' : (calendarEntry?.price != null ? 'calendar' : null),
-          minStay: normalizeInteger(calendarEntry?.minStay),
-          closed: derivedClosed === null ? false : derivedClosed,
-          available: availability == null ? null : Boolean(availability),
-          hasBooking: Boolean(booking),
-          booking: booking ? {
-            id: booking.id,
+      inventoryDays.push({
+        date,
+        propertyId,
+        roomId: roomKey,
+        apartmentId: apartment.id,
+        price: normalizeNumber(offerEntry?.price ?? calendarEntry?.price),
+        priceSource: offerEntry?.price != null ? 'offers' : (calendarEntry?.price != null ? 'calendar' : null),
+        minStay: normalizeInteger(calendarEntry?.minStay),
+        closed: derivedClosed === null ? false : derivedClosed,
+        available: availability == null ? null : Boolean(availability),
+        hasBooking: Boolean(booking),
+        booking: booking ? {
+          id: booking.id,
           guestName: booking.guestName,
           checkIn: booking.checkIn,
           checkOut: booking.checkOut,
@@ -275,7 +358,7 @@ async function loadInventoryDays(env, apartments, bookings, from, to, selectedRo
   return { inventoryDays, warnings };
 }
 
-async function loadOfferPrices(env, roomIds, from, to, diagnostics) {
+async function loadOfferPrices(env, roomIds, from, to, diagnostics, { freshInventory = false } = {}) {
   if (!roomIds.length) return new Map();
   const map = new Map();
   const today = new Date().toISOString().slice(0, 10);
@@ -286,6 +369,7 @@ async function loadOfferPrices(env, roomIds, from, to, diagnostics) {
       key: `offers:${roomIds.slice().sort().join(',')}:${date}:2`,
       ttlMs: CACHE_TTL.offers,
       staleTtlMs: CACHE_STALE_TTL.offers,
+      bypassCache: freshInventory,
       diagnostics,
       loader: async () => {
         const departure = addDaysUtc(parseIsoDateUtc(date), 1);
@@ -523,11 +607,13 @@ function respond(statusCode, payload) {
   };
 }
 
-async function loadCalendarOverrides(env, roomIds, from, to, diagnostics, warnings, calendarMap, propertyIds) {
+async function loadCalendarOverrides(env, roomIds, from, to, diagnostics, warnings, calendarMap, propertyIds, { freshInventory = false } = {}) {
   const params = new URLSearchParams();
   roomIds.forEach((id) => params.append('roomId', id));
   params.set('from', from);
   params.set('to', to);
+  params.set('includePrices', 'true');
+  params.set('includeMinStay', 'true');
   const path = `/inventory/rooms/calendar?${params.toString()}`;
 
   try {
@@ -535,6 +621,7 @@ async function loadCalendarOverrides(env, roomIds, from, to, diagnostics, warnin
       key: `calendar:${roomIds.slice().sort().join(',')}:${from}:${to}`,
       ttlMs: CACHE_TTL.inventory,
       staleTtlMs: CACHE_STALE_TTL.inventory,
+      bypassCache: freshInventory,
       diagnostics,
       loader: async () => {
         const calendarRes = await beds24Fetch(path, env, {}, diagnostics);
@@ -567,7 +654,7 @@ async function loadCalendarOverrides(env, roomIds, from, to, diagnostics, warnin
   }
 }
 
-async function loadAvailability(env, roomIds, from, to, diagnostics, warnings, availabilityMap, propertyIds) {
+async function loadAvailability(env, roomIds, from, to, diagnostics, warnings, availabilityMap, propertyIds, { freshInventory = false } = {}) {
   const params = new URLSearchParams();
   roomIds.forEach((id) => params.append('roomId', id));
   params.set('dateFrom', from);
@@ -579,6 +666,7 @@ async function loadAvailability(env, roomIds, from, to, diagnostics, warnings, a
       key: `availability:${roomIds.slice().sort().join(',')}:${from}:${to}`,
       ttlMs: CACHE_TTL.inventory,
       staleTtlMs: CACHE_STALE_TTL.inventory,
+      bypassCache: freshInventory,
       diagnostics,
       loader: async () => {
         const availabilityRes = await beds24Fetch(path, env, {}, diagnostics);
@@ -613,10 +701,10 @@ async function loadAvailability(env, roomIds, from, to, diagnostics, warnings, a
   }
 }
 
-function withCache({ key, ttlMs, staleTtlMs, diagnostics, loader }) {
+function withCache({ key, ttlMs, staleTtlMs, diagnostics, loader, bypassCache = false }) {
   const now = Date.now();
   const cached = CACHE.get(key);
-  if (cached && cached.expiresAt > now) {
+  if (!bypassCache && cached && cached.expiresAt > now) {
     diagnostics.cacheHits += 1;
     return Promise.resolve(cached.value);
   }
@@ -665,3 +753,11 @@ function isRateLimitError(error) {
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+module.exports.__test__ = {
+  normalizeExternalId,
+  resolveApartmentPropertyId,
+  matchesRequestedRoom,
+  findMissingPropertyIds,
+  normalizeCalendarEntries,
+};

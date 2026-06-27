@@ -118,7 +118,10 @@ function renderMarkdown(report) {
     lines.push('Nessuna notte aggiornata.');
   } else {
     for (const item of report.applied.slice(0, 80)) {
-      lines.push(`- ${item.apartmentName} / ${item.unitLabel} / ${item.date}: prezzo ${item.currentPrice ?? 'n.d.'} -> ${item.newPrice ?? 'n.d.'}, min stay ${item.currentMinStay ?? '-'} -> ${item.newMinStay ?? '-'} [${item.tags.join(', ')}]`);
+      const minStayDelta = item.newMinStay != null && item.newMinStay !== item.currentMinStay
+        ? `, min stay ${item.currentMinStay ?? '-'} -> ${item.newMinStay}`
+        : '';
+      lines.push(`- ${item.apartmentName} / ${item.unitLabel} / ${item.date}: prezzo ${item.currentPrice ?? 'n.d.'} -> ${item.newPrice ?? 'n.d.'}${minStayDelta} [${item.tags.join(', ')}]`);
     }
   }
 
@@ -186,7 +189,7 @@ async function pushBeds24Calendar(token, payload) {
   return data;
 }
 
-function runOptimizer(strategy, windowDays, todayIso) {
+function runOptimizer(strategy, windowDays, todayIso, runtimeConfig = {}) {
   const args = [
     'scripts/revenue-optimizer.mjs',
     `--strategy=${strategy}`,
@@ -199,7 +202,11 @@ function runOptimizer(strategy, windowDays, todayIso) {
     cwd: process.cwd(),
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
-    env: process.env,
+    env: {
+      ...process.env,
+      ...(runtimeConfig.supabaseUrl ? { SUPABASE_URL: runtimeConfig.supabaseUrl } : {}),
+      ...(runtimeConfig.supabaseKey ? { SUPABASE_SERVICE_ROLE_KEY: runtimeConfig.supabaseKey } : {}),
+    },
     maxBuffer: 1024 * 1024 * 12,
   });
 
@@ -313,7 +320,7 @@ function wasAppliedToday(change, currentPrice, currentMinStay, currentClosed) {
   return priceProtected && minStayProtected && closedProtected;
 }
 
-function buildPlan(actions, context) {
+function buildPlan(actions, context, { allowMinStayAutomation = false } = {}) {
   const roomIdGroups = new Map();
   for (const unit of context.units) {
     const roomId = String(unit.beds24_room_id || '').trim();
@@ -389,7 +396,8 @@ function buildPlan(actions, context) {
     }
 
     const newPrice = normalizePrice(action.recommendedPrice);
-    const newMinStay = normalizeNullableInteger(action.recommendedMinStay);
+    const recommendedMinStay = normalizeNullableInteger(action.recommendedMinStay);
+    const newMinStay = allowMinStayAutomation ? recommendedMinStay : null;
     const newClosed = action.recommendedClosed === null || action.recommendedClosed === undefined
       ? null
       : action.recommendedClosed === true;
@@ -589,6 +597,7 @@ async function main() {
   const strategy = String(args.strategy || 'combined').trim() || 'combined';
   const windowDays = clampWindowDays(parseIntArg(args['window-days'], MAX_WINDOW_DAYS));
   const todayIso = String(args.today || isoDate(new Date()));
+  const allowMinStayAutomation = parseBoolean(args['allow-minstay'], parseBoolean(getEnvValue('ALLOW_MIN_STAY_AUTOMATION'), false));
 
   const { supabaseUrl, supabaseKey, beds24RefreshToken } = resolveRuntimeConfig();
   if (!supabaseUrl || !supabaseKey) {
@@ -598,13 +607,13 @@ async function main() {
     throw new Error('BEDS24_REFRESH_TOKEN o BEDS24_API_KEY e obbligatorio per la scrittura live');
   }
 
-  const optimizerResult = runOptimizer(strategy, windowDays, todayIso);
+  const optimizerResult = runOptimizer(strategy, windowDays, todayIso, { supabaseUrl, supabaseKey });
   const client = createClient(supabaseUrl, supabaseKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
   const context = await loadContext(client, todayIso, windowDays);
-  const plan = buildPlan(Array.isArray(optimizerResult.actions) ? optimizerResult.actions : [], context);
+  const plan = buildPlan(Array.isArray(optimizerResult.actions) ? optimizerResult.actions : [], context, { allowMinStayAutomation });
   const runAtIso = new Date().toISOString();
 
   const report = {
@@ -617,7 +626,9 @@ async function main() {
     optimizerSummary: optimizerResult.summary || {},
     applied: plan.applied,
     skipped: plan.skipped,
-    warnings: [],
+    warnings: allowMinStayAutomation
+      ? []
+      : ['Min stay automation disabilitata di default. Usa --allow-minstay=true o ALLOW_MIN_STAY_AUTOMATION=true per abilitarla.'],
   };
 
   if (!dryRun && plan.applied.length) {
