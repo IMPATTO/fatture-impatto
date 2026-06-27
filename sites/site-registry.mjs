@@ -43,6 +43,7 @@ export const siteRegistry = {
       'backoffice-operativita.html',
       'backoffice-richieste.html',
       'backoffice-beds24-messaggi.html',
+      'backoffice-beds24-reviews.html',
     ],
     assets: [
       'js/site-links.js',
@@ -50,6 +51,8 @@ export const siteRegistry = {
       'js/backoffice-operativita.js',
     ],
     functions: [
+      'beds24-review-drafts',
+      'cron-review-drafts',
       'daily-checkin-checkout-notify',
       'get-backoffice-richieste',
       'get-operativita-apartments',
@@ -67,6 +70,7 @@ export const siteRegistry = {
       'carica-documenti-fattura.html',
     ],
     assets: [
+      'comuni.csv',
       'js/legacy-host-redirect.js',
       'js/site-links.js',
       'js/supabase-client.js',
@@ -76,8 +80,11 @@ export const siteRegistry = {
       'apply-apartment-links',
       'audit-apartment-links',
       'create-public-checkin-emergency-token',
+      'create-public-tourist-tax-stripe-checkout',
+      'create-public-checkin-upload-urls',
       'get-backoffice-portale-data',
       'get-public-portal-data',
+      'get-public-tourist-tax-stripe-session',
       'lookup-comuni',
       'log-legacy-redirect',
       'ocr',

@@ -86,6 +86,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .role-choice-copy{flex:1;min-width:0;}
 .role-choice-copy strong{display:block;font-size:14px;font-weight:500;color:var(--text);}
 .role-choice-copy span{display:block;margin-top:4px;font-size:11px;line-height:1.5;color:var(--text3);font-family:'DM Mono',monospace;}
+.tourist-tax-panel{margin-top:14px;}
 .dynamic-guest-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-top:10px;}
 .dynamic-guest-card h4{font-size:12px;font-family:'DM Mono',monospace;letter-spacing:0.08em;color:var(--text2);margin-bottom:12px;text-transform:uppercase;}
 .checkbox-row{display:flex;align-items:flex-start;gap:10px;}
@@ -196,6 +197,85 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
     <div class="intro">
       <h2 data-t="title1">I tuoi dati<br><em>check-in</em></h2>
       <p data-t="sub1">Compila i campi per ricevere la ricevuta del tuo soggiorno.</p>
+    </div>
+
+    <div class="card" id="touristTaxCard" style="display:none">
+      <div class="card-header"><span class="card-title" data-t="touristTaxTitle">TASSA DI SOGGIORNO</span></div>
+      <div class="card-body">
+        <div class="helper-note" data-t="touristTaxIntro">Prima di procedere con il check-in e con le istruzioni per accedere all'appartamento, devi effettuare il pagamento della tassa di soggiorno obbligatoria. Guarda la tua prenotazione su Booking: li potrai vedere quanto devi pagare. Scegli qui sotto come vuoi pagare.</div>
+        <div class="field" id="touristTaxAmountField" style="margin-top:14px">
+          <label><span data-t="touristTaxAmountLabel">Importo tassa di soggiorno su Booking</span> <span class="req">*</span></label>
+          <input type="text" id="touristTaxAmount" inputmode="decimal" placeholder="12,00" oninput="handleTouristTaxAmountInput()">
+          <div class="helper-note" data-t="touristTaxAmountNote">Inserisci qui il totale da pagare, come indicato nella prenotazione Booking.</div>
+        </div>
+        <div class="field" id="touristTaxConfirmField">
+          <div class="checkbox-row">
+            <input type="checkbox" id="touristTaxConfirm" onchange="handleTouristTaxConfirmChange()">
+            <label class="checkbox-copy" for="touristTaxConfirm" data-t="touristTaxConfirmLabel">Confermo di aver verificato su Booking l'importo della tassa di soggiorno da pagare.</label>
+          </div>
+        </div>
+        <div class="field" id="touristTaxMethodField">
+          <label><span data-t="touristTaxMethodLabel">Metodo di pagamento</span> <span class="req">*</span></label>
+          <div class="role-choice-grid" id="touristTaxMethodOptions" style="margin-top:10px">
+            <label class="role-choice-option active" id="touristTaxMethodBankOption">
+              <input type="radio" name="touristTaxMethod" id="touristTaxMethodBank" value="bank_transfer" checked onchange="handleTouristTaxMethodChange()">
+              <span class="role-choice-copy">
+                <strong data-t="touristTaxMethodBankTransfer">Bonifico bancario</strong>
+                <span data-t="touristTaxMethodBankTransferHint">Carica la ricevuta o uno screenshot del pagamento.</span>
+              </span>
+            </label>
+            <label class="role-choice-option" id="touristTaxMethodStripeOption">
+              <input type="radio" name="touristTaxMethod" id="touristTaxMethodStripe" value="stripe_checkout" onchange="handleTouristTaxMethodChange()">
+              <span class="role-choice-copy">
+                <strong data-t="touristTaxMethodStripe">Carta online con Stripe</strong>
+                <span data-t="touristTaxMethodStripeHint">Paga con carta e torna qui automaticamente al termine.</span>
+              </span>
+            </label>
+          </div>
+        </div>
+        <div class="tourist-tax-panel" id="touristTaxBankPanel">
+          <div class="helper-note" data-t="touristTaxBankIntro">Se preferisci il bonifico, usa questi dati:</div>
+          <div class="review-box" style="margin-top:14px">
+            <div class="review-row">
+              <span class="review-key" data-t="touristTaxBeneficiaryLabel">INTESTATARIO</span>
+              <span class="review-val mono" id="touristTaxBeneficiaryValue">Impatto S.R.L.</span>
+            </div>
+            <div class="review-row">
+              <span class="review-key" data-t="touristTaxIbanLabel">IBAN</span>
+              <span class="review-val mono" id="touristTaxIbanValue">IT28 J 0709 06777 00100 1021 8743</span>
+            </div>
+            <div class="review-row">
+              <span class="review-key" data-t="touristTaxBicLabel">BIC/SWIFT</span>
+              <span class="review-val mono" id="touristTaxBicValue">CCRTIT2TMAL</span>
+            </div>
+          </div>
+          <div class="field" id="touristTaxField" style="margin-top:14px">
+            <label><span data-t="touristTaxUploadTitle">Prova del bonifico</span> <span class="req">*</span></label>
+            <div class="upload-optional">
+              <input type="file" id="touristTaxProofInput" accept=".pdf,image/*" multiple onchange="handleTouristTaxProofFiles(this.files)">
+              <div class="upload-icon">&#128196;</div>
+              <h3 data-t="touristTaxUploadTitle">Prova del bonifico</h3>
+              <p data-t="touristTaxUploadSub">PDF o screenshot del pagamento</p>
+            </div>
+            <div class="upload-list" id="touristTaxUploadList"></div>
+            <div class="upload-note" data-t="touristTaxUploadHint">Carica la ricevuta del bonifico o uno screenshot leggibile del pagamento.</div>
+          </div>
+        </div>
+        <div class="tourist-tax-panel" id="touristTaxStripeField" style="display:none">
+          <div class="helper-note" data-t="touristTaxStripeIntro">In alternativa puoi pagare online con carta tramite Stripe. Dopo il pagamento torni qui e puoi continuare il check-in.</div>
+          <div class="document-flow-actions">
+            <button class="btn-primary" type="button" id="touristTaxStripeBtn" onclick="startTouristTaxStripeCheckout()" data-t="touristTaxStripeCta">Paga con carta</button>
+          </div>
+          <div class="upload-note" data-t="touristTaxStripeHint">Si apre la pagina protetta di Stripe e, a pagamento completato, torni automaticamente qui.</div>
+        </div>
+        <div class="ocr-status" id="touristTaxVerificationStatus">
+          <div class="spinner" id="touristTaxVerificationSpinner"></div>
+          <span id="touristTaxVerificationMsg"></span>
+        </div>
+        <div class="document-flow-actions" style="margin-top:12px">
+          <a class="btn-secondary" id="touristTaxWhatsappLink" href="#" target="_blank" rel="noopener" data-t="touristTaxWhatsappCta">Hai problemi? Scrivi a Serena su WhatsApp</a>
+        </div>
+      </div>
     </div>
 
     <div class="card">
@@ -374,7 +454,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
           </div>
           <div class="field">
             <label><span data-t="issuePlaceLabel">Comune di rilascio documento</span> <span class="req">*</span></label>
-            <input type="text" id="luogoRilascioDocumento" placeholder="Pesaro" oninput="markFilled(this);handleComuneFieldInput('issue')" onchange="handleComuneFieldInput('issue')">
+            <input type="text" id="luogoRilascioDocumento" placeholder="Pesaro" list="countryOptions" oninput="handleIssuePlaceInput()" onchange="handleIssuePlaceBlur()" autocomplete="country-name">
             <input type="hidden" id="luogoRilascioCodice">
             <div class="helper-note warn" id="luogoRilascioStatus" style="display:none"></div>
           </div>
@@ -519,6 +599,15 @@ function getPortalBaseUrl(){
   if(canonicalHost&&host===canonicalHost)return origin;
   return canonical||origin;
 }
+function isTouristTaxStripeEnabled(){
+  if(window.__CHECKIN_STRIPE_ENABLED===true)return true;
+  var params=new URLSearchParams(window.location.search);
+  var stripeParam=String(params.get('stripe')||'').trim().toLowerCase();
+  if(['1','true','yes','on'].indexOf(stripeParam)>=0)return true;
+  if(params.has('stripe_checkout')||params.has('stripe_session_id'))return true;
+  var host=String(window.location.hostname||'').trim().toLowerCase();
+  return host==='localhost'||host==='127.0.0.1';
+}
 var PORTAL_BASE_URL = getPortalBaseUrl();
 var T={
   it:{step1:'DATI',step2:'CONFERMA',title1:'I tuoi dati<br><em>check-in</em>',sub1:'Compila i campi per completare il check-in.',title2:'Conferma<br><em>i tuoi dati</em>',sub2:'Controlla che tutto sia corretto.',residenzaLabel:'PAESE DI RESIDENZA',paese:'Paese',countryNotice:'Per ospiti non residenti in Italia, codice fiscale e indirizzo non sono obbligatori.',anagraficaLabel:'DATI ANAGRAFICI',stayInfoLabel:'DATI SOGGIORNO',guestsCountLabel:'Numero ospiti',guestDocumentsLabel:'Documenti ospite principale',guestDocumentsLabelOther:'Documenti ospite',groupRoleAutoHint:'Scegli il ruolo del primo ospite quando viaggiate in piu persone.',invoiceLabel:'FATTURA',invoiceToggle:'Vuoi fattura?',invoiceNote:'Se sei una persona fisica, non serve compilare la sezione azienda: la fattura verra emessa automaticamente con i dati gia inseriti sopra e inviata alla tua email. Questa sezione serve solo se ti occorrono dati aziendali o un\'intestazione diversa.',nome:'Nome',cognome:'Cognome',email:'Email',telefono:'Telefono',birthDate:'Data di nascita',birthPlace:'Luogo di nascita',birthOriginLabel:'Luogo di nascita',birthOriginHint:'Seleziona dove e nato il guest principale per compilare i codici Alloggiati in modo corretto.',bornInItaly:'Nato in Italia',bornAbroad:"Nato all'estero",birthPlaceComune:'Comune di nascita',birthCountryLabel:'Stato/Paese di nascita',sexLabel:'Sesso',citizenshipLabel:'Cittadinanza',documentTypeLabel:'Tipo documento',documentTypeIdentity:"Carta d'identita",documentTypePassport:'Passaporto',documentTypeDrivingLicense:'Patente',documentNumberLabel:'Numero documento',issuePlaceLabel:'Luogo di rilascio documento',comuneChoiceLabel:'Seleziona il comune corretto',comuneChoiceHint:'Questo comune esiste in piu province. Seleziona l\'opzione corretta.',comuneChoicePlaceholder:'Seleziona provincia e comune',comuneNotFoundHint:'Comune non trovato nel dataset Alloggiati. Il testo resta salvato ma senza codice.',comuneMatchedHint:'Comune riconosciuto automaticamente:',comuneChoiceRequiredMsg:'Seleziona una delle opzioni proposte per usare il codice corretto.',dayLabel:'Giorno',monthLabel:'Mese',yearLabel:'Anno',travelersCount:'Numero persone che viaggiano',guestRole:'Ruolo nel gruppo/famiglia',additionalGuestsTitle:'Altri ospiti',guestLabel:'Ospite',guestSex:'Sesso',guestStateBirth:'Stato di nascita',role16:'Ospite singolo',role17:'Capofamiglia',role18:'Capogruppo',role19:'Familiare',role20:'Membro gruppo',role17Hint:'Usa questa opzione se viaggi con il tuo nucleo familiare.',role18Hint:'Usa questa opzione se viaggi con amici, colleghi o conoscenti.',cf:'Codice fiscale',cfWarning:'Il codice fiscale non sembra valido. Correggi o prosegui se sei sicuro.',indirizzoLabel:'INDIRIZZO DI RESIDENZA',indirizzo:'Indirizzo',citta:'Citta',cap:'CAP',prov:'Prov.',ragSoc:'Ragione sociale',piva:'Partita IVA',vatHelper:'Italia: controllo formale reale. UE con prefisso paese: controllo di formato base. Extra-UE: inserimento manuale, non bloccato da controlli automatici.',sdi:'Codice SDI',pecLabel:'PEC',indirizzoAzLabel:'Sede legale',checkin:'Check-in',checkout:'Check-out',riepilogoLabel:'RIEPILOGO',uploadTitle:'Carica documento o PDF',uploadSub:"Carta d'identita - Passaporto - Patente - PDF",uploadMultiHint:'Puoi caricare piu file per la stessa persona, anche fronte e retro. PDF inclusi.',documentFlowTitle:'DOCUMENTI E PORTALE',documentFlowNote:'Per aprire il portale dobbiamo prima ricevere i documenti di tutti gli ospiti.',documentEmergencyBtn:'Il caricamento dei documenti non funziona? Continua il check-in e inviali a Serena su WhatsApp',continua:'Continua',indietro:'Indietro',invia:'Invia dati',ocrLoading:'Caricamento...',ocrErr:'Autolettura temporaneamente non disponibile. Il documento e comunque allegato.',successTitle:'Dati ricevuti',successMsg:"I tuoi dati sono stati inviati correttamente.<br>Riceverai a breve una email con le istruzioni per il check-in.<br><br>Grazie per aver scelto Il Lupo Affitta.",successMsgEmergency:'Check-in ricevuto.<br>Invia subito i documenti a Serena su WhatsApp e poi apri il portale dal pulsante qui sotto.<br><br>Grazie per aver scelto Il Lupo Affitta.',errRequired:'Compila tutti i campi obbligatori',errDate:'Inserisci le date di soggiorno',errSending:'Errore di invio - riprova',errPrivacy:'Accetta l\'informativa privacy per continuare',privacyLabel:'Ho letto e compreso l\'<a href="privacy-policy.html" target="_blank" rel="noopener">informativa sul trattamento dei dati personali</a> ai sensi dell\'art. 13 GDPR. I miei dati saranno comunicati all\'Autorità di Pubblica Sicurezza ai sensi dell\'art. 109 TULPS.',NOME:'NOME',EMAIL:'EMAIL',TELEFONO:'TELEFONO',CF:'CODICE FISCALE',INDIRIZZO:'INDIRIZZO',CHECKIN:'CHECK-IN',CHECKOUT:'CHECK-OUT',PAESE:'PAESE',RAGIONE:'RAGIONE SOCIALE',PIVA:'PARTITA IVA',SDI:'SDI'},
@@ -529,14 +618,80 @@ var T={
   ru:{step1:'DANNYE',step2:'PODTVERZHDENIE',title1:'Vash<br><em>chek-in</em>',sub1:'Zapolnite polya dlya zaversheniya registratsii.',title2:'Podtverdite<br><em>dannye</em>',sub2:'Ubedites, chto vse verno.',tipoLabel:'TIP SUBEKTA',privato:'Fizlitso',privatoDesc:'INN / dokument',azienda:'Yurlitso',aziendaDesc:'B2B schet / NDS',residenzaLabel:'STRANA PROZHIVANIYA',paese:'Strana',countryNotice:'Dlya gostey ne iz Italii nalogovyy kod i adres ne obyazatelny.',anagraficaLabel:'LICHNYE DANNYE',nome:'Imya',cognome:'Familiya',email:'Email',telefono:'Telefon',cf:'Nalogovyy kod',cfWarning:'Nalogovyy kod kazhetsya nedeystvitelnym. Proverte ili prodolzhite.',indirizzoLabel:'ADRES PROZHIVANIYA',indirizzo:'Adres',citta:'Gorod',cap:'Indeks',prov:'Provinciya',aziendaLabel:'DANNYE KOMPANII',ragSoc:'Nazvanie',piva:'NDS nomer',sdi:'Kod SDI',pecLabel:'PEC',indirizzoAzLabel:'Yur. adres',soggiornoLabel:'PROZHIVANIE',checkin:'Vselenie',checkout:'Vyselenie',riepilogoLabel:'SVODNAYA',fotoLabel:'FOTO DOKUMENTA',uploadTitle:'Dobavit foto dokumenta',uploadSub:'Pasport - Udostoverenie lichnosti',continua:'Dalee',indietro:'Nazad',invia:'Otpravit',ocrLoading:'Zagruzka...',ocrOk:'Dokument prikreplyon',ocrErr:'Oshibka zagruzki',successTitle:'Dannye polucheny',successMsg:'Vashi dannye uspeshno otpravleny.<br>Skoro vy poluchite email s instruktsiyami.<br><br>Spasibo.',errRequired:'Zapolnite vse obyazatelnye polya',errDate:'Vvedite daty prozhivaniya',errSending:'Oshibka otpravki - povtorite',errPrivacy:'Pozhaluysta, primite politiku konfidentsialnosti dlya prodolzheniya',privacyLabel:'Ya oznakomilsya s <a href="privacy-policy.html" target="_blank" rel="noopener">politikoy konfidentsialnosti</a> (st. 13 GDPR). Moi dannye budut peredany organam publichnoy bezopasnosti v sootvetstvii s zakonodatelstvom Italii.',NOME:'IMYA / FAMILIYA',EMAIL:'EMAIL',TELEFONO:'TELEFON',CF:'NAL. KOD',INDIRIZZO:'ADRES',CHECKIN:'VSELENIE',CHECKOUT:'VYSELENIE',PAESE:'STRANA',RAGIONE:'KOMPANIYA',PIVA:'NDS',SDI:'KOD SDI'}
 };
 
+Object.assign(T.it,{
+  touristTaxTitle:'TASSA DI SOGGIORNO',
+  touristTaxIntro:'Prima di procedere con il check-in e con le istruzioni per accedere all appartamento, devi effettuare il pagamento della tassa di soggiorno obbligatoria. Guarda la tua prenotazione su Booking: li potrai vedere quanto devi pagare. Scegli qui sotto come vuoi pagare.',
+  touristTaxBeneficiaryLabel:'INTESTATARIO',
+  touristTaxIbanLabel:'IBAN',
+  touristTaxBicLabel:'BIC/SWIFT',
+  touristTaxAmountLabel:'Importo tassa di soggiorno su Booking',
+  touristTaxAmountNote:'Inserisci qui il totale da pagare, come indicato nella prenotazione Booking.',
+  touristTaxConfirmLabel:'Confermo di aver verificato su Booking l importo della tassa di soggiorno da pagare.',
+  touristTaxMethodLabel:'Metodo di pagamento',
+  touristTaxMethodBankTransfer:'Bonifico bancario',
+  touristTaxMethodBankTransferHint:'Carica la ricevuta o uno screenshot del pagamento.',
+  touristTaxMethodStripe:'Carta online con Stripe',
+  touristTaxMethodStripeHint:'Paga con carta e torna qui automaticamente al termine.',
+  touristTaxBankIntro:'Se preferisci il bonifico, usa questi dati:',
+  touristTaxUploadTitle:'Prova del bonifico',
+  touristTaxUploadSub:'PDF o screenshot del pagamento',
+  touristTaxUploadHint:'Carica la ricevuta del bonifico o uno screenshot leggibile del pagamento.',
+  touristTaxStripeIntro:'In alternativa puoi pagare online con carta tramite Stripe. Dopo il pagamento torni qui e puoi continuare il check-in.',
+  touristTaxStripeCta:'Paga con carta',
+  touristTaxStripeHint:'Si apre la pagina protetta di Stripe e, a pagamento completato, torni automaticamente qui.',
+  touristTaxStripePaidCta:'Pagamento Stripe verificato',
+  touristTaxReviewLabel:'TASSA DI SOGGIORNO',
+  touristTaxWhatsappCta:'Hai problemi? Scrivi a Serena su WhatsApp'
+});
+Object.assign(T.en,{
+  touristTaxTitle:'TOURIST TAX',
+  touristTaxIntro:'Before completing the check-in and receiving the apartment access instructions, you must pay the mandatory tourist tax. Check Booking to see the exact amount due, then choose how you want to pay below.',
+  touristTaxBeneficiaryLabel:'BENEFICIARY',
+  touristTaxIbanLabel:'IBAN',
+  touristTaxBicLabel:'BIC/SWIFT',
+  touristTaxAmountLabel:'Tourist tax amount shown on Booking',
+  touristTaxAmountNote:'Check the total amount due on Booking and enter it here.',
+  touristTaxConfirmLabel:'I confirm that I checked on Booking the tourist tax amount that must be paid.',
+  touristTaxMethodLabel:'Payment method',
+  touristTaxMethodBankTransfer:'Bank transfer',
+  touristTaxMethodBankTransferHint:'Upload the receipt or a screenshot of the payment.',
+  touristTaxMethodStripe:'Online card payment with Stripe',
+  touristTaxMethodStripeHint:'Pay by card and come back here automatically when finished.',
+  touristTaxBankIntro:'If you prefer a bank transfer, use these details:',
+  touristTaxUploadTitle:'Bank transfer proof',
+  touristTaxUploadSub:'PDF or payment screenshot',
+  touristTaxUploadHint:'Upload the transfer receipt or a clear screenshot of the payment.',
+  touristTaxStripeIntro:'Alternatively, you can pay online by card via Stripe. After payment, you will return here and can continue the check-in.',
+  touristTaxStripeCta:'Pay by card',
+  touristTaxStripeHint:'A secure Stripe page opens and, once payment is complete, you return here automatically.',
+  touristTaxStripePaidCta:'Stripe payment verified',
+  touristTaxReviewLabel:'TOURIST TAX',
+  touristTaxWhatsappCta:'Having trouble? Write to Serena on WhatsApp'
+});
+
 var MESSAGES={
-  it:{sending:'Invio in corso...',retryingSubmit:'Riprovo invio...',recoveringSubmit:'Verifico il salvataggio...',submissionRecovered:'Check-in recuperato correttamente dopo un problema di rete.',portalCta:'Entra nel tuo portale',portalAfterEmergencyCta:'Apri il portale',invalidEmail:'Email non valida',invalidPhone:'Telefono non valido',invalidCap:'CAP non valido',invalidVat:'Partita IVA non valida',invalidSdi:'Codice SDI non valido',invalidCheckout:'Il check-out deve essere dopo il check-in',invalidApartment:'Link non valido: appartamento mancante',ocrOkClean:'Dati letti dal documento',ocrMultiOk:'Documenti analizzati',ocrNoData:'Documento allegato, ma non sono riuscito a leggere automaticamente i dati.',ocrNoDataHeic:'Documento allegato, ma non sono riuscito a leggere automaticamente i dati da questa foto iPhone. Se serve, compila i campi a mano.',ocrFilesAttached:'Documento allegato. Le foto provano l autolettura automatica; i PDF restano allegati senza compilazione automatica.',ocrErrHeic:'Non sono riuscito a convertire automaticamente questa foto iPhone. Il documento e comunque allegato.',documentsReady:'Documenti completi: dopo l invio si aprira il portale.',documentsEmergency:'Percorso di emergenza attivo: completa il check-in, invia i documenti a Serena su WhatsApp e poi apri il portale.',documentsEmergencyActivated:'Percorso di emergenza attivato. Invia i documenti a Serena su WhatsApp e poi completa l invio.',documentsEmergencyPreparing:'Attivo il percorso di emergenza...',documentsEmergencyRetry:'Non sono riuscito ad attivare il percorso di emergenza. Riprova tra pochi secondi.',documentsWhatsappCta:'Invia i documenti a Serena su WhatsApp',issuePlaceCountryHint:'Paese estero rilevato: il codice verra risolto automaticamente al salvataggio.'},
-  en:{sending:'Sending...',retryingSubmit:'Retrying submission...',recoveringSubmit:'Checking whether your check-in was saved...',submissionRecovered:'Check-in recovered successfully after a network issue.',portalCta:'Open your portal',portalAfterEmergencyCta:'Open the portal',invalidEmail:'Invalid email',invalidPhone:'Invalid phone number',invalidCap:'Invalid postal code',invalidVat:'Invalid VAT number',invalidSdi:'Invalid SDI code',invalidCheckout:'Check-out must be after check-in',invalidApartment:'Invalid link: missing apartment',ocrOkClean:'Data read from the document',ocrMultiOk:'Documents analyzed',ocrNoData:'Document attached, but I could not read the data automatically.',ocrNoDataHeic:'Document attached, but I could not read the data automatically from this iPhone photo. You can still fill the fields manually.',ocrFilesAttached:'Document attached. Photos try automatic reading; PDFs stay attached without auto-fill.',ocrErrHeic:'I could not automatically convert this iPhone photo. The document is still attached.',documentsReady:'Documents complete: the portal will open after you submit the check-in.',documentsEmergency:'Emergency flow enabled: finish the check-in, send the documents to Serena on WhatsApp, then open the portal.',documentsEmergencyActivated:'Emergency flow enabled. Send the documents to Serena on WhatsApp, then finish the submission.',documentsEmergencyPreparing:'Enabling the emergency flow...',documentsEmergencyRetry:'Unable to enable the emergency flow right now. Please try again in a few seconds.',documentsWhatsappCta:'Send the documents to Serena on WhatsApp',issuePlaceCountryHint:'Foreign issuing country detected: the code will be resolved automatically on submit.'},
+  it:{sending:'Invio in corso...',retryingSubmit:'Riprovo invio...',recoveringSubmit:'Verifico il salvataggio...',submissionRecovered:'Check-in recuperato correttamente dopo un problema di rete.',portalCta:'Entra nel tuo portale',portalAfterEmergencyCta:'Apri il portale',invalidEmail:'Email non valida',invalidPhone:'Telefono non valido',invalidCap:'CAP non valido',invalidVat:'Partita IVA non valida',invalidSdi:'Codice SDI non valido',invalidCheckout:'Il check-out deve essere dopo il check-in',invalidApartment:'Link non valido: appartamento mancante',ocrOkClean:'Dati letti dal documento',ocrMultiOk:'Documenti analizzati',ocrNoData:'Documento allegato, ma non sono riuscito a leggere automaticamente i dati.',ocrNoDataHeic:'Documento allegato, ma non sono riuscito a leggere automaticamente i dati da questa foto iPhone. Se serve, compila i campi a mano.',ocrFilesAttached:'Documento allegato. Le foto provano l autolettura automatica; i PDF restano allegati senza compilazione automatica.',ocrErrHeic:'Non sono riuscito a convertire automaticamente questa foto iPhone. Il documento e comunque allegato.',ocrSlowAttached:'Documento allegato. L autolettura sta impiegando troppo tempo: puoi continuare.',documentsReady:'Documenti completi: dopo l invio si aprira il portale.',documentsEmergency:'Percorso di emergenza attivo: completa il check-in, invia i documenti a Serena su WhatsApp e poi apri il portale.',documentsEmergencyActivated:'Percorso di emergenza attivato. Invia i documenti a Serena su WhatsApp e poi completa l invio.',documentsEmergencyPreparing:'Attivo il percorso di emergenza...',documentsEmergencyRetry:'Non sono riuscito ad attivare il percorso di emergenza. Riprova tra pochi secondi.',documentsTooLargeAutoEmergency:'I documenti caricati sono troppo pesanti per l invio diretto dal portale. Completa il check-in e inviali a Serena su WhatsApp.',documentsWhatsappCta:'Invia i documenti a Serena su WhatsApp',issuePlaceCountryHint:'Paese estero rilevato: il codice verra risolto automaticamente al salvataggio.',touristTaxVerifyPreparing:'Verifico la ricevuta del bonifico...',touristTaxVerifySuccess:'Ricevuta verificata: puoi continuare.',touristTaxStripePreparing:'Apro Stripe...',touristTaxStripeVerifyPreparing:'Verifico il pagamento Stripe...',touristTaxStripeVerifySuccess:'Pagamento Stripe verificato: puoi continuare.',touristTaxStripeCancelled:'Pagamento Stripe annullato. Puoi riprovare o usare il bonifico.'},
+  en:{sending:'Sending...',retryingSubmit:'Retrying submission...',recoveringSubmit:'Checking whether your check-in was saved...',submissionRecovered:'Check-in recovered successfully after a network issue.',portalCta:'Open your portal',portalAfterEmergencyCta:'Open the portal',invalidEmail:'Invalid email',invalidPhone:'Invalid phone number',invalidCap:'Invalid postal code',invalidVat:'Invalid VAT number',invalidSdi:'Invalid SDI code',invalidCheckout:'Check-out must be after check-in',invalidApartment:'Invalid link: missing apartment',ocrOkClean:'Data read from the document',ocrMultiOk:'Documents analyzed',ocrNoData:'Document attached, but I could not read the data automatically.',ocrNoDataHeic:'Document attached, but I could not read the data automatically from this iPhone photo. You can still fill the fields manually.',ocrFilesAttached:'Document attached. Photos try automatic reading; PDFs stay attached without auto-fill.',ocrErrHeic:'I could not automatically convert this iPhone photo. The document is still attached.',ocrSlowAttached:'Document attached. Auto-reading is taking too long: you can continue.',documentsReady:'Documents complete: the portal will open after you submit the check-in.',documentsEmergency:'Emergency flow enabled: finish the check-in, send the documents to Serena on WhatsApp, then open the portal.',documentsEmergencyActivated:'Emergency flow enabled. Send the documents to Serena on WhatsApp, then finish the submission.',documentsEmergencyPreparing:'Enabling the emergency flow...',documentsEmergencyRetry:'Unable to enable the emergency flow right now. Please try again in a few seconds.',documentsTooLargeAutoEmergency:'The uploaded documents are too large for direct portal upload. Finish the check-in and send them to Serena on WhatsApp.',documentsWhatsappCta:'Send the documents to Serena on WhatsApp',issuePlaceCountryHint:'Foreign issuing country detected: the code will be resolved automatically on submit.',touristTaxVerifyPreparing:'Checking the bank transfer proof...',touristTaxVerifySuccess:'Payment proof verified: you can continue.',touristTaxStripePreparing:'Opening Stripe...',touristTaxStripeVerifyPreparing:'Verifying the Stripe payment...',touristTaxStripeVerifySuccess:'Stripe payment verified: you can continue.',touristTaxStripeCancelled:'Stripe payment was cancelled. You can try again or use the bank transfer.'},
 };
 
-var lang='it',currentStep=1,isItalian=true,cfAttempts=0;
-var countryOptionsState={loaded:false,loading:null,names:[],map:new Map()};
+var lang='it',currentStep=1,isItalian=true;
+var countryOptionsState={loaded:false,loading:null,canonicalNames:[],canonicalMap:new Map(),isoByCanonicalKey:new Map(),displayNames:[],displayMap:new Map()};
+var regionCatalogState={loaded:false,byCode:new Map(),itNameToCode:new Map()};
 var guestDocumentStore={0:[]};
+var TOURIST_TAX_STORE_KEY='tourist_tax';
+var TOURIST_TAX_BANK_TRANSFER_METHOD='bank_transfer';
+var TOURIST_TAX_STRIPE_METHOD='stripe_checkout';
+var TOURIST_TAX_STRIPE_ENABLED=isTouristTaxStripeEnabled();
+var TOURIST_TAX_PAYMENT_DETAILS={
+  beneficiary:'Impatto S.R.L.',
+  iban:'IT28 J 0709 06777 00100 1021 8743',
+  bic:'CCRTIT2TMAL',
+  currency:'EUR'
+};
+var touristTaxVerificationState={matched:false,result:null};
+var touristTaxVerificationResults={bank_transfer:null,stripe_checkout:null};
+var touristTaxStripeCheckoutRequestInFlight=null;
+var directDocumentUploadState={cacheKey:'',uploadBatchToken:'',documents:[]};
 var documentEmergencyBypass=false;
 var documentEmergencyToken='';
 var documentEmergencyTokenBinding='';
@@ -546,13 +701,48 @@ var activeOCRTarget={scope:'main',index:0};
 var SUPPORT_WHATSAPP='393501258030';
 var MAX_GUEST_DOCUMENT_SIZE_BYTES=20*1024*1024;
 var MAX_GUEST_DOCUMENTS_PER_GUEST=8;
+var MAX_GUEST_SUBMIT_UPLOAD_BYTES=4*1024*1024;
+var OCR_REQUEST_TIMEOUT_MS=Number(window.__CHECKIN_OCR_TIMEOUT_MS||8000);
+if(!Number.isFinite(OCR_REQUEST_TIMEOUT_MS)||OCR_REQUEST_TIMEOUT_MS<1)OCR_REQUEST_TIMEOUT_MS=8000;
 var RETRYABLE_SUBMIT_STATUS_CODES=[408,425,429,500,502,503,504];
 var GUEST_ALLOWED_DOCUMENT_MIME_TYPES=['application/pdf','image/gif','image/heic','image/heif','image/jpeg','image/jpg','image/png','image/webp'];
 var GUEST_ALLOWED_DOCUMENT_EXTENSIONS=['.gif','.heic','.heif','.jpeg','.jpg','.pdf','.png','.webp'];
 var comuneLookupCache={},comuneLookupTimers={birth:null,issue:null,residence_city:null};
 var cfAutofillState={manual:false,lastGenerated:''};
 var capAutofillState={manual:false,lastCap:'',lastProvince:''};
+var COUNTRY_LOCALE_BY_LANG={it:'it',en:'en',de:'de',fr:'fr',es:'es',ru:'ru'};
+var COUNTRY_SELECT_LABELS={
+  OTHER:{it:'Altro',en:'Other',de:'Andere',fr:'Autre',es:'Otro',ru:'Другое'}
+};
+var COUNTRY_ALPHA3_ALIASES={
+  ALB:'ALBANIA',
+  BEL:'BELGIO',
+  CHE:'SVIZZERA',
+  CHN:'CINA',
+  DEU:'GERMANIA',
+  ESP:'SPAGNA',
+  FRA:'FRANCIA',
+  GBR:'REGNO UNITO',
+  IRL:'IRLANDA',
+  MAR:'MAROCCO',
+  NLD:'PAESI BASSI',
+  ROU:'ROMANIA',
+  RUS:'FEDERAZIONE RUSSA',
+  UKR:'UCRAINA',
+  USA:"STATI UNITI D'AMERICA"
+};
 var COUNTRY_ALIASES={
+  italy:'ITALIA',
+  italia:'ITALIA',
+  it:'ITALIA',
+  italian:'ITALIA',
+  italiana:'ITALIA',
+  italiano:'ITALIA',
+  italiani:'ITALIA',
+  italiane:'ITALIA',
+  'cittadinanza italiana':'ITALIA',
+  'nazionalita italiana':'ITALIA',
+  'nazionalita: italia':'ITALIA',
   usa:"STATI UNITI D'AMERICA",
   'u.s.a.':"STATI UNITI D'AMERICA",
   us:"STATI UNITI D'AMERICA",
@@ -631,6 +821,47 @@ var COUNTRY_ALIASES={
   cinese:'CINA',
   cinesi:'CINA'
 };
+var COUNTRY_CANONICAL_CODE_OVERRIDES={
+  "stati uniti damerica":'US',
+  'federazione russa':'RU',
+  'repubblica ceca':'CZ',
+  'repubblica slovacca':'SK',
+  'stato della citta del vaticano':'VA',
+  'hong kong':'HK',
+  'guinea bissau':'GW',
+  'maurizio':'MU',
+  'marshall':'MH',
+  'micronesia stati federali':'FM',
+  'myanmar-birmania':'MM',
+  'papuasia-nguinea':'PG',
+  'palau repubblica':'PW',
+  'salomone':'SB',
+  'timor':'TL',
+  'wallis':'WF',
+  'anguilla (isola)':'AI',
+  'bermude':'BM',
+  'cayman (isole)':'KY',
+  'christmas':'CX',
+  'cocos':'CC',
+  'faer oer':'FO',
+  'georgia sud e isole sandwich australi':'GS',
+  'guayana francese':'GF',
+  'la reunion':'RE',
+  'malvine':'FK',
+  'man':'IM',
+  'norfolk':'NF',
+  'pitcairn':'PN',
+  'polinesia':'PF',
+  'puerto rico':'PR',
+  's. christopher e nevis':'KN',
+  'saint pierre et miquelon':'PM',
+  'sant elena':'SH',
+  'sri lanka (ceylon)':'LK',
+  'swaziland':'SZ',
+  'turks':'TC',
+  'vergini britanniche (isole)':'VG',
+  'sahara spagnolo':'EH'
+};
 var MONTH_LABELS={
   it:['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'],
   en:['January','February','March','April','May','June','July','August','September','October','November','December']
@@ -645,6 +876,7 @@ function getFirstQueryParam(params,keys){
 }
 var legacyPortalToken=getFirstQueryParam(initialParams,['token','portale_token']);
 var legacyAptRef=getFirstQueryParam(initialParams,['apt','aptId','apartment_ref','apartment_id','key']);
+var bookingSourceHint=normalizePublicSourceChannel(getFirstQueryParam(initialParams,['src','source','channel']));
 if(legacyPortalToken){
   var legacyPortalUrl=new URL('/portale.html',window.location.origin);
   initialParams.forEach(function(value,key){ legacyPortalUrl.searchParams.set(key,value); });
@@ -654,6 +886,189 @@ var aptRef=getFirstQueryParam(initialParams,['apt','aptId','apartment_ref','apar
 function t(k){return(T[lang]&&T[lang][k]!==undefined)?T[lang][k]:(T.it[k]||k);}
 function msg(k){return(MESSAGES[lang]&&MESSAGES[lang][k]!==undefined)?MESSAGES[lang][k]:(MESSAGES.it[k]||k);}
 function normalizeUpperNoSpaces(value){return String(value||'').replace(/\s+/g,'').trim().toUpperCase();}
+function normalizePublicSourceChannel(value){
+  var normalized=String(value||'').trim().toLowerCase();
+  return normalized.indexOf('booking')>=0?'booking':'';
+}
+function isBookingTouristTaxRequired(){
+  return bookingSourceHint==='booking';
+}
+function isItalianResidenceSelected(){
+  var select=document.getElementById('paeseResidenza');
+  return (select&&select.value?select.value:'IT')==='IT';
+}
+function buildRegionCatalog(){
+  if(regionCatalogState.loaded)return regionCatalogState;
+  regionCatalogState.loaded=true;
+  if(typeof Intl==='undefined' || typeof Intl.DisplayNames!=='function')return regionCatalogState;
+  var displayNamesByLang={};
+  Object.keys(COUNTRY_LOCALE_BY_LANG).forEach(function(langKey){
+    displayNamesByLang[langKey]=new Intl.DisplayNames([COUNTRY_LOCALE_BY_LANG[langKey]],{type:'region'});
+  });
+  for(var a=65;a<=90;a++){
+    for(var b=65;b<=90;b++){
+      var code=String.fromCharCode(a)+String.fromCharCode(b);
+      var italianName=displayNamesByLang.it.of(code);
+      if(!italianName || italianName===code)continue;
+      var names={};
+      Object.keys(displayNamesByLang).forEach(function(langKey){
+        names[langKey]=displayNamesByLang[langKey].of(code)||italianName;
+      });
+      regionCatalogState.byCode.set(code,names);
+      var italianKey=normalizeComuneLookupValue(italianName);
+      if(italianKey && !regionCatalogState.itNameToCode.has(italianKey))regionCatalogState.itNameToCode.set(italianKey,code);
+    }
+  }
+  return regionCatalogState;
+}
+function getLocalizedRegionName(code,langKey){
+  if(code==='OTHER')return (COUNTRY_SELECT_LABELS.OTHER&&COUNTRY_SELECT_LABELS.OTHER[langKey])||COUNTRY_SELECT_LABELS.OTHER.it;
+  var catalog=buildRegionCatalog();
+  var names=catalog.byCode.get(String(code||'').toUpperCase());
+  return names&&(names[langKey]||names.it)||String(code||'').toUpperCase();
+}
+function getCanonicalCountryName(value){
+  var key=normalizeComuneLookupValue(value);
+  if(!key)return '';
+  return countryOptionsState.canonicalMap.get(key)||normalizeValue(value);
+}
+function resolveCountryCodeAlias(value){
+  var raw=normalizeUpperNoSpaces(value).replace(/[^A-Z]/g,'');
+  if(raw.length===2){
+    var italianName=getLocalizedRegionName(raw,'it');
+    if(italianName && italianName!==raw){
+      var canonical=getCanonicalCountryName(italianName);
+      return canonical||italianName;
+    }
+  }
+  if(raw.length===3 && COUNTRY_ALPHA3_ALIASES[raw]){
+    return getCanonicalCountryName(COUNTRY_ALPHA3_ALIASES[raw])||COUNTRY_ALPHA3_ALIASES[raw];
+  }
+  return '';
+}
+function findApproximateCountryValue(value){
+  var normalized=normalizeComuneLookupValue(value);
+  if(!normalized || normalized.length<3)return '';
+  var bestCanonical='';
+  var bestMatchLength=0;
+  var ambiguous=false;
+  function considerCandidate(key,canonical){
+    var candidateKey=normalizeComuneLookupValue(key);
+    if(!candidateKey || candidateKey.length<3 || !canonical)return;
+    if(normalized!==candidateKey && normalized.indexOf(candidateKey)<0 && candidateKey.indexOf(normalized)<0)return;
+    if(candidateKey.length>bestMatchLength){
+      bestCanonical=canonical;
+      bestMatchLength=candidateKey.length;
+      ambiguous=false;
+      return;
+    }
+    if(candidateKey.length===bestMatchLength && canonical!==bestCanonical){
+      ambiguous=true;
+    }
+  }
+  countryOptionsState.displayMap.forEach(function(canonical,key){ considerCandidate(key,canonical); });
+  countryOptionsState.canonicalMap.forEach(function(canonical,key){ considerCandidate(key,canonical); });
+  Object.keys(COUNTRY_ALIASES).forEach(function(alias){
+    considerCandidate(alias,getCanonicalCountryName(COUNTRY_ALIASES[alias])||COUNTRY_ALIASES[alias]);
+  });
+  return ambiguous?'':bestCanonical;
+}
+function resolveCountryRegionCode(canonicalName){
+  var key=normalizeComuneLookupValue(canonicalName);
+  if(!key)return '';
+  if(countryOptionsState.isoByCanonicalKey.has(key))return countryOptionsState.isoByCanonicalKey.get(key);
+  if(COUNTRY_CANONICAL_CODE_OVERRIDES[key])return COUNTRY_CANONICAL_CODE_OVERRIDES[key];
+  var catalog=buildRegionCatalog();
+  return catalog.itNameToCode.get(key)||'';
+}
+function rebuildCountryDisplayState(){
+  var displayMap=new Map();
+  var isoByCanonicalKey=new Map();
+  var displayPairs=[];
+  countryOptionsState.canonicalNames.forEach(function(canonicalName){
+    var canonicalKey=normalizeComuneLookupValue(canonicalName);
+    if(!canonicalKey)return;
+    var isoCode=resolveCountryRegionCode(canonicalName);
+    if(isoCode)isoByCanonicalKey.set(canonicalKey,isoCode);
+    displayMap.set(canonicalKey,canonicalName);
+    if(isoCode){
+      Object.keys(COUNTRY_LOCALE_BY_LANG).forEach(function(langKey){
+        var localizedName=getLocalizedRegionName(isoCode,langKey);
+        var localizedKey=normalizeComuneLookupValue(localizedName);
+        if(localizedKey && !displayMap.has(localizedKey))displayMap.set(localizedKey,canonicalName);
+      });
+    }
+    displayPairs.push({
+      canonical:canonicalName,
+      display:isoCode?getLocalizedRegionName(isoCode,lang):canonicalName
+    });
+  });
+  displayPairs.sort(function(a,b){
+    return a.display.localeCompare(b.display,COUNTRY_LOCALE_BY_LANG[lang]||'it',{sensitivity:'base'});
+  });
+  countryOptionsState.isoByCanonicalKey=isoByCanonicalKey;
+  countryOptionsState.displayMap=displayMap;
+  countryOptionsState.displayNames=displayPairs.map(function(entry){return entry.display;});
+}
+function resolveCanonicalCountryValue(value){
+  var raw=normalizeValue(value);
+  if(!raw)return '';
+  var key=normalizeComuneLookupValue(raw);
+  if(!key)return '';
+  var codeAlias=resolveCountryCodeAlias(raw);
+  if(codeAlias)return codeAlias;
+  if(countryOptionsState.displayMap.has(key))return countryOptionsState.displayMap.get(key);
+  if(countryOptionsState.canonicalMap.has(key))return countryOptionsState.canonicalMap.get(key);
+  if(COUNTRY_ALIASES[key])return getCanonicalCountryName(COUNTRY_ALIASES[key]);
+  var approximate=findApproximateCountryValue(raw);
+  if(approximate)return approximate;
+  return '';
+}
+function getCountryDisplayValue(value){
+  var canonical=resolveCanonicalCountryValue(value)||normalizeValue(value);
+  var canonicalKey=normalizeComuneLookupValue(canonical);
+  if(!canonicalKey)return '';
+  var isoCode=resolveCountryRegionCode(canonical);
+  if(!isoCode)return canonical;
+  return getLocalizedRegionName(isoCode,lang)||canonical;
+}
+function hydrateResidenceCountrySelect(){
+  var select=document.getElementById('paeseResidenza');
+  if(!select)return;
+  var currentValue=select.value||'IT';
+  Array.prototype.forEach.call(select.options,function(option){
+    option.textContent=getLocalizedRegionName(option.value,lang);
+  });
+  select.value=currentValue;
+}
+function syncCountryFieldPlaceholders(){
+  var birthStateEl=document.getElementById('statoNascitaEstero');
+  var citizenshipEl=document.getElementById('cittadinanza');
+  if(birthStateEl)birthStateEl.placeholder=getLocalizedRegionName('FR',lang);
+  if(citizenshipEl)citizenshipEl.placeholder=getLocalizedRegionName('IT',lang);
+}
+function syncCountryInputValue(id){
+  var el=document.getElementById(id);
+  if(!el)return;
+  var canonical=resolveCanonicalCountryValue(el.value);
+  if(!canonical)return;
+  var displayValue=getCountryDisplayValue(canonical);
+  if(displayValue && displayValue!==el.value){
+    el.value=displayValue;
+    markFilled(el);
+  }
+}
+function syncCountryUiLanguage(){
+  syncCountryInputValue('statoNascitaEstero');
+  syncCountryInputValue('cittadinanza');
+  syncCountryInputValue('luogoRilascioDocumento');
+  var additionalGuestCount=Math.max(0,getNumeroPersone()-1);
+  for(var i=0;i<additionalGuestCount;i++){
+    syncCountryInputValue('additionalGuest_'+i+'_stato_nascita');
+    syncCountryInputValue('additionalGuest_'+i+'_cittadinanza');
+    syncCountryInputValue('additionalGuest_'+i+'_luogo_rilascio_documento');
+  }
+}
 function buildSupportWhatsappHref(){
   var apartmentRef=getResolvedApartmentRef()||legacyAptRef||aptRef||'';
   var message='Ciao Serena, il caricamento dei documenti del check-in non funziona. Sto completando il check-in';
@@ -665,6 +1080,11 @@ function clearDocumentEmergencyToken(){
   documentEmergencyToken='';
   documentEmergencyTokenBinding='';
   documentEmergencyTokenExpiresAt='';
+}
+function clearDirectDocumentUploadState(){
+  directDocumentUploadState.cacheKey='';
+  directDocumentUploadState.uploadBatchToken='';
+  directDocumentUploadState.documents=[];
 }
 function buildDocumentEmergencyPayload(payload){
   return {
@@ -678,6 +1098,493 @@ function buildDocumentEmergencyPayload(payload){
 }
 function getDocumentEmergencyBinding(payload){
   return JSON.stringify(buildDocumentEmergencyPayload(payload));
+}
+function getTouristTaxProofEntries(){
+  var entries=guestDocumentStore[getGuestStoreKey(TOURIST_TAX_STORE_KEY)]||[];
+  return Array.isArray(entries)?entries:[];
+}
+function normalizeTouristTaxMethod(value){
+  return TOURIST_TAX_STRIPE_ENABLED&&String(value||'').trim().toLowerCase()===TOURIST_TAX_STRIPE_METHOD
+    ? TOURIST_TAX_STRIPE_METHOD
+    : TOURIST_TAX_BANK_TRANSFER_METHOD;
+}
+function getTouristTaxPaymentMethod(){
+  var selected=document.querySelector('input[name="touristTaxMethod"]:checked');
+  return normalizeTouristTaxMethod(selected&&selected.value?selected.value:TOURIST_TAX_BANK_TRANSFER_METHOD);
+}
+function setTouristTaxPaymentMethod(method){
+  var normalized=normalizeTouristTaxMethod(method);
+  var target=document.getElementById(normalized===TOURIST_TAX_STRIPE_METHOD?'touristTaxMethodStripe':'touristTaxMethodBank');
+  if(target)target.checked=true;
+  updateTouristTaxMethodUi();
+}
+function getTouristTaxVerificationResult(method){
+  var normalized=normalizeTouristTaxMethod(method||getTouristTaxPaymentMethod());
+  return touristTaxVerificationResults[normalized]||null;
+}
+function syncTouristTaxVerificationStatus(){
+  var currentResult=getTouristTaxVerificationResult();
+  touristTaxVerificationState={
+    matched:!!(currentResult&&currentResult.matched===true),
+    result:currentResult||null
+  };
+  if(currentResult){
+    setTouristTaxVerificationStatus(currentResult.matched?'success':'error',currentResult.message||'');
+  }else{
+    setTouristTaxVerificationStatus('','');
+  }
+  updateTouristTaxStripeButton();
+}
+function setTouristTaxVerificationResult(method,result){
+  touristTaxVerificationResults[normalizeTouristTaxMethod(method)]=result||null;
+  syncTouristTaxVerificationStatus();
+}
+function resetTouristTaxVerification(method){
+  if(method){
+    touristTaxVerificationResults[normalizeTouristTaxMethod(method)]=null;
+  }else{
+    touristTaxVerificationResults[TOURIST_TAX_BANK_TRANSFER_METHOD]=null;
+    touristTaxVerificationResults[TOURIST_TAX_STRIPE_METHOD]=null;
+  }
+  syncTouristTaxVerificationStatus();
+}
+function buildTouristTaxWhatsappHref(){
+  var apartmentRef=getResolvedApartmentRef()||legacyAptRef||aptRef||'';
+  var amount=formatTouristTaxAmount(parseTouristTaxAmountValue(document.getElementById('touristTaxAmount')?.value));
+  var stripeSelected=getTouristTaxPaymentMethod()===TOURIST_TAX_STRIPE_METHOD;
+  var message='Ciao Serena, ho problemi '+(stripeSelected?'con il pagamento Stripe':'con la ricevuta del pagamento della tassa di soggiorno');
+  if(apartmentRef)message+=' per '+apartmentRef;
+  if(amount)message+=' (totale inserito: '+amount+')';
+  message+=stripeSelected
+    ? '. Ti scrivo qui per farmi aiutare con il pagamento online.'
+    : '. Ti invio qui lo screenshot o il PDF del bonifico.';
+  return 'https://wa.me/'+SUPPORT_WHATSAPP+'?text='+encodeURIComponent(message);
+}
+function updateTouristTaxWhatsappLink(){
+  var link=document.getElementById('touristTaxWhatsappLink');
+  if(!link)return;
+  link.href=buildTouristTaxWhatsappHref();
+}
+function hasTouristTaxProofUploads(){
+  return getTouristTaxProofEntries().length>0;
+}
+function parseTouristTaxAmountValue(value){
+  var normalized=String(value||'').trim().replace(/\s+/g,'').replace(',', '.').replace(/[^\d.]/g,'');
+  if(!normalized)return 0;
+  var parts=normalized.split('.');
+  if(parts.length>2)normalized=parts.shift()+'.'+parts.join('');
+  var parsed=Number(normalized);
+  if(!Number.isFinite(parsed))return 0;
+  return Math.round(parsed*100)/100;
+}
+function formatTouristTaxAmount(amount){
+  if(!Number.isFinite(amount) || amount<=0)return '';
+  return amount.toLocaleString(lang==='it'?'it-IT':'en-GB',{
+    style:'currency',
+    currency:TOURIST_TAX_PAYMENT_DETAILS.currency
+  });
+}
+function formatTouristTaxAmountInputValue(amount){
+  if(!Number.isFinite(amount) || amount<=0)return '';
+  return lang==='it'?amount.toFixed(2).replace('.', ','):amount.toFixed(2);
+}
+function getTouristTaxAmountErrorMessage(){
+  return lang==='en'
+    ? 'Enter the tourist tax amount shown on Booking.'
+    : 'Inserisci l importo della tassa di soggiorno indicato su Booking.';
+}
+function getTouristTaxConfirmErrorMessage(){
+  return lang==='en'
+    ? 'Confirm that you checked the tourist tax amount on Booking.'
+    : 'Conferma di aver controllato su Booking l importo della tassa di soggiorno.';
+}
+function getTouristTaxProofErrorMessage(){
+  return lang==='en'
+    ? 'Upload the bank transfer receipt or screenshot for the tourist tax.'
+    : 'Carica la ricevuta o lo screenshot del bonifico della tassa di soggiorno.';
+}
+function getTouristTaxStripeErrorMessage(){
+  return lang==='en'
+    ? 'Complete the Stripe payment before continuing.'
+    : 'Completa il pagamento Stripe prima di continuare.';
+}
+function setTouristTaxVerificationStatus(state,message){
+  var statusEl=document.getElementById('touristTaxVerificationStatus');
+  var spinnerEl=document.getElementById('touristTaxVerificationSpinner');
+  var msgEl=document.getElementById('touristTaxVerificationMsg');
+  if(!statusEl||!spinnerEl||!msgEl)return;
+  if(!state){
+    statusEl.style.display='none';
+    statusEl.className='ocr-status';
+    spinnerEl.style.display='none';
+    msgEl.textContent='';
+    return;
+  }
+  statusEl.style.display='flex';
+  statusEl.className='ocr-status'+(state==='success'?' success':state==='error'?' error':'');
+  spinnerEl.style.display=state==='loading'?'block':'none';
+  msgEl.textContent=message||'';
+}
+function updateTouristTaxStripeButton(){
+  var btn=document.getElementById('touristTaxStripeBtn');
+  if(!btn)return;
+  var stripeResult=getTouristTaxVerificationResult(TOURIST_TAX_STRIPE_METHOD);
+  if(stripeResult&&stripeResult.matched){
+    btn.disabled=true;
+    btn.textContent=t('touristTaxStripePaidCta');
+    return;
+  }
+  btn.disabled=!!touristTaxStripeCheckoutRequestInFlight;
+  btn.textContent=t('touristTaxStripeCta');
+}
+async function loadTouristTaxStripeAvailability(){
+  if(TOURIST_TAX_STRIPE_ENABLED || !isBookingTouristTaxRequired())return TOURIST_TAX_STRIPE_ENABLED;
+  try{
+    var res=await fetch('/.netlify/functions/create-public-tourist-tax-stripe-checkout',{ method:'GET' });
+    var data=await res.json().catch(function(){ return {}; });
+    TOURIST_TAX_STRIPE_ENABLED=!!(res.ok && data && data.enabled===true);
+  }catch(_error){
+    TOURIST_TAX_STRIPE_ENABLED=false;
+  }
+  updateTouristTaxMethodUi();
+  return TOURIST_TAX_STRIPE_ENABLED;
+}
+function buildTouristTaxPaymentPayload(){
+  if(!isBookingTouristTaxRequired())return null;
+  var method=getTouristTaxPaymentMethod();
+  var surname=normalizeValue(document.getElementById('cognome')?.value);
+  var paymentPayload={
+    required:true,
+    channel_hint:'booking',
+    method:method,
+    amount:parseTouristTaxAmountValue(document.getElementById('touristTaxAmount')?.value),
+    currency:TOURIST_TAX_PAYMENT_DETAILS.currency,
+    booking_amount_confirmed:!!document.getElementById('touristTaxConfirm')?.checked,
+    note:method===TOURIST_TAX_STRIPE_METHOD?'Pagamento online Stripe':'',
+    verification:getTouristTaxVerificationResult(method)
+  };
+  if(method===TOURIST_TAX_STRIPE_METHOD)return paymentPayload;
+  paymentPayload.beneficiary=TOURIST_TAX_PAYMENT_DETAILS.beneficiary;
+  paymentPayload.iban=TOURIST_TAX_PAYMENT_DETAILS.iban;
+  paymentPayload.bic=TOURIST_TAX_PAYMENT_DETAILS.bic;
+  paymentPayload.causal=surname?'Tassa di soggiorno Booking - '+surname:'Tassa di soggiorno Booking';
+  return paymentPayload;
+}
+async function buildTouristTaxVerificationFiles(){
+  var proofEntries=getTouristTaxProofEntries();
+  return Promise.all(proofEntries.map(async function(entry,index){
+    var encoded=await readFileAsBase64(entry.file);
+    return {
+      file_name:entry.name||entry.file.name||('prova-pagamento-'+(index+1)),
+      mime_type:encoded.mime_type||normalizeValue(entry.type||entry.file.type||'').toLowerCase()||'application/octet-stream',
+      data:encoded.data||''
+    };
+  }));
+}
+function createTouristTaxVerificationError(message,fieldId){
+  var error=new Error(message);
+  error.fieldId=fieldId||'touristTaxField';
+  error.recoveryDisabled=true;
+  return error;
+}
+function isTouristTaxFieldErrorId(fieldId){
+  return ['touristTaxAmount','touristTaxConfirm','touristTaxField','touristTaxStripeField','touristTaxMethodField'].indexOf(fieldId)>=0;
+}
+async function refreshTouristTaxStripeVerification(sessionId){
+  var res=await fetch('/.netlify/functions/get-public-tourist-tax-stripe-session',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      session_id:String(sessionId||'').trim(),
+      apartment_ref:getResolvedApartmentRef()||legacyAptRef||aptRef||'',
+      source_channel_hint:bookingSourceHint,
+      amount:parseTouristTaxAmountValue(document.getElementById('touristTaxAmount')?.value),
+      currency:TOURIST_TAX_PAYMENT_DETAILS.currency
+    })
+  });
+  var data=await res.json().catch(function(){ return {}; });
+  if(!res.ok || !data || data.matched!==true){
+    var errorMessage=data&&data.message?data.message:getTouristTaxStripeErrorMessage();
+    setTouristTaxVerificationResult(TOURIST_TAX_STRIPE_METHOD,null);
+    setTouristTaxVerificationStatus('error',errorMessage);
+    throw createTouristTaxVerificationError(errorMessage,'touristTaxStripeField');
+  }
+  var verifiedAmount=Number(data.amount||data.amount_total||data.expected_amount||0);
+  var amountInput=document.getElementById('touristTaxAmount');
+  if(amountInput && Number.isFinite(verifiedAmount) && verifiedAmount>0){
+    amountInput.value=formatTouristTaxAmountInputValue(verifiedAmount);
+    markFilled(amountInput);
+  }
+  var confirmInput=document.getElementById('touristTaxConfirm');
+  if(confirmInput)confirmInput.checked=true;
+  clearFieldError('touristTaxAmount');
+  clearFieldError('touristTaxConfirm');
+  clearFieldError('touristTaxStripeField');
+  var verificationResult={
+    matched:true,
+    status:String(data.status||'paid'),
+    message:String(data.message||msg('touristTaxStripeVerifySuccess')),
+    expected_amount:Number(data.expected_amount||verifiedAmount||0),
+    extracted_amount:verifiedAmount,
+    difference:Number(data.difference||0),
+    tolerance_eur:0,
+    checked_at:String(data.checked_at||new Date().toISOString()),
+    provider:'stripe',
+    session_id:String(data.session_id||sessionId||'').trim(),
+    payment_status:String(data.payment_status||'paid'),
+    session_status:String(data.session_status||'complete'),
+    amount_total:verifiedAmount,
+    currency:String(data.currency||TOURIST_TAX_PAYMENT_DETAILS.currency),
+    livemode:!!data.livemode,
+    customer_email:String(data.customer_email||'').trim().toLowerCase()
+  };
+  setTouristTaxVerificationResult(TOURIST_TAX_STRIPE_METHOD,verificationResult);
+  setTouristTaxPaymentMethod(TOURIST_TAX_STRIPE_METHOD);
+  return verificationResult;
+}
+function buildTouristTaxStripeReturnPath(){
+  var url=new URL(window.location.href);
+  url.searchParams.delete('stripe_checkout');
+  url.searchParams.delete('stripe_session_id');
+  return url.pathname+(url.search||'');
+}
+function clearTouristTaxStripeReturnParams(){
+  var url=new URL(window.location.href);
+  url.searchParams.delete('stripe_checkout');
+  url.searchParams.delete('stripe_session_id');
+  window.history.replaceState({},document.title,url.pathname+(url.search||'')+(url.hash||''));
+}
+async function startTouristTaxStripeCheckout(){
+  clearTopAlert();
+  clearFieldError('touristTaxAmount');
+  clearFieldError('touristTaxConfirm');
+  clearFieldError('touristTaxStripeField');
+  var amount=parseTouristTaxAmountValue(document.getElementById('touristTaxAmount')?.value);
+  if(!Number.isFinite(amount) || amount<=0){
+    var amountMessage=getTouristTaxAmountErrorMessage();
+    setFieldError('touristTaxAmount',amountMessage);
+    showTopAlert(amountMessage);
+    showToast(amountMessage);
+    focusField('touristTaxAmount');
+    return;
+  }
+  if(!document.getElementById('touristTaxConfirm').checked){
+    var confirmMessage=getTouristTaxConfirmErrorMessage();
+    setFieldError('touristTaxConfirm',confirmMessage);
+    showTopAlert(confirmMessage);
+    showToast(confirmMessage);
+    focusField('touristTaxConfirm');
+    return;
+  }
+  if(touristTaxStripeCheckoutRequestInFlight)return;
+  touristTaxStripeCheckoutRequestInFlight={startedAt:Date.now()};
+  updateTouristTaxStripeButton();
+  setTouristTaxVerificationStatus('loading',msg('touristTaxStripePreparing'));
+  try{
+    var payload=buildPayload();
+    var res=await fetch('/.netlify/functions/create-public-tourist-tax-stripe-checkout',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        apartment_ref:(payload&&payload.apartment_ref)||getResolvedApartmentRef()||legacyAptRef||aptRef||'',
+        source_channel_hint:bookingSourceHint,
+        amount:amount,
+        currency:TOURIST_TAX_PAYMENT_DETAILS.currency,
+        email:payload&&payload.email?payload.email:'',
+        cognome:payload&&payload.cognome?payload.cognome:'',
+        lingua:lang,
+        return_path:buildTouristTaxStripeReturnPath()
+      })
+    });
+    var data=await res.json().catch(function(){ return {}; });
+    if(!res.ok || !data || !data.url){
+      var checkoutMessage=data&&data.message?data.message:'Pagamento Stripe non disponibile al momento. Usa il bonifico o contatta Serena su WhatsApp.';
+      setTouristTaxVerificationStatus('error',checkoutMessage);
+      throw createTouristTaxVerificationError(checkoutMessage,'touristTaxStripeField');
+    }
+    var redirectWindow=window.open(data.url,'_self');
+    if(!redirectWindow)window.location.href=data.url;
+  }catch(err){
+    console.error(err);
+    setFieldError('touristTaxStripeField',err.message||getTouristTaxStripeErrorMessage());
+    showTopAlert(err.message||getTouristTaxStripeErrorMessage());
+    showToast(err.message||getTouristTaxStripeErrorMessage());
+    setTouristTaxVerificationStatus('error',err.message||getTouristTaxStripeErrorMessage());
+  }finally{
+    touristTaxStripeCheckoutRequestInFlight=null;
+    updateTouristTaxStripeButton();
+  }
+}
+async function handleInitialTouristTaxStripeReturn(){
+  if(!isBookingTouristTaxRequired())return;
+  var checkoutState=String(urlParams.get('stripe_checkout')||'').trim().toLowerCase();
+  var stripeSessionId=String(urlParams.get('stripe_session_id')||'').trim();
+  if(!checkoutState && !stripeSessionId)return;
+  setTouristTaxPaymentMethod(TOURIST_TAX_STRIPE_METHOD);
+  if(checkoutState==='cancelled'){
+    setTouristTaxVerificationResult(TOURIST_TAX_STRIPE_METHOD,null);
+    setTouristTaxVerificationStatus('error',msg('touristTaxStripeCancelled'));
+    clearTouristTaxStripeReturnParams();
+    showToast(msg('touristTaxStripeCancelled'));
+    return;
+  }
+  if(!stripeSessionId){
+    clearTouristTaxStripeReturnParams();
+    return;
+  }
+  try{
+    setTouristTaxVerificationStatus('loading',msg('touristTaxStripeVerifyPreparing'));
+    await refreshTouristTaxStripeVerification(stripeSessionId);
+    showToast(msg('touristTaxStripeVerifySuccess'));
+  }catch(err){
+    console.error(err);
+    setFieldError('touristTaxStripeField',err.message||getTouristTaxStripeErrorMessage());
+    showTopAlert(err.message||getTouristTaxStripeErrorMessage());
+    showToast(err.message||getTouristTaxStripeErrorMessage());
+  }finally{
+    clearTouristTaxStripeReturnParams();
+  }
+}
+function verifyStripeTouristTaxPaymentBeforeSubmit(payload){
+  var stripeVerification=payload&&payload.tourist_tax_payment&&payload.tourist_tax_payment.verification
+    ? payload.tourist_tax_payment.verification
+    : getTouristTaxVerificationResult(TOURIST_TAX_STRIPE_METHOD);
+  if(!stripeVerification || stripeVerification.matched!==true || String(stripeVerification.provider||'').toLowerCase()!=='stripe'){
+    var stripeMessage=getTouristTaxStripeErrorMessage();
+    setTouristTaxVerificationStatus('error',stripeMessage);
+    throw createTouristTaxVerificationError(stripeMessage,'touristTaxStripeField');
+  }
+  setTouristTaxVerificationResult(TOURIST_TAX_STRIPE_METHOD,stripeVerification);
+  return stripeVerification;
+}
+async function verifyTouristTaxPaymentBeforeSubmit(payload){
+  if(!isBookingTouristTaxRequired())return null;
+  var verificationPayload=payload&&payload.tourist_tax_payment?payload.tourist_tax_payment:buildTouristTaxPaymentPayload();
+  var method=normalizeTouristTaxMethod(verificationPayload&&verificationPayload.method);
+  if(method===TOURIST_TAX_STRIPE_METHOD){
+    return verifyStripeTouristTaxPaymentBeforeSubmit(payload);
+  }
+  setTouristTaxVerificationStatus('loading',msg('touristTaxVerifyPreparing'));
+  updateTouristTaxWhatsappLink();
+  var verificationFiles=await buildTouristTaxVerificationFiles();
+  var res=await fetch('/.netlify/functions/verify-public-tourist-tax-payment',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      expected_amount:verificationPayload&&verificationPayload.amount,
+      currency:verificationPayload&&verificationPayload.currency,
+      beneficiary:verificationPayload&&verificationPayload.beneficiary,
+      iban:verificationPayload&&verificationPayload.iban,
+      files:verificationFiles
+    })
+  });
+  var data=await res.json().catch(function(){ return {}; });
+  if(!res.ok){
+    var unavailableMessage=data&&data.message?data.message:'Caricamento fallito. Contatta Serena su WhatsApp.';
+    setTouristTaxVerificationStatus('error',unavailableMessage);
+    throw createTouristTaxVerificationError(unavailableMessage,'touristTaxField');
+  }
+  if(!data || data.matched!==true){
+    var mismatchMessage=data&&data.message?data.message:'Caricamento fallito. Contatta Serena su WhatsApp.';
+    setTouristTaxVerificationStatus('error',mismatchMessage);
+    throw createTouristTaxVerificationError(mismatchMessage,'touristTaxField');
+  }
+  var verificationResult={
+    matched:true,
+    status:String(data.status||'matched'),
+    message:String(data.message||msg('touristTaxVerifySuccess')),
+    expected_amount:Number(data.expected_amount||0),
+    extracted_amount:Number(data.extracted_amount||0),
+    difference:Number(data.difference||0),
+    tolerance_eur:Number(data.tolerance_eur||0),
+    checked_at:String(data.checked_at||new Date().toISOString()),
+    provider:String(data.provider||'anthropic')
+  };
+  setTouristTaxVerificationResult(TOURIST_TAX_BANK_TRANSFER_METHOD,verificationResult);
+  return verificationResult;
+}
+function renderTouristTaxProofUploads(){
+  var listEl=document.getElementById('touristTaxUploadList');
+  if(!listEl)return;
+  var files=getTouristTaxProofEntries();
+  listEl.innerHTML=files.map(function(file,fileIndex){
+    return '<div class="upload-item"><span class="upload-name">'+escAttr(file.name||('file-'+(fileIndex+1)))+'</span><button type="button" class="upload-remove" onclick="removeTouristTaxProofFile('+fileIndex+')">X</button></div>';
+  }).join('');
+}
+function updateTouristTaxMethodUi(){
+  var method=getTouristTaxPaymentMethod();
+  var bankOption=document.getElementById('touristTaxMethodBankOption');
+  var stripeOption=document.getElementById('touristTaxMethodStripeOption');
+  var bankPanel=document.getElementById('touristTaxBankPanel');
+  var stripePanel=document.getElementById('touristTaxStripeField');
+  if(stripeOption)stripeOption.style.display=TOURIST_TAX_STRIPE_ENABLED?'':'none';
+  if(!TOURIST_TAX_STRIPE_ENABLED&&method===TOURIST_TAX_STRIPE_METHOD){
+    method=TOURIST_TAX_BANK_TRANSFER_METHOD;
+    setTouristTaxPaymentMethod(method);
+    return;
+  }
+  if(bankOption)bankOption.classList.toggle('active',method===TOURIST_TAX_BANK_TRANSFER_METHOD);
+  if(stripeOption)stripeOption.classList.toggle('active',method===TOURIST_TAX_STRIPE_METHOD);
+  if(bankPanel)bankPanel.style.display=method===TOURIST_TAX_BANK_TRANSFER_METHOD?'':'none';
+  if(stripePanel)stripePanel.style.display=method===TOURIST_TAX_STRIPE_METHOD?'':'none';
+  updateTouristTaxWhatsappLink();
+  syncTouristTaxVerificationStatus();
+  if(currentStep===2)buildReview();
+}
+function updateBookingTouristTaxUi(){
+  var card=document.getElementById('touristTaxCard');
+  if(!card)return;
+  card.style.display=isBookingTouristTaxRequired()?'':'none';
+  renderTouristTaxProofUploads();
+  updateTouristTaxMethodUi();
+}
+function handleTouristTaxAmountInput(){
+  var input=document.getElementById('touristTaxAmount');
+  if(input)markFilled(input);
+  resetTouristTaxVerification();
+  updateTouristTaxWhatsappLink();
+  clearFieldError('touristTaxAmount');
+  clearFieldError('touristTaxField');
+  clearFieldError('touristTaxStripeField');
+  if(currentStep===2)buildReview();
+}
+function handleTouristTaxConfirmChange(){
+  clearFieldError('touristTaxConfirm');
+  if(currentStep===2)buildReview();
+}
+function handleTouristTaxMethodChange(){
+  clearFieldError('touristTaxMethodField');
+  clearFieldError('touristTaxField');
+  clearFieldError('touristTaxStripeField');
+  updateTouristTaxMethodUi();
+}
+function handleTouristTaxProofFiles(files){
+  var selected=Array.prototype.slice.call(files||[]).filter(Boolean);
+  if(!selected.length)return;
+  var key=getGuestStoreKey(TOURIST_TAX_STORE_KEY);
+  var validated=validateGuestFiles(TOURIST_TAX_STORE_KEY,selected);
+  if(validated.errors.length)showToast(validated.errors[0]);
+  if(!validated.accepted.length)return;
+  guestDocumentStore[key]=(guestDocumentStore[key]||[]).concat(validated.accepted.map(function(file){
+    return createGuestFileEntry(0,file,{guestScope:'tourist_tax'});
+  }));
+  resetTouristTaxVerification(TOURIST_TAX_BANK_TRANSFER_METHOD);
+  clearDirectDocumentUploadState();
+  clearFieldError('touristTaxField');
+  renderTouristTaxProofUploads();
+  if(currentStep===2)buildReview();
+}
+function removeTouristTaxProofFile(fileIndex){
+  var key=getGuestStoreKey(TOURIST_TAX_STORE_KEY);
+  if(!Array.isArray(guestDocumentStore[key]))return;
+  guestDocumentStore[key].splice(fileIndex,1);
+  resetTouristTaxVerification(TOURIST_TAX_BANK_TRANSFER_METHOD);
+  clearDirectDocumentUploadState();
+  clearFieldError('touristTaxField');
+  renderTouristTaxProofUploads();
+  var input=document.getElementById('touristTaxProofInput');
+  if(input)input.value='';
+  if(currentStep===2)buildReview();
 }
 function hasValidDocumentEmergencyToken(payload){
   if(!documentEmergencyToken)return false;
@@ -737,6 +1644,23 @@ function getGuestDocumentRequirementMessage(status){
 function hasAllRequiredGuestDocuments(){
   return getGuestDocumentStatus().complete;
 }
+function getUploadedGuestDocumentEntries(){
+  var files=[];
+  Object.keys(guestDocumentStore).forEach(function(key){
+    (guestDocumentStore[key]||[]).forEach(function(item){
+      if(item&&item.file)files.push(item.file);
+    });
+  });
+  return files;
+}
+function getUploadedGuestDocumentsTotalBytes(){
+  return getUploadedGuestDocumentEntries().reduce(function(sum,file){
+    return sum+Number(file&&file.size?file.size:0);
+  },0);
+}
+function shouldUseDirectCheckinDocumentUpload(){
+  return getUploadedGuestDocumentsTotalBytes()>MAX_GUEST_SUBMIT_UPLOAD_BYTES;
+}
 function shouldUseDocumentEmergencyFlow(){
   return documentEmergencyBypass && !hasAllRequiredGuestDocuments();
 }
@@ -755,7 +1679,11 @@ function updateDocumentFlowUi(){
   if(status.complete){
     statusEl.className='document-flow-status ready';
     statusEl.textContent=msg('documentsReady');
-    noteEl.innerHTML=t('documentFlowNote');
+    noteEl.innerHTML=shouldUseDirectCheckinDocumentUpload()
+      ? (lang==='en'
+          ? 'Large documents detected: they will be sent with a direct secure upload during submission.'
+          : 'Documenti pesanti rilevati: durante l invio useremo un upload diretto sicuro.')
+      : t('documentFlowNote');
     buttonEl.style.display='none';
     return;
   }
@@ -841,12 +1769,21 @@ function setLang(l){
     var v=T[l]&&T[l][k]!==undefined?T[l][k]:(T.it[k]!==undefined?T.it[k]:null);
     if(v!==null&&el.tagName!=='INPUT'&&el.tagName!=='TEXTAREA'&&el.tagName!=='SELECT')el.innerHTML=v;
   });
+  hydrateResidenceCountrySelect();
+  syncCountryFieldPlaceholders();
   initDateParts();
   renderAdditionalGuests();
   updateBirthOriginUi();
   updatePrimaryGuestUi();
   renderGuestUploads(0);
   updateDocumentFlowUi();
+  updateBookingTouristTaxUi();
+  ensureCountryOptionsLoaded().finally(function(){
+    rebuildCountryDisplayState();
+    hydrateCountryDatalist();
+    syncCountryUiLanguage();
+    if(currentStep===2)buildReview();
+  });
 }
 
 function goToStep(n){
@@ -856,7 +1793,10 @@ function goToStep(n){
   document.getElementById('progressFill').style.width=n===1?'50%':'100%';
   document.getElementById('s1').className='step'+(n>1?' done':' active');
   document.getElementById('s2').className='step'+(n===2?' active':'');
-  if(n===2)updateDocumentFlowUi();
+  if(n===2){
+    updateDocumentFlowUi();
+    updateBookingTouristTaxUi();
+  }
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -883,8 +1823,7 @@ function updateInvoiceBusinessRequirements(){
 }
 
 function onPaeseChange(){
-  var v=document.getElementById('paeseResidenza').value;
-  isItalian=v==='IT';
+  isItalian=isItalianResidenceSelected();
   clearAllErrors();
   clearTopAlert();
   resetCfWarning();
@@ -926,23 +1865,24 @@ function ensureCountryOptionsLoaded(){
       var rows=String(csv||'').split(/\r?\n/).map(function(line){return line.trim();}).filter(Boolean);
       if(rows.length<2)return;
       var names=[];
-      var map=new Map();
+      var canonicalMap=new Map();
       rows.slice(1).forEach(function(line){
         var cols=parseCsvLine(line);
         var description=normalizeValue(cols[1]||'');
         var dataFineVal=normalizeValue(cols[3]||'');
         if(!description||dataFineVal)return;
         names.push(description);
-        map.set(normalizeComuneLookupValue(description),description);
+        canonicalMap.set(normalizeComuneLookupValue(description),description);
       });
       Object.keys(COUNTRY_ALIASES).forEach(function(alias){
         var targetKey=normalizeComuneLookupValue(COUNTRY_ALIASES[alias]);
-        var targetValue=map.get(targetKey);
-        if(targetValue)map.set(normalizeComuneLookupValue(alias),targetValue);
+        var targetValue=canonicalMap.get(targetKey);
+        if(targetValue)canonicalMap.set(normalizeComuneLookupValue(alias),targetValue);
       });
-      countryOptionsState.names=Array.from(new Set(names)).sort(function(a,b){return a.localeCompare(b,'it',{sensitivity:'base'});});
-      countryOptionsState.map=map;
+      countryOptionsState.canonicalNames=Array.from(new Set(names)).sort(function(a,b){return a.localeCompare(b,'it',{sensitivity:'base'});});
+      countryOptionsState.canonicalMap=canonicalMap;
       countryOptionsState.loaded=true;
+      rebuildCountryDisplayState();
       hydrateCountryDatalist();
     })
     .catch(function(err){
@@ -956,17 +1896,12 @@ function ensureCountryOptionsLoaded(){
 function hydrateCountryDatalist(){
   var list=document.getElementById('countryOptions');
   if(!list)return;
-  list.innerHTML=countryOptionsState.names.map(function(name){
+  list.innerHTML=countryOptionsState.displayNames.map(function(name){
     return '<option value="'+escAttr(name)+'"></option>';
   }).join('');
 }
 function normalizeKnownCountryValue(value){
-  var normalized=normalizeCitizenshipValue(value);
-  var key=normalizeComuneLookupValue(normalized);
-  if(!key)return '';
-  if(countryOptionsState.map.has(key))return countryOptionsState.map.get(key);
-  if(COUNTRY_ALIASES[key])return COUNTRY_ALIASES[key];
-  return normalized;
+  return resolveCanonicalCountryValue(value)||normalizeValue(value);
 }
 function isItalianCountryValue(value){
   var normalized=normalizeComuneLookupValue(normalizeKnownCountryValue(value)||value);
@@ -976,10 +1911,11 @@ function isKnownForeignCountryValue(value){
   var normalized=normalizeKnownCountryValue(value);
   if(!normalized)return false;
   var key=normalizeComuneLookupValue(normalized);
-  return !isItalianCountryValue(normalized) && (!!key && (countryOptionsState.map.has(key) || Object.prototype.hasOwnProperty.call(COUNTRY_ALIASES, normalizeComuneLookupValue(value))));
+  return !isItalianCountryValue(normalized) && (!!key && (countryOptionsState.displayMap.has(key) || Object.prototype.hasOwnProperty.call(COUNTRY_ALIASES, normalizeComuneLookupValue(value))));
 }
 function handleIssuePlaceAsCountry(value){
-  var normalized=normalizeKnownCountryValue(value)||normalizeValue(value);
+  var canonical=resolveCanonicalCountryValue(value)||normalizeValue(value);
+  var normalized=getCountryDisplayValue(canonical)||canonical;
   var inputEl=document.getElementById('luogoRilascioDocumento');
   if(inputEl&&normalized&&inputEl.value!==normalized){
     inputEl.value=normalized;
@@ -988,11 +1924,29 @@ function handleIssuePlaceAsCountry(value){
   resetComuneChoice('issue');
   setComuneStatus('issue',msg('issuePlaceCountryHint'));
 }
+function handleIssuePlaceInput(){
+  var el=document.getElementById('luogoRilascioDocumento');
+  if(!el)return;
+  markFilled(el);
+  handleComuneFieldInput('issue');
+  if(!countryOptionsState.loaded){
+    ensureCountryOptionsLoaded().finally(function(){
+      if(normalizeValue(document.getElementById('luogoRilascioDocumento')?.value))handleComuneFieldInput('issue');
+    });
+  }
+}
+function handleIssuePlaceBlur(){
+  handleCountryFieldBlur('luogoRilascioDocumento');
+  ensureCountryOptionsLoaded().finally(function(){
+    if(normalizeValue(document.getElementById('luogoRilascioDocumento')?.value))handleComuneFieldInput('issue');
+  });
+}
 function handleCountryFieldBlur(id){
   ensureCountryOptionsLoaded().finally(function(){
     var el=document.getElementById(id);
     if(!el)return;
-    var normalized=normalizeKnownCountryValue(el.value);
+    var canonical=resolveCanonicalCountryValue(el.value);
+    var normalized=canonical?getCountryDisplayValue(canonical):'';
     if(normalized&&normalized!==el.value){
       el.value=normalized;
       markFilled(el);
@@ -1004,7 +1958,8 @@ function handleAdditionalGuestCountryBlur(index,field){
   ensureCountryOptionsLoaded().finally(function(){
     var el=document.getElementById('additionalGuest_'+index+'_'+field);
     if(!el)return;
-    var normalized=normalizeKnownCountryValue(el.value);
+    var canonical=resolveCanonicalCountryValue(el.value);
+    var normalized=canonical?getCountryDisplayValue(canonical):'';
     if(normalized&&normalized!==el.value){
       el.value=normalized;
       markFilled(el);
@@ -1221,6 +2176,14 @@ function getComuneSelectedLabel(kind){
   var codeEl=document.getElementById(cfg.codeId);
   return codeEl&&codeEl.dataset?codeEl.dataset.label||'':'';
 }
+function getComuneChoiceRequiredMessage(kind){
+  if(kind==='issue')return t('issuePlaceLabel')+': '+t('comuneChoiceRequiredMsg');
+  if(kind==='birth')return t('birthPlaceComune')+': '+t('comuneChoiceRequiredMsg');
+  if(isAdditionalGuestBirthKind(kind)){
+    return t('guestLabel')+' '+(getAdditionalGuestIndexFromKind(kind)+2)+' · '+t('birthPlace')+': '+t('comuneChoiceRequiredMsg');
+  }
+  return t('comuneChoiceRequiredMsg');
+}
 function setComuneStatus(kind,message){
   var cfg=getComuneFieldConfig(kind);
   var statusEl=document.getElementById(cfg.statusId);
@@ -1306,7 +2269,7 @@ function renderComuneChoice(kind,matches){
       codeEl.value='';
       codeEl.dataset.label='';
       codeEl.dataset.resolvedInput='';
-      setComuneStatus(kind,t('comuneChoiceRequiredMsg'));
+      setComuneStatus(kind,getComuneChoiceRequiredMessage(kind));
     }
     fieldEl.style.display='';
     return;
@@ -1467,7 +2430,7 @@ function handleComuneChoiceChange(kind,code,label){
     codeEl.dataset.label='';
     codeEl.dataset.resolvedInput='';
   }
-  setComuneStatus(kind,codeEl&&codeEl.value?codeEl.dataset.label:t('comuneChoiceRequiredMsg'));
+  setComuneStatus(kind,codeEl&&codeEl.value?codeEl.dataset.label:getComuneChoiceRequiredMessage(kind));
   if(kind==='birth')scheduleCfAutofill();
 }
 function isComuneChoiceRequired(kind){
@@ -1484,8 +2447,7 @@ function getAdditionalGuestIndexFromKind(kind){
 }
 function isAdditionalGuestBornInItaly(index){
   var stateEl=document.getElementById('additionalGuest_'+index+'_stato_nascita');
-  var normalized=normalizeComuneLookupValue(stateEl&&stateEl.value?stateEl.value:'');
-  return normalized==='italia'||normalized==='italy'||normalized==='it';
+  return isItalianCountryValue(stateEl&&stateEl.value?stateEl.value:'');
 }
 function getAdditionalGuestComuneKind(index){
   return 'additional_birth_'+index;
@@ -1564,7 +2526,7 @@ function computeSuggestedCF(){
 }
 function applySuggestedCF(force){
   var cfEl=document.getElementById('cf');
-  if(!cfEl || !isItalian)return;
+  if(!cfEl || !isItalianResidenceSelected())return;
   var generated=computeSuggestedCF();
   if(!generated)return;
   var current=normalizeUpperNoSpaces(cfEl.value);
@@ -1613,24 +2575,21 @@ function setCapLookupStatus(message,isWarn){
   el.className='helper-note'+(isWarn?' warn':'');
 }
 function normalizeCitizenshipValue(value){
-  var normalized=normalizeComuneLookupValue(value||'');
-  if(!normalized)return '';
-  if(['italia','italy','italiana','italiano','cittadinanza italiana','nazionalita italiana','nazionalita: italia'].indexOf(normalized)>=0)return 'Italia';
-  return normalizeValue(value);
+  return resolveCanonicalCountryValue(value)||normalizeValue(value);
 }
 function resolveOcrBirthOrigin(data){
   var explicitState=normalizeKnownCountryValue(data.stato_nascita||'');
   if(explicitState && !isItalianCountryValue(explicitState)){
     document.getElementById('natoInItalia').value='0';
     updateBirthOriginUi();
-    updateFieldValue('statoNascitaEstero',explicitState);
+    updateCountryFieldValue('statoNascitaEstero',explicitState);
     return;
   }
   var foreignBirthCountry=normalizeKnownCountryValue(data.luogo_nascita||'');
   if(foreignBirthCountry && !isItalianCountryValue(foreignBirthCountry)){
     document.getElementById('natoInItalia').value='0';
     updateBirthOriginUi();
-    updateFieldValue('statoNascitaEstero',foreignBirthCountry);
+    updateCountryFieldValue('statoNascitaEstero',foreignBirthCountry);
     updateFieldValue('luogoNascita','');
     resetComuneChoice('birth');
     return;
@@ -1655,9 +2614,9 @@ function applyAdditionalGuestOcrLinkedResolutions(index,data){
   var prefix='additionalGuest_'+index+'_';
   var explicitState=normalizeKnownCountryValue(data.stato_nascita||'');
   if(explicitState){
-    updateFieldValue(prefix+'stato_nascita',explicitState,function(){handleAdditionalGuestBirthStateChange(index);});
+    updateCountryFieldValue(prefix+'stato_nascita',explicitState,function(){handleAdditionalGuestBirthStateChange(index);});
   }else if(!normalizeValue(document.getElementById(prefix+'stato_nascita')?.value)){
-    updateFieldValue(prefix+'stato_nascita',inferGuestBirthState(data),function(){handleAdditionalGuestBirthStateChange(index);});
+    updateCountryFieldValue(prefix+'stato_nascita',inferGuestBirthState(data),function(){handleAdditionalGuestBirthStateChange(index);});
   }else{
     handleAdditionalGuestBirthStateChange(index);
   }
@@ -1726,25 +2685,28 @@ async function resolveResidenceCityCap(cityValue,provinceValue){
   }
 }
 function scheduleResidenceCityLookup(){
-  if(!isItalian)return;
+  if(!isItalianResidenceSelected())return;
   window.clearTimeout(window.__cityCapTimer);
   window.__cityCapTimer=window.setTimeout(function(){
     resolveResidenceCityCap(document.getElementById('citta')?.value||'',document.getElementById('provincia')?.value||'');
   },250);
 }
 function getGuestStoreKey(index){
+  if(typeof index==='string' && index.trim())return index.trim();
   return Number(index)===0?0:Number(index);
 }
-function createGuestFileEntry(index,file){
-  var numericIndex=Number(index)===0?0:Number(index);
+function createGuestFileEntry(index,file,options){
+  var config=options||{};
+  var storeKey=getGuestStoreKey(index);
+  var numericIndex=Number(storeKey);
   var clientId=(window.crypto&&typeof window.crypto.randomUUID==='function')
     ? window.crypto.randomUUID()
     : 'doc_'+Date.now()+'_'+Math.random().toString(36).slice(2,10);
   return {
     clientId:clientId,
     fileField:'guest_file_'+clientId,
-    guestScope:numericIndex===0?'main':'additional',
-    guestIndex:numericIndex,
+    guestScope:config.guestScope||(numericIndex===0?'main':'additional'),
+    guestIndex:Number.isFinite(numericIndex)?numericIndex:0,
     name:file&&file.name?file.name:'',
     size:file&&file.size?file.size:0,
     type:file&&file.type?file.type:'',
@@ -1884,6 +2846,10 @@ function getGuestOcrNoDataMessage(files){
 function getGuestOcrErrorMessage(files){
   return (files||[]).some(isHeicGuestDocumentFile)?msg('ocrErrHeic'):t('ocrErr');
 }
+function getGuestOcrFallbackMessage(files,error){
+  if(error&&(error.code==='ocr_timeout'||error.message==='ocr_timeout'))return msg('ocrSlowAttached');
+  return getGuestOcrErrorMessage(files);
+}
 function hasUploadedGuestDocuments(){
   return Object.keys(guestDocumentStore).some(function(key){
     return Array.isArray(guestDocumentStore[key]) && guestDocumentStore[key].length>0;
@@ -1916,9 +2882,154 @@ function buildCheckinFormData(payload){
   });
   return formData;
 }
+function buildGuestDocumentUploadEntries(){
+  var entries=[];
+  Object.keys(guestDocumentStore).forEach(function(key){
+    (guestDocumentStore[key]||[]).forEach(function(item,fileIndex){
+      if(!item||!item.file)return;
+      entries.push({
+        client_id:item.clientId||'',
+        guest_scope:item.guestScope||'main',
+        guest_index:Number.isFinite(item.guestIndex)?item.guestIndex:0,
+        display_order:fileIndex,
+        file_name:item.name||item.file.name||'documento',
+        mime_type:normalizeValue(item.type||item.file.type||'').toLowerCase()||'application/octet-stream',
+        size_bytes:Number(item.size||item.file.size||0)
+      });
+    });
+  });
+  return entries;
+}
+function findGuestDocumentEntryByClientId(clientId){
+  var target=String(clientId||'').trim();
+  if(!target)return null;
+  var keys=Object.keys(guestDocumentStore);
+  for(var i=0;i<keys.length;i++){
+    var items=guestDocumentStore[keys[i]]||[];
+    for(var j=0;j<items.length;j++){
+      var item=items[j];
+      if(item&&String(item.clientId||'').trim()===target)return item;
+    }
+  }
+  return null;
+}
+function getDirectDocumentUploadCacheKey(payload,entries){
+  return JSON.stringify({
+    binding:buildDocumentEmergencyPayload(payload),
+    documents:(Array.isArray(entries)?entries:[]).map(function(entry){
+      return {
+        client_id:entry.client_id||'',
+        guest_scope:entry.guest_scope||'main',
+        guest_index:Number(entry.guest_index||0),
+        display_order:Number(entry.display_order||0),
+        file_name:entry.file_name||'',
+        mime_type:entry.mime_type||'',
+        size_bytes:Number(entry.size_bytes||0)
+      };
+    })
+  });
+}
+async function requestPublicCheckinUploadTargets(payload,entries){
+  var res=await fetch('/.netlify/functions/create-public-checkin-upload-urls',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      apartment_ref:payload&&payload.apartment_ref,
+      email:payload&&payload.email,
+      telefono:payload&&payload.telefono,
+      cognome:payload&&payload.cognome,
+      data_checkin:payload&&payload.data_checkin,
+      data_checkout:payload&&payload.data_checkout,
+      document_uploads:entries
+    })
+  });
+  var data=await res.json().catch(function(){ return {}; });
+  if(!res.ok || !data || !data.upload_batch_token || !Array.isArray(data.uploads)){
+    throw new Error((data&&data.fields&&data.fields[0]&&data.fields[0].message)||data.error||t('errSending'));
+  }
+  return data;
+}
+async function uploadGuestDocumentToSignedUrl(target,file){
+  var formData=new FormData();
+  formData.append('cacheControl','3600');
+  formData.append('',file,target&&target.file_name?target.file_name:(file&&file.name?file.name:'documento'));
+  var res=await fetch(String(target&&target.signed_url||''),{
+    method:'PUT',
+    headers:{'x-upsert':'true'},
+    body:formData
+  });
+  if(!res.ok){
+    var rawText=await res.text().catch(function(){ return ''; });
+    throw new Error(rawText||t('errSending'));
+  }
+}
+async function ensureDirectCheckinDocumentsUploaded(payload){
+  var entries=buildGuestDocumentUploadEntries();
+  if(!entries.length)return {upload_batch_token:'',documents:[]};
+  var cacheKey=getDirectDocumentUploadCacheKey(payload,entries);
+  if(directDocumentUploadState.cacheKey===cacheKey && directDocumentUploadState.uploadBatchToken && Array.isArray(directDocumentUploadState.documents) && directDocumentUploadState.documents.length===entries.length){
+    return {
+      upload_batch_token:directDocumentUploadState.uploadBatchToken,
+      documents:directDocumentUploadState.documents.slice()
+    };
+  }
+  var prepared=await requestPublicCheckinUploadTargets(payload,entries);
+  await Promise.all((prepared.uploads||[]).map(async function(target){
+    var item=findGuestDocumentEntryByClientId(target&&target.client_id);
+    if(!item||!item.file)throw new Error('Documento locale non trovato');
+    await uploadGuestDocumentToSignedUrl(target,item.file);
+  }));
+  var documents=(prepared.uploads||[]).map(function(entry){
+    return {
+      client_id:entry.client_id||'',
+      guest_scope:entry.guest_scope||'main',
+      guest_index:Number(entry.guest_index||0),
+      display_order:Number(entry.display_order||0),
+      file_name:entry.file_name||'',
+      mime_type:entry.mime_type||'',
+      size_bytes:Number(entry.size_bytes||0),
+      storage_bucket:entry.storage_bucket||'',
+      storage_path:entry.storage_path||''
+    };
+  });
+  directDocumentUploadState.cacheKey=cacheKey;
+  directDocumentUploadState.uploadBatchToken=String(prepared.upload_batch_token||'');
+  directDocumentUploadState.documents=documents.slice();
+  return {
+    upload_batch_token:directDocumentUploadState.uploadBatchToken,
+    documents:documents
+  };
+}
 function shouldRetryGuestSubmit(status,error){
   if(error)return true;
   return RETRYABLE_SUBMIT_STATUS_CODES.indexOf(Number(status||0))>=0;
+}
+async function fetchGuestOcrResponse(images){
+  var controller=typeof AbortController==='function'?new AbortController():null;
+  var timeoutId=null;
+  try{
+    if(controller){
+      timeoutId=setTimeout(function(){ controller.abort(); }, OCR_REQUEST_TIMEOUT_MS);
+    }
+    var requestOptions={
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({images:images,tipo:'privato'})
+    };
+    if(controller)requestOptions.signal=controller.signal;
+    var res=await fetch('/.netlify/functions/ocr',requestOptions);
+    if(!res.ok)throw new Error('OCR error');
+    return await res.json();
+  }catch(err){
+    if(err&&err.name==='AbortError'){
+      var timeoutError=new Error('ocr_timeout');
+      timeoutError.code='ocr_timeout';
+      throw timeoutError;
+    }
+    throw err;
+  }finally{
+    if(timeoutId)clearTimeout(timeoutId);
+  }
 }
 async function submitCheckinRequestWithRetry(requestFactory,onAttempt){
   var lastError=null;
@@ -1927,11 +3038,16 @@ async function submitCheckinRequestWithRetry(requestFactory,onAttempt){
     try{
       var requestOptions=requestFactory();
       var res=await fetch('/.netlify/functions/submit-public-checkin',requestOptions);
-      var data=await res.json().catch(function(){ return {}; });
-      if(res.ok || !shouldRetryGuestSubmit(res.status,null) || attempt===2){
-        return {res:res,data:data};
+      var contentType=String(res.headers.get('content-type')||'').toLowerCase();
+      var rawText=await res.text().catch(function(){ return ''; });
+      var data={};
+      if(rawText){
+        try{ data=JSON.parse(rawText); }catch(_error){ data={}; }
       }
-      lastError=new Error(data.error||t('errSending'));
+      if(res.ok || !shouldRetryGuestSubmit(res.status,null) || attempt===2){
+        return {res:res,data:data,rawText:rawText,contentType:contentType};
+      }
+      lastError=new Error(data.error||rawText||t('errSending'));
     }catch(error){
       lastError=error;
       if(attempt===2 || !shouldRetryGuestSubmit(0,error))break;
@@ -1960,6 +3076,15 @@ async function recoverRecentCheckinSubmission(payload){
     return null;
   }
   return data;
+}
+async function recoverRecentCheckinSubmissionWithRetry(payload){
+  var lastRecovered=null;
+  for(var attempt=0;attempt<5;attempt++){
+    lastRecovered=await recoverRecentCheckinSubmission(payload);
+    if(lastRecovered)return lastRecovered;
+    if(attempt<4)await waitForGuestSubmit(600*(attempt+1));
+  }
+  return null;
 }
 function showSuccessfulCheckinSubmission(data,usedEmergencyFlow){
   document.getElementById('mainContent').style.display='none';
@@ -2003,9 +3128,14 @@ function updateFieldValue(id,value,onAfter){
   markFilled(el);
   if(typeof onAfter==='function')onAfter();
 }
+function updateCountryFieldValue(id,value,onAfter){
+  var canonical=normalizeKnownCountryValue(value);
+  if(!normalizeValue(canonical))return;
+  updateFieldValue(id,getCountryDisplayValue(canonical)||canonical,onAfter);
+}
 function inferGuestBirthState(data){
   var cittadinanza=normalizeComuneLookupValue(normalizeCitizenshipValue(data.cittadinanza)||'');
-  if(cittadinanza==='italia' || cittadinanza==='italy' || cittadinanza==='it')return 'Italia';
+  if(cittadinanza==='italia' || cittadinanza==='italy' || cittadinanza==='it')return getCountryDisplayValue('Italia')||'Italia';
   return '';
 }
 function applyOCRToForm(data){
@@ -2015,12 +3145,13 @@ function applyOCRToForm(data){
     updateFieldValue('cognome',data.cognome);
     updateFieldValue('dataNascita',data.data_nascita,updatePrimaryGuestUi);
     updateFieldValue('sesso',data.sesso);
-    updateFieldValue('cittadinanza',normalizeCitizenshipValue(data.cittadinanza));
+    updateCountryFieldValue('cittadinanza',normalizeCitizenshipValue(data.cittadinanza));
     updateFieldValue('tipoDocumento',data.tipo_documento);
     updateFieldValue('numeroDocumento',data.numero_documento);
     if(normalizeValue(data.luogo_nascita))updateFieldValue('luogoNascita',data.luogo_nascita);
-    if(normalizeValue(data.stato_nascita))updateFieldValue('statoNascitaEstero',normalizeCitizenshipValue(data.stato_nascita));
-    updateFieldValue('luogoRilascioDocumento',data.luogo_rilascio);
+    if(normalizeValue(data.stato_nascita))updateCountryFieldValue('statoNascitaEstero',normalizeCitizenshipValue(data.stato_nascita));
+    if(isKnownForeignCountryValue(data.luogo_rilascio))updateCountryFieldValue('luogoRilascioDocumento',data.luogo_rilascio);
+    else updateFieldValue('luogoRilascioDocumento',data.luogo_rilascio);
     updateFieldValue('cf',data.codice_fiscale);
     if(normalizeValue(data.codice_fiscale)){
       cfAutofillState.manual=true;
@@ -2043,11 +3174,12 @@ function applyOCRToForm(data){
   updateFieldValue(prefix+'cognome',data.cognome);
   updateFieldValue(prefix+'data_nascita',data.data_nascita);
   updateFieldValue(prefix+'sesso',data.sesso);
-  updateFieldValue(prefix+'cittadinanza',normalizeCitizenshipValue(data.cittadinanza));
+  updateCountryFieldValue(prefix+'cittadinanza',normalizeCitizenshipValue(data.cittadinanza));
   updateFieldValue(prefix+'tipo_documento',data.tipo_documento);
   updateFieldValue(prefix+'numero_documento',data.numero_documento);
   updateFieldValue(prefix+'luogo_nascita',data.luogo_nascita);
-  updateFieldValue(prefix+'luogo_rilascio_documento',data.luogo_rilascio);
+  if(isKnownForeignCountryValue(data.luogo_rilascio))updateCountryFieldValue(prefix+'luogo_rilascio_documento',data.luogo_rilascio);
+  else updateFieldValue(prefix+'luogo_rilascio_documento',data.luogo_rilascio);
   applyAdditionalGuestOcrLinkedResolutions(target.index,data);
 }
 function setOcrStatus(scope,index,state,message){
@@ -2076,6 +3208,7 @@ function removeGuestFile(index,fileIndex){
   var key=getGuestStoreKey(index);
   if(!Array.isArray(guestDocumentStore[key]))return;
   guestDocumentStore[key].splice(fileIndex,1);
+  clearDirectDocumentUploadState();
   renderGuestUploads(index);
   var input=document.getElementById(index===0?'mainFileInput':'additionalGuest_'+(index-1)+'_file');
   if(input)input.value='';
@@ -2121,6 +3254,7 @@ async function handleGuestFiles(index,files){
     return;
   }
   guestDocumentStore[key]=(guestDocumentStore[key]||[]).concat(validated.accepted.map(function(file){ return createGuestFileEntry(index,file); }));
+  clearDirectDocumentUploadState();
   renderGuestUploads(index);
   activeOCRTarget=isMain?{scope:'main',index:0}:{scope:'guest',index:guestIndex};
   var allFiles=(guestDocumentStore[key]||[]).map(function(item){ return item.file; }).filter(Boolean);
@@ -2134,20 +3268,15 @@ async function handleGuestFiles(index,files){
   try{
     var preparedOcr=await buildGuestOcrImages(ocrReadyFiles);
     if(!preparedOcr.encoded.length)throw new Error(preparedOcr.heicFailure?'ocr_heic_conversion_failed':'ocr_prepare_failed');
-    var res=await fetch('/.netlify/functions/ocr',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({images:preparedOcr.encoded,tipo:'privato'})
-    });
-    if(!res.ok)throw new Error('OCR error');
-    var response=await res.json();
+    var response=await fetchGuestOcrResponse(preparedOcr.encoded);
     var merged=mergeOCRResults(Array.isArray(response)?response:[]);
     applyOCRToForm(merged);
     setOcrStatus(activeOCRTarget.scope,guestIndex,'success',Object.values(merged).some(function(value){return normalizeValue(value);})?msg('ocrMultiOk'):getGuestOcrNoDataMessage(ocrReadyFiles));
     if(currentStep===2)buildReview();
   }catch(err){
     console.error(err);
-    setOcrStatus(activeOCRTarget.scope,guestIndex,'error',getGuestOcrErrorMessage(ocrReadyFiles));
+    setOcrStatus(activeOCRTarget.scope,guestIndex,'success',getGuestOcrFallbackMessage(ocrReadyFiles,err));
+    if(currentStep===2)buildReview();
   }
 }
 function collectAdditionalGuests(){
@@ -2164,11 +3293,11 @@ function collectAdditionalGuests(){
       luogo_nascita:normalizeValue(document.getElementById('additionalGuest_'+i+'_luogo_nascita')?.value),
       luogo_nascita_codice:normalizeValue(codeEl?.value),
       luogo_nascita_label:codeEl&&codeEl.dataset?normalizeValue(codeEl.dataset.label):getComuneSelectedLabel(kind),
-      stato_nascita:normalizeValue(document.getElementById('additionalGuest_'+i+'_stato_nascita')?.value),
+      stato_nascita:normalizeKnownCountryValue(document.getElementById('additionalGuest_'+i+'_stato_nascita')?.value),
       cittadinanza:normalizeCitizenshipValue(document.getElementById('additionalGuest_'+i+'_cittadinanza')?.value),
       tipo_documento:normalizeValue(document.getElementById('additionalGuest_'+i+'_tipo_documento')?.value),
       numero_documento:normalizeValue(document.getElementById('additionalGuest_'+i+'_numero_documento')?.value),
-      luogo_rilascio_documento:normalizeValue(document.getElementById('additionalGuest_'+i+'_luogo_rilascio_documento')?.value),
+      luogo_rilascio_documento:normalizeKnownCountryValue(document.getElementById('additionalGuest_'+i+'_luogo_rilascio_documento')?.value)||normalizeValue(document.getElementById('additionalGuest_'+i+'_luogo_rilascio_documento')?.value),
       tipo_alloggiato:getAdditionalGuestRoleType()
     });
   }
@@ -2234,6 +3363,7 @@ function renderAdditionalGuests(){
     handleAdditionalGuestBirthStateChange(j);
     renderGuestUploads(j+1);
   }
+  syncCountryUiLanguage();
 }
 function handleNumeroPersoneChange(){
   var el=document.getElementById('numeroPersone');
@@ -2276,7 +3406,6 @@ function updatePrimaryGuestUi(){
 function isCheckoutAfterCheckin(checkin,checkout){return !!checkin&&!!checkout&&checkout>checkin;}
 
 function resetCfWarning(){
-  cfAttempts=0;
   document.getElementById('cfWarning').style.display='none';
 }
 
@@ -2340,21 +3469,27 @@ function mapServerFieldId(id){
   if(id==='email_fattura')return 'email';
   if(id==='indirizzo_fatturazione')return 'indirizzoAz';
   if(id==='guest_documents')return 'documentFlowField';
+  if(id==='tourist_tax_amount')return 'touristTaxAmount';
+  if(id==='tourist_tax_confirm')return 'touristTaxConfirm';
+  if(id==='tourist_tax_proof')return 'touristTaxField';
+  if(id==='tourist_tax_stripe')return 'touristTaxStripeField';
   return id;
 }
 
 function validateCF(){
   var cf=(document.getElementById('cf')?document.getElementById('cf').value:'').trim().toUpperCase();
-  if(!cf||!isItalian)return true;
+  if(!cf||!isItalianResidenceSelected())return true;
   return /^[A-Z]{6}[0-9LMNPQRSTUV]{2}[ABCDEHLMPRST][0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{3}[A-Z]$/.test(cf);
 }
 
 function validateClientData(options){
   var config=options||{};
   var requireDocuments=config.requireDocuments!==false;
+  var requireTouristTax=config.requireTouristTax!==false;
   clearAllErrors();
   var errors=[];
   var paese=document.getElementById('paeseResidenza').value;
+  var italianResidence=paese==='IT';
   var wantsInvoice=!!document.getElementById('vuoiFattura').checked;
   var documentStatus=getGuestDocumentStatus();
 
@@ -2373,11 +3508,11 @@ function validateClientData(options){
   });
   if(isBornInItaly()){
     if(!normalizeValue(document.getElementById('luogoNascita').value))errors.push({id:'luogoNascita',msg:t('errRequired')});
-    if(isComuneChoiceRequired('birth')&&!normalizeValue(document.getElementById('luogoNascitaCodice').value))errors.push({id:'birthPlaceItalyChoiceField',msg:t('comuneChoiceRequiredMsg')});
+    if(isComuneChoiceRequired('birth')&&!normalizeValue(document.getElementById('luogoNascitaCodice').value))errors.push({id:'birthPlaceItalyChoiceField',msg:getComuneChoiceRequiredMessage('birth')});
   }else{
     if(!normalizeValue(document.getElementById('statoNascitaEstero').value))errors.push({id:'statoNascitaEstero',msg:t('errRequired')});
   }
-  if(isComuneChoiceRequired('issue')&&!normalizeValue(document.getElementById('luogoRilascioCodice').value))errors.push({id:'issuePlaceChoiceField',msg:t('comuneChoiceRequiredMsg')});
+  if(isComuneChoiceRequired('issue')&&!normalizeValue(document.getElementById('luogoRilascioCodice').value))errors.push({id:'issuePlaceChoiceField',msg:getComuneChoiceRequiredMessage('issue')});
   if(normalizeValue(document.getElementById('email').value) && !isValidEmail(document.getElementById('email').value))errors.push({id:'email',msg:msg('invalidEmail')});
   if(normalizeValue(document.getElementById('telefono').value) && !isValidPhone(document.getElementById('telefono').value))errors.push({id:'telefono',msg:msg('invalidPhone')});
   if(getNumeroPersone()>1){
@@ -2396,12 +3531,12 @@ function validateClientData(options){
         errors.push({id:'additionalGuest_'+index+'_stato_nascita',msg:t('errRequired')});
       }
       if(guestBornInItaly&&isComuneChoiceRequired(getAdditionalGuestComuneKind(index))&&!normalizeValue(guest.luogo_nascita_codice)){
-        errors.push({id:'additionalGuest_'+index+'_luogo_nascita_choice',msg:t('comuneChoiceRequiredMsg')});
+        errors.push({id:'additionalGuest_'+index+'_luogo_nascita_choice',msg:getComuneChoiceRequiredMessage(getAdditionalGuestComuneKind(index))});
       }
     });
   }
 
-  if(isItalian){
+  if(italianResidence){
     ['indirizzo','citta','cap'].forEach(function(id){
       if(!normalizeValue(document.getElementById(id).value))errors.push({id:id,msg:t('errRequired')});
     });
@@ -2409,11 +3544,8 @@ function validateClientData(options){
     var cfEl=document.getElementById('cf');
     if(!normalizeValue(cfEl.value))errors.push({id:'cf',msg:t('errRequired')});
     else if(!validateCF()){
-      cfAttempts++;
-      if(cfAttempts<2){
-        document.getElementById('cfWarning').style.display='flex';
-        errors.push({id:'cf',msg:t('cfWarning')});
-      }
+      document.getElementById('cfWarning').style.display='flex';
+      errors.push({id:'cf',msg:t('cfWarning')});
     } else {
       document.getElementById('cfWarning').style.display='none';
     }
@@ -2438,17 +3570,37 @@ function validateClientData(options){
   if(!checkin)errors.push({id:'checkin',msg:t('errDate')});
   if(!checkout)errors.push({id:'checkout',msg:t('errDate')});
   if(checkin&&checkout&&!isCheckoutAfterCheckin(checkin,checkout))errors.push({id:'checkout',msg:msg('invalidCheckout')});
+  if(requireTouristTax && isBookingTouristTaxRequired()){
+    var touristTaxAmount=parseTouristTaxAmountValue(document.getElementById('touristTaxAmount').value);
+    var touristTaxMethod=getTouristTaxPaymentMethod();
+    if(!Number.isFinite(touristTaxAmount) || touristTaxAmount<=0){
+      errors.push({id:'touristTaxAmount',msg:getTouristTaxAmountErrorMessage()});
+    }
+    if(!document.getElementById('touristTaxConfirm').checked){
+      errors.push({id:'touristTaxConfirm',msg:getTouristTaxConfirmErrorMessage()});
+    }
+    if(touristTaxMethod===TOURIST_TAX_STRIPE_METHOD){
+      var stripeVerification=getTouristTaxVerificationResult(TOURIST_TAX_STRIPE_METHOD);
+      if(!stripeVerification || stripeVerification.matched!==true){
+        errors.push({id:'touristTaxStripeField',msg:getTouristTaxStripeErrorMessage()});
+      }
+    }else if(!hasTouristTaxProofUploads()){
+      errors.push({id:'touristTaxField',msg:getTouristTaxProofErrorMessage()});
+    }
+  }
   if(requireDocuments && !documentStatus.complete && !shouldUseDocumentEmergencyFlow()){
     errors.push({id:'documentFlowField',msg:getGuestDocumentRequirementMessage(documentStatus)});
   }
 
   if(errors.length){
+    if(currentStep!==1 && isTouristTaxFieldErrorId(errors[0].id))goToStep(1);
     var seen={};
     errors.forEach(function(err){
       if(seen[err.id])return;
       seen[err.id]=true;
       setFieldError(err.id,err.msg);
     });
+    showTopAlert(errors[0].msg);
     focusField(errors[0].id);
   }
   return errors;
@@ -2456,7 +3608,7 @@ function validateClientData(options){
 
 async function goToStep2(){
   await ensureCriticalComuneLookupsResolved();
-  var errors=validateClientData({requireDocuments:false});
+  var errors=validateClientData({requireDocuments:false,requireTouristTax:false});
   if(errors.length){showToast(errors[0].msg);return;}
   buildReview();goToStep(2);
 }
@@ -2464,6 +3616,7 @@ async function goToStep2(){
 function buildReview(){
   var box=document.getElementById('reviewBox');
   var rows=[];
+  var italianResidence=isItalianResidenceSelected();
   var pEl=document.getElementById('paeseResidenza');
   var birthSummary=isBornInItaly()?(getComuneSelectedLabel('birth')||document.getElementById('luogoNascita').value):document.getElementById('statoNascitaEstero').value;
   var issueSummary=getComuneSelectedLabel('issue')||document.getElementById('luogoRilascioDocumento').value;
@@ -2487,7 +3640,7 @@ function buildReview(){
       rows.push([t('guestLabel')+' '+(index+2)+' · '+getAdditionalGuestRoleLabel(),[guest.nome,guest.cognome,birthText].filter(Boolean).join(' · ')]);
     });
   }
-  if(isItalian){
+  if(italianResidence){
     rows.push([t('CF'),document.getElementById('cf').value.toUpperCase()]);
     rows.push([t('INDIRIZZO'),[document.getElementById('indirizzo').value,document.getElementById('citta').value,document.getElementById('cap').value,document.getElementById('provincia').value].filter(Boolean).join(', ')]);
   }
@@ -2499,6 +3652,36 @@ function buildReview(){
   }
   rows.push([t('CHECKIN'),document.getElementById('checkin').value]);
   rows.push([t('CHECKOUT'),document.getElementById('checkout').value]);
+  if(isBookingTouristTaxRequired()){
+    var touristTaxPayment=buildTouristTaxPaymentPayload()||{};
+    var touristTaxMethod=normalizeTouristTaxMethod(touristTaxPayment.method);
+    rows.push([
+      t('touristTaxReviewLabel'),
+      [
+        touristTaxMethod===TOURIST_TAX_STRIPE_METHOD
+          ? 'Stripe'
+          : (lang==='en'?'Bank transfer':'Bonifico'),
+        formatTouristTaxAmount(Number(touristTaxPayment.amount||0))||'—',
+        touristTaxPayment.booking_amount_confirmed
+          ? (lang==='en'?'Booking amount confirmed':'Importo Booking confermato')
+          : (lang==='en'?'Booking amount to confirm':'Importo Booking da confermare'),
+        touristTaxVerificationState.matched
+          ? (
+              touristTaxMethod===TOURIST_TAX_STRIPE_METHOD
+                ? (lang==='en'?'payment verified':'pagamento verificato')
+                : (lang==='en'?'receipt verified':'ricevuta verificata')
+            )
+          : '',
+        touristTaxMethod===TOURIST_TAX_STRIPE_METHOD
+          ? (touristTaxVerificationState.matched ? (lang==='en'?'paid online':'pagato online') : (lang==='en'?'payment pending':'pagamento da completare'))
+          : (
+              hasTouristTaxProofUploads()
+                ? (lang==='en'?'proof uploaded':'prova caricata')
+                : (lang==='en'?'proof missing':'prova mancante')
+            )
+      ].filter(Boolean).join(' · ')
+    ]);
+  }
   rows.push([lang==='en'?'DOCUMENTS':'DOCUMENTI',documentStatus.complete?msg('documentsReady'):getGuestDocumentRequirementMessage(documentStatus)]);
   if(shouldUseDocumentEmergencyFlow()){
     rows.push([lang==='en'?'EMERGENCY FLOW':'PERCORSO EMERGENZA',msg('documentsEmergency')]);
@@ -2510,14 +3693,17 @@ function buildReview(){
 
 function buildPayload(){
   var paese=document.getElementById('paeseResidenza').value;
+  var italianResidence=paese==='IT';
   var numeroPersone=getNumeroPersone();
+  var touristTaxPayment=buildTouristTaxPaymentPayload();
   var hasBusinessInvoiceData=[
     document.getElementById('ragioneSociale').value,
     document.getElementById('piva').value,
     document.getElementById('indirizzoAz').value
   ].some(function(value){ return normalizeValue(value); });
-  return {
+  var payload={
     apartment_ref:getResolvedApartmentRef(),
+    source_channel_hint:isBookingTouristTaxRequired()?bookingSourceHint:'',
     data_checkin:document.getElementById('checkin').value,
     data_checkout:document.getElementById('checkout').value,
     lingua:lang.toUpperCase(),
@@ -2533,18 +3719,18 @@ function buildPayload(){
     luogo_nascita:document.getElementById('luogoNascita').value.trim(),
     luogo_nascita_codice:document.getElementById('luogoNascitaCodice').value.trim(),
     nato_in_italia:isBornInItaly(),
-    stato_nascita:document.getElementById('statoNascitaEstero').value.trim(),
+    stato_nascita:normalizeKnownCountryValue(document.getElementById('statoNascitaEstero').value.trim()),
     sesso:document.getElementById('sesso').value,
     cittadinanza:normalizeCitizenshipValue(document.getElementById('cittadinanza').value.trim()),
     tipo_documento:document.getElementById('tipoDocumento').value,
     numero_documento:document.getElementById('numeroDocumento').value.trim(),
-    luogo_rilascio_documento:document.getElementById('luogoRilascioDocumento').value.trim(),
+    luogo_rilascio_documento:normalizeKnownCountryValue(document.getElementById('luogoRilascioDocumento').value.trim())||document.getElementById('luogoRilascioDocumento').value.trim(),
     luogo_rilascio_codice:document.getElementById('luogoRilascioCodice').value.trim(),
     tipo_alloggiato:getPrimaryGuestRoleType(),
     additional_guests:numeroPersone>1?collectAdditionalGuests():[],
-    codice_fiscale:isItalian?document.getElementById('cf').value.trim().toUpperCase():'',
-    codice_fiscale_verificato:isItalian?validateCF():true,
-    indirizzo_residenza:isItalian?[document.getElementById('indirizzo').value.trim(),document.getElementById('citta').value.trim(),document.getElementById('cap').value.trim(),document.getElementById('provincia').value.trim().toUpperCase()].filter(Boolean).join(', '):'',
+    codice_fiscale:italianResidence?document.getElementById('cf').value.trim().toUpperCase():'',
+    codice_fiscale_verificato:italianResidence?validateCF():true,
+    indirizzo_residenza:italianResidence?[document.getElementById('indirizzo').value.trim(),document.getElementById('citta').value.trim(),document.getElementById('cap').value.trim(),document.getElementById('provincia').value.trim().toUpperCase()].filter(Boolean).join(', '):'',
     ragione_sociale:document.getElementById('ragioneSociale').value.trim(),
     indirizzo_fatturazione:document.getElementById('indirizzoAz').value.trim(),
     piva_cliente:document.getElementById('piva').value.trim(),
@@ -2553,6 +3739,8 @@ function buildPayload(){
     document_upload_issue:shouldUseDocumentEmergencyFlow(),
     document_emergency_token:shouldUseDocumentEmergencyFlow()?documentEmergencyToken:''
   };
+  if(touristTaxPayment)payload.tourist_tax_payment=touristTaxPayment;
+  return payload;
 }
 
 async function submitForm(){
@@ -2565,11 +3753,23 @@ async function submitForm(){
   var payload=buildPayload();
   var usedEmergencyFlow=shouldUseDocumentEmergencyFlow();
   try{
+    if(isBookingTouristTaxRequired()){
+      var touristTaxVerification=await verifyTouristTaxPaymentBeforeSubmit(payload);
+      if(payload.tourist_tax_payment && touristTaxVerification){
+        payload.tourist_tax_payment.verification=touristTaxVerification;
+      }
+    }
     if(usedEmergencyFlow){
       payload.document_emergency_token=await ensureDocumentEmergencyToken(payload);
     }
     var hasDocuments=hasUploadedGuestDocuments();
-    var requestFactory=hasDocuments
+    var useDirectDocumentUpload=hasDocuments && shouldUseDirectCheckinDocumentUpload() && !usedEmergencyFlow;
+    if(useDirectDocumentUpload){
+      var uploadedDocuments=await ensureDirectCheckinDocumentsUploaded(payload);
+      payload.document_upload_batch_token=uploadedDocuments.upload_batch_token;
+      payload.document_uploads=uploadedDocuments.documents;
+    }
+    var requestFactory=hasDocuments && !usedEmergencyFlow && !useDirectDocumentUpload
       ? function(){ return {method:'POST',body:buildCheckinFormData(payload)}; }
       : function(){ return {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}; };
     var response=await submitCheckinRequestWithRetry(requestFactory,function(attempt){
@@ -2586,22 +3786,32 @@ async function submitForm(){
             else setFieldError(mapServerFieldId(field.field),field.message);
           }
         });
+        showTopAlert(data.fields[0].message||t('errSending'));
         if(data.fields[0].field!=='apartment_id') focusField(mapServerFieldId(data.fields[0].field));
         var fieldError=new Error(data.fields[0].message||t('errSending'));
         fieldError.recoveryDisabled=true;
         throw fieldError;
       }
-      var submitError=new Error(data.error||t('errSending'));
+      var submitErrorMessage=data.error||response.rawText||t('errSending');
+      if(data&&data.detail&&!data.error){
+        submitErrorMessage=data.detail;
+      }
+      var submitError=new Error(submitErrorMessage);
       submitError.recoveryDisabled=Number(res.status||0)<500;
       throw submitError;
     }
     showSuccessfulCheckinSubmission(data,usedEmergencyFlow);
   }catch(err){
     console.error(err);
+    if(err&&err.fieldId){
+      if(currentStep!==1 && isTouristTaxFieldErrorId(err.fieldId))goToStep(1);
+      setFieldError(mapServerFieldId(err.fieldId),err.message||t('errSending'));
+      focusField(mapServerFieldId(err.fieldId));
+    }
     if(!err || err.recoveryDisabled!==true){
       try{
         btn.textContent=msg('recoveringSubmit');
-        var recoveredData=await recoverRecentCheckinSubmission(payload);
+        var recoveredData=await recoverRecentCheckinSubmissionWithRetry(payload);
         if(recoveredData){
           showSuccessfulCheckinSubmission(recoveredData,usedEmergencyFlow);
           showToast(msg('submissionRecovered'));
@@ -2611,6 +3821,7 @@ async function submitForm(){
         console.error(recoveryError);
       }
     }
+    showTopAlert(err.message||t('errSending'));
     showToast(err.message||t('errSending'));
     btn.disabled=false;btn.innerHTML=t('invia');
   }
@@ -2636,6 +3847,9 @@ if(urlParams.get('checkout'))document.getElementById('checkout').value=urlParams
 initDateParts();
 updateBirthOriginUi();
 updatePrimaryGuestUi();
+updateBookingTouristTaxUi();
+loadTouristTaxStripeAvailability().catch(function(){});
+handleInitialTouristTaxStripeReturn().catch(function(err){ console.error(err); });
 ensureCountryOptionsLoaded();
 document.addEventListener('input',function(e){
   if(e.target&&e.target.id){

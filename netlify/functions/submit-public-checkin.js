@@ -4,11 +4,24 @@ const fs = require('fs');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 const {
+  preferCurrentComuneRows,
+} = require('./_current-comuni-index');
+const {
   derivePublicCheckinEmergencySecret,
   verifyPublicCheckinEmergencyToken,
 } = require('./_public-checkin-emergency-token');
+const {
+  derivePublicCheckinUploadBatchSecret,
+  verifyPublicCheckinUploadBatchToken,
+} = require('./_public-checkin-upload-batch-token');
 const { resolvePublicCheckinKeyAlias } = require('./_public-checkin-key-rotation');
 const { ensureLocalInvoiceDraftForOspiteId } = require('./_lib/fatture-fic');
+const {
+  DEFAULT_CURRENCY: DEFAULT_STRIPE_TOURIST_TAX_CURRENCY,
+  STRIPE_CHECKOUT_METHOD,
+  evaluateStripeCheckoutSession,
+  retrieveStripeCheckoutSession,
+} = require('./_lib/public-tourist-tax-stripe');
 
 const DEFAULT_SUPABASE_URL = 'https://tysxeikqbgebpfyblgeb.supabase.co';
 const SUPABASE_URL = resolveSupabaseUrl(process.env.SUPABASE_URL);
@@ -17,9 +30,16 @@ const PUBLIC_CHECKIN_EMERGENCY_TOKEN_SECRET = derivePublicCheckinEmergencySecret
   process.env.PUBLIC_CHECKIN_EMERGENCY_TOKEN_SECRET,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+const PUBLIC_CHECKIN_UPLOAD_BATCH_SECRET = derivePublicCheckinUploadBatchSecret(
+  process.env.PUBLIC_CHECKIN_UPLOAD_BATCH_SECRET,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 const PUBLIC_PORTAL_BASE_URL = process.env.PUBLIC_PORTAL_BASE_URL || '';
 const CHECKIN_DOCUMENTS_BUCKET = process.env.PUBLIC_CHECKIN_DOCUMENTS_BUCKET || 'checkin-documents';
 const MAX_CHECKIN_DOCUMENT_SIZE_BYTES = 20 * 1024 * 1024;
+const BOOKING_CHANNEL_HINT = 'booking';
+const TOURIST_TAX_DOCUMENT_SCOPE = 'tourist_tax';
+const BANK_TRANSFER_TOURIST_TAX_METHOD = 'bank_transfer';
 let siteLinksConfigPromise = null;
 let checkinDocumentsBucketPromise = null;
 
@@ -153,7 +173,9 @@ exports.handler = async (event) => {
 
   try {
     const parsedRequest = await parseIncomingRequest(event);
+    const normalizedDocumentUploads = normalizeDocumentUploads(parsedRequest.documentUploads);
     const payload = normalizePayload(parsedRequest.body);
+    payload.document_uploads = normalizedDocumentUploads;
     const validationErrors = validatePayload(payload);
     if (validationErrors.length) {
       return respond(400, { error: 'Validation failed', fields: validationErrors });
@@ -180,7 +202,25 @@ exports.handler = async (event) => {
         });
       }
     }
-    if (!parsedRequest.files.length && !payload.document_upload_issue) {
+    if (!parsedRequest.files.length && normalizedDocumentUploads.length) {
+      const uploadBatchValidation = verifyPublicCheckinUploadBatchToken(
+        payload.document_upload_batch_token,
+        payload,
+        normalizedDocumentUploads,
+        PUBLIC_CHECKIN_UPLOAD_BATCH_SECRET
+      );
+      if (!uploadBatchValidation.ok) {
+        return respond(400, {
+          error: 'Validation failed',
+          fields: [{
+            field: 'guest_documents',
+            message: 'Sessione upload documenti non valida o scaduta. Ricarica i documenti e riprova.',
+          }],
+          detail: uploadBatchValidation.reason || 'invalid_upload_batch',
+        });
+      }
+    }
+    if (!parsedRequest.files.length && !normalizedDocumentUploads.length && !payload.document_upload_issue) {
       return respond(400, {
         error: 'Validation failed',
         fields: [{ field: 'guest_documents', message: 'Carica i documenti di tutti gli ospiti oppure usa il percorso di emergenza WhatsApp.' }],
@@ -204,20 +244,30 @@ exports.handler = async (event) => {
 
     payload.apartment_id = apartment.id;
 
+    const touristTaxServerErrors = await validateTouristTaxPaymentServerSide(payload);
+    if (touristTaxServerErrors.length) {
+      return respond(400, { error: 'Validation failed', fields: touristTaxServerErrors });
+    }
+
     const columnSupport = await detectOptionalColumns(supabase);
-    if (parsedRequest.files.length && !columnSupport.documenti_caricati) {
+    if ((parsedRequest.files.length || normalizedDocumentUploads.length) && !columnSupport.documenti_caricati) {
       return respond(503, {
         error: 'Upload documenti temporaneamente non disponibile',
         fields: [{ field: 'files', message: 'Il supporto documenti non è ancora attivo sul database. Riprova tra poco.' }],
       });
     }
 
+    if (!parsedRequest.files.length) {
+      const storedUploadErrors = await validateStoredDocumentUploads(supabase, normalizedDocumentUploads);
+      if (storedUploadErrors.length) {
+        return respond(400, { error: 'Validation failed', fields: storedUploadErrors });
+      }
+    }
+
     const operationalErrors = await validateOperationalGuestCodes(supabase, payload);
     if (operationalErrors.length) {
       return respond(400, { error: 'Validation failed', fields: operationalErrors });
     }
-
-    const normalizedDocumentUploads = normalizeDocumentUploads(parsedRequest.documentUploads);
     let storedDocuments = [];
     let insertedRecordId = '';
 
@@ -465,6 +515,7 @@ function normalizePayload(body) {
   return {
     apartment_ref: String(body.apartment_ref || body.apt || body.apartment_id || '').trim(),
     apartment_id: '',
+    source_channel_hint: normalizeSourceChannelHint(body.source_channel_hint || body.channel || body.source || ''),
     tipo_cliente: tipoCliente,
     lingua: String(body.lingua || 'IT').trim().toUpperCase(),
     data_checkin: String(body.data_checkin || '').trim(),
@@ -502,12 +553,80 @@ function normalizePayload(body) {
       || body.document_upload_issue === 1
       || body.document_upload_issue === '1',
     document_emergency_token: String(body.document_emergency_token || '').trim(),
+    document_upload_batch_token: String(body.document_upload_batch_token || '').trim(),
+    tourist_tax_payment: normalizeTouristTaxPayment(body.tourist_tax_payment),
   };
+}
+
+function normalizeSourceChannelHint(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  return normalized === BOOKING_CHANNEL_HINT ? BOOKING_CHANNEL_HINT : '';
+}
+
+function normalizeTouristTaxPayment(value) {
+  const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  return {
+    required: source.required === true || source.required === 'true' || normalizeSourceChannelHint(source.channel_hint) === BOOKING_CHANNEL_HINT,
+    channel_hint: normalizeSourceChannelHint(source.channel_hint || source.channel),
+    method: normalizeTouristTaxMethod(source.method),
+    amount: normalizeNullableMoney(source.amount),
+    currency: String(source.currency || DEFAULT_STRIPE_TOURIST_TAX_CURRENCY).trim().toUpperCase() || DEFAULT_STRIPE_TOURIST_TAX_CURRENCY,
+    booking_amount_confirmed: source.booking_amount_confirmed === true
+      || source.booking_amount_confirmed === 'true'
+      || source.booking_amount_confirmed === 1
+      || source.booking_amount_confirmed === '1',
+    beneficiary: String(source.beneficiary || '').trim(),
+    iban: normalizeIban(source.iban),
+    bic: String(source.bic || '').trim().toUpperCase(),
+    causal: String(source.causal || '').trim(),
+    note: String(source.note || '').trim(),
+    verification: normalizeTouristTaxVerification(source.verification),
+  };
+}
+
+function normalizeTouristTaxVerification(value) {
+  const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  return {
+    matched: source.matched === true || source.matched === 'true',
+    status: String(source.status || '').trim().toLowerCase(),
+    message: String(source.message || '').trim(),
+    expected_amount: normalizeNullableMoney(source.expected_amount),
+    extracted_amount: normalizeNullableMoney(source.extracted_amount),
+    difference: normalizeNullableMoney(source.difference),
+    tolerance_eur: normalizeNullableMoney(source.tolerance_eur),
+    checked_at: String(source.checked_at || '').trim(),
+    provider: String(source.provider || '').trim().toLowerCase(),
+    session_id: String(source.session_id || source.sessionId || '').trim(),
+    payment_status: String(source.payment_status || '').trim().toLowerCase(),
+    session_status: String(source.session_status || '').trim().toLowerCase(),
+    amount_total: normalizeNullableMoney(source.amount_total),
+    currency: String(source.currency || DEFAULT_STRIPE_TOURIST_TAX_CURRENCY).trim().toUpperCase() || DEFAULT_STRIPE_TOURIST_TAX_CURRENCY,
+    livemode: source.livemode === true || source.livemode === 'true',
+    customer_email: String(source.customer_email || '').trim().toLowerCase(),
+  };
+}
+
+function normalizeTouristTaxMethod(value) {
+  return String(value || '').trim().toLowerCase() === STRIPE_CHECKOUT_METHOD
+    ? STRIPE_CHECKOUT_METHOD
+    : BANK_TRANSFER_TOURIST_TAX_METHOD;
+}
+
+function normalizeNullableMoney(value) {
+  if (value == null || value === '') return null;
+  const normalized = Number(String(value).replace(',', '.').replace(/[^\d.-]/g, ''));
+  if (!Number.isFinite(normalized)) return null;
+  return Math.round(normalized * 100) / 100;
+}
+
+function normalizeIban(value) {
+  return String(value || '').replace(/\s+/g, '').trim().toUpperCase();
 }
 
 function validatePayload(payload) {
   const errors = [];
   const isItalian = payload.paese_residenza === 'IT';
+  const touristTaxRequired = payload.source_channel_hint === BOOKING_CHANNEL_HINT;
 
   if (!payload.apartment_ref) errors.push(errorField('apartment_id', 'Link appartamento mancante'));
   if (!payload.data_checkin) errors.push(errorField('checkin', 'Check-in obbligatorio'));
@@ -584,7 +703,30 @@ function validatePayload(payload) {
     if (payload.pec && !isValidEmail(payload.pec)) errors.push(errorField('pec', 'PEC non valida'));
   }
 
+  if (touristTaxRequired) {
+    payload.tourist_tax_payment.required = true;
+    payload.tourist_tax_payment.channel_hint = BOOKING_CHANNEL_HINT;
+    if (!Number.isFinite(payload.tourist_tax_payment.amount) || payload.tourist_tax_payment.amount <= 0) {
+      errors.push(errorField('tourist_tax_amount', 'Importo tassa di soggiorno obbligatorio'));
+    }
+    if (!payload.tourist_tax_payment.booking_amount_confirmed) {
+      errors.push(errorField('tourist_tax_confirm', 'Conferma l importo della tassa di soggiorno indicato su Booking'));
+    }
+    if (payload.tourist_tax_payment.method === STRIPE_CHECKOUT_METHOD) {
+      if (!payload.tourist_tax_payment.verification?.session_id) {
+        errors.push(errorField('tourist_tax_stripe', 'Completa il pagamento Stripe prima di continuare'));
+      }
+    } else if (!hasTouristTaxProofUploads(payload.document_uploads)) {
+      errors.push(errorField('tourist_tax_proof', 'Carica la ricevuta o lo screenshot del bonifico della tassa di soggiorno'));
+    }
+  }
+
   return errors;
+}
+
+function hasTouristTaxProofUploads(documentUploads) {
+  return Array.isArray(documentUploads)
+    && documentUploads.some((entry) => String(entry?.guest_scope || '').trim().toLowerCase() === TOURIST_TAX_DOCUMENT_SCOPE);
 }
 
 async function buildInsertPayload(supabase, payload, columnSupport, storedDocuments = []) {
@@ -647,9 +789,114 @@ async function buildInsertPayload(supabase, payload, columnSupport, storedDocume
   if (columnSupport.ragione_sociale) insertPayload.ragione_sociale = hasInvoice ? payload.ragione_sociale || null : null;
   if (columnSupport.indirizzo_fatturazione) insertPayload.indirizzo_fatturazione = hasInvoice ? payload.indirizzo_fatturazione || null : null;
   if (columnSupport.documenti_caricati) insertPayload.documenti_caricati = storedDocuments;
+  if (columnSupport.tassa_soggiorno_pagamento) {
+    insertPayload.tassa_soggiorno_pagamento = buildTouristTaxPaymentRecord(payload, storedDocuments);
+  }
   insertPayload.dati_completi = computeGuestCompleteness(insertPayload);
 
   return insertPayload;
+}
+
+function buildTouristTaxPaymentRecord(payload, storedDocuments = []) {
+  const touristTaxRequired = payload.source_channel_hint === BOOKING_CHANNEL_HINT;
+  if (!touristTaxRequired && !payload.tourist_tax_payment?.required) {
+    return {};
+  }
+
+  const proofDocuments = (Array.isArray(storedDocuments) ? storedDocuments : [])
+    .filter((entry) => String(entry?.guest_scope || '').trim().toLowerCase() === TOURIST_TAX_DOCUMENT_SCOPE);
+  const method = normalizeTouristTaxMethod(payload.tourist_tax_payment?.method);
+  const verification = payload.tourist_tax_payment?.verification || null;
+
+  return {
+    required: true,
+    status: verification?.matched
+      ? (method === STRIPE_CHECKOUT_METHOD ? 'stripe_paid_verified' : 'proof_verified')
+      : method === STRIPE_CHECKOUT_METHOD
+        ? 'pending_stripe_payment'
+        : proofDocuments.length
+          ? 'proof_uploaded'
+          : 'pending_proof',
+    channel_hint: BOOKING_CHANNEL_HINT,
+    method,
+    amount: payload.tourist_tax_payment?.amount ?? null,
+    currency: payload.tourist_tax_payment?.currency || DEFAULT_STRIPE_TOURIST_TAX_CURRENCY,
+    booking_amount_confirmed: !!payload.tourist_tax_payment?.booking_amount_confirmed,
+    beneficiary: payload.tourist_tax_payment?.beneficiary || null,
+    iban: payload.tourist_tax_payment?.iban || null,
+    bic: payload.tourist_tax_payment?.bic || null,
+    causal: payload.tourist_tax_payment?.causal || null,
+    note: payload.tourist_tax_payment?.note || null,
+    verification,
+    proof_documents: proofDocuments,
+    submitted_at: new Date().toISOString(),
+  };
+}
+
+async function validateTouristTaxPaymentServerSide(payload) {
+  const touristTaxRequired = payload.source_channel_hint === BOOKING_CHANNEL_HINT;
+  if (!touristTaxRequired) return [];
+  if (normalizeTouristTaxMethod(payload.tourist_tax_payment?.method) !== STRIPE_CHECKOUT_METHOD) {
+    return [];
+  }
+
+  const stripeSessionId = String(
+    payload.tourist_tax_payment?.verification?.session_id
+    || payload.tourist_tax_payment?.verification?.sessionId
+    || ''
+  ).trim();
+  if (!stripeSessionId) {
+    return [errorField('tourist_tax_stripe', 'Completa il pagamento Stripe prima di continuare')];
+  }
+
+  const secretKey = String(process.env.STRIPE_SECRET_KEY || '').trim();
+  if (!secretKey) {
+    return [errorField('tourist_tax_stripe', 'Pagamento Stripe non disponibile al momento. Usa il bonifico o contatta Serena su WhatsApp.')];
+  }
+
+  try {
+    const session = await retrieveStripeCheckoutSession({
+      secretKey,
+      sessionId: stripeSessionId,
+    });
+    const verification = evaluateStripeCheckoutSession({
+      session,
+      expectedAmount: payload.tourist_tax_payment?.amount,
+      expectedCurrency: payload.tourist_tax_payment?.currency || DEFAULT_STRIPE_TOURIST_TAX_CURRENCY,
+      expectedApartmentRef: payload.apartment_ref,
+      expectedChannelHint: payload.source_channel_hint,
+    });
+
+    if (!verification.matched) {
+      return [errorField('tourist_tax_stripe', verification.message || 'Completa il pagamento Stripe prima di continuare')];
+    }
+
+    payload.tourist_tax_payment.method = STRIPE_CHECKOUT_METHOD;
+    payload.tourist_tax_payment.amount = verification.amount ?? payload.tourist_tax_payment.amount;
+    payload.tourist_tax_payment.currency = verification.currency || payload.tourist_tax_payment.currency || DEFAULT_STRIPE_TOURIST_TAX_CURRENCY;
+    payload.tourist_tax_payment.verification = {
+      matched: true,
+      status: verification.status,
+      message: verification.message,
+      expected_amount: verification.expected_amount,
+      extracted_amount: verification.amount,
+      difference: verification.difference,
+      tolerance_eur: 0,
+      checked_at: verification.checked_at,
+      provider: 'stripe',
+      session_id: verification.session_id,
+      payment_status: verification.payment_status,
+      session_status: verification.session_status,
+      amount_total: verification.amount_total,
+      currency: verification.currency,
+      livemode: verification.livemode,
+      customer_email: verification.customer_email,
+    };
+    return [];
+  } catch (error) {
+    console.error('submit-public-checkin stripe verification error:', error);
+    return [errorField('tourist_tax_stripe', 'Non riesco a verificare il pagamento Stripe. Usa il bonifico o contatta Serena su WhatsApp.')];
+  }
 }
 
 async function buildAdditionalGuestInsertPayloads(supabase, payload, columnSupport, capogruppoId) {
@@ -946,6 +1193,7 @@ async function detectOptionalColumns(supabase) {
   const ragione_sociale = await hasColumn(supabase, 'ragione_sociale');
   const indirizzo_fatturazione = await hasColumn(supabase, 'indirizzo_fatturazione');
   const documenti_caricati = await hasColumn(supabase, 'documenti_caricati');
+  const tassa_soggiorno_pagamento = await hasColumn(supabase, 'tassa_soggiorno_pagamento');
   return {
     numero_persone,
     additional_guests,
@@ -964,6 +1212,7 @@ async function detectOptionalColumns(supabase) {
     ragione_sociale,
     indirizzo_fatturazione,
     documenti_caricati,
+    tassa_soggiorno_pagamento,
   };
 }
 
@@ -1100,14 +1349,28 @@ function normalizeDocumentUploads(value) {
   return raw.map((entry, index) => ({
     client_id: String(entry?.client_id || '').trim() || `doc-${index + 1}`,
     file_field: String(entry?.file_field || '').trim(),
-    guest_scope: String(entry?.guest_scope || '').trim() === 'additional' ? 'additional' : 'main',
+    guest_scope: normalizeGuestDocumentScope(entry?.guest_scope),
     guest_index: normalizeGuestDocumentIndex(entry?.guest_index),
     display_order: normalizeGuestDocumentIndex(entry?.display_order),
+    file_name: String(entry?.file_name || '').trim(),
+    mime_type: String(entry?.mime_type || '').trim().toLowerCase(),
+    size_bytes: normalizePositiveInt(entry?.size_bytes),
+    storage_bucket: String(entry?.storage_bucket || '').trim(),
+    storage_path: String(entry?.storage_path || '').trim(),
   }));
 }
 
+function normalizeGuestDocumentScope(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (normalized === 'additional') return 'additional';
+  if (normalized === TOURIST_TAX_DOCUMENT_SCOPE) return TOURIST_TAX_DOCUMENT_SCOPE;
+  return 'main';
+}
+
 async function persistUploadedDocuments(supabase, payload, files, documentUploads) {
-  if (!Array.isArray(files) || !files.length) return [];
+  if (!Array.isArray(files) || !files.length) {
+    return buildStoredDocumentsFromUploads(documentUploads);
+  }
 
   await ensureCheckinDocumentsBucket(supabase);
 
@@ -1153,6 +1416,49 @@ async function persistUploadedDocuments(supabase, payload, files, documentUpload
   }
 
   return storedDocuments;
+}
+
+function buildStoredDocumentsFromUploads(documentUploads) {
+  return (Array.isArray(documentUploads) ? documentUploads : [])
+    .filter((entry) => entry && entry.storage_bucket && entry.storage_path)
+    .map((entry) => ({
+      client_id: entry.client_id || '',
+      guest_scope: entry.guest_scope || 'main',
+      guest_index: entry.guest_index ?? 0,
+      display_order: entry.display_order ?? 0,
+      file_name: entry.file_name || '',
+      mime_type: entry.mime_type || '',
+      size_bytes: Number(entry.size_bytes || 0),
+      storage_bucket: entry.storage_bucket || CHECKIN_DOCUMENTS_BUCKET,
+      storage_path: entry.storage_path || '',
+      uploaded_at: new Date().toISOString(),
+    }));
+}
+
+async function validateStoredDocumentUploads(supabase, documentUploads) {
+  if (!Array.isArray(documentUploads) || !documentUploads.length) return [];
+  const errors = [];
+  for (const entry of documentUploads) {
+    const fileName = String(entry?.file_name || 'Documento').trim();
+    const fieldName = String(entry?.guest_scope || '').trim().toLowerCase() === TOURIST_TAX_DOCUMENT_SCOPE
+      ? 'tourist_tax_proof'
+      : 'guest_documents';
+    const storageBucket = String(entry?.storage_bucket || '').trim();
+    const storagePath = String(entry?.storage_path || '').trim();
+    if (storageBucket !== CHECKIN_DOCUMENTS_BUCKET) {
+      errors.push(errorField(fieldName, `${fileName}: bucket documento non valido.`));
+      continue;
+    }
+    if (!storagePath.startsWith('public-checkin/')) {
+      errors.push(errorField(fieldName, `${fileName}: percorso documento non valido.`));
+      continue;
+    }
+    const { data, error } = await supabase.storage.from(storageBucket).exists(storagePath);
+    if (error || !data) {
+      errors.push(errorField(fieldName, `${fileName}: upload documento mancante o incompleto. Ricarica il file e riprova.`));
+    }
+  }
+  return errors;
 }
 
 async function ensureCheckinDocumentsBucket(supabase) {
@@ -1221,6 +1527,11 @@ function isAllowedUploadFile(file) {
 function normalizeGuestDocumentIndex(value) {
   const parsed = parseInt(value, 10);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+}
+
+function normalizePositiveInt(value) {
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
 }
 
 function sanitizeStorageKeyPart(value) {
@@ -1595,7 +1906,7 @@ async function findUniqueComuneCode(supabase, value, options = {}) {
       collectedRows.push(row);
     });
 
-    const resolved = resolveComuneLookupRows(collectedRows, normalizedComune, provinceHint);
+    const resolved = await resolveComuneLookupRows(collectedRows, normalizedComune, provinceHint);
     if (resolved.status === 'matched' || resolved.status === 'ambiguous') {
       return resolved;
     }
@@ -1816,7 +2127,7 @@ async function fetchComuneLookupRows(supabase, pattern) {
   return Array.isArray(data) ? data : [];
 }
 
-function resolveComuneLookupRows(rows, normalizedComune, provinceHint) {
+async function resolveComuneLookupRows(rows, normalizedComune, provinceHint) {
   const exactRows = (Array.isArray(rows) ? rows : []).filter((row) => (
     normalizeComuneLookupValue(row?.nome) === normalizedComune
   ));
@@ -1826,6 +2137,13 @@ function resolveComuneLookupRows(rows, normalizedComune, provinceHint) {
       normalizeUpperProvinceCode(row?.provincia) === provinceHint
     ));
     if (narrowed.length) return resolveLookupRows(narrowed);
+  }
+
+  const preferredRows = await preferCurrentComuneRows(exactRows, normalizedComune, {
+    normalize: normalizeComuneLookupValue,
+  });
+  if (preferredRows.length !== exactRows.length) {
+    return resolveLookupRows(preferredRows);
   }
 
   return resolveLookupRows(exactRows);
