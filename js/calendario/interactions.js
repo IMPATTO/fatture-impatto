@@ -7,13 +7,13 @@ import {
   initializeFilterDefaults,
   loadMonthData,
   loadStaticData,
-} from './data.js?v=20260626c';
-import { ELS, PMS_EDITOR_EMAILS, S, SIDEBAR_STORAGE_KEY } from './state.js?v=20260626c';
+} from './data.js?v=20260627b';
+import { ELS, PMS_EDITOR_EMAILS, S, SIDEBAR_STORAGE_KEY } from './state.js?v=20260627b';
 import {
   nightsBetween,
   startOfMonth,
   toMonthInputValue,
-} from './utils.js?v=20260626c';
+} from './utils.js?v=20260627b';
 
 const RENDER = {
   renderAll: null,
@@ -73,7 +73,7 @@ function collectCalendarWarnings(payload = {}) {
 
 export async function init() {
   cacheElements();
-  await import('./render.js?v=20260626c');
+  await import('./render.js?v=20260627b');
   bindShellEvents();
   restoreSidebarState();
   handleScrollHeaderToggle();
@@ -1834,15 +1834,27 @@ export function syncTimelineScrollChrome({ contentWidth, desiredScrollLeft } = {
     inner.style.width = `${width}px`;
   });
 
-  const shouldShow = width > (main.clientWidth + 6);
+  const previousTopScrollbarHeight = Number.parseInt(
+    getComputedStyle(document.documentElement).getPropertyValue('--timeline-top-scrollbar-height').trim(),
+    10,
+  ) || 0;
+  // Above the grid the auxiliary scrollbar is redundant until the header is pinned.
+  const shouldShow = width > (main.clientWidth + 6) && ELS.timelineHeader?.classList.contains('is-fixed');
   auxiliaryScrollbars.forEach(([scrollbar]) => {
     scrollbar.classList.toggle('hidden', !shouldShow);
   });
+  const nextTopScrollbarHeight = shouldShow
+    ? Math.ceil(ELS.timelineTopScrollbarUpper?.offsetHeight || 0)
+    : 0;
   document.documentElement.style.setProperty(
     '--timeline-top-scrollbar-height',
-    shouldShow ? `${Math.ceil(ELS.timelineTopScrollbarUpper?.offsetHeight || 0)}px` : '0px',
+    `${nextTopScrollbarHeight}px`,
   );
+  const topScrollbarHeightChanged = previousTopScrollbarHeight !== nextTopScrollbarHeight;
   if (!shouldShow) {
+    if (topScrollbarHeightChanged) {
+      syncStickyTimelineHeader();
+    }
     positionDragSelectionToolbar();
     return;
   }
@@ -1858,6 +1870,9 @@ export function syncTimelineScrollChrome({ contentWidth, desiredScrollLeft } = {
   requestAnimationFrame(() => {
     timelineScrollSyncLocked = false;
   });
+  if (topScrollbarHeightChanged) {
+    syncStickyTimelineHeader();
+  }
   positionDragSelectionToolbar();
 }
 

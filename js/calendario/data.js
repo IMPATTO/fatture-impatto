@@ -5,7 +5,7 @@ import {
   OCCUPYING_STATUSES,
   S,
   STATUS_LABELS,
-} from './state.js?v=20260626c';
+} from './state.js?v=20260627a';
 import {
   formatDate,
   formatPrice,
@@ -18,7 +18,7 @@ import {
   unique,
   compareBookingsForRender,
   compareOrphans,
-} from './utils.js?v=20260626c';
+} from './utils.js?v=20260627a';
 
 const KEKKO_UNIT_CATALOG = [
   { sourceId: 'M1', title: '104 Mono con giardino', floor: 'PT', capacity: 3, groupName: 'Monolocale · Piano Terra', note: '', sortOrder: 2, aliases: ['104', 'Mono PT con giardino', '104 Mono con giardino'] },
@@ -31,8 +31,8 @@ const KEKKO_UNIT_CATALOG = [
   { sourceId: 'BPT2', title: '106 Bilo con giardino', floor: 'PT', capacity: 6, groupName: 'Bilocale · Piano Terra', note: '', sortOrder: 3, aliases: ['Bilo PT 2', 'Bilo PT 2 con giardino', '106', '106 Bilo con giardino'] },
   { sourceId: 'BPT3', title: '102 Bilo senza giardino', floor: 'PT', capacity: 6, groupName: 'Bilocale · Piano Terra', note: '', sortOrder: 1, aliases: ['Bilo PT 3', 'Bilo PT 3 senza giardino', '102', '102 Bilo senza giardino'] },
   { sourceId: 'BPT4', title: '110 Bilo senza giardino', floor: 'PT', capacity: 6, groupName: 'Bilocale · Piano Terra', note: '', sortOrder: 5, aliases: ['Bilo PT 4', 'Bilo PT 4 senza giardino', '110', '110 Bilo senza giardino'] },
-  { sourceId: 'B1A', title: '214 Bilo interno', floor: '2°', capacity: 6, groupName: 'Bilocale · Secondo Piano', note: '', sortOrder: 12, aliases: ['Bilo 1° A', '214', '214 Bilo interno'] },
-  { sourceId: 'B1B', title: '212 Bilo ingresso', floor: '2°', capacity: 6, groupName: 'Bilocale · Secondo Piano', note: '', sortOrder: 11, aliases: ['Bilo 1° B', '212', '212 Bilo ingresso'] },
+  { sourceId: 'B1A', title: '214 Bilo dietro', floor: '2°', capacity: 6, groupName: 'Bilocale · Secondo Piano', note: '', sortOrder: 12, aliases: ['Bilo 1° A', '214', '214 Bilo interno', '214 Bilo dietro'] },
+  { sourceId: 'B1B', title: '212 Bilo vista ingresso', floor: '2°', capacity: 6, groupName: 'Bilocale · Secondo Piano', note: '', sortOrder: 11, aliases: ['Bilo 1° B', '212', '212 Bilo ingresso', '212 Bilo vista ingresso'] },
   { sourceId: 'B1C', title: '206', floor: '2°', capacity: 6, groupName: 'Bilocale · Secondo Piano', note: '', sortOrder: 8, aliases: ['Bilo 1° C', '206', '206 Bilo vista mare', 'Bilo 206'] },
   { sourceId: 'B202', title: '202 (stella) bilo vista mare', floor: '2°', capacity: 7, groupName: 'Bilocale · Secondo Piano', note: '', sortOrder: 6, aliases: ['202', '202 ★', 'Bilo 1° 202 ★', '202 Bilo vista mare', '202 (stella) bilo vista mare'] },
   { sourceId: 'T1', title: '204 Trilo', floor: '2°', capacity: 6, groupName: 'Trilocale · Secondo Piano', note: '', sortOrder: 7, aliases: ['Trilo 1°', 'Trilo 1 piano', '204', '204 Trilo', 'Trilo 204'] },
@@ -215,7 +215,19 @@ function buildUnitDisplayNote(unit, apartment) {
     if (unitLabel && !isGenericUnitLabel(unitLabel) && unitLabel !== title) return unitLabel;
     return '';
   }
+  if (isVillaMargheritaApartment(apartment)) {
+    return [describeVillaMargheritaFloor(presentation.floor), presentation.note].filter(Boolean).join(' · ');
+  }
   return [presentation.groupName, presentation.note].filter(Boolean).join(' · ');
+}
+
+function describeVillaMargheritaFloor(floor) {
+  const value = String(floor || '').trim();
+  if (value === 'PT') return 'Piano Terra';
+  if (value === '2°') return 'Secondo Piano';
+  if (value === '3°') return 'Terzo Piano';
+  if (value === 'Dep') return 'Dependance';
+  return value;
 }
 
 function buildBookingDisplayName(row) {
@@ -713,6 +725,7 @@ export function getDayAvailabilityState(row, date) {
   return {
     ...stateFromInventory,
     hasBooking: stateFromInventory.hasBooking || hasBooking,
+    supabaseHasBooking: hasBooking,
     price: stateFromInventory.price ?? cachedDay?.price ?? null,
     minStay: stateFromInventory.minStay ?? cachedDay?.min_stay ?? null,
     closed: stateFromInventory.closed || (!stateFromInventory.hasInventory && cachedClosed),

@@ -8,8 +8,8 @@ import {
   selectAllCities,
   toggleCityFilter,
   toggleSetValue,
-} from './interactions.js?v=20260626c';
-import { CHANNEL_CONFIG, ELS, S, STATUS_LABELS } from './state.js?v=20260626c';
+} from './interactions.js?v=20260627b';
+import { CHANNEL_CONFIG, ELS, S, STATUS_LABELS } from './state.js?v=20260627b';
 import {
   buildDayCellLabel,
   compareCity,
@@ -28,7 +28,7 @@ import {
   groupVisibleBookingsForMobile,
   groupVisibleRowsByCity,
   isKekkoImportedBooking,
-} from './data.js?v=20260626c';
+} from './data.js?v=20260627b';
 import {
   addDays,
   bookingSpanWithinMonth,
@@ -48,7 +48,7 @@ import {
   minutesAgoLabel,
   nightsBetween,
   titleCase,
-} from './utils.js?v=20260626c';
+} from './utils.js?v=20260627b';
 
 let dragMouseUpBound = false;
 let dragStartCell = null;
@@ -474,7 +474,7 @@ export function buildDayCells(row, monthDays) {
     const today = isSameDate(date, new Date()) ? ' today' : '';
     const unavailable = state.closed ? ' unavail' : '';
     const booked = state.hasBooking ? ' has-booking' : '';
-    const editable = (!state.hasBooking && S.isPmsEditor) ? ' editable' : '';
+    const editable = (!state.supabaseHasBooking && S.isPmsEditor) ? ' editable' : '';
     const dragSelected = S.dragSelection.selectedCells.has(cellKey) ? ' drag-selected' : '';
     let content = '';
     if (state.closed) {
@@ -611,7 +611,6 @@ export function bindTimelineEvents() {
     const editableCells = ELS.timelineBody.querySelectorAll('.day-cell.editable');
     editableCells.forEach((cell) => {
       cell.addEventListener('mousedown', (event) => {
-        if (cell.classList.contains('has-booking')) return;
         event.preventDefault();
         const unitId = cell.getAttribute('data-unit-id');
         const date = cell.getAttribute('data-date');
@@ -646,7 +645,7 @@ export function bindTimelineEvents() {
           .querySelectorAll(`.day-cell.editable[data-unit-id="${unitId}"]`)
           .forEach((rowCell) => {
             const cellDate = rowCell.getAttribute('data-date');
-            if (!cellDate || rowCell.classList.contains('has-booking')) return;
+            if (!cellDate) return;
             if (cellDate >= minDate && cellDate <= maxDate) {
               rowCell.classList.add('drag-selected');
               S.dragSelection.selectedCells.add(`${unitId}:${cellDate}`);
@@ -657,7 +656,6 @@ export function bindTimelineEvents() {
 
       cell.addEventListener('click', () => {
         if (Date.now() < suppressEditableClickUntil) return;
-        if (cell.classList.contains('has-booking')) return;
 
         const apartmentUnitId = cell.getAttribute('data-unit-id');
         const date = cell.getAttribute('data-date');
