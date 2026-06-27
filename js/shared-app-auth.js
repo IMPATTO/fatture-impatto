@@ -3,8 +3,38 @@
     return `shared_app_auth:${String(app || '').trim()}`;
   }
 
+  function readStorage(storage, key) {
+    try {
+      return storage?.getItem(key) || '';
+    } catch (_error) {
+      return '';
+    }
+  }
+
+  function writeStorage(storage, key, value) {
+    try {
+      storage?.setItem(key, value);
+      return true;
+    } catch (_error) {
+      return false;
+    }
+  }
+
+  function removeStorage(storage, key) {
+    try {
+      storage?.removeItem(key);
+    } catch (_error) {
+      // Ignore storage cleanup failures.
+    }
+  }
+
+  function readSessionRaw(app) {
+    const key = storageKey(app);
+    return readStorage(localStorage, key) || readStorage(sessionStorage, key);
+  }
+
   function loadSession(app) {
-    const raw = sessionStorage.getItem(storageKey(app));
+    const raw = readSessionRaw(app);
     if (!raw) return null;
 
     try {
@@ -14,6 +44,7 @@
         clearSession(app);
         return null;
       }
+      saveSession(app, parsed);
       return parsed;
     } catch (_error) {
       clearSession(app);
@@ -28,12 +59,17 @@
       role: session?.role || '',
       expires_at: session?.expires_at || null,
     };
-    sessionStorage.setItem(storageKey(app), JSON.stringify(payload));
+    const key = storageKey(app);
+    const raw = JSON.stringify(payload);
+    writeStorage(localStorage, key, raw);
+    writeStorage(sessionStorage, key, raw);
     return payload;
   }
 
   function clearSession(app) {
-    sessionStorage.removeItem(storageKey(app));
+    const key = storageKey(app);
+    removeStorage(localStorage, key);
+    removeStorage(sessionStorage, key);
   }
 
   function getToken(app) {

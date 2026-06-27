@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 const {
   getBearerToken,
@@ -64,7 +65,7 @@ exports.handler = async (event) => {
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY,
     BEDS24_REFRESH_TOKEN: String(process.env.BEDS24_REFRESH_TOKEN || '').trim(),
   };
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY || !env.BEDS24_REFRESH_TOKEN) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
     return respond(500, { error: 'Missing env vars' });
   }
 
@@ -88,6 +89,7 @@ exports.handler = async (event) => {
       existingBooking = existingResult.data || null;
     }
   }
+  const isResidenceMirror = Boolean(existingBooking && isResidenceMirrorBooking(existingBooking));
 
   let unit = null;
   let apartment = null;
@@ -99,7 +101,7 @@ exports.handler = async (event) => {
     if (!mapping.unit) {
       return respond(400, { error: 'Invalid apartment_unit_id' });
     }
-    if (!mapping.unit.beds24_room_id) {
+    if (!mapping.unit.beds24_room_id && !(isResidenceMirror && operation !== 'create')) {
       return respond(400, { error: 'Apartment unit has no beds24_room_id mapping' });
     }
     unit = mapping.unit;
@@ -160,6 +162,35 @@ exports.handler = async (event) => {
     }
   }
 
+  if (isResidenceMirror && operation !== 'create') {
+    const residenceResult = await applyResidenceMirrorMutation({
+      supabase,
+      operation,
+      booking,
+      existingBooking,
+      unit,
+    });
+    if (!residenceResult.ok) {
+      return respond(residenceResult.statusCode || 502, {
+        error: residenceResult.error || 'Residence sync failed',
+        detail: residenceResult.detail || '',
+      });
+    }
+    return respond(200, compactObject({
+      success: true,
+      operation,
+      beds24_booking_id: bookingId,
+      beds24_updated: false,
+      local_cache_updated: true,
+      warning: residenceResult.warning,
+      fields_modified: operation === 'update' ? listModifiedFields(booking) : undefined,
+    }));
+  }
+
+  if (!env.BEDS24_REFRESH_TOKEN) {
+    return respond(500, { error: 'Missing env vars' });
+  }
+
   let beds24Token;
   try {
     beds24Token = await getBeds24AccessToken(env.BEDS24_REFRESH_TOKEN);
@@ -202,7 +233,14 @@ exports.handler = async (event) => {
       beds24RequestBody,
     });
     localCacheUpdated = localResult.ok;
-    warning = localResult.warning;
+    const residenceSync = localCacheUpdated
+      ? await syncPmsBookingIntoResidence({
+        supabase,
+        beforeBooking: null,
+        afterBooking: await fetchLocalBookingByBeds24Id(supabase, beds24BookingId),
+      })
+      : { changed: false, warning: '' };
+    warning = mergeWarnings(localResult.warning, residenceSync.warning);
     return respond(200, compactObject({
       success: true,
       operation,
@@ -237,7 +275,14 @@ exports.handler = async (event) => {
       beds24RequestBody,
     });
     localCacheUpdated = localResult.ok;
-    warning = localResult.warning;
+    const residenceSync = localCacheUpdated
+      ? await syncPmsBookingIntoResidence({
+        supabase,
+        beforeBooking: existingBooking,
+        afterBooking: await fetchLocalBookingByBeds24Id(supabase, bookingId),
+      })
+      : { changed: false, warning: '' };
+    warning = mergeWarnings(localResult.warning, residenceSync.warning);
     return respond(200, compactObject({
       success: true,
       operation,
@@ -264,7 +309,14 @@ exports.handler = async (event) => {
     beds24Result,
   });
   localCacheUpdated = localResult.ok;
-  warning = localResult.warning;
+  const residenceSync = localCacheUpdated
+    ? await syncPmsBookingIntoResidence({
+      supabase,
+      beforeBooking: existingBooking,
+      afterBooking: existingBooking ? { ...existingBooking, status: 'cancelled' } : null,
+    })
+    : { changed: false, warning: '' };
+  warning = mergeWarnings(localResult.warning, residenceSync.warning);
 
   return respond(200, compactObject({
     success: true,
@@ -449,6 +501,7 @@ async function deleteBeds24Booking(token, bookingId) {
 
 async function createLocalBooking({ supabase, beds24BookingId, booking, unit, apartment, beds24Result, beds24RequestBody }) {
   const now = new Date().toISOString();
+  const hasNotes = booking.notes !== undefined && normalizeText(booking.notes) !== '';
   const localRow = {
     beds24_booking_id: beds24BookingId,
     beds24_property_id: normalizeText(apartment?.beds24_property_id) || normalizeText(unit?.beds24_room_id) || 'unknown',
@@ -477,7 +530,7 @@ async function createLocalBooking({ supabase, beds24BookingId, booking, unit, ap
       manual_request: booking,
       beds24_request: beds24RequestBody,
       beds24_response: beds24Result,
-      notes_not_persisted_in_columns: true,
+      notes_not_persisted_in_columns: hasNotes,
     },
   };
 
@@ -581,6 +634,206 @@ async function cancelLocalBooking({ supabase, bookingId, existingBooking, beds24
   return { ok: true, warning: '' };
 }
 
+async function fetchLocalBookingByBeds24Id(supabase, beds24BookingId) {
+  if (!normalizeText(beds24BookingId)) return null;
+  const result = await supabase
+    .from('bookings')
+    .select('*')
+    .eq('beds24_booking_id', normalizeText(beds24BookingId))
+    .maybeSingle();
+  if (result.error) {
+    console.warn('[LOCAL-BOOKING-FETCH-FAIL]', result.error.message);
+    return null;
+  }
+  return result.data || null;
+}
+
+async function applyResidenceMirrorMutation({ supabase, operation, booking, existingBooking, unit }) {
+  const rmBookingId = getResidenceMirrorBookingId(existingBooking);
+  if (!rmBookingId) {
+    return {
+      ok: false,
+      statusCode: 400,
+      error: 'Calendario Kekko mapping mancante per questa prenotazione',
+    };
+  }
+
+  if (operation === 'delete' || !unit || isCancelledLikeStatus(booking.status)) {
+    const deleteResult = await supabase
+      .from('rm_bookings')
+      .delete()
+      .eq('id', rmBookingId);
+    if (deleteResult.error) {
+      return {
+        ok: false,
+        statusCode: 500,
+        error: 'Eliminazione su calendario Kekko fallita',
+        detail: deleteResult.error.message,
+      };
+    }
+  } else {
+    const mappingResult = await supabase
+      .from('rm_internal_unit_sync_targets')
+      .select('rm_apartment_id')
+      .eq('source_apartment_unit_id', unit.id)
+      .eq('active', true)
+      .maybeSingle();
+    if (mappingResult.error) {
+      return {
+        ok: false,
+        statusCode: 500,
+        error: 'Lookup sync target Kekko fallito',
+        detail: mappingResult.error.message,
+      };
+    }
+    if (!mappingResult.data?.rm_apartment_id) {
+      return {
+        ok: false,
+        statusCode: 400,
+        error: 'Unita non collegata al calendario Kekko',
+      };
+    }
+
+    const patch = {
+      apartment_id: mappingResult.data.rm_apartment_id,
+      name: buildResidenceNameFromBookingSnapshot({
+        guest_first_name: booking.first_name ?? existingBooking?.guest_first_name,
+        guest_last_name: booking.last_name ?? existingBooking?.guest_last_name,
+      }),
+      checkin: normalizeDate(booking.arrival) || normalizeDate(existingBooking?.check_in),
+      checkout: normalizeDate(booking.departure) || normalizeDate(existingBooking?.check_out),
+      pax: buildResidencePaxFromBookingSnapshot({
+        num_adults: booking.num_adult ?? existingBooking?.num_adults,
+        num_children: booking.num_child ?? existingBooking?.num_children,
+      }),
+    };
+    const notes = normalizeText(booking.notes)
+      || extractResidenceNotesFromBooking(existingBooking);
+    if (notes) patch.notes = notes;
+
+    const updateResult = await supabase
+      .from('rm_bookings')
+      .update(patch)
+      .eq('id', rmBookingId);
+    if (updateResult.error) {
+      return {
+        ok: false,
+        statusCode: 500,
+        error: 'Aggiornamento su calendario Kekko fallito',
+        detail: updateResult.error.message,
+      };
+    }
+  }
+
+  const syncResult = await syncResidenceCalendarToPms(supabase);
+  if (!syncResult.ok) return syncResult;
+  return { ok: true, warning: '' };
+}
+
+async function syncPmsBookingIntoResidence({ supabase, beforeBooking, afterBooking }) {
+  const unitIds = uniqueTexts([
+    beforeBooking?.apartment_unit_id,
+    afterBooking?.apartment_unit_id,
+  ]);
+  if (!unitIds.length) return { changed: false, warning: '' };
+
+  const mappingResult = await supabase
+    .from('rm_internal_unit_sync_targets')
+    .select('rm_apartment_id,source_apartment_unit_id')
+    .in('source_apartment_unit_id', unitIds)
+    .eq('active', true);
+  if (mappingResult.error) {
+    console.warn('[RM-INTERNAL-SYNC-LOOKUP-FAIL]', mappingResult.error.message);
+    return { changed: false, warning: 'Sync verso calendario Kekko non riuscita.' };
+  }
+
+  const mappingByUnitId = new Map(
+    (mappingResult.data || []).map((row) => [normalizeText(row.source_apartment_unit_id), row]),
+  );
+  const beforeMapping = mappingByUnitId.get(normalizeText(beforeBooking?.apartment_unit_id)) || null;
+  const afterMapping = mappingByUnitId.get(normalizeText(afterBooking?.apartment_unit_id)) || null;
+  const beforeSyntheticId = beforeMapping && beforeBooking ? buildInternalResidenceSystemId(beforeBooking) : '';
+  const afterSyntheticId = afterMapping && afterBooking ? buildInternalResidenceSystemId(afterBooking) : '';
+
+  if (beforeSyntheticId && (!afterSyntheticId || isCancelledLikeStatus(afterBooking?.status))) {
+    const deleteResult = await supabase
+      .from('rm_bookings')
+      .delete()
+      .eq('id', beforeSyntheticId)
+      .eq('source', 'system');
+    if (deleteResult.error) {
+      console.warn('[RM-INTERNAL-SYNC-DELETE-FAIL]', deleteResult.error.message);
+      return { changed: false, warning: 'Prenotazione salvata, ma la rimozione dal calendario Kekko non e riuscita.' };
+    }
+  }
+
+  if (!afterSyntheticId || !afterBooking || isCancelledLikeStatus(afterBooking.status)) {
+    return { changed: Boolean(beforeSyntheticId), warning: '' };
+  }
+
+  const row = {
+    id: afterSyntheticId,
+    apartment_id: afterMapping.rm_apartment_id,
+    name: buildResidenceNameFromBookingSnapshot(afterBooking),
+    checkin: normalizeDate(afterBooking.check_in),
+    checkout: normalizeDate(afterBooking.check_out),
+    pax: buildResidencePaxFromBookingSnapshot(afterBooking),
+    status: mapPmsStatusToResidenceStatus(afterBooking.status),
+    source: 'system',
+    notes: buildInternalResidenceSyncNotes(afterBooking),
+  };
+  const duplicateResult = await supabase
+    .from('rm_bookings')
+    .select('id,name,source,status')
+    .eq('apartment_id', row.apartment_id)
+    .eq('checkin', row.checkin)
+    .eq('checkout', row.checkout)
+    .neq('source', 'system')
+    .not('status', 'eq', 'cancelled');
+  if (duplicateResult.error) {
+    console.warn('[RM-INTERNAL-SYNC-DUPLICATE-LOOKUP-FAIL]', duplicateResult.error.message);
+  } else {
+    const hasMatchingResidenceBooking = (duplicateResult.data || []).some((item) => (
+      normalizeText(item?.name).toLowerCase() === normalizeText(row.name).toLowerCase()
+    ));
+    if (hasMatchingResidenceBooking) {
+      const deleteDuplicateResult = await supabase
+        .from('rm_bookings')
+        .delete()
+        .eq('id', afterSyntheticId)
+        .eq('source', 'system');
+      if (deleteDuplicateResult.error) {
+        console.warn('[RM-INTERNAL-SYNC-DUPLICATE-DELETE-FAIL]', deleteDuplicateResult.error.message);
+        return { changed: false, warning: 'Prenotazione salvata, ma la pulizia della doppia su calendario Kekko non e riuscita.' };
+      }
+      return { changed: true, warning: '' };
+    }
+  }
+  const upsertResult = await supabase
+    .from('rm_bookings')
+    .upsert(row, { onConflict: 'id' });
+  if (upsertResult.error) {
+    console.warn('[RM-INTERNAL-SYNC-UPSERT-FAIL]', upsertResult.error.message);
+    return { changed: false, warning: 'Prenotazione salvata, ma la sync verso calendario Kekko non e riuscita.' };
+  }
+
+  return { changed: true, warning: '' };
+}
+
+async function syncResidenceCalendarToPms(supabase) {
+  const result = await supabase.rpc('sync_rm_calendar_to_pms');
+  if (result.error) {
+    console.error('[RM-CALENDAR-TO-PMS-SYNC-FAIL]', result.error.message);
+    return {
+      ok: false,
+      statusCode: 502,
+      error: 'Sync immediata con il calendario interno fallita',
+      detail: result.error.message,
+    };
+  }
+  return { ok: true };
+}
+
 function listModifiedFields(booking) {
   const fieldMap = {
     apartment_unit_id: 'apartment_unit_id',
@@ -671,6 +924,83 @@ function normalizeDate(value) {
 
 function isIsoDate(value) {
   return /^\d{4}-\d{2}-\d{2}$/.test(String(value || ''));
+}
+
+function getResidenceMirrorBookingId(booking) {
+  const rawId = normalizeText(booking?.raw_payload?.rm_booking_id);
+  if (rawId) return rawId;
+  const prefixedBookingId = normalizeText(booking?.beds24_booking_id);
+  if (prefixedBookingId.toLowerCase().startsWith('rmk:')) {
+    return prefixedBookingId.slice(4);
+  }
+  return '';
+}
+
+function isResidenceMirrorBooking(booking) {
+  if (!getResidenceMirrorBookingId(booking)) return false;
+  const source = normalizeText(booking?.source).toLowerCase();
+  const channel = normalizeText(booking?.channel).toLowerCase();
+  return source === 'rm-calendar' || channel === 'calendario kekko';
+}
+
+function buildResidenceNameFromBookingSnapshot(booking) {
+  const first = normalizeText(booking?.guest_first_name ?? booking?.first_name);
+  const last = normalizeText(booking?.guest_last_name ?? booking?.last_name);
+  return [first, last].filter(Boolean).join(' ').trim() || 'Ospite PMS';
+}
+
+function buildResidencePaxFromBookingSnapshot(booking) {
+  const adults = Number(booking?.num_adults ?? booking?.num_adult ?? 0);
+  const children = Number(booking?.num_children ?? booking?.num_child ?? 0);
+  return Math.max(1, adults + children);
+}
+
+function extractResidenceNotesFromBooking(booking) {
+  return normalizeText(
+    booking?.raw_payload?.last_manual_request?.notes
+      || booking?.raw_payload?.manual_request?.notes
+      || booking?.raw_payload?.notes
+      || '',
+  );
+}
+
+function mapPmsStatusToResidenceStatus(status) {
+  const normalized = normalizeText(status).toLowerCase();
+  if (normalized === 'black') return 'staff';
+  if (normalized === 'request' || normalized === 'new' || normalized === 'inquiry') return 'pending';
+  if (normalized === 'cancelled') return 'cancelled';
+  return 'confirmed';
+}
+
+function buildInternalResidenceSyncNotes(booking) {
+  return [
+    'Sync automatico interno da PMS',
+    `PMS booking: ${normalizeText(booking?.beds24_booking_id) || normalizeText(booking?.id) || 'n/d'}`,
+    `Canale: ${normalizeText(booking?.channel) || 'n/d'}`,
+    `Stato PMS: ${normalizeText(booking?.status) || 'n/d'}`,
+  ].join(' | ');
+}
+
+function buildInternalResidenceSystemId(booking) {
+  const seed = normalizeText(booking?.beds24_booking_id) || normalizeText(booking?.id);
+  return stableUuid(`rminternal|${seed}`);
+}
+
+function stableUuid(seed) {
+  const hash = crypto.createHash('md5').update(String(seed || '')).digest('hex');
+  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}-${hash.slice(16, 20)}-${hash.slice(20, 32)}`;
+}
+
+function uniqueTexts(values) {
+  return [...new Set((values || []).map((value) => normalizeText(value)).filter(Boolean))];
+}
+
+function isCancelledLikeStatus(status) {
+  return normalizeText(status).toLowerCase() === 'cancelled';
+}
+
+function mergeWarnings(...warnings) {
+  return warnings.map((value) => normalizeText(value)).filter(Boolean).join(' ');
 }
 
 function compactObject(obj) {

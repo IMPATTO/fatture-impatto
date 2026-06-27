@@ -7,6 +7,11 @@ const ROME_TIMEZONE = 'Europe/Rome';
 const DEFAULT_SUPABASE_URL = 'https://tysxeikqbgebpfyblgeb.supabase.co';
 const ELIGIBLE_STATI = ['APPROVATA', 'CREDENZIALI_INVIATE', 'BOZZA_CREATA', 'CHECK_IN_COMPLETATO'];
 const ELIGIBLE_ALLOGGIATI_STATI = ['DA_INVIARE', 'ERRORE'];
+const SYSTEM_AUTO_SEND_ACTOR = 'system@auto-send-alloggiati';
+const RESIDENCE_MARGHERITA_APARTMENT_ID = 'ca7641f6-82a4-40f3-85e6-149c39d46a03';
+const RESIDENCE_MARGHERITA_WEEKLY_MIN_AUTO_SEND = 45;
+const RESIDENCE_MARGHERITA_WEEKLY_MAX_AUTO_SEND = 55;
+const AUTO_SEND_MAX_DELAY_DAYS = 2;
 
 function normalizeSupabaseUrl(value) {
   const normalized = String(value || '').trim();
@@ -21,6 +26,7 @@ exports.config = {
 exports.handler = async () => {
   const now = new Date();
   const romeNow = getRomeDateParts(now);
+  const cutoffDate = shiftIsoDate(romeNow.date, -AUTO_SEND_MAX_DELAY_DAYS);
 
   const supabaseUrl = normalizeSupabaseUrl(process.env.SUPABASE_URL);
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
@@ -55,13 +61,29 @@ exports.handler = async () => {
       .from('ospiti_check_in')
       .select('*, apartments(nome_appartamento)')
       .in('apartment_id', apartmentIds)
-      .eq('data_checkin', romeNow.date)
+      .gte('data_checkin', cutoffDate)
+      .lte('data_checkin', romeNow.date)
       .in('stato', ELIGIBLE_STATI)
       .in('alloggiati_stato', ELIGIBLE_ALLOGGIATI_STATI)
+      .order('data_checkin', { ascending: true })
       .order('created_at', { ascending: true });
 
     if (ospitiError) {
       throw new Error(`Load ospiti_check_in failed: ${ospitiError.message}`);
+    }
+
+    const { data: olderPending, error: olderPendingError } = await supabase
+      .from('ospiti_check_in')
+      .select('id,nome,cognome,data_checkin,apartment_id,apartments(nome_appartamento)')
+      .in('apartment_id', apartmentIds)
+      .lt('data_checkin', cutoffDate)
+      .in('stato', ELIGIBLE_STATI)
+      .in('alloggiati_stato', ELIGIBLE_ALLOGGIATI_STATI)
+      .order('data_checkin', { ascending: true })
+      .order('created_at', { ascending: true });
+
+    if (olderPendingError) {
+      throw new Error(`Load older ospiti_check_in failed: ${olderPendingError.message}`);
     }
 
     const grouped = new Map();
@@ -77,8 +99,24 @@ exports.handler = async () => {
       sentApartments: 0,
       sentGuests: 0,
       skippedApartments: 0,
+      skippedGuestsWeeklyCap: 0,
+      skippedGuestsOlderThan48h: 0,
       errors: [],
+      weeklyCaps: [],
     };
+
+    if ((olderPending || []).length) {
+      const olderReason = buildOlderThan48hManualReason({
+        cutoffDate,
+        targetDate: romeNow.date,
+      });
+      await markGuestsForManualQueue(
+        supabase,
+        olderPending,
+        olderReason
+      );
+      summary.skippedGuestsOlderThan48h = olderPending.length;
+    }
 
     for (const link of validLinks) {
       const apartmentGuests = grouped.get(link.apartment_id) || [];
@@ -90,14 +128,29 @@ exports.handler = async () => {
       summary.processedApartments += 1;
 
       try {
-        const result = await processApartmentSend(supabase, link, apartmentGuests, 'system@auto-send-alloggiati');
+        const capPlan = await planWeeklyAutoSendQuota(supabase, link, apartmentGuests, romeNow.date);
+        if (capPlan.weeklyCapInfo) {
+          summary.weeklyCaps.push(capPlan.weeklyCapInfo);
+        }
+
+        if (capPlan.manualGuests.length) {
+          await markGuestsForManualQueue(supabase, capPlan.manualGuests, capPlan.manualReason);
+          summary.skippedGuestsWeeklyCap += capPlan.manualGuests.length;
+        }
+
+        if (!capPlan.autoGuests.length) {
+          summary.skippedApartments += 1;
+          continue;
+        }
+
+        const result = await processApartmentSend(supabase, link, capPlan.autoGuests, SYSTEM_AUTO_SEND_ACTOR);
         if (result.success) {
           summary.sentApartments += 1;
-          summary.sentGuests += apartmentGuests.length;
+          summary.sentGuests += capPlan.autoGuests.length;
         } else {
           summary.errors.push({
             apartment_id: link.apartment_id,
-            apartment_name: apartmentGuests[0]?.apartments?.nome_appartamento || null,
+            apartment_name: capPlan.autoGuests[0]?.apartments?.nome_appartamento || null,
             error: result.error || 'Invio automatico fallito',
           });
         }
@@ -295,6 +348,168 @@ async function processApartmentSend(supabase, link, ospiti, actorEmail) {
   return { success: fullSuccess, error: result.error || partialMessage || null };
 }
 
+async function planWeeklyAutoSendQuota(supabase, link, ospiti, targetDate) {
+  if (link?.apartment_id !== RESIDENCE_MARGHERITA_APARTMENT_ID) {
+    return {
+      autoGuests: ospiti.slice(),
+      manualGuests: [],
+      manualReason: '',
+      weeklyCapInfo: null,
+    };
+  }
+
+  const weekStart = getIsoWeekStart(targetDate);
+  const nextWeekStart = addIsoDays(weekStart, 7);
+  const weeklyCap = getStableWeeklyAutoSendCap(link.apartment_id, weekStart);
+  const alreadySent = await countApartmentWeeklyAutoSentGuests(supabase, {
+    apartmentId: link.apartment_id,
+    weekStart,
+    nextWeekStart,
+  });
+  const remainingCapacity = Math.max(0, weeklyCap - alreadySent);
+  const groupedBookings = buildApartmentBookingGroups(ospiti);
+
+  const autoGuests = [];
+  const manualGuests = [];
+  let selectedGuests = 0;
+
+  for (const bookingGroup of groupedBookings) {
+    const groupSize = bookingGroup.rows.length;
+    if (groupSize <= 0) continue;
+
+    if (selectedGuests + groupSize <= remainingCapacity) {
+      autoGuests.push(...bookingGroup.rows);
+      selectedGuests += groupSize;
+      continue;
+    }
+
+    manualGuests.push(...bookingGroup.rows);
+  }
+
+  const apartmentName = ospiti[0]?.apartments?.nome_appartamento || null;
+  const finalSentCount = alreadySent + autoGuests.length;
+  const manualReason = [
+    'Esclusa dall invio automatico per tetto settimanale Residence Margherita.',
+    `Settimana ${weekStart}.`,
+    `Cap automatico ${weeklyCap} documenti.`,
+    `Gia inviati ${alreadySent}.`,
+    `Previsti in automatico questa notte ${autoGuests.length}.`,
+    'Ripristina il record da archivio se vuoi inviarlo a mano dal backoffice documenti.',
+  ].join(' ');
+
+  return {
+    autoGuests,
+    manualGuests,
+    manualReason,
+    weeklyCapInfo: {
+      apartment_id: link.apartment_id,
+      apartment_name: apartmentName,
+      week_start: weekStart,
+      weekly_cap: weeklyCap,
+      already_sent: alreadySent,
+      auto_selected_now: autoGuests.length,
+      manual_overflow_now: manualGuests.length,
+      final_auto_total_if_successful: finalSentCount,
+    },
+  };
+}
+
+async function countApartmentWeeklyAutoSentGuests(supabase, {
+  apartmentId,
+  weekStart,
+  nextWeekStart,
+}) {
+  const { data, error } = await supabase
+    .from('alloggiati_invii')
+    .select('num_schedine,created_at')
+    .eq('apartment_id', apartmentId)
+    .eq('inviato_da', SYSTEM_AUTO_SEND_ACTOR)
+    .eq('esito', 'SEND_OK')
+    .gte('created_at', `${addIsoDays(weekStart, -1)}T00:00:00.000Z`)
+    .lt('created_at', `${addIsoDays(nextWeekStart, 1)}T00:00:00.000Z`);
+
+  if (error) {
+    throw new Error(`Load alloggiati_invii weekly cap failed: ${error.message}`);
+  }
+
+  return (data || []).reduce((sum, row) => {
+    const romeCreatedDate = getRomeDateParts(new Date(row.created_at)).date;
+    if (romeCreatedDate < weekStart || romeCreatedDate >= nextWeekStart) {
+      return sum;
+    }
+    const count = Number(row?.num_schedine || 0);
+    return sum + (Number.isFinite(count) ? count : 0);
+  }, 0);
+}
+
+function buildApartmentBookingGroups(ospiti) {
+  const groups = new Map();
+  const requestedIds = (ospiti || []).map(item => item.id);
+
+  for (const row of ospiti || []) {
+    const key = `${row.capogruppo_id || row.id}:${row.apartment_id}:${row.data_checkin}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(row);
+  }
+
+  return [...groups.values()]
+    .map(rows => ({
+      rows: sortGuestsForAlloggiati(rows, requestedIds),
+      createdAt: rows.reduce((min, row) => {
+        const createdAt = String(row?.created_at || '');
+        if (!min) return createdAt;
+        if (!createdAt) return min;
+        return createdAt < min ? createdAt : min;
+      }, ''),
+    }))
+    .sort((left, right) => {
+      if (left.createdAt && right.createdAt && left.createdAt !== right.createdAt) {
+        return left.createdAt.localeCompare(right.createdAt);
+      }
+      return String(left.rows[0]?.id || '').localeCompare(String(right.rows[0]?.id || ''));
+    });
+}
+
+function getStableWeeklyAutoSendCap(apartmentId, weekStart) {
+  const hash = crypto
+    .createHash('sha256')
+    .update(`${String(apartmentId || '')}:${String(weekStart || '')}`)
+    .digest();
+  const span = RESIDENCE_MARGHERITA_WEEKLY_MAX_AUTO_SEND - RESIDENCE_MARGHERITA_WEEKLY_MIN_AUTO_SEND + 1;
+  const offset = hash[0] % span;
+  return RESIDENCE_MARGHERITA_WEEKLY_MIN_AUTO_SEND + offset;
+}
+
+async function markGuestsForManualQueue(supabase, ospiti, message) {
+  if (!Array.isArray(ospiti) || !ospiti.length) return;
+
+  const ospitiIds = ospiti.map(item => item.id).filter(Boolean);
+  if (!ospitiIds.length) return;
+
+  const { error } = await supabase
+    .from('ospiti_check_in')
+    .update({
+      alloggiati_stato: 'NON_NECESSARIA',
+      alloggiati_errore: message,
+    })
+    .in('id', ospitiIds);
+
+  if (error) {
+    throw new Error(`Mark manual queue failed: ${error.message}`);
+  }
+}
+
+function buildOlderThan48hManualReason({
+  cutoffDate,
+  targetDate,
+}) {
+  return [
+    'Esclusa dall invio automatico: superata la finestra massima di 48 ore.',
+    `Alla data ${targetDate} l automatico considera solo check-in dal ${cutoffDate} in poi.`,
+    'Da gestire manualmente dal backoffice documenti.',
+  ].join(' ');
+}
+
 async function logAutoSend(supabase, {
   apartmentId,
   accountId,
@@ -369,6 +584,33 @@ function getRomeDateParts(date) {
     hour: pick('hour'),
     minute: pick('minute'),
   };
+}
+
+function getIsoWeekStart(isoDate) {
+  const normalized = normalizeIsoDate(isoDate);
+  const date = new Date(`${normalized}T12:00:00Z`);
+  const day = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() - (day - 1));
+  return date.toISOString().slice(0, 10);
+}
+
+function addIsoDays(isoDate, days) {
+  const normalized = normalizeIsoDate(isoDate);
+  const date = new Date(`${normalized}T12:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + Number(days || 0));
+  return date.toISOString().slice(0, 10);
+}
+
+function shiftIsoDate(isoDate, days) {
+  return addIsoDays(isoDate, days);
+}
+
+function normalizeIsoDate(value) {
+  const normalized = String(value || '').trim().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
+    throw new Error(`Data ISO non valida: ${value}`);
+  }
+  return normalized;
 }
 
 function json(statusCode, body) {

@@ -2,7 +2,7 @@ const { createClient } = require('@supabase/supabase-js');
 const JSZip = require('jszip');
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 const FIC_TOKEN = process.env.FATTURE_CLOUD_TOKEN;
 const FIC_COMPANY_ID = process.env.FATTURE_CLOUD_COMPANY_ID;
 const COMMERCIALISTA_EMAIL = process.env.COMMERCIALISTA_EMAIL;
@@ -307,7 +307,7 @@ function validateRuntimeConfig({ dryRun }) {
 function validateBaseConfig() {
   const missing = [];
   if (!SUPABASE_URL) missing.push('SUPABASE_URL');
-  if (!SUPABASE_SERVICE_ROLE_KEY) missing.push('SUPABASE_SERVICE_ROLE_KEY');
+  if (!SUPABASE_SERVICE_ROLE_KEY) missing.push('SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SERVICE_KEY');
   return missing.length ? `Variabili ambiente mancanti: ${missing.join(', ')}` : null;
 }
 

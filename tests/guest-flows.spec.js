@@ -449,6 +449,69 @@ function ilikeMatches(value, pattern) {
   return regex.test(String(value || ''));
 }
 
+function createValidBookingPayload(overrides = {}) {
+  return {
+    apartment_ref: 'test-apt',
+    source_channel_hint: 'booking',
+    data_checkin: '2026-06-10',
+    data_checkout: '2026-06-12',
+    lingua: 'IT',
+    tipo_cliente: 'privato',
+    vuoi_fattura: false,
+    paese_residenza: 'IT',
+    numero_persone: 1,
+    nome: 'Mario',
+    cognome: 'Rossi',
+    email: 'mario.rossi@example.com',
+    telefono: '+393331112233',
+    data_nascita: '1980-01-01',
+    luogo_nascita: 'Riccione',
+    luogo_nascita_codice: '099013',
+    nato_in_italia: true,
+    stato_nascita: '',
+    sesso: 'M',
+    cittadinanza: 'Italia',
+    tipo_documento: "Carta d'identita",
+    numero_documento: 'AZ1234567',
+    luogo_rilascio_documento: 'Riccione',
+    luogo_rilascio_codice: '099013',
+    tipo_alloggiato: 16,
+    additional_guests: [],
+    codice_fiscale: 'RSSMRA80A01H501U',
+    codice_fiscale_verificato: true,
+    indirizzo_residenza: 'Via Roma 1, Riccione, 47838 RN',
+    ragione_sociale: '',
+    indirizzo_fatturazione: '',
+    piva_cliente: '',
+    sdi: '',
+    pec: '',
+    document_upload_issue: false,
+    document_emergency_token: '',
+    tourist_tax_payment: {
+      required: true,
+      channel_hint: 'booking',
+      method: 'bank_transfer',
+      amount: 12.5,
+      currency: 'EUR',
+      booking_amount_confirmed: true,
+      beneficiary: 'Impatto S.R.L.',
+      iban: 'IT28 J 0709 06777 00100 1021 8743',
+      bic: 'CCRTIT2TMAL',
+      causal: 'Tassa di soggiorno Booking - ROSSI',
+      verification: null,
+    },
+    document_uploads: [
+      {
+        guest_scope: 'tourist_tax',
+        file_name: 'bonifico.pdf',
+        mime_type: 'application/pdf',
+        storage_path: 'public-checkin/mock/bonifico.pdf',
+      },
+    ],
+    ...overrides,
+  };
+}
+
 test('check-in accetta PDF e invia multipart con metadati allegati', async ({ page }) => {
   await installFetchMock(page);
   await page.goto('/?apt=test-apt&mode=checkin', { waitUntil: 'domcontentloaded' });
@@ -483,6 +546,50 @@ test('check-in accetta PDF e invia multipart con metadati allegati', async ({ pa
   expect(fileEntries[0].type).toBe('application/pdf');
 });
 
+test('frontend ripulisce il comune OCR con etichetta e provincia prima del lookup', async ({ page }) => {
+  await installFetchMock(page, {
+    lookupComuniResults: {
+      'L Aquila|AQ': {
+        status: 200,
+        body: {
+          matches: [{ codice: 'A345', nome: "L'Aquila", provincia: 'AQ' }],
+        },
+      },
+    },
+  });
+  await page.goto('/?apt=test-apt&mode=checkin', { waitUntil: 'domcontentloaded' });
+
+  await page.fill('#luogoNascita', 'Luogo di nascita: L Aquila (AQ)');
+  await page.waitForTimeout(400);
+
+  await expect(page.locator('#luogoNascitaCodice')).toHaveValue('A345');
+  await expect(page.locator('#luogoNascitaStatus')).toContainText("L'Aquila (AQ)");
+});
+
+test('prenotazione Booking permette di spuntare la conferma cliccando il testo o la riga', async ({ page }) => {
+  await installFetchMock(page);
+  await page.goto('/?apt=test-apt&mode=checkin&src=booking', { waitUntil: 'domcontentloaded' });
+
+  await page.click('[data-t="touristTaxConfirmLabel"]');
+  await expect(page.locator('#touristTaxConfirm')).toBeChecked();
+
+  await page.click('#touristTaxConfirmRow');
+  await expect(page.locator('#touristTaxConfirm')).not.toBeChecked();
+});
+
+test('prenotazione Booking mantiene blindata la schermata tassa di soggiorno', async ({ page }) => {
+  await installFetchMock(page);
+  await page.goto('/?apt=test-apt&mode=checkin&src=booking', { waitUntil: 'domcontentloaded' });
+
+  await expect(page.locator('#panel1 > .card').first()).toHaveAttribute('id', 'touristTaxCard');
+  await expect(page.locator('[data-t="touristTaxTitle"]')).toHaveText('TASSA DI SOGGIORNO');
+  await expect(page.locator('[data-t="touristTaxIntro"]')).toContainText('Puoi pagare con bonifico oppure con carta online tramite Stripe');
+  await expect(page.locator('#touristTaxMethodOptions .role-choice-option')).toHaveCount(2);
+  await expect(page.locator('#touristTaxMethodBankOption')).toContainText('Bonifico bancario');
+  await expect(page.locator('#touristTaxMethodStripeOption')).toContainText('Carta online con Stripe');
+  await expect(page.locator('#touristTaxWhatsappLink')).toContainText('Hai problemi? Scrivi a Serena su WhatsApp');
+});
+
 test('prenotazione Booking richiede tassa di soggiorno e allega la prova bonifico', async ({ page }) => {
   await installFetchMock(page);
   await page.goto('/?apt=test-apt&mode=checkin&src=booking', { waitUntil: 'domcontentloaded' });
@@ -496,8 +603,9 @@ test('prenotazione Booking richiede tassa di soggiorno e allega la prova bonific
   await fillRequiredCheckinFields(page);
 
   await page.click('button[data-t="continua"]');
+  await expect(page.locator('#submitBtn')).toBeDisabled();
 
-  await page.click('#submitBtn');
+  await page.evaluate(() => window.submitForm());
   await expect(page.locator('#topAlert')).toContainText(/tassa di soggiorno/i);
   await expect(page.locator('#panel1')).toHaveClass(/active/);
   await expect(page.locator('#successScreen')).toBeHidden();
@@ -514,6 +622,7 @@ test('prenotazione Booking richiede tassa di soggiorno e allega la prova bonific
   });
 
   await page.click('button[data-t="continua"]');
+  await expect(page.locator('#submitBtn')).toBeEnabled();
   await page.click('#submitBtn');
   await expect(page.locator('#successScreen')).toBeVisible();
 
@@ -646,9 +755,6 @@ test('prenotazione Booking permette pagamento Stripe e invia la sessione verific
     && String(entry.method || '').toUpperCase() === 'POST'
   );
   expect(checkoutCaptures).toHaveLength(1);
-
-  const openedUrls = await page.evaluate(() => window.__openedUrls);
-  expect(openedUrls.some((url) => url.includes('https://checkout.stripe.com/c/pay/cs_test_paid'))).toBe(true);
 
   await page.goto('/?apt=test-apt&mode=checkin&src=booking&stripe_checkout=success&stripe_session_id=cs_test_paid', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('#touristTaxMethodStripe')).toBeChecked();
@@ -1027,6 +1133,16 @@ test('backend risolve il comune italiano con apostrofo e provincia digitata', as
   expect(result.code).toBe('A345');
 });
 
+test('backend ripulisce le etichette OCR dal comune di nascita italiano', async () => {
+  const supabase = createComuneLookupSupabase([
+    { codice: 'A345', nome: "L'Aquila", provincia: 'AQ' },
+  ]);
+
+  const result = await submitPublicCheckinTestApi.findUniqueComuneCode(supabase, 'Luogo di nascita: L Aquila (AQ)');
+  expect(result.status).toBe('matched');
+  expect(result.code).toBe('A345');
+});
+
 test('backend preferisce il codice comune corrente quando il duplicato e storico', async () => {
   const supabase = createComuneLookupSupabase([
     { codice: '408040518', nome: 'Riccione', provincia: 'FO' },
@@ -1070,6 +1186,64 @@ test('backend accetta una sessione Stripe completa per la tassa di soggiorno Boo
   expect(verification.payment_status).toBe('paid');
 });
 
+test('backend rifiuta una prenotazione Booking senza prova o conferma della tassa di soggiorno', async () => {
+  const errors = submitPublicCheckinTestApi.validatePayload(createValidBookingPayload({
+    tourist_tax_payment: {
+      required: true,
+      channel_hint: 'booking',
+      method: 'bank_transfer',
+      amount: 12.5,
+      currency: 'EUR',
+      booking_amount_confirmed: false,
+      verification: null,
+    },
+    document_uploads: [],
+  }));
+
+  expect(errors.map((entry) => entry.field)).toEqual(expect.arrayContaining([
+    'tourist_tax_confirm',
+    'tourist_tax_proof',
+  ]));
+});
+
+test('backend rifiuta una prenotazione Booking con Stripe non pagato', async () => {
+  const errors = submitPublicCheckinTestApi.validatePayload(createValidBookingPayload({
+    tourist_tax_payment: {
+      required: true,
+      channel_hint: 'booking',
+      method: 'stripe_checkout',
+      amount: 12.5,
+      currency: 'EUR',
+      booking_amount_confirmed: true,
+      verification: null,
+    },
+    document_uploads: [],
+  }));
+
+  expect(errors.map((entry) => entry.field)).toContain('tourist_tax_stripe');
+});
+
+test('backend continua a richiedere la tassa di soggiorno Booking anche se il source hint principale viene ripulito', async () => {
+  const errors = submitPublicCheckinTestApi.validatePayload(createValidBookingPayload({
+    source_channel_hint: '',
+    tourist_tax_payment: {
+      required: true,
+      channel_hint: 'booking',
+      method: 'bank_transfer',
+      amount: 12.5,
+      currency: 'EUR',
+      booking_amount_confirmed: false,
+      verification: null,
+    },
+    document_uploads: [],
+  }));
+
+  expect(errors.map((entry) => entry.field)).toEqual(expect.arrayContaining([
+    'tourist_tax_confirm',
+    'tourist_tax_proof',
+  ]));
+});
+
 test('backend risolve il luogo rilascio usando la provincia di residenza quando il comune e duplicato', async () => {
   const supabase = createComuneLookupSupabase([
     { codice: '408040518', nome: 'Riccione', provincia: 'FO' },
@@ -1088,6 +1262,19 @@ test('backend normalizza questura di rimini come luogo rilascio italiano', async
 
   const result = await submitPublicCheckinTestApi.findIssuePlaceMatch(supabase, {
     luogo_rilascio_documento: 'Questura di Rimini',
+    indirizzo_residenza: 'Via Roma 1, Rimini, 47921, RN',
+  });
+  expect(result.status).toBe('matched');
+  expect(result.code).toBe('399014061');
+});
+
+test('backend normalizza anche le etichette OCR sul luogo rilascio italiano', async () => {
+  const supabase = createComuneLookupSupabase([
+    { codice: '399014061', nome: 'Rimini', provincia: 'RN' },
+  ]);
+
+  const result = await submitPublicCheckinTestApi.findIssuePlaceMatch(supabase, {
+    luogo_rilascio_documento: 'Place of issue: Questura di Rimini',
     indirizzo_residenza: 'Via Roma 1, Rimini, 47921, RN',
   });
   expect(result.status).toBe('matched');

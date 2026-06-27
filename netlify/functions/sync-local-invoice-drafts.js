@@ -40,8 +40,9 @@ exports.handler = async (event) => {
   const ospitiIds = Array.isArray(body.ospiti_check_in_ids)
     ? body.ospiti_check_in_ids.map((value) => String(value || '').trim()).filter(Boolean)
     : [];
+  const uniqueOspitiIds = [...new Set(ospitiIds)];
 
-  if (!ospitiIds.length) {
+  if (!uniqueOspitiIds.length) {
     return withCors(jsonResponse(400, { error: 'ospiti_check_in_ids richiesto' }));
   }
 
@@ -56,7 +57,7 @@ exports.handler = async (event) => {
   let skipped = 0;
   let failed = 0;
 
-  for (const ospitiId of [...new Set(ospitiIds)]) {
+  for (const ospitiId of uniqueOspitiIds) {
     const result = await ensureLocalInvoiceDraftForOspiteId(supabase, ospitiId, {
       columnSupport,
       force: body.force === true,
@@ -95,7 +96,8 @@ exports.handler = async (event) => {
     updated,
     skipped,
     failed,
-    total: ospitiIds.length,
+    total: uniqueOspitiIds.length,
+    requested_total: ospitiIds.length,
     results,
   }));
 };

@@ -208,6 +208,42 @@ function clearStatus() {
   el.className = 'status';
 }
 
+function waitForInvoiceRetry(ms) {
+  return new Promise(function(resolve) {
+    setTimeout(resolve, ms);
+  });
+}
+
+function shouldRetryInvoiceSubmit(status, error) {
+  if (error) return true;
+  return [502, 503, 504].indexOf(Number(status || 0)) >= 0;
+}
+
+async function submitInvoiceRequestWithRetry(requestFactory, onAttempt) {
+  let lastError = null;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    if (typeof onAttempt === 'function') onAttempt(attempt);
+    try {
+      const response = await fetch('/.netlify/functions/submit-public-invoice-documents', requestFactory());
+      const data = await response.json().catch(() => ({}));
+
+      if (response.ok || !shouldRetryInvoiceSubmit(response.status, null) || attempt === 2) {
+        return { response, data };
+      }
+
+      lastError = new Error(data.error || 'Errore invio richiesta');
+    } catch (error) {
+      lastError = error;
+      if (attempt === 2 || !shouldRetryInvoiceSubmit(0, error)) break;
+    }
+
+    await waitForInvoiceRetry(500 * (attempt + 1));
+  }
+
+  throw lastError || new Error('Errore invio richiesta');
+}
+
 function renderFiles() {
   $('fileList').innerHTML = selectedFiles.map((file, index) => {
     return '<div class="file-item"><span>' + escapeHtml(file.name) + ' · ' + formatBytes(file.size) + '</span><button type="button" class="file-remove" onclick="removeFile(' + index + ')">Rimuovi</button></div>';
@@ -263,11 +299,17 @@ $('invoiceForm').addEventListener('submit', async function(event) {
   btn.textContent = 'Invio in corso...';
 
   try {
-    const res = await fetch('/.netlify/functions/submit-public-invoice-documents', {
-      method: 'POST',
-      body: formData
+    const result = await submitInvoiceRequestWithRetry(function() {
+      return {
+        method: 'POST',
+        body: formData
+      };
+    }, function(attempt) {
+      btn.textContent = attempt === 0 ? 'Invio in corso...' : 'Nuovo tentativo in corso...';
     });
-    const data = await res.json().catch(() => ({}));
+
+    const res = result.response;
+    const data = result.data;
     if (!res.ok) {
       const msg = Array.isArray(data.fields) && data.fields.length
         ? data.fields.map(item => item.message).join(' · ')

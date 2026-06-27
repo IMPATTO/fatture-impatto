@@ -63,11 +63,14 @@
   .search-input{padding:.5rem .85rem;border:1px solid var(--sand-200);border-radius:var(--radius-md);font-size:13px;font-family:inherit;min-width:200px;}
   .search-input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-pale);}
   .view-controls{margin-left:auto;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;}
-  .month-nav{display:flex;align-items:center;gap:.5rem;}
+  .month-nav{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;}
   .month-label{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;margin:0 1rem;min-width:200px;text-align:center;color:var(--ink);letter-spacing:-.3px;}
   .month-label .year{color:var(--gold-dark);font-style:italic;}
   .nav-btn{background:white;border:1px solid var(--sand-200);border-radius:var(--radius-md);width:40px;height:40px;cursor:pointer;font-size:18px;color:var(--ink);font-family:serif;}
   .nav-btn:hover{background:var(--sand-50);border-color:var(--gold);}
+  .month-picker{padding:.55rem .75rem;border:1px solid var(--sand-200);border-radius:var(--radius-md);font-size:12px;font-family:inherit;color:var(--ink);background:white;min-width:140px;}
+  .month-picker:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-pale);}
+  .btn-month-today{padding:.55rem .9rem;}
 
   .bookings-section{background:white;border:1px solid var(--sand-200);border-radius:var(--radius-lg);padding:1.5rem;box-shadow:var(--shadow-sm);}
   .section-title{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:1rem;border-bottom:1px solid var(--sand-200);padding-bottom:.75rem;}
@@ -84,8 +87,28 @@
   .cal-header.weekend .cal-day-name{color:var(--sea-500, #2d6b7a);}
   .cal-day-label{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:var(--ink);margin-top:1px;}
   .cal-header.weekend .cal-day-label{color:var(--sea-700, #1a4a56);}
-  .cal-header.today{background:var(--gold-pale);}
-  .cal-header.today .cal-day-label{color:var(--gold-dark);}
+  .cal-header.today{background:rgba(205,36,36,.12);box-shadow:inset 1px 0 0 rgba(205,36,36,.28), inset -1px 0 0 rgba(205,36,36,.28);}
+  .cal-header.today,
+  .apt-cell.today{position:relative;}
+  .cal-header.today::before,
+  .apt-cell.today::before,
+  .cal-header.today::after,
+  .apt-cell.today::after{
+    content:'';
+    position:absolute;
+    top:0;
+    width:3px;
+    height:100%;
+    background:rgba(214,76,76,.85);
+    z-index:4;
+    pointer-events:none;
+  }
+  .cal-header.today::before,
+  .apt-cell.today::before{left:0;}
+  .cal-header.today::after,
+  .apt-cell.today::after{right:0;}
+  .cal-header.today .cal-day-name,
+  .cal-header.today .cal-day-label{color:rgba(150,30,30,.95);}
   .apt-name{background:white;padding:.5rem .875rem;border-bottom:1px solid var(--sand-100);border-right:2px solid var(--sand-200);position:sticky;left:0;z-index:1;display:flex;flex-direction:column;justify-content:center;gap:1px;min-height:48px;}
   .apt-name .a-title{font-size:13px;font-weight:600;color:var(--ink);line-height:1.2;}
   .apt-name .a-title .star{color:var(--gold);font-size:11px;}
@@ -98,7 +121,7 @@
   .apt-cell:hover{background:var(--sand-50);}
   .apt-cell.weekend{background:rgba(238,245,247,.4);}
   .apt-cell.weekend:hover{background:#eef5f7;}
-  .apt-cell.today{box-shadow:inset 0 0 0 1px var(--gold-light);}
+  .apt-cell.today{background:rgba(205,36,36,.08);box-shadow:inset 1px 0 0 rgba(205,36,36,.22), inset -1px 0 0 rgba(205,36,36,.22);}
   .apt-cell.unavail{background:repeating-linear-gradient(45deg, #f0ebe0, #f0ebe0 4px, #e8dcc0 4px, #e8dcc0 8px);opacity:.5;}
   .apt-cell.unavail:hover{background:repeating-linear-gradient(45deg, #f0ebe0, #f0ebe0 4px, #e8dcc0 4px, #e8dcc0 8px);}
   .group-header{background:linear-gradient(90deg,var(--sand-100) 0%, var(--sand-50) 100%);padding:.5rem .875rem;font-family:'Cormorant Garamond',serif;font-size:12px;font-weight:700;color:var(--gold-dark);text-transform:uppercase;letter-spacing:2px;grid-column:1 / -1;border-top:1px solid var(--sand-200);border-bottom:1px solid var(--sand-200);}
@@ -238,15 +261,17 @@
     </div>
     <input type="text" class="search-input" id="search" placeholder="Cerca nome cliente..." oninput="render()">
     <div class="view-controls">
-      <button class="filter-pill active" id="view-table-btn" onclick="setViewMode('table')">Tabella</button>
-      <button class="filter-pill" id="view-calendar-btn" onclick="setViewMode('calendar')">Calendario</button>
+      <button type="button" class="filter-pill active" id="view-table-btn" onclick="setViewMode('table')">Tabella</button>
+      <button type="button" class="filter-pill" id="view-calendar-btn" onclick="setViewMode('calendar')">Calendario</button>
       <div class="month-nav" id="month-nav" style="display:none;">
-        <button class="nav-btn" onclick="changeMonth(-1)">‹</button>
+        <button type="button" class="nav-btn" onclick="changeMonth(-1)" aria-label="Mese precedente">‹</button>
         <div class="month-label" id="month-label">Luglio 2026</div>
-        <button class="nav-btn" onclick="changeMonth(1)">›</button>
+        <button type="button" class="nav-btn" onclick="changeMonth(1)" aria-label="Mese successivo">›</button>
+        <input type="month" class="month-picker" id="month-picker" onchange="setMonthFromPicker(this.value)" aria-label="Seleziona mese">
+        <button type="button" class="btn-secondary btn-month-today" onclick="jumpToToday()">Oggi</button>
       </div>
-      <button class="btn-primary" onclick="openNewBooking()">+ Nuova prenotazione</button>
-      <button class="btn-secondary" onclick="exportCSV()">⬇ Esporta CSV</button>
+      <button type="button" class="btn-primary" onclick="openNewBooking()">+ Nuova prenotazione</button>
+      <button type="button" class="btn-secondary" onclick="exportCSV()">⬇ Esporta CSV</button>
     </div>
   </div>
 
@@ -325,6 +350,9 @@
 const AUTH = window.sharedAppAuth;
 const AUTH_APP = 'rm_admin';
 const ADMIN_NAME = 'admin';
+const DEFAULT_SEASON_YEAR = 2026;
+const DEFAULT_SEASON_MONTH = 6;
+const CALENDAR_VISIBLE_DAYS = 60;
 let refreshTimer = null;
 
 let APARTMENTS = [];
@@ -333,8 +361,8 @@ let UNAVAILABLE = [];
 let filters = { status: 'all', source: 'all' };
 let editingBookingId = null;
 let viewMode = 'table';
-let currentMonth = 6;
-let currentYear = 2026;
+let currentMonth = DEFAULT_SEASON_MONTH;
+let currentYear = DEFAULT_SEASON_YEAR;
 
 function checkAuth() {
   if (AUTH.loadSession(AUTH_APP)) {
@@ -408,7 +436,7 @@ function getDateRange(checkin, checkout) {
   const start = new Date(checkin + 'T00:00:00');
   const end = new Date(checkout + 'T00:00:00');
   const days = [];
-  for (let d = new Date(start); d < end; d.setDate(d.getDate()+1)) days.push(d.toISOString().slice(0,10));
+  for (let d = new Date(start); d < end; d.setDate(d.getDate()+1)) days.push(dateOnly(d));
   return days;
 }
 
@@ -434,7 +462,9 @@ function setFilter(key, val) {
 }
 
 function fmt(iso) { return new Date(iso + 'T00:00:00').toLocaleDateString('it-IT', { day:'numeric', month:'short' }); }
-function dateOnly(d) { return d.toISOString().slice(0,10); }
+function dateOnly(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 function parseISO(iso) { return new Date(iso + 'T00:00:00'); }
 function parseMoneyInput(value) {
   if (value === '' || value == null) return null;
@@ -466,6 +496,58 @@ function daysInMonth(year, month) { return new Date(year, month + 1, 0).getDate(
 const DAY_NAMES = ['DOM','LUN','MAR','MER','GIO','VEN','SAB'];
 const MONTH_NAMES = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 function isWeekend(dateStr) { const d = parseISO(dateStr).getDay(); return d === 0 || d === 6; }
+function addDays(date, amount) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + amount);
+  return next;
+}
+function getToday() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+}
+function getCalendarWindowStart() {
+  return new Date(currentYear, currentMonth, 1);
+}
+function getCalendarWindowDates() {
+  const start = getCalendarWindowStart();
+  const dates = [];
+  for (let index = 0; index < CALENDAR_VISIBLE_DAYS; index += 1) {
+    dates.push(addDays(start, index));
+  }
+  return dates;
+}
+function formatCalendarWindowLabel(startDate, endDate) {
+  const startMonth = MONTH_NAMES[startDate.getMonth()];
+  const endMonth = MONTH_NAMES[endDate.getMonth()];
+  const startYear = startDate.getFullYear();
+  const endYear = endDate.getFullYear();
+  if (startYear === endYear) {
+    if (startDate.getMonth() === endDate.getMonth()) {
+      return `${startMonth} <span class="year">${startYear}</span>`;
+    }
+    return `${startMonth} / ${endMonth} <span class="year">${startYear}</span>`;
+  }
+  return `${startMonth} <span class="year">${startYear}</span> / ${endMonth} <span class="year">${endYear}</span>`;
+}
+function resetCalendarCursor() {
+  const today = getToday();
+  if (today.getFullYear() === DEFAULT_SEASON_YEAR) {
+    currentMonth = today.getMonth();
+    currentYear = today.getFullYear();
+    return;
+  }
+  currentMonth = DEFAULT_SEASON_MONTH;
+  currentYear = DEFAULT_SEASON_YEAR;
+}
+function syncMonthControls() {
+  const windowDates = getCalendarWindowDates();
+  const startDate = windowDates[0];
+  const endDate = windowDates[windowDates.length - 1];
+  document.getElementById('month-label').innerHTML = formatCalendarWindowLabel(startDate, endDate);
+  const picker = document.getElementById('month-picker');
+  if (picker) picker.value = `${currentYear}-${String(currentMonth + 1).padStart(2,'0')}`;
+}
 function isUnavailable(aptId, dateStr) {
   for (const u of UNAVAILABLE) {
     if (u.apartment_id !== aptId) continue;
@@ -513,24 +595,37 @@ function changeMonth(delta) {
   if (currentMonth > 11) { currentMonth = 0; currentYear += 1; }
   render();
 }
+function setMonthFromPicker(value) {
+  if (!value) return;
+  const [year, month] = value.split('-').map(Number);
+  if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) return;
+  currentYear = year;
+  currentMonth = month - 1;
+  render();
+}
+function jumpToToday() {
+  resetCalendarCursor();
+  render();
+}
 function renderCalendar(filtered) {
   const grid = document.getElementById('calendar-grid');
-  const numDays = daysInMonth(currentYear, currentMonth);
+  const visibleDays = getCalendarWindowDates();
+  const numDays = visibleDays.length;
   grid.innerHTML = '';
-  document.getElementById('month-label').innerHTML = `${MONTH_NAMES[currentMonth]} <span class="year">${currentYear}</span>`;
+  syncMonthControls();
   grid.style.gridTemplateColumns = `200px repeat(${numDays}, minmax(36px, 1fr))`;
-  const todayStr = dateOnly(new Date());
+  const todayStr = dateOnly(getToday());
 
   const headerApt = document.createElement('div');
   headerApt.className = 'cal-header apt-col';
   headerApt.textContent = 'Appartamento';
   grid.appendChild(headerApt);
-  for (let day = 1; day <= numDays; day += 1) {
-    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-    const dayName = DAY_NAMES[parseISO(dateStr).getDay()];
+  for (const date of visibleDays) {
+    const dateStr = dateOnly(date);
+    const dayName = DAY_NAMES[date.getDay()];
     const cell = document.createElement('div');
     cell.className = `cal-header${isWeekend(dateStr) ? ' weekend' : ''}${dateStr === todayStr ? ' today' : ''}`;
-    cell.innerHTML = `<div class="cal-day-name">${dayName}</div><div class="cal-day-label">${day}</div>`;
+    cell.innerHTML = `<div class="cal-day-name">${dayName}</div><div class="cal-day-label">${date.getDate()}</div>`;
     grid.appendChild(cell);
   }
 
@@ -560,8 +655,8 @@ function renderCalendar(filtered) {
       aptCell.innerHTML = `<div class="a-title">${star}${apt.name}</div><div class="a-meta">${apt.floor} · ${apt.capacity} pax</div>${noteHtml}`;
       grid.appendChild(aptCell);
 
-      for (let day = 1; day <= numDays; day++) {
-        const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      for (const date of visibleDays) {
+        const dateStr = dateOnly(date);
         const cell = document.createElement('div');
         let cellCls = 'apt-cell';
         if (isWeekend(dateStr)) cellCls += ' weekend';
@@ -575,23 +670,24 @@ function renderCalendar(filtered) {
     }
   }
 
-  setTimeout(() => placeBookings(filtered, numDays), 0);
+  setTimeout(() => placeBookings(filtered, visibleDays), 0);
 }
-function placeBookings(filtered, numDays) {
+function placeBookings(filtered, visibleDays) {
   const grid = document.getElementById('calendar-grid');
   document.querySelectorAll('.calendar-grid > .booking').forEach(b => b.remove());
-  const monthStart = new Date(currentYear, currentMonth, 1);
-  const monthEnd = new Date(currentYear, currentMonth, numDays);
+  const windowStart = visibleDays[0];
+  const windowEndExclusive = addDays(visibleDays[visibleDays.length - 1], 1);
   for (const booking of filtered) {
     const bIn = parseISO(booking.checkin);
     const bOut = parseISO(booking.checkout);
-    if (bOut <= monthStart || bIn > monthEnd) continue;
+    if (bOut <= windowStart || bIn >= windowEndExclusive) continue;
     if (!APARTMENTS.find(a => a.id === booking.apartment_id)) continue;
-    const startDay = bIn < monthStart ? 1 : bIn.getDate();
-    const endDay = bOut > monthEnd ? numDays : (bOut.getDate() - 1);
-    if (endDay < startDay) continue;
-    const firstCell = document.querySelector(`.apt-cell[data-apt-id="${booking.apartment_id}"][data-date="${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(startDay).padStart(2,'0')}"]`);
-    const lastCell = document.querySelector(`.apt-cell[data-apt-id="${booking.apartment_id}"][data-date="${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(endDay).padStart(2,'0')}"]`);
+    const visibleStart = bIn < windowStart ? windowStart : bIn;
+    const visibleEndExclusive = bOut > windowEndExclusive ? windowEndExclusive : bOut;
+    const lastVisibleDay = addDays(visibleEndExclusive, -1);
+    if (lastVisibleDay < visibleStart) continue;
+    const firstCell = document.querySelector(`.apt-cell[data-apt-id="${booking.apartment_id}"][data-date="${dateOnly(visibleStart)}"]`);
+    const lastCell = document.querySelector(`.apt-cell[data-apt-id="${booking.apartment_id}"][data-date="${dateOnly(lastVisibleDay)}"]`);
     if (!firstCell || !lastCell) continue;
     const conflicts = checkConflicts(booking);
     const div = document.createElement('button');
@@ -779,8 +875,12 @@ function openNewBooking() {
   document.getElementById('modal-title').textContent = 'Nuova prenotazione';
   document.getElementById('modal-delete-btn').style.display = 'none';
   document.getElementById('m-name').value = '';
-  const start = new Date(currentYear, currentMonth, 1);
-  const end = new Date(currentYear, currentMonth, 8);
+  const today = getToday();
+  const start = currentYear === today.getFullYear() && currentMonth === today.getMonth()
+    ? new Date(today)
+    : new Date(currentYear, currentMonth, 1);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 7);
   document.getElementById('m-checkin').value = dateOnly(start);
   document.getElementById('m-checkout').value = dateOnly(end);
   document.getElementById('m-pax').value = 2;
@@ -871,12 +971,13 @@ function exportCSV() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `prenotazioni-residence-${new Date().toISOString().slice(0,10)}.csv`;
+  a.download = `prenotazioni-residence-${dateOnly(getToday())}.csv`;
   a.click();
   URL.revokeObjectURL(url);
   showToast('CSV esportato', 'success');
 }
 
+resetCalendarCursor();
 checkAuth();
 </script>
 

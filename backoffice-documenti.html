@@ -449,6 +449,7 @@
     <a href="/backoffice-richieste.html" class="navbar-link">Richieste</a>
     <a href="/backoffice-operativita.html" class="navbar-link">Operativita</a>
     <a href="/backoffice-beds24-messaggi.html" class="navbar-link">Beds24 Messaggi</a>
+    <a href="/backoffice-beds24-reviews.html" class="navbar-link">Beds24 Reviews</a>
     <a href="/backoffice-contabilita.html" class="navbar-link">Contabilita</a>
   </div>
 </nav>
@@ -1721,6 +1722,43 @@ function normalizeLookupValue(value) {
     .toLowerCase();
 }
 
+function sanitizeComuneAutocompleteValue(value) {
+  let raw = String(value || '').replace(/[’`´]/g, "'").replace(/\s+/g, ' ').trim();
+  if (!raw) return '';
+  raw = raw.replace(/^(?:luogo(?:\s+di)?\s+nascita|birth\s*place|place\s+of\s+birth|born\s+in|nato\s+a|nata\s+a)\s*[:.-]?\s*/i, '');
+  raw = raw.replace(/^(?:luogo(?:\s+di)?\s+rilascio|place\s+of\s+issue|issued\s+(?:at|by)|authority\s+of\s+issue)\s*[:.-]?\s*/i, '');
+  raw = raw.replace(/^(rilasciato\s+(?:da|presso)\s+)/i, '');
+  raw = raw.replace(/^(comune|questura|prefettura|motorizzazione|anagrafe)\s+di\s+/i, '');
+  raw = raw.replace(/^(comune|questura|prefettura|motorizzazione|anagrafe)\s+/i, '');
+  raw = raw.replace(/\b\d{5}\b/g, ' ').replace(/\s+/g, ' ').trim();
+  raw = raw.replace(/\(([A-Za-z]{2})\)\s*$/, ' ').trim();
+  raw = raw.replace(/[-/]\s*[A-Za-z]{2}\s*$/, ' ').trim();
+  const commaParts = raw.split(',').map((part) => String(part || '').trim()).filter(Boolean);
+  if (commaParts.length > 1) {
+    const lastPart = commaParts[commaParts.length - 1];
+    const prevPart = commaParts[commaParts.length - 2];
+    raw = /^[A-Za-z]{2}$/.test(String(lastPart || '').trim().toUpperCase()) && prevPart
+      ? prevPart
+      : lastPart;
+  }
+  const tokens = raw.split(/\s+/).filter(Boolean);
+  if (tokens.length > 1) {
+    const lastToken = String(tokens[tokens.length - 1] || '').trim().toUpperCase().replace(/[^A-Z]/g, '');
+    if (/^[A-Z]{2}$/.test(lastToken)) tokens.pop();
+  }
+  return tokens.join(' ').replace(/\s+/g, ' ').trim();
+}
+
+function normalizeComuneAutocompleteValue(value) {
+  return sanitizeComuneAutocompleteValue(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[’`´'-]/g, '')
+    .replace(/\s+/g, '')
+    .trim()
+    .toLowerCase();
+}
+
 function extractProvinceFromComuneLabel(value) {
   const match = String(value || '').match(/\(([^)]+)\)\s*$/);
   return match ? match[1].trim().toUpperCase().slice(0, 2) : '';
@@ -2815,13 +2853,14 @@ const AC = {
   },
 
   search(type, query) {
-    const q = query.trim().toUpperCase();
+    const normalizeForType = type === 'comune' ? normalizeComuneAutocompleteValue : normalizeLookupValue;
+    const q = normalizeForType(query);
     if (q.length < 2) return [];
     const list = type === 'comune' ? AC.comuni : AC.stati;
     if (!list) return [];
     const exact = [], starts = [], contains = [];
     for (const item of list) {
-      const n = item.nome.toUpperCase();
+      const n = normalizeForType(item.nome);
       if (n === q) exact.push(item);
       else if (n.startsWith(q)) starts.push(item);
       else if (n.includes(q)) contains.push(item);
@@ -2830,11 +2869,15 @@ const AC = {
   },
 
   resolveSingle(type, query, provinciaHint = '') {
-    const normalized = normalizeLookupValue(query);
+    const normalized = type === 'comune'
+      ? normalizeComuneAutocompleteValue(query)
+      : normalizeLookupValue(query);
     if (!normalized) return null;
     const list = type === 'comune' ? AC.comuni : AC.stati;
     if (!list) return null;
-    let matches = list.filter(item => normalizeLookupValue(item.nome) === normalized);
+    let matches = list.filter(item => (
+      (type === 'comune' ? normalizeComuneAutocompleteValue(item.nome) : normalizeLookupValue(item.nome)) === normalized
+    ));
     if (type === 'comune' && matches.length > 1 && provinciaHint) {
       const prov = String(provinciaHint || '').trim().toUpperCase().slice(0, 2);
       const narrowed = matches.filter(item => String(item.prov || '').trim().toUpperCase().slice(0, 2) === prov);

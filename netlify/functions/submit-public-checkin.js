@@ -623,10 +623,16 @@ function normalizeIban(value) {
   return String(value || '').replace(/\s+/g, '').trim().toUpperCase();
 }
 
+function isBookingTouristTaxRequiredPayload(payload) {
+  return normalizeSourceChannelHint(payload?.source_channel_hint) === BOOKING_CHANNEL_HINT
+    || payload?.tourist_tax_payment?.required === true
+    || normalizeSourceChannelHint(payload?.tourist_tax_payment?.channel_hint) === BOOKING_CHANNEL_HINT;
+}
+
 function validatePayload(payload) {
   const errors = [];
   const isItalian = payload.paese_residenza === 'IT';
-  const touristTaxRequired = payload.source_channel_hint === BOOKING_CHANNEL_HINT;
+  const touristTaxRequired = isBookingTouristTaxRequiredPayload(payload);
 
   if (!payload.apartment_ref) errors.push(errorField('apartment_id', 'Link appartamento mancante'));
   if (!payload.data_checkin) errors.push(errorField('checkin', 'Check-in obbligatorio'));
@@ -704,6 +710,7 @@ function validatePayload(payload) {
   }
 
   if (touristTaxRequired) {
+    payload.source_channel_hint = BOOKING_CHANNEL_HINT;
     payload.tourist_tax_payment.required = true;
     payload.tourist_tax_payment.channel_hint = BOOKING_CHANNEL_HINT;
     if (!Number.isFinite(payload.tourist_tax_payment.amount) || payload.tourist_tax_payment.amount <= 0) {
@@ -798,7 +805,7 @@ async function buildInsertPayload(supabase, payload, columnSupport, storedDocume
 }
 
 function buildTouristTaxPaymentRecord(payload, storedDocuments = []) {
-  const touristTaxRequired = payload.source_channel_hint === BOOKING_CHANNEL_HINT;
+  const touristTaxRequired = isBookingTouristTaxRequiredPayload(payload);
   if (!touristTaxRequired && !payload.tourist_tax_payment?.required) {
     return {};
   }
@@ -834,8 +841,11 @@ function buildTouristTaxPaymentRecord(payload, storedDocuments = []) {
 }
 
 async function validateTouristTaxPaymentServerSide(payload) {
-  const touristTaxRequired = payload.source_channel_hint === BOOKING_CHANNEL_HINT;
+  const touristTaxRequired = isBookingTouristTaxRequiredPayload(payload);
   if (!touristTaxRequired) return [];
+  payload.source_channel_hint = BOOKING_CHANNEL_HINT;
+  payload.tourist_tax_payment.required = true;
+  payload.tourist_tax_payment.channel_hint = BOOKING_CHANNEL_HINT;
   if (normalizeTouristTaxMethod(payload.tourist_tax_payment?.method) !== STRIPE_CHECKOUT_METHOD) {
     return [];
   }
@@ -2046,6 +2056,7 @@ function extractProvinceCodeFromAddress(value) {
 function normalizeIssuePlaceValue(value) {
   let raw = String(value || '').replace(/[’`´]/g, "'").replace(/\s+/g, ' ').trim();
   if (!raw) return '';
+  raw = raw.replace(/^(?:luogo(?:\s+di)?\s+rilascio|place\s+of\s+issue|issued\s+(?:at|by)|authority\s+of\s+issue)\s*[:.-]?\s*/i, '');
   raw = raw.replace(/^(rilasciato\s+(?:da|presso)\s+)/i, '');
   raw = raw.replace(/^(comune|questura|prefettura|motorizzazione|anagrafe)\s+di\s+/i, '');
   raw = raw.replace(/^(comune|questura|prefettura|motorizzazione|anagrafe)\s+/i, '');
@@ -2061,6 +2072,11 @@ function normalizeUpperProvinceCode(value) {
 function sanitizeComuneLikeValue(value) {
   let raw = String(value || '').replace(/[’`´]/g, "'").replace(/\s+/g, ' ').trim();
   if (!raw) return '';
+  raw = raw.replace(/^(?:luogo(?:\s+di)?\s+nascita|birth\s*place|place\s+of\s+birth|born\s+in|nato\s+a|nata\s+a)\s*[:.-]?\s*/i, '');
+  raw = raw.replace(/^(?:luogo(?:\s+di)?\s+rilascio|place\s+of\s+issue|issued\s+(?:at|by)|authority\s+of\s+issue)\s*[:.-]?\s*/i, '');
+  raw = raw.replace(/^(rilasciato\s+(?:da|presso)\s+)/i, '');
+  raw = raw.replace(/^(comune|questura|prefettura|motorizzazione|anagrafe)\s+di\s+/i, '');
+  raw = raw.replace(/^(comune|questura|prefettura|motorizzazione|anagrafe)\s+/i, '');
   raw = raw.replace(/\b\d{5}\b/g, ' ').replace(/\s+/g, ' ').trim();
   raw = raw.replace(/\(([A-Za-z]{2})\)\s*$/, ' ').trim();
   raw = raw.replace(/[-/]\s*[A-Za-z]{2}\s*$/, ' ').trim();
@@ -2255,4 +2271,5 @@ exports.__test__ = {
   extractProvinceCodeFromComuneText,
   extractProvinceCodeFromAddress,
   normalizeIssuePlaceValue,
+  validatePayload,
 };

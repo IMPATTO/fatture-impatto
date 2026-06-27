@@ -90,8 +90,14 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .dynamic-guest-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-top:10px;}
 .dynamic-guest-card h4{font-size:12px;font-family:'DM Mono',monospace;letter-spacing:0.08em;color:var(--text2);margin-bottom:12px;text-transform:uppercase;}
 .checkbox-row{display:flex;align-items:flex-start;gap:10px;}
-.checkbox-row input[type="checkbox"]{width:16px;height:16px;margin-top:2px;accent-color:var(--accent);flex-shrink:0;cursor:pointer;}
+.field .checkbox-row{margin-bottom:0;}
+.checkbox-row input[type="checkbox"]{width:16px;height:16px;margin-top:2px;accent-color:var(--accent);flex-shrink:0;cursor:pointer;-webkit-appearance:auto;appearance:auto;background:#fff;}
 .checkbox-copy{font-size:13px;color:var(--text2);line-height:1.5;}
+.checkbox-row-interactive{padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:#fff;cursor:pointer;transition:border-color 0.15s,background 0.15s;}
+.checkbox-row-interactive:hover{border-color:var(--border2);}
+.checkbox-row-interactive.active{border-color:var(--accent);background:var(--accent-bg);}
+.field .checkbox-row-interactive{gap:10px;}
+.field .checkbox-row-interactive .checkbox-copy{display:block;flex:1;cursor:pointer;}
 .guest-documents{margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border);}
 .guest-documents:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
 .upload-list{display:grid;gap:8px;margin-top:10px;}
@@ -149,7 +155,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface3);border:1px solid var(--border2);color:var(--text);padding:10px 18px;border-radius:var(--radius-sm);font-size:12px;font-family:'DM Mono',monospace;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);z-index:999;white-space:normal;text-align:center;max-width:90vw;}
 .toast.show{transform:translateX(-50%) translateY(0);}
 .privacy-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:14px;display:flex;align-items:flex-start;gap:12px;transition:border-color 0.15s,background 0.15s;}
-.privacy-block input[type="checkbox"]{width:16px;height:16px;margin-top:2px;accent-color:var(--accent);flex-shrink:0;cursor:pointer;}
+.privacy-block input[type="checkbox"]{width:16px;height:16px;margin-top:2px;accent-color:var(--accent);flex-shrink:0;cursor:pointer;-webkit-appearance:auto;appearance:auto;background:#fff;}
 .privacy-block label{font-size:12px;color:var(--text2);line-height:1.55;cursor:pointer;}
 .privacy-block label a{color:var(--accent);text-decoration:underline;}
 .privacy-block.err{border-color:var(--red-border);background:var(--red-bg);}
@@ -202,17 +208,20 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
     <div class="card" id="touristTaxCard" style="display:none">
       <div class="card-header"><span class="card-title" data-t="touristTaxTitle">TASSA DI SOGGIORNO</span></div>
       <div class="card-body">
-        <div class="helper-note" data-t="touristTaxIntro">Prima di procedere con il check-in e con le istruzioni per accedere all'appartamento, devi effettuare il pagamento della tassa di soggiorno obbligatoria. Guarda la tua prenotazione su Booking: li potrai vedere quanto devi pagare. Scegli qui sotto come vuoi pagare.</div>
+        <div class="helper-note" data-t="touristTaxIntro">Prima di procedere con il check-in e con le istruzioni per accedere all'appartamento, devi effettuare il pagamento della tassa di soggiorno obbligatoria. Guarda la tua prenotazione su Booking: li potrai vedere quanto devi pagare. Puoi pagare con bonifico oppure con carta online tramite Stripe. Scegli qui sotto come preferisci procedere.</div>
         <div class="field" id="touristTaxAmountField" style="margin-top:14px">
           <label><span data-t="touristTaxAmountLabel">Importo tassa di soggiorno su Booking</span> <span class="req">*</span></label>
           <input type="text" id="touristTaxAmount" inputmode="decimal" placeholder="12,00" oninput="handleTouristTaxAmountInput()">
           <div class="helper-note" data-t="touristTaxAmountNote">Inserisci qui il totale da pagare, come indicato nella prenotazione Booking.</div>
         </div>
         <div class="field" id="touristTaxConfirmField">
-          <div class="checkbox-row">
+          <label
+            class="checkbox-row checkbox-row-interactive"
+            id="touristTaxConfirmRow"
+          >
             <input type="checkbox" id="touristTaxConfirm" onchange="handleTouristTaxConfirmChange()">
-            <label class="checkbox-copy" for="touristTaxConfirm" data-t="touristTaxConfirmLabel">Confermo di aver verificato su Booking l'importo della tassa di soggiorno da pagare.</label>
-          </div>
+            <span class="checkbox-copy" data-t="touristTaxConfirmLabel">Confermo di aver verificato su Booking l'importo della tassa di soggiorno da pagare.</span>
+          </label>
         </div>
         <div class="field" id="touristTaxMethodField">
           <label><span data-t="touristTaxMethodLabel">Metodo di pagamento</span> <span class="req">*</span></label>
@@ -620,7 +629,7 @@ var T={
 
 Object.assign(T.it,{
   touristTaxTitle:'TASSA DI SOGGIORNO',
-  touristTaxIntro:'Prima di procedere con il check-in e con le istruzioni per accedere all appartamento, devi effettuare il pagamento della tassa di soggiorno obbligatoria. Guarda la tua prenotazione su Booking: li potrai vedere quanto devi pagare. Scegli qui sotto come vuoi pagare.',
+  touristTaxIntro:'Prima di procedere con il check-in e con le istruzioni per accedere all appartamento, devi effettuare il pagamento della tassa di soggiorno obbligatoria. Guarda la tua prenotazione su Booking: li potrai vedere quanto devi pagare. Puoi pagare con bonifico oppure con carta online tramite Stripe. Scegli qui sotto come preferisci procedere.',
   touristTaxBeneficiaryLabel:'INTESTATARIO',
   touristTaxIbanLabel:'IBAN',
   touristTaxBicLabel:'BIC/SWIFT',
@@ -645,7 +654,7 @@ Object.assign(T.it,{
 });
 Object.assign(T.en,{
   touristTaxTitle:'TOURIST TAX',
-  touristTaxIntro:'Before completing the check-in and receiving the apartment access instructions, you must pay the mandatory tourist tax. Check Booking to see the exact amount due, then choose how you want to pay below.',
+  touristTaxIntro:'Before completing the check-in and receiving the apartment access instructions, you must pay the mandatory tourist tax. Check Booking to see the exact amount due. You can pay by bank transfer or by card online with Stripe, then choose below how you want to proceed.',
   touristTaxBeneficiaryLabel:'BENEFICIARY',
   touristTaxIbanLabel:'IBAN',
   touristTaxBicLabel:'BIC/SWIFT',
@@ -691,6 +700,7 @@ var TOURIST_TAX_PAYMENT_DETAILS={
 var touristTaxVerificationState={matched:false,result:null};
 var touristTaxVerificationResults={bank_transfer:null,stripe_checkout:null};
 var touristTaxStripeCheckoutRequestInFlight=null;
+var submitRequestInFlight=false;
 var directDocumentUploadState={cacheKey:'',uploadBatchToken:'',documents:[]};
 var documentEmergencyBypass=false;
 var documentEmergencyToken='';
@@ -1134,6 +1144,7 @@ function syncTouristTaxVerificationStatus(){
     setTouristTaxVerificationStatus('','');
   }
   updateTouristTaxStripeButton();
+  updateSubmitButtonLockState();
 }
 function setTouristTaxVerificationResult(method,result){
   touristTaxVerificationResults[normalizeTouristTaxMethod(method)]=result||null;
@@ -1164,6 +1175,31 @@ function updateTouristTaxWhatsappLink(){
   var link=document.getElementById('touristTaxWhatsappLink');
   if(!link)return;
   link.href=buildTouristTaxWhatsappHref();
+}
+function isDocumentFlowReadyForSubmit(){
+  return hasAllRequiredGuestDocuments() || shouldUseDocumentEmergencyFlow();
+}
+function isBookingTouristTaxReadyForSubmit(){
+  if(!isBookingTouristTaxRequired())return true;
+  var amount=parseTouristTaxAmountValue(document.getElementById('touristTaxAmount')?.value);
+  if(!Number.isFinite(amount) || amount<=0)return false;
+  if(!document.getElementById('touristTaxConfirm')?.checked)return false;
+  if(getTouristTaxPaymentMethod()===TOURIST_TAX_STRIPE_METHOD){
+    var stripeVerification=getTouristTaxVerificationResult(TOURIST_TAX_STRIPE_METHOD);
+    return !!(stripeVerification && stripeVerification.matched===true);
+  }
+  return hasTouristTaxProofUploads();
+}
+function updateSubmitButtonLockState(){
+  var btn=document.getElementById('submitBtn');
+  if(!btn)return;
+  var shouldLock=submitRequestInFlight
+    || !getResolvedApartmentRef()
+    || currentStep!==2
+    || !isDocumentFlowReadyForSubmit()
+    || !isBookingTouristTaxReadyForSubmit();
+  btn.disabled=!!shouldLock;
+  btn.setAttribute('aria-disabled',shouldLock?'true':'false');
 }
 function hasTouristTaxProofUploads(){
   return getTouristTaxProofEntries().length>0;
@@ -1317,6 +1353,7 @@ async function refreshTouristTaxStripeVerification(sessionId){
   }
   var confirmInput=document.getElementById('touristTaxConfirm');
   if(confirmInput)confirmInput.checked=true;
+  syncTouristTaxConfirmUi();
   clearFieldError('touristTaxAmount');
   clearFieldError('touristTaxConfirm');
   clearFieldError('touristTaxStripeField');
@@ -1529,14 +1566,17 @@ function updateTouristTaxMethodUi(){
   if(stripePanel)stripePanel.style.display=method===TOURIST_TAX_STRIPE_METHOD?'':'none';
   updateTouristTaxWhatsappLink();
   syncTouristTaxVerificationStatus();
+  updateSubmitButtonLockState();
   if(currentStep===2)buildReview();
 }
 function updateBookingTouristTaxUi(){
   var card=document.getElementById('touristTaxCard');
   if(!card)return;
   card.style.display=isBookingTouristTaxRequired()?'':'none';
+  syncTouristTaxConfirmUi();
   renderTouristTaxProofUploads();
   updateTouristTaxMethodUi();
+  updateSubmitButtonLockState();
 }
 function handleTouristTaxAmountInput(){
   var input=document.getElementById('touristTaxAmount');
@@ -1546,10 +1586,19 @@ function handleTouristTaxAmountInput(){
   clearFieldError('touristTaxAmount');
   clearFieldError('touristTaxField');
   clearFieldError('touristTaxStripeField');
+  updateSubmitButtonLockState();
   if(currentStep===2)buildReview();
+}
+function syncTouristTaxConfirmUi(){
+  var row=document.getElementById('touristTaxConfirmRow');
+  var input=document.getElementById('touristTaxConfirm');
+  if(!row || !input)return;
+  row.classList.toggle('active',!!input.checked);
 }
 function handleTouristTaxConfirmChange(){
   clearFieldError('touristTaxConfirm');
+  syncTouristTaxConfirmUi();
+  updateSubmitButtonLockState();
   if(currentStep===2)buildReview();
 }
 function handleTouristTaxMethodChange(){
@@ -1572,6 +1621,7 @@ function handleTouristTaxProofFiles(files){
   clearDirectDocumentUploadState();
   clearFieldError('touristTaxField');
   renderTouristTaxProofUploads();
+  updateSubmitButtonLockState();
   if(currentStep===2)buildReview();
 }
 function removeTouristTaxProofFile(fileIndex){
@@ -1584,6 +1634,7 @@ function removeTouristTaxProofFile(fileIndex){
   renderTouristTaxProofUploads();
   var input=document.getElementById('touristTaxProofInput');
   if(input)input.value='';
+  updateSubmitButtonLockState();
   if(currentStep===2)buildReview();
 }
 function hasValidDocumentEmergencyToken(payload){
@@ -1685,6 +1736,7 @@ function updateDocumentFlowUi(){
           : 'Documenti pesanti rilevati: durante l invio useremo un upload diretto sicuro.')
       : t('documentFlowNote');
     buttonEl.style.display='none';
+    updateSubmitButtonLockState();
     return;
   }
   if(shouldUseDocumentEmergencyFlow()){
@@ -1694,12 +1746,14 @@ function updateDocumentFlowUi(){
       ? 'If WhatsApp opened, finish the check-in now and use the success screen to open the portal afterwards.'
       : 'Se hai aperto WhatsApp, completa ora il check-in e usa la schermata finale per aprire il portale dopo l invio.';
     buttonEl.style.display='';
+    updateSubmitButtonLockState();
     return;
   }
   statusEl.className='document-flow-status warning';
   statusEl.textContent=getGuestDocumentRequirementMessage(status);
   noteEl.innerHTML=t('documentFlowNote');
   buttonEl.style.display='';
+  updateSubmitButtonLockState();
 }
 async function startDocumentEmergencyFlow(){
   var buttonEl=document.getElementById('documentEmergencyBtn');
@@ -1797,6 +1851,7 @@ function goToStep(n){
     updateDocumentFlowUi();
     updateBookingTouristTaxUi();
   }
+  updateSubmitButtonLockState();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -2089,11 +2144,11 @@ function initDateParts(){
   });
 }
 function normalizeComuneLookupValue(value){
-  return String(value||'')
+  return sanitizeComuneLikeValue(value)
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g,'')
-    .replace(/[’`´']/g,'')
-    .replace(/\s+/g,' ')
+    .replace(/[’`´'-]/g,'')
+    .replace(/\s+/g,'')
     .trim()
     .toLowerCase();
 }
@@ -2119,6 +2174,8 @@ function extractProvinceCodeFromText(value){
 function sanitizeComuneLikeValue(value){
   var raw=String(value||'').replace(/[’`´]/g,"'").replace(/\s+/g,' ').trim();
   if(!raw)return '';
+  raw=raw.replace(/^(?:luogo(?:\s+di)?\s+nascita|birth\s*place|place\s+of\s+birth|born\s+in|nato\s+a|nata\s+a)\s*[:.-]?\s*/i,'');
+  raw=raw.replace(/^(?:luogo(?:\s+di)?\s+rilascio|place\s+of\s+issue|issued\s+(?:at|by)|authority\s+of\s+issue)\s*[:.-]?\s*/i,'');
   raw=raw.replace(/^(rilasciato\s+(?:da|presso)\s+)/i,'');
   raw=raw.replace(/^(comune|questura|prefettura|motorizzazione|anagrafe)\s+di\s+/i,'');
   raw=raw.replace(/^(comune|questura|prefettura|motorizzazione|anagrafe)\s+/i,'');
@@ -3749,7 +3806,9 @@ async function submitForm(){
   await ensureCriticalComuneLookupsResolved();
   var errors=validateClientData({requireDocuments:true});
   if(errors.length){showToast(errors[0].msg);return;}
-  btn.disabled=true;btn.textContent=msg('sending');
+  submitRequestInFlight=true;
+  updateSubmitButtonLockState();
+  btn.textContent=msg('sending');
   var payload=buildPayload();
   var usedEmergencyFlow=shouldUseDocumentEmergencyFlow();
   try{
@@ -3823,7 +3882,10 @@ async function submitForm(){
     }
     showTopAlert(err.message||t('errSending'));
     showToast(err.message||t('errSending'));
-    btn.disabled=false;btn.innerHTML=t('invia');
+    btn.innerHTML=t('invia');
+  }finally{
+    submitRequestInFlight=false;
+    updateSubmitButtonLockState();
   }
 }
 
@@ -3851,6 +3913,7 @@ updateBookingTouristTaxUi();
 loadTouristTaxStripeAvailability().catch(function(){});
 handleInitialTouristTaxStripeReturn().catch(function(err){ console.error(err); });
 ensureCountryOptionsLoaded();
+updateSubmitButtonLockState();
 document.addEventListener('input',function(e){
   if(e.target&&e.target.id){
     clearFieldError(e.target.id);

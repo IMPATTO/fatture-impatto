@@ -31,6 +31,93 @@ const DEFAULT_SEZIONALE = 'D';
 const BACKOFFICE_EMAILS = Array.from(INTERNAL_ALLOWED_EMAILS);
 const LOCAL_DRAFT_ELIGIBLE_STATI = ['CHECK_IN_COMPLETATO', 'DA_VERIFICARE', 'APPROVATA'];
 const LOCAL_DRAFT_INCOMPLETE_STATO = 'DA_COMPLETARE';
+const COUNTRY_NAMES_BY_ISO = Object.freeze({
+  AT: 'Austria',
+  AU: 'Australia',
+  BE: 'Belgio',
+  BR: 'Brasile',
+  CA: 'Canada',
+  CH: 'Svizzera',
+  CN: 'Cina',
+  CZ: 'Repubblica Ceca',
+  DE: 'Germania',
+  DK: 'Danimarca',
+  ES: 'Spagna',
+  FI: 'Finlandia',
+  FR: 'Francia',
+  GB: 'Regno Unito',
+  GR: 'Grecia',
+  HU: 'Ungheria',
+  IE: 'Irlanda',
+  IT: 'Italia',
+  JP: 'Giappone',
+  NL: 'Paesi Bassi',
+  NO: 'Norvegia',
+  PL: 'Polonia',
+  PT: 'Portogallo',
+  RO: 'Romania',
+  RU: 'Russia',
+  SE: 'Svezia',
+  UA: 'Ucraina',
+  US: 'Stati Uniti',
+});
+const COUNTRY_ISO_BY_ALIAS = Object.freeze({
+  argentina: 'AR',
+  australia: 'AU',
+  austria: 'AT',
+  belgio: 'BE',
+  belgium: 'BE',
+  brasile: 'BR',
+  brazil: 'BR',
+  canada: 'CA',
+  china: 'CN',
+  cina: 'CN',
+  'repubblica ceca': 'CZ',
+  'czech republic': 'CZ',
+  danimarca: 'DK',
+  denmark: 'DK',
+  finlandia: 'FI',
+  finland: 'FI',
+  francia: 'FR',
+  france: 'FR',
+  germania: 'DE',
+  germany: 'DE',
+  giappone: 'JP',
+  greece: 'GR',
+  grecia: 'GR',
+  hungary: 'HU',
+  ungheria: 'HU',
+  irlanda: 'IE',
+  ireland: 'IE',
+  italia: 'IT',
+  italy: 'IT',
+  japan: 'JP',
+  netherlands: 'NL',
+  'paesi bassi': 'NL',
+  poland: 'PL',
+  polonia: 'PL',
+  portogallo: 'PT',
+  portugal: 'PT',
+  'regno unito': 'GB',
+  romania: 'RO',
+  russia: 'RU',
+  'russia federation': 'RU',
+  'russian federation': 'RU',
+  'russia federazione': 'RU',
+  spagna: 'ES',
+  spain: 'ES',
+  'stati uniti': 'US',
+  sweden: 'SE',
+  svezia: 'SE',
+  svizzera: 'CH',
+  switzerland: 'CH',
+  uk: 'GB',
+  ucraina: 'UA',
+  ukraine: 'UA',
+  'united kingdom': 'GB',
+  'united states': 'US',
+  usa: 'US',
+});
 
 function jsonResponse(statusCode, body) {
   return {
@@ -90,6 +177,10 @@ function toNumber(value) {
 
 function normalizeString(value) {
   return String(value || '').trim();
+}
+
+function escapeRegExp(value) {
+  return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function normalizeSearchToken(value) {
@@ -205,20 +296,176 @@ function resolveSezionale(value) {
   };
 }
 
+function splitFullName(value) {
+  const parts = normalizeString(value).split(/\s+/).filter(Boolean);
+  if (parts.length <= 1) {
+    return {
+      firstName: parts[0] || '',
+      lastName: ''
+    };
+  }
+
+  return {
+    firstName: parts.slice(0, -1).join(' '),
+    lastName: parts.slice(-1).join(' ')
+  };
+}
+
+function resolvePersonIdentity(source) {
+  let firstName = normalizeString(source.first_name || source.nome || '');
+  let lastName = normalizeString(source.last_name || source.cognome || '');
+  const displayName = normalizeString(source.nome_visualizzato || '');
+
+  if (firstName && !lastName && /\s/.test(firstName)) {
+    const split = splitFullName(firstName);
+    firstName = split.firstName;
+    lastName = split.lastName;
+  }
+
+  if ((!firstName || !lastName) && displayName) {
+    const split = splitFullName(displayName);
+    if (!firstName) firstName = split.firstName;
+    if (!lastName) lastName = split.lastName;
+  }
+
+  const fullName = [firstName, lastName].filter(Boolean).join(' ').trim() || displayName;
+  return {
+    firstName,
+    lastName,
+    fullName
+  };
+}
+
+function normalizeCountryIsoCandidate(value) {
+  const raw = normalizeString(value).toUpperCase();
+  if (!raw) return '';
+  if (raw === 'UK') return 'GB';
+  return /^[A-Z]{2}$/.test(raw) ? raw : '';
+}
+
+function resolveCountryFields(source) {
+  const rawCountryName = [
+    source.paese,
+    source.country
+  ]
+    .map((value) => normalizeString(value))
+    .find((value) => value && !normalizeCountryIsoCandidate(value)) || '';
+
+  const countryIso = [
+    source.country_iso,
+    source.countryIso,
+    source.paese_residenza,
+    source.paese,
+    source.country
+  ]
+    .map(normalizeCountryIsoCandidate)
+    .find(Boolean)
+    || COUNTRY_ISO_BY_ALIAS[normalizeSearchToken(rawCountryName)]
+    || '';
+
+  const country = rawCountryName || COUNTRY_NAMES_BY_ISO[countryIso] || '';
+  return { country, countryIso };
+}
+
+function extractPostalCode(value) {
+  const match = normalizeString(value).match(/\b\d{5}\b/);
+  return match ? match[0] : '';
+}
+
+function extractProvinceCode(value) {
+  const raw = normalizeString(value).toUpperCase();
+  if (!raw) return '';
+
+  const parentheticalMatch = raw.match(/\(([A-Z]{2})\)\s*$/);
+  if (parentheticalMatch) return parentheticalMatch[1];
+
+  const commaParts = raw.split(',').map((part) => part.trim()).filter(Boolean);
+  const partsToInspect = commaParts.length ? commaParts.slice(-2).reverse() : [raw];
+  for (const part of partsToInspect) {
+    if (/^[A-Z]{2}$/.test(part)) return part;
+    const tokenMatch = part.match(/\b([A-Z]{2})\b\s*$/);
+    if (tokenMatch) return tokenMatch[1];
+  }
+
+  return '';
+}
+
+function cleanupLocationSegment(value, { postalCode, province }) {
+  let cleaned = normalizeString(value);
+  if (!cleaned) return '';
+
+  if (postalCode) {
+    cleaned = cleaned.replace(new RegExp(`\\b${escapeRegExp(postalCode)}\\b`, 'g'), ' ');
+  }
+
+  if (province) {
+    cleaned = cleaned.replace(new RegExp(`(?:\\(|\\b)${escapeRegExp(province)}(?:\\)|\\b)\\s*$`, 'i'), ' ');
+  }
+
+  return cleaned
+    .replace(/[,-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function parseStructuredAddress(value) {
+  const raw = normalizeString(value);
+  if (!raw) {
+    return {
+      street: '',
+      postalCode: '',
+      city: '',
+      province: ''
+    };
+  }
+
+  const parts = raw.split(',').map((part) => normalizeString(part)).filter(Boolean);
+  const postalCode = extractPostalCode(raw);
+  const province = extractProvinceCode(raw);
+  const street = parts.length > 1 ? parts[0] : raw;
+  const locationParts = parts.length > 1 ? parts.slice(1) : [raw];
+
+  const city = locationParts
+    .map((part) => cleanupLocationSegment(part, { postalCode, province }))
+    .find(Boolean) || '';
+
+  return {
+    street,
+    postalCode,
+    city,
+    province
+  };
+}
+
 function buildClientEntity(source, options = {}) {
   const tipoCliente = normalizeString(options.tipoCliente || source.tipo_cliente).toLowerCase();
-  const companyName = source.ragione_sociale || source.nome_visualizzato || source.nome || source.piva_cliente || source.piva || '';
-  const personName = [source.nome, source.cognome].filter(Boolean).join(' ').trim();
+  const companyName = normalizeString(source.ragione_sociale || source.nome_visualizzato || source.piva_cliente || source.piva || '');
+  const personIdentity = resolvePersonIdentity(source);
   const billingAddress = source.indirizzo_fatturazione || source.indirizzo || source.indirizzo_residenza || null;
   const isCompany = tipoCliente === 'azienda';
+  const parsedAddress = parseStructuredAddress(billingAddress);
+  const addressStreet = normalizeString(source.address_street || parsedAddress.street || source.indirizzo || billingAddress || '');
+  const addressPostalCode = normalizeString(source.cap || parsedAddress.postalCode || '');
+  const addressCity = normalizeString(source.citta || parsedAddress.city || '');
+  const addressProvince = normalizeString(source.provincia || parsedAddress.province || '').toUpperCase();
+  const { country, countryIso } = resolveCountryFields(source);
   const client = compactObject({
-    name: isCompany ? (companyName || personName || 'Cliente') : (personName || companyName || source.nome_visualizzato || 'Cliente'),
+    name: isCompany
+      ? (companyName || personIdentity.fullName || 'Cliente')
+      : (personIdentity.fullName || companyName || normalizeString(source.nome_visualizzato) || 'Cliente'),
     type: isCompany ? 'company' : 'person',
-    address_street: billingAddress || null
+    address_street: addressStreet || null
   });
 
   const vatNumber = source.piva_cliente || source.piva || null;
   const taxCode = source.codice_fiscale || null;
+
+  if (!isCompany) {
+    if (personIdentity.firstName) client.first_name = personIdentity.firstName;
+    if (personIdentity.lastName) client.last_name = personIdentity.lastName;
+  } else if (personIdentity.fullName && personIdentity.fullName !== client.name) {
+    client.contact_person = personIdentity.fullName;
+  }
 
   if (vatNumber && (isCompany || tipoCliente === 'professionista')) {
     client.vat_number = vatNumber;
@@ -231,10 +478,12 @@ function buildClientEntity(source, options = {}) {
   if (source.email) client.email = source.email;
   if (source.pec) client.certified_email = source.pec;
   if (source.codice_destinatario) client.ei_code = source.codice_destinatario;
-  if (source.paese) client.country = source.paese;
-  if (source.cap) client.address_postal_code = source.cap;
-  if (source.citta) client.address_city = source.citta;
-  if (source.provincia) client.address_province = source.provincia;
+  if (source.telefono || source.phone) client.phone = source.telefono || source.phone;
+  if (country) client.country = country;
+  if (countryIso) client.country_iso = countryIso;
+  if (addressPostalCode) client.address_postal_code = addressPostalCode;
+  if (addressCity) client.address_city = addressCity;
+  if (addressProvince) client.address_province = addressProvince;
 
   return client;
 }

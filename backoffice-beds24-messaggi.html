@@ -173,22 +173,50 @@ const VALLE_DAOSTA_WHATSAPP = '+39 349 243 4501';
 
 const MESSAGE_TYPES = [
   {
+    key: 'WHATSAPP_REDIRECT',
+    label: 'WhatsApp redirect',
+    timing: 'Su messaggio / manuale',
+    subject: 'Contatta Serena su WhatsApp',
+    body_it: `Ciao {{guest_name}},
+se hai bisogno di qualsiasi cosa, scrivi direttamente a Serena su WhatsApp:
+-> {{whatsapp}}
+
+Ti risponderà lì il prima possibile.
+
+A presto!
+Serena – Il Lupo Affitta`,
+    body_en: `Hi {{guest_name}},
+if you need anything, please write directly to Serena on WhatsApp:
+-> {{whatsapp}}
+
+She will reply there as soon as possible.
+
+Best regards,
+Serena – Il Lupo Affitta`,
+  },
+  {
     key: 'BOOKING_CONFIRMATION',
     label: 'Booking confirmation',
     timing: 'Subito',
     subject: 'Prenotazione confermata',
     body_it: `Ciao {{guest_name}},
-abbiamo ricevuto la tua prenotazione 😊
+abbiamo ricevuto la tua prenotazione.
 Siamo felici di ospitarti a {{city}}.
 
 Una settimana prima dell’arrivo ti invieremo tutte le istruzioni per il check-in online: è un passaggio semplice e necessario per accedere all’appartamento.
 
-Ti consigliamo di completarlo appena lo ricevi, così eviti ritardi il giorno dell’arrivo.
+Ti consigliamo di completarlo appena lo ricevi, così arrivi con tutto chiaro e senza stress.
 
 Una volta fatto, avrai subito tutte le informazioni per arrivare e per il self check-in.
 
+Per aiutarti in modo rapido ed efficace, siamo disponibili ogni giorno dalle 10:00 alle 18:00 per qualsiasi domanda.
+Fuori da questi orari gestiamo solo emergenze.
+
+Se prevedi di fare check-in dopo le 22:00, ti chiediamo di leggere con attenzione tutte le istruzioni prima dell’arrivo e di segnalarci eventuali dubbi entro le 22:00:
+dopo quell’orario non saremo raggiungibili al telefono e, se nasce un problema dopo le 22:00, per noi non è possibile risolverlo fino al giorno successivo.
+
 Per qualsiasi necessità puoi scrivermi su WhatsApp:
-📞 {{whatsapp}}
+-> {{whatsapp}}
 
 A presto!
 Serena – Il Lupo Affitta`,
@@ -201,7 +229,7 @@ Serena – Il Lupo Affitta`,
     body_it: `Ciao {{guest_name}},
 per accedere all’appartamento è obbligatorio completare il check-in online.
 
-👉 Fallo ora da qui:
+-> Fallo ora da qui:
 {{checkin_link}}
 
 Prima di iniziare, tieni pronti i documenti di tutti gli ospiti (bambini inclusi).
@@ -215,7 +243,7 @@ Una volta completato, potrai accedere al tuo portale personale con tutte le istr
 Richiede solo pochi minuti: ti consigliamo di farlo subito per evitare ritardi all’arrivo.
 
 Se hai dubbi, scrivimi qui o su WhatsApp:
-📞 {{whatsapp}}
+-> {{whatsapp}}
 
 A presto!
 Serena – Il Lupo Affitta`,
@@ -226,9 +254,9 @@ Serena – Il Lupo Affitta`,
     timing: '1 giorno prima',
     subject: 'Portale self check-in',
     body_it: `Ciao {{guest_name}},
-ti stiamo aspettando 😊
+ti stiamo aspettando.
 
-👉 Accedi qui al portale con tutte le istruzioni:
+-> Accedi qui al portale con tutte le istruzioni:
 {{portal_link}}
 
 Ti consiglio di aprirlo ora: trovi tutto quello che ti servirà all’arrivo.
@@ -242,7 +270,7 @@ Il check-in è dalle ore {{checkin_time}} (salvo accordi diversi).
 Prima di quell’orario l’appartamento potrebbe non essere ancora pronto.
 
 Se hai bisogno di assistenza, scrivici su WhatsApp:
-📞 {{whatsapp}}
+-> {{whatsapp}}
 
 Buon viaggio!
 Serena – Il Lupo Affitta`,
@@ -253,16 +281,20 @@ Serena – Il Lupo Affitta`,
     timing: 'Ore 18 del giorno di check-in',
     subject: 'Tutto ok con l’appartamento?',
     body_it: `Ciao {{guest_name}},
-tutto ok con l’appartamento? 😊
+tutto ok con l’appartamento?
 
-Se c’è qualcosa che possiamo fare per migliorare la tua esperienza fammelo sapere, interveniamo rapidamente.
+Se c’è qualcosa che possiamo fare per migliorare il tuo soggiorno, scrivici subito: quando ci segnali un problema in tempo, riusciamo quasi sempre a intervenire più rapidamente.
 
-Se invece non c’è nulla che possiamo migliorare, allora significa che va tutto bene e ne siamo felici.
+Siamo disponibili ogni giorno dalle 10:00 alle 18:00 per qualsiasi domanda o necessità.
+Fuori da questi orari gestiamo solo emergenze.
 
-Per qualsiasi necessità urgente puoi chiamarmi o scrivermi su WhatsApp:
-📞 {{whatsapp}} (Serena)
+Ti ricordiamo anche che, se il check-in avviene dopo le 22:00, non saremo raggiungibili al telefono e, se nasce un problema dopo quell’orario, per noi non è possibile risolverlo fino al giorno successivo.
+Per questo ti consigliamo di controllare appena entri accesso, chiavi e istruzioni, così possiamo aiutarti in tempo utile.
 
-Ti chiediamo solo una cosa: trattare la casa con cura, come fosse tua 🙏
+Per qualsiasi necessità puoi scrivermi su WhatsApp:
+-> {{whatsapp}} (Serena)
+
+Ti chiediamo solo una cosa: trattare la casa con cura, come fosse tua.
 
 Grazie
 Serena - Il Lupo Affitta`,
@@ -280,15 +312,15 @@ Prima di andare, ti chiediamo di:
 • chiuderla e impostare il codice su 0000
 • buttare la spazzatura differenziata negli appositi contenitori
 
-Se l’appartamento viene lasciato in ordine, ci aiuti a prepararlo al meglio per i prossimi ospiti 🙏
+Se l’appartamento viene lasciato in ordine, ci aiuti a prepararlo al meglio per i prossimi ospiti.
 
 Per qualsiasi dubbio su WhatsApp:
-📞 {{whatsapp}}
+-> {{whatsapp}}
 
 Grazie per la collaborazione e buon rientro!
 Serena – Il Lupo Affitta
 
-PS: Se abbiamo preso accordi diversi, ignora questo messaggio 👍`,
+PS: Se abbiamo preso accordi diversi, ignora questo messaggio.`,
   },
   {
     key: 'REVIEW_REQUEST',
@@ -296,11 +328,11 @@ PS: Se abbiamo preso accordi diversi, ignora questo messaggio 👍`,
     timing: 'Ore 17 del giorno di partenza',
     subject: 'Grazie per il soggiorno',
     body_it: `Ciao {{guest_name}},
-grazie per aver soggiornato da noi 🙏
+grazie per aver soggiornato da noi.
 
 Spero che ti sia trovato bene e che ti sia goduto al meglio {{city}}.
 
-Ti ho appena lasciato una recensione 😊
+Ti ho appena lasciato una recensione.
 
 Se anche per te è stata una buona esperienza, mi farebbe davvero piacere ricevere la tua: per noi è fondamentale.
 
@@ -309,7 +341,7 @@ Se invece c’è qualcosa che possiamo migliorare, scrivimi pure qui.
 Buon rientro e a presto!
 Serena – Il Lupo Affitta
 
-PS: Se vorrai tornare scrivimi direttamente al {{whatsapp}}: ti riservo uno sconto dedicato 😉`,
+PS: Se vorrai tornare scrivimi direttamente al {{whatsapp}}: ti riservo uno sconto dedicato.`,
   },
 ];
 
@@ -318,6 +350,12 @@ const DEFAULTS = {
   city: 'CITTÀ',
   whatsapp: DEFAULT_WHATSAPP,
   checkin_time: '16:00',
+};
+
+const APARTMENT_MESSAGE_NOTES = {
+  'rivazzurra - viale bergamo 23': {
+    PORTAL_ACCESS: 'PS: Ultimamente hanno rotto il cancello principale che il condominio sta sistemando. Per entrare, se lo trovate bloccato o chiuso, usate quello laterale a sinistra per il passaggio delle macchine.',
+  },
 };
 
 const S = {
@@ -341,6 +379,31 @@ function esc(value) {
     .replace(/"/g, '&quot;');
 }
 
+const MESSAGE_SYMBOL_REPLACEMENTS = [
+  [/📞|👉|→/g, '->'],
+  [/-->/g, '->'],
+  [/•/g, '-'],
+  [/[’‘]/g, "'"],
+  [/[–—]/g, '-'],
+  [/€/g, ' EUR'],
+  [/✨/g, ''],
+  [/[😊🙏😉👍]/g, ''],
+];
+
+function sanitizeMessageText(value) {
+  // Keep guest-facing Beds24 copy on ASCII-safe punctuation to avoid `?` replacements in delivery.
+  let text = String(value || '').replace(/\r\n/g, '\n');
+  for (const [pattern, replacement] of MESSAGE_SYMBOL_REPLACEMENTS) {
+    text = text.replace(pattern, replacement);
+  }
+  return text
+    .replace(/(^|\n)\?\s+/g, '$1-> ')
+    .replace(/\s+\?(?=$|\n)/g, ' ->')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 function toast(message, tone = 'ok') {
   const root = document.getElementById('_toast');
   clearTimeout(S.toastTimer);
@@ -349,7 +412,7 @@ function toast(message, tone = 'ok') {
 }
 
 function normalizeText(value) {
-  return String(value || '').replace(/\r\n/g, '\n');
+  return sanitizeMessageText(value);
 }
 
 function getSelectedApartment() {
@@ -411,21 +474,39 @@ function getSavedTemplate(typeKey) {
   ) || null;
 }
 
+function normalizeApartmentName(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function applyApartmentMessageOverrides(apartment, typeKey, template) {
+  const note = APARTMENT_MESSAGE_NOTES[normalizeApartmentName(apartment?.nome_appartamento)]?.[typeKey];
+  if (!note) return template;
+
+  const bodyIt = normalizeText(template?.body_it || '');
+  return {
+    ...template,
+    body_it: bodyIt.includes('cancello principale')
+      ? bodyIt
+      : normalizeText(`${bodyIt}\n\n${note}`),
+  };
+}
+
 function makeDraftFromType(typeKey) {
   const meta = getTypeMeta(typeKey);
   const saved = getSavedTemplate(typeKey);
-  return {
+  const draft = {
     id: saved?.id || null,
     apartment_id: S.selectedApt || null,
     channel: S.selectedChannel,
     message_type: typeKey,
-    subject: saved?.subject ?? meta.subject,
+    subject: normalizeText(saved?.subject ?? meta.subject),
     body_it: normalizeText(saved?.body_it ?? meta.body_it),
     body_en: normalizeText(saved?.body_en ?? ''),
-    timing_note: saved?.timing_note ?? meta.timing,
+    timing_note: normalizeText(saved?.timing_note ?? meta.timing),
     enabled: saved?.enabled ?? true,
     updated_at: saved?.updated_at || null,
   };
+  return applyApartmentMessageOverrides(getSelectedApartment(), typeKey, draft);
 }
 
 function ensureDraft() {
@@ -531,16 +612,16 @@ async function createStandardTemplates() {
     return;
   }
   const apartment = getSelectedApartment();
-  const confirmed = window.confirm(`Creare o aggiornare i 6 template standard per ${apartment?.nome_appartamento || 'questo appartamento'} sul canale ${S.selectedChannel}?`);
+  const confirmed = window.confirm(`Creare o aggiornare i ${MESSAGE_TYPES.length} template standard per ${apartment?.nome_appartamento || 'questo appartamento'} sul canale ${S.selectedChannel}?`);
   if (!confirmed) return;
-  const rows = MESSAGE_TYPES.map((item) => ({
+  const rows = MESSAGE_TYPES.map((item) => applyApartmentMessageOverrides(apartment, item.key, {
     apartment_id: S.selectedApt,
     channel: S.selectedChannel,
     message_type: item.key,
-    subject: item.subject,
-    body_it: item.body_it,
-    body_en: null,
-    timing_note: item.timing,
+    subject: normalizeText(item.subject),
+    body_it: normalizeText(item.body_it),
+    body_en: normalizeText(item.body_en || '').trim() || null,
+    timing_note: normalizeText(item.timing).trim() || null,
     enabled: true,
   }));
   const { error } = await sb
@@ -709,6 +790,7 @@ function renderApp() {
         <a href="/backoffice-richieste.html" class="navbar-link">Richieste</a>
         <a href="/backoffice-operativita.html" class="navbar-link">Operativita</a>
         <a href="/backoffice-beds24-messaggi.html" class="navbar-link active">Beds24 Messaggi</a>
+        <a href="/backoffice-beds24-reviews.html" class="navbar-link">Beds24 Reviews</a>
         <a href="/backoffice-contabilita.html" class="navbar-link">Contabilita</a>
       </div>
     </div>

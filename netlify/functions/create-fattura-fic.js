@@ -50,6 +50,7 @@ exports.handler = async (event) => {
     'importo_lordo',
     'data_checkin',
     'data_checkout',
+    'paese_residenza',
     'codice_fiscale',
     'codice_fiscale_verificato',
     'indirizzo_residenza',

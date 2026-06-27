@@ -125,6 +125,7 @@ async function createResidenceBookings(admin, auth, body) {
     actor: auth.actor,
     details: { count: sanitized.length, source: sanitized[0]?.source || null },
   });
+  await syncResidenceCalendarToPms(admin);
 
   return { ok: true, bookings: data || [] };
 }
@@ -178,6 +179,7 @@ async function updateResidenceBooking(admin, auth, body) {
     actor: auth.actor,
     details: payload,
   });
+  await syncResidenceCalendarToPms(admin);
 
   return { ok: true, booking: data };
 }
@@ -211,6 +213,7 @@ async function deleteResidenceBookings(admin, auth, body) {
     actor: auth.actor,
     details: { ids: rows.map((row) => row.id), count: rows.length },
   });
+  await syncResidenceCalendarToPms(admin);
 
   return { ok: true, deleted_ids: rows.map((row) => row.id) };
 }
@@ -242,6 +245,7 @@ async function approveResidenceBooking(admin, auth, body) {
     actor: auth.actor,
     details: { ids },
   });
+  await syncResidenceCalendarToPms(admin);
 
   return { ok: true, bookings: data || [], approved_ids: ids };
 }
@@ -282,6 +286,7 @@ async function rejectResidenceBooking(admin, auth, body) {
     actor: auth.actor,
     details: { ids, reason: reason || null },
   });
+  await syncResidenceCalendarToPms(admin);
 
   return { ok: true, rejected_ids: ids };
 }
@@ -358,6 +363,13 @@ async function insertAudit(admin, payload) {
     });
   } catch (error) {
     console.warn('[residence-api] audit insert failed:', error.message);
+  }
+}
+
+async function syncResidenceCalendarToPms(admin) {
+  const result = await admin.rpc('sync_rm_calendar_to_pms');
+  if (result.error) {
+    throw new Error(`Sync calendario interno fallita: ${result.error.message}`);
   }
 }
 

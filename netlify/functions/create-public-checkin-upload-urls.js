@@ -172,13 +172,20 @@ function normalizeDocumentUploads(value) {
   const raw = Array.isArray(value) ? value : [];
   return raw.map((entry, index) => ({
     client_id: String(entry?.client_id || '').trim() || `doc-${index + 1}`,
-    guest_scope: String(entry?.guest_scope || '').trim() === 'additional' ? 'additional' : 'main',
+    guest_scope: normalizeGuestScope(entry?.guest_scope),
     guest_index: normalizeNonNegativeInt(entry?.guest_index),
     display_order: normalizeNonNegativeInt(entry?.display_order),
     file_name: String(entry?.file_name || '').trim(),
     mime_type: String(entry?.mime_type || '').trim().toLowerCase(),
     size_bytes: normalizePositiveInt(entry?.size_bytes),
   }));
+}
+
+function normalizeGuestScope(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (normalized === 'additional') return 'additional';
+  if (normalized === 'tourist_tax') return 'tourist_tax';
+  return 'main';
 }
 
 function normalizePositiveInt(value) {
