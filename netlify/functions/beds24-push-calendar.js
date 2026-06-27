@@ -486,8 +486,10 @@ function buildLocalRowFromSources({
   if (change.price !== undefined) row.price = change.price;
   else if (calendarEntry?.price !== undefined && calendarEntry?.price !== null) row.price = calendarEntry.price;
 
+  // Only include min_stay if explicitly in this change. Using calendarEntry.minStay as fallback
+  // would overwrite user-set Supabase values when saving price/availability separately,
+  // because Beds24 read-after-write can lag and still return the old value.
   if (change.min_stay !== undefined) row.min_stay = change.min_stay;
-  else if (calendarEntry?.minStay !== undefined && calendarEntry?.minStay !== null) row.min_stay = calendarEntry.minStay;
 
   if (change.closed !== undefined) {
     row.closed = change.closed === true;
