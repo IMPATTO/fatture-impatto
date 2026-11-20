@@ -1367,6 +1367,21 @@ input {
   color: var(--ink);
 }
 
+.detail-link {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.detail-note {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;

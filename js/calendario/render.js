@@ -8,8 +8,8 @@ import {
   selectAllCities,
   toggleCityFilter,
   toggleSetValue,
-} from './interactions.js?v=20260627b';
-import { CHANNEL_CONFIG, ELS, S, STATUS_LABELS } from './state.js?v=20260627b';
+} from './interactions.js?v=20261120a';
+import { CHANNEL_CONFIG, ELS, S, STATUS_LABELS } from './state.js?v=20261120a';
 import {
   buildDayCellLabel,
   compareCity,
@@ -28,7 +28,7 @@ import {
   groupVisibleBookingsForMobile,
   groupVisibleRowsByCity,
   isKekkoImportedBooking,
-} from './data.js?v=20260627b';
+} from './data.js?v=20261120a';
 import {
   addDays,
   bookingSpanWithinMonth,
@@ -48,7 +48,7 @@ import {
   minutesAgoLabel,
   nightsBetween,
   titleCase,
-} from './utils.js?v=20260627b';
+} from './utils.js?v=20261120a';
 
 let dragMouseUpBound = false;
 let dragStartCell = null;
@@ -561,7 +561,8 @@ export function buildBookingTooltip(booking) {
     `${formatDate(booking.check_in)} → ${formatDate(booking.check_out)} · ${nightsBetween(booking.check_in, booking.check_out)} notti`,
     `${channelText} · ${STATUS_LABELS[booking.status] || booking.status}`,
     price,
-  ].join('\n');
+    guestPhoneTooltip(booking),
+  ].filter(Boolean).join('\n');
 }
 
 export function bindTimelineEvents() {
@@ -704,6 +705,7 @@ export function renderMobileList() {
           <h4>${esc(booking.displayGuestName || booking.guest_last_name || booking.guest_first_name || 'BLOCCO')}</h4>
           <p class="mobile-meta">${formatDate(booking.check_in)} → ${formatDate(booking.check_out)} · ${nightsBetween(booking.check_in, booking.check_out)} notti</p>
           <p class="mobile-meta">${esc(STATUS_LABELS[booking.status] || booking.status)} · ${esc(booking.unitPresentation?.title || booking.unit?.unit_label || '—')}</p>
+          ${guestPhoneMobileLine(booking)}
           <button type="button" class="btn btn-ghost btn-small" data-mobile-booking="${esc(booking.beds24_booking_id)}">Apri dettagli</button>
         </div>
       `).join('')}
@@ -743,8 +745,8 @@ export function renderDrawer() {
         <dl class="detail-list">
           ${detailRow('Booking ID', booking.beds24_booking_id)}
           ${detailRow('Ospite', guestLabel || '—')}
-          ${detailRow('Email', booking.guest_email || '—')}
-          ${detailRow('Telefono', booking.guest_phone || '—')}
+          ${renderEmailDetail(booking)}
+          ${renderPhoneDetail(booking)}
         </dl>
       </section>
       <section class="detail-block">
@@ -857,6 +859,67 @@ export function renderDrawer() {
 
 export function detailRow(label, value) {
   return `<div class="detail-row"><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`;
+}
+
+function detailRowHtml(label, html) {
+  return `<div class="detail-row"><dt>${esc(label)}</dt><dd>${html}</dd></div>`;
+}
+
+function isBookingComBooking(booking) {
+  const normalized = String(booking?.channel_normalized || '').toLowerCase();
+  const raw = String(booking?.channel || '').toLowerCase();
+  return normalized === 'booking' || normalized.includes('booking') || raw.includes('booking');
+}
+
+function phoneTelHref(phone) {
+  const compact = String(phone || '').replace(/[^\d+]/g, '');
+  return compact ? `tel:${compact}` : '';
+}
+
+function renderEmailDetail(booking) {
+  const email = String(booking?.guest_email || '').trim();
+  if (!email) return detailRow('Email', '—');
+  return detailRowHtml('Email', `<a class="detail-link" href="mailto:${esc(email)}">${esc(email)}</a>`);
+}
+
+function renderPhoneDetail(booking) {
+  const phone = String(booking?.guest_phone || '').trim();
+  if (phone) {
+    const href = phoneTelHref(phone);
+    const value = href
+      ? `<a class="detail-link" href="${esc(href)}">${esc(phone)}</a>`
+      : esc(phone);
+    return detailRowHtml('Telefono', value);
+  }
+  if (isBookingComBooking(booking)) {
+    return detailRowHtml(
+      'Telefono',
+      'Non disponibile<p class="detail-note">Booking.com dal 28 settembre 2026 non invia più il numero a Beds24. Il telefono resta nell\'Extranet (prenotazione, Mostra numero) e nell\'app Pulse. Per scrivere all\'ospite usa l\'email alias qui sopra, oppure <a class="detail-link" href="/backoffice-beds24-messaggi.html">Messaggi Beds24</a>: il messaggio arriva nella chat Booking.com.</p>',
+    );
+  }
+  return detailRow('Telefono', '—');
+}
+
+function guestPhoneTooltip(booking) {
+  const phone = String(booking?.guest_phone || '').trim();
+  if (phone) return `Tel ${phone}`;
+  if (isBookingComBooking(booking)) return 'Telefono non inviato da Booking.com: usa email o Extranet';
+  return '';
+}
+
+function guestPhoneMobileLine(booking) {
+  const phone = String(booking?.guest_phone || '').trim();
+  if (phone) {
+    const href = phoneTelHref(phone);
+    const value = href
+      ? `<a class="detail-link" href="${esc(href)}">${esc(phone)}</a>`
+      : esc(phone);
+    return `<p class="mobile-meta">Tel ${value}</p>`;
+  }
+  if (isBookingComBooking(booking)) {
+    return '<p class="mobile-meta">Telefono Booking.com non disponibile: usa email o Extranet</p>';
+  }
+  return '';
 }
 
 export function openDrawer(bookingId) {

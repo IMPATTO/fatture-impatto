@@ -13,7 +13,8 @@
     "check:links:deprecated": "node scripts/check-project-links.mjs config/project-links-deprecated.json",
     "sync:residence-pr-snapshot": "node scripts/sync-extracted-residence-pr.mjs",
     "sync:project-links": "node scripts/sync-project-links.mjs",
-    "verify:integrity": "node scripts/verify-site-integrity.mjs"
+    "verify:integrity": "node scripts/verify-site-integrity.mjs",
+    "backfill:guest-phones": "node scripts/backfill-guest-phones.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.102.1",

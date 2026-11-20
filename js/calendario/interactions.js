@@ -7,13 +7,13 @@ import {
   initializeFilterDefaults,
   loadMonthData,
   loadStaticData,
-} from './data.js?v=20260627b';
-import { ELS, PMS_EDITOR_EMAILS, S, SIDEBAR_STORAGE_KEY } from './state.js?v=20260627b';
+} from './data.js?v=20261120a';
+import { ELS, PMS_EDITOR_EMAILS, S, SIDEBAR_STORAGE_KEY } from './state.js?v=20261120a';
 import {
   nightsBetween,
   startOfMonth,
   toMonthInputValue,
-} from './utils.js?v=20260627b';
+} from './utils.js?v=20261120a';
 
 const RENDER = {
   renderAll: null,
@@ -73,7 +73,7 @@ function collectCalendarWarnings(payload = {}) {
 
 export async function init() {
   cacheElements();
-  await import('./render.js?v=20260627b');
+  await import('./render.js?v=20261120a');
   bindShellEvents();
   restoreSidebarState();
   handleScrollHeaderToggle();

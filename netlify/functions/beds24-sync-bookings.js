@@ -7,6 +7,10 @@
  * Usa BEDS24_API_KEY con lo stesso pattern auth del progetto: scambio token via /authentication/token.
  * Dry-run e il default: fare sempre preview prima di qualsiasi execute.
  * Scrive solo su bookings, sync_jobs e sync_state. Nessun DELETE, nessun cron, nessun webhook.
+ *
+ * Telefono ospite: legge phone, mobile, guestPhone, guests[] e infoItems.
+ * Dal 28 settembre 2026 Booking.com non manda più il numero: un campo vuoto
+ * non cancella un guest_phone già salvato. Vedi _lib/guest-phone.js.
  */
 
 const { createClient } = require('@supabase/supabase-js');
@@ -16,6 +20,7 @@ const {
   normalizeSupabaseUrl,
 } = require('./_lib/shared-auth');
 const { resolvePmsCalendarScope } = require('./_lib/pms-calendar-access');
+const { resolveStoredGuestPhone } = require('./_lib/guest-phone');
 
 const BEDS24_URL = 'https://api.beds24.com/v2';
 const OCCUPYING_STATUSES = new Set(['confirmed', 'new', 'request', 'black']);
@@ -112,6 +117,7 @@ exports.handler = async (event) => {
     preview: [],
     orphans: [],
     errors_detail: [],
+    warnings: [],
     sync_job_id: null,
   };
 
@@ -207,15 +213,12 @@ exports.handler = async (event) => {
     for (const targetPropertyId of targetProperties) {
       let beds24Bookings = [];
       try {
-        const payload = await fetchBeds24Json(
-          buildBookingsPath({
-            propertyId: targetPropertyId,
-            from,
-            to,
-            modifiedSince,
-          }),
-          env
-        );
+        const payload = await fetchPropertyBookings(env, {
+          propertyId: targetPropertyId,
+          from,
+          to,
+          modifiedSince,
+        }, output);
         beds24Bookings = asDataArray(payload);
       } catch (error) {
         output.summary.errors += 1;
@@ -263,6 +266,7 @@ exports.handler = async (event) => {
           occupancyByUnit: propertyState.occupancyByUnit,
         });
 
+        applyStoredGuestPhone(booking, existing);
         const row = buildBookingRow(booking, assignment);
         const action = existing ? 'update' : 'create';
 
@@ -493,23 +497,42 @@ function determineTargetApartmentIds({ apartmentId, targetProperties, propertyTo
   return Array.from(set);
 }
 
-function buildBookingsPath({ propertyId, from, to, modifiedSince }) {
+function buildBookingsPath({ propertyId, from, to, modifiedSince, includeContactDetails }) {
   const params = new URLSearchParams({
     propertyId: String(propertyId),
     arrivalFrom: from,
     arrivalTo: to,
     includeInvoice: 'false',
   });
+  if (includeContactDetails) {
+    params.set('includeInfoItems', 'true');
+    params.set('includeGuests', 'true');
+  }
   if (modifiedSince) {
     params.set('modifiedSince', modifiedSince);
   }
   return `/bookings?${params.toString()}`;
 }
 
+async function fetchPropertyBookings(env, query, output) {
+  try {
+    return await fetchBeds24Json(buildBookingsPath({ ...query, includeContactDetails: true }), env);
+  } catch (error) {
+    const status = Number(String(error.message || '').match(/Beds24 error (\d+)/)?.[1] || 0);
+    if (status !== 400 && status !== 403) throw error;
+    output.warnings.push({
+      type: 'beds24_contact_include_fallback',
+      property_id: query.propertyId,
+      message: `includeGuests/includeInfoItems rifiutati (${status}), rileggo i campi telefono di testata`,
+    });
+    return fetchBeds24Json(buildBookingsPath({ ...query, includeContactDetails: false }), env);
+  }
+}
+
 async function loadExistingBookingsForProperty(supabase, propertyId) {
   const { data, error } = await supabase
     .from('bookings')
-    .select('id,beds24_booking_id,apartment_unit_id,apartment_id,source_updated_at,check_in,check_out,status')
+    .select('id,beds24_booking_id,apartment_unit_id,apartment_id,source_updated_at,check_in,check_out,status,guest_phone')
     .eq('beds24_property_id', String(propertyId));
 
   if (error) {
@@ -559,6 +582,12 @@ function normalizeIncomingBooking(rawBooking, fallbackPropertyId) {
   const channel = normalizeText(
     firstDefined(rawBooking?.referer, rawBooking?.channel, rawBooking?.source, rawBooking?.apiSource)
   );
+  const storedPhone = resolveStoredGuestPhone({
+    rawBooking,
+    existingPhone: null,
+    channel,
+    channelNormalized: null,
+  });
   const sourceUpdatedAt = normalizeIsoString(
     firstDefined(rawBooking?.modifiedTime, rawBooking?.modified, rawBooking?.bookingTime)
   ) || new Date().toISOString();
@@ -583,7 +612,9 @@ function normalizeIncomingBooking(rawBooking, fallbackPropertyId) {
     guest_first_name: normalizeText(firstDefined(rawBooking?.firstName, rawBooking?.guestFirstName, rawBooking?.fname)),
     guest_last_name: normalizeText(firstDefined(rawBooking?.lastName, rawBooking?.guestLastName, rawBooking?.lname)),
     guest_email: normalizeText(firstDefined(rawBooking?.email, rawBooking?.guestEmail, rawBooking?.mail)),
-    guest_phone: normalizeText(firstDefined(rawBooking?.phone, rawBooking?.mobile, rawBooking?.guestPhone)),
+    guest_phone: storedPhone.phone,
+    guest_phone_source: storedPhone.source,
+    guest_phone_missing_reason: storedPhone.missing_reason,
     num_adults: normalizeNullableInt(firstDefined(rawBooking?.numAdult, rawBooking?.adults, rawBooking?.adult)),
     num_children: normalizeNullableInt(firstDefined(rawBooking?.numChild, rawBooking?.children, rawBooking?.child)),
   };
@@ -677,6 +708,18 @@ function buildAssignment({ method, reason, candidates, selectedUnit, effectiveUn
   };
 }
 
+function applyStoredGuestPhone(booking, existing) {
+  const stored = resolveStoredGuestPhone({
+    rawBooking: booking.raw,
+    existingPhone: existing?.guest_phone,
+    channel: booking.channel,
+    channelNormalized: booking.channel_normalized,
+  });
+  booking.guest_phone = stored.phone;
+  booking.guest_phone_source = stored.source;
+  booking.guest_phone_missing_reason = stored.missing_reason;
+}
+
 function buildBookingRow(booking, assignment) {
   return {
     beds24_booking_id: booking.beds24_booking_id,
@@ -704,6 +747,11 @@ function buildBookingRow(booking, assignment) {
     synced_at: new Date().toISOString(),
     raw_payload: {
       ...booking.raw,
+      __guest_phone: {
+        source: booking.guest_phone_source || null,
+        missing_reason: booking.guest_phone ? null : (booking.guest_phone_missing_reason || null),
+        resolved_at: new Date().toISOString(),
+      },
       __assignment: {
         method: assignment.method,
         reason: assignment.reason,
@@ -731,6 +779,9 @@ function buildPreviewRow({ booking, action, assignment }) {
     assignment_method: assignment.method,
     selected_unit_label: assignment.selected_unit_label || null,
     reason: assignment.reason || null,
+    guest_phone_present: Boolean(booking.guest_phone),
+    guest_phone_source: booking.guest_phone_source || null,
+    guest_phone_missing_reason: booking.guest_phone ? null : (booking.guest_phone_missing_reason || null),
   };
 }
 
